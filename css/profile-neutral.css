@@ -61,7 +61,7 @@
 #profile-wrap .statgrid.is-3up .stat-l { color:var(--muted) !important; }
 
 /* Championships are hardware. Keep them shiny gold regardless of member palette. */
-.profile-head .ph-record .is-gold { color:#e7c66a !important; }
+.profile-head .ph-record .is-gold { color:var(--milestone) !important; }
 .profile-head .ph-record .is-gold svg {
   color:#e7c66a !important;
   filter:drop-shadow(0 0 4px rgba(231,198,106,.28));

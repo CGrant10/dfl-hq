@@ -1,7 +1,6 @@
 /* The daily desks share one control hierarchy. Artwork and live scores keep
    their own palette and geometry; action fills use the selected theme. */
 :root { --action-fill:var(--accent-fill,#C8102E); --action-ink:var(--on-accent,#fff); }
-:root[data-palette="light"] { --action-fill:#B8001B; }
 :root[data-palette="fairway"] { --action-fill:#056936; }
 
 :is(#view.view[data-page-system][data-route]:where(:not([data-route^="arena"],[data-route="golf"],[data-route="broadcast"])),.dfl-player-card,.trade-player-picker,.sb-slip,#more) .btn {

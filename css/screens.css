@@ -202,7 +202,7 @@
 #hist-tabs > [aria-selected="true"],
 #year-picker > [aria-selected="true"] {
   border-color:color-mix(in srgb,var(--accent) 45%,transparent);
-  background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 76%,var(--accent-2)));
+  background:var(--accent-fill);
   color:var(--on-accent);
   box-shadow:0 7px 18px color-mix(in srgb,var(--accent) 22%,transparent);
 }
@@ -776,7 +776,7 @@
     color-mix(in srgb, var(--accent-fill) 12%, var(--bg-3)), var(--bg-3));
 }
 .choice.is-primary .choice-ico {
-  background: var(--accent-sweep-135);
+  background: var(--accent-fill);
   border-color: transparent;
   color: var(--on-accent);
 }
@@ -2592,7 +2592,7 @@ a.moment:hover { background: var(--hover-soft); }
   margin-bottom: var(--s-2);
   padding: 3px 8px;
   border-radius: var(--r-pill);
-  background: var(--accent-sweep-135);
+  background: var(--accent-fill);
   color: var(--on-accent);
   font-size: var(--fs-micro);
   font-weight: var(--fw-bold);

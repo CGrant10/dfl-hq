@@ -39,102 +39,70 @@
    from Google on every cold load, and an @import is the slowest possible way
    to arrive at a font: the browser cannot even discover it until this file has
    been downloaded and parsed, and rendering blocks the whole time. */
-/*
-  THE COLOUR RULE - the one thing to know before editing anything below.
-
-    --accent / --accent-2            TEXT. Legible in whichever mode is on.
-    --accent-fill / --accent-2-fill  The crest's true #E5011B and #003396,
-                                     for fills, borders and gradients.
-
-  The crest red is a good fill and a poor letter - 3.9:1 on the dark page,
-  4.4:1 on the light one. So --accent is a lightened red in dark mode and a
-  darkened one in light mode, and NOTHING that has to be read uses the fill
-  pair. js/theme.js owns the switch and sets every variable below at runtime.
-
-  The values here are the dark-mode defaults, which is what paints for the
-  few milliseconds before that runs.
-*/
+/* Medicine Wheel Dark first-paint defaults. js/theme.js applies the selected
+   palette at runtime. Text and fill accents have separate contrast roles. */
 :root {
-  --bg:          #0d1117;   /* page background        */
-  --bg-2:        #131a24;   /* card background        */
-  --bg-3:        #1b2432;   /* input / hover          */
-  --line:        #222b3a;   /* borders                */
-  --line-soft:   #1a222e;   /* dividers within a card */
-  --text:        #e8edf5;
-  --muted:       #8b98ab;
-  --body-text:   #cdd6e2;   /* card copy, a shade below --text */
-  --hover:       #1b2432;
-  --hover-soft:  rgba(255,255,255,.025);
-  --control-line: #616F80;  /* the edge of a tappable control */
-  /* The plate behind a floating control (broadcast pause/arrows). Defined
-     here as well as in theme.js so the very first paint - before the theme
-     is applied - is not a bare ring with nothing behind it. */
-  --control-bg:  rgba(20,27,38,.72);
+  --bg: #191817;
+  --bg-2: #22201d;
+  --bg-3: #2b2822;
+  --line: #8a8678;
+  --line-soft: #615e52;
+  --text: #f4f1eb;
+  --muted: #ddd8cb;
+  --body-text: #e9e5df;
+  --hover: #2b2822;
+  --hover-soft: rgba(255,255,255,.03);
+  --control-line: #aaa58f;
 
-  /* Tells the browser what to make of the UI IT draws: select popups, date
-     and time pickers, scrollbars, autofill. theme.js overrides this per
-     mode; without it they follow the OS and go black in light mode. */
+  --control-bg: rgba(34,32,29,.9);
+
   color-scheme: dark;
 
-  --accent:        #E67582; /* crest red, made readable  - TEXT   */
-  --accent-2:      #7098E6; /* crest blue, made readable - TEXT   */
-  --accent-fill:   #E5011B; /* the crest's own red       - FILLS  */
-  --accent-2-fill: #003396; /* the crest's own blue      - FILLS  */
-  /*
-    THE LONG-LINE GRADIENT, declared statically as well as by theme.js.
+  --accent: #f5d66c;
+  --accent-2: #f4f1eb;
+  --accent-fill: #C8102E;
+  --accent-2-fill: #EFC94C;
 
-    js/theme.js overwrites this on every apply(). It has to exist here too:
-    `background: var(--accent-sweep)` with the variable unset is an invalid
-    declaration, so a meter fill or a dwell timer would draw NOTHING for the
-    frames before the theme is applied - and permanently if the script ever
-    fails to run.
-  */
-  --accent-sweep:     linear-gradient(90deg,  #E5011B, #003396);
-  --accent-sweep-135: linear-gradient(135deg, #E5011B, #003396);
-  --accent-sweep-v:   linear-gradient(180deg, #E5011B, #003396);
-  --accent-dim:    #003396;
-  --on-accent:     #FFFFFF; /* text drawn on top of a fill        */
+  --accent-sweep: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill));
+  --accent-sweep-135: linear-gradient(135deg, var(--accent-fill), var(--accent-2-fill));
+  --accent-sweep-v: linear-gradient(180deg, var(--accent-fill), var(--accent-2-fill));
+  --accent-dim: var(--accent-2-fill);
+  --on-accent:     #FFFFFF;
 
-  --chalk:       #f5f7fa;   /* yard-line white        */
+  --chalk: #ffffff;
   --warn:        #f0a742;
   --danger:      #e0574a;
-  --ok:          #86e6a8;
-  --ok-bg:       rgba(47,191,95,.12);
-  --ok-line:     #1d7a3d;
-  --warn-ink:    #f3c887;
-  --warn-bg:     rgba(240,167,66,.12);
-  --warn-line:   #7a5a1d;
-  --danger-ink:  #f0a79b;
-  --danger-bg:   rgba(224,87,74,.12);
-  --danger-line: #7a2f27;
-  --sc-under:    #35d06f;
-  --sc-over:     #ff766d;
-  --sc-bad:      #e33d35;
+  --ok: #b0ebbf;
+  --ok-bg: rgba(96,176,123,.13);
+  --ok-line: #3f7a52;
+  --warn-ink: #f8d6a0;
+  --warn-bg: rgba(232,163,61,.12);
+  --warn-line: #7a5a20;
+  --danger-ink: #ffbfb6;
+  --danger-bg: rgba(200,16,46,.14);
+  --danger-line: #7d2029;
+  --sc-under: #b0ebbf;
+  --sc-over: #ffbfb6;
+  --sc-bad: #ffbfb6;
 
-  --topbar-a:    #101823;
-  --topbar-b:    #0d1117;
-  --hero-a:      #141c27;
-  --hero-wash:   rgba(255,255,255,.05);
-  --toast-bg:    #1f2937;
-  --on-toast:    #e8edf5;
-  --milestone:   #d6b254;
+  --topbar-a: #22201d;
+  --topbar-b: #191817;
+  --hero-a: #22201d;
+  --hero-wash: rgba(255,255,255,.05);
+  --toast-bg: #2b2822;
+  --on-toast: #f4f1eb;
+  --milestone: #EFC94C;
 
-  /* Older names, kept because the profile header and the scorecard card still
-     ask for them. They are the crest, softened. */
-  --theme-primary:   #E5011B;
-  --theme-secondary: #003396;
-  --theme-soft:      color-mix(in srgb, #E5011B 12%, transparent);
-  --theme-soft-2:    color-mix(in srgb, #003396 10%, transparent);
-  --theme-border:    color-mix(in srgb, #E5011B 34%, var(--line));
+  --theme-primary: var(--accent-fill);
+  --theme-secondary: var(--accent-2-fill);
+  --theme-soft: color-mix(in srgb, var(--accent-fill) 12%, transparent);
+  --theme-soft-2: color-mix(in srgb, var(--accent-2-fill) 10%, transparent);
+  --theme-border: color-mix(in srgb, var(--accent-fill) 34%, var(--line));
 
   --radius:      14px;
   --pad:         16px;
-  --shadow:      0 1px 3px rgba(0,0,0,.28);
+  --shadow: 0 1px 3px rgba(0,0,0,.18);
 
-  /* THE COMMISSIONER IDENTITY CARD IS THE SURFACE STANDARD.
-     These are deliberately derived from the active palette, so the quiet
-     wash, hairline edge and restrained depth survive every theme without
-     turning the whole screen green or changing the layout. */
   --card-surface:
     radial-gradient(ellipse 88% 72% at 0% 0%, color-mix(in srgb, var(--accent) 13%, transparent) 0%, color-mix(in srgb, var(--accent) 6%, transparent) 34%, transparent 70%),
     linear-gradient(180deg, color-mix(in srgb, var(--bg-2) 96%, var(--accent) 4%) 0%, var(--bg-2) 58%);
@@ -598,7 +566,7 @@ a.linkcard:hover { border-color: color-mix(in srgb, var(--accent) 48%, var(--lin
 /* -------------------------------- buttons ---------------------------- */
 
 .btn {
-  background: var(--accent-sweep-135);
+  background: var(--accent-fill);
   color: var(--on-accent);
   border: none;
   border-radius: 10px;
@@ -682,7 +650,7 @@ textarea { min-height: 96px; resize: vertical; }
   white-space: nowrap;
   cursor: pointer;
 }
-.tabs button.on { background: var(--accent-sweep-135); border-color: var(--accent); color: var(--on-accent); }
+.tabs button.on { background: var(--accent-fill); border-color: var(--accent); color: var(--on-accent); }
 .tabs button .tabcount {
   display: inline-block;
   margin-left: 5px;
@@ -1584,7 +1552,7 @@ textarea { min-height: 96px; resize: vertical; }
   border-color: rgba(255,255,255,.2);
 }
 .topbar .whoami:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.32); }
-.brand-text span { color: #E67582; }
+.brand-text span { color: var(--accent); }
 :root[data-mode="light"] .topbar { color: var(--text); border-bottom-color: var(--line); }
 :root[data-mode="light"] .topbar .whoami {
   background: color-mix(in srgb, var(--bg-2) 90%, transparent);
@@ -1604,7 +1572,7 @@ textarea { min-height: 96px; resize: vertical; }
    Fills and gradients take the crest pair; text takes the readable pair.
    ------------------------------------------------------------------- */
 .btn.primary, .btn.accent {
-  background: var(--accent-sweep-135);
+  background: var(--accent-fill);
   color: var(--on-accent);
   border-color: var(--accent-fill);
 }
@@ -1805,7 +1773,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-2-fill) !
 /* The live one is filled, not just outlined - on a three-way switch an
    outline alone reads as "hovered" rather than "chosen". */
 .mode-opt.is-on {
-  background: var(--accent-sweep-135);
+  background: var(--accent-fill);
   border-color: var(--accent-fill);
   color: var(--on-accent);
 }
@@ -1919,8 +1887,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-2-fill) !
   justify-content: center;
   font-weight: 800;
   color: var(--on-accent);
-  background: linear-gradient(135deg,
-    var(--accent) 0 50%, var(--accent-2, var(--accent)) 50% 100%);
+  background: var(--accent-fill);
   border: none;
 }
 .avatar.sm { width: 34px; height: 34px; font-size: 13px; }
@@ -2679,7 +2646,7 @@ input.masked {
 .track[data-heat="2"] .runner-art { animation-duration: .3s; }
 .track[data-heat="3"] .runner-art { animation-duration: .24s; }
 .track[data-heat="2"] .ar-row, .track[data-heat="3"] .ar-row { transition-duration: 260ms; }
-.track[data-heat="3"] { box-shadow: inset 0 0 40px rgba(229,1,27,.10); }
+.track[data-heat="3"] { box-shadow: inset 0 0 40px color-mix(in srgb,var(--accent-fill) 10%,transparent); }
 
 /* =====================================================================
    THE RACERS, LOUDER.

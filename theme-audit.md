@@ -1,36 +1,65 @@
-# DFL HQ color-theme audit
+# DFL HQ theme audit — 1.422.0
 
-## Scope and evidence
+Reviewed 2026-10-15 using Chromium on the compiled app, with the existing member
+profile and read-only league browsing. Primary screenshots: 390 × 844. Home,
+Trade and Profile also passed horizontal overflow checks at 320 and 430 px.
+Current-run screenshots and computed-color results are retained in
+`/workspace/dfl-themes-1422/`; private member screenshots are not committed.
 
-Captured on a 390 x 844 mobile viewport at device scale factor 1. The current audit produced screenshots under:
+## Findings and corrections
 
-`C:\Users\GUEST\Documents\Codex\2026-08-31\okay\theme-audit\screenshots`
+Light still used the former cool background and blue secondary accent. The
+current-run Home capture showed blue glyphs and old red labels; the theme picker
+also offered both canonical and duplicate Medicine Wheel entries. Dark already
+used the warm Medicine ground, but static defaults and profile wash tokens still
+contained crest red/blue. These now use the selected palette.
 
-Five palettes were checked on Home, Trade, and Analyzer: Light, Dark, Fairway Light, Medicine Wheel, and Medicine Wheel Light. Light and Dark were also checked across Rules, Keepers, Polls, Proposals, Calendar, History, Facts, Fees, and Notifications. Golf was not redesigned; it retains its intentionally pinned Fairway presentation. Arena/Broadcast cinematic scenes were treated as authored media rather than ordinary themed app surfaces.
+Dark and Light now are the Medicine Wheel palettes. Retired `medicine` and
+`medicine-light` selections normalize to `dark` and `light` in local storage,
+member synchronization and member switching. Match my phone, Fairway and club
+palettes remain supported. No database migration is required.
 
-## Steps
+Text-bearing selected controls use the primary fill instead of a red/yellow
+sweep that placed white letters over bright yellow. This covers base buttons,
+mode picks, archive controls, avatar fallbacks, Keeper call labels and Sportsbook
+selected/hover actions. Decorative gradients still follow both palette accents.
+Profile championship labels use readable milestone ink while trophies retain
+metallic artwork. Startup grounds and the legacy Arena light-mode plate also
+use Medicine colors.
 
-1. **Home — repaired, healthy.** The new Home composition had locally pinned dark background/text tokens. That made light palettes render a mixed dark/gray feature with mismatched text. Home now inherits the selected palette for the matchup, power rankings, and weekly report. The anniversary photograph remains intentionally dark branded artwork.
-2. **Trade — healthy.** All five palettes use the correct page, control, divider, text, muted, accent, and semantic-status tokens. Native controls receive the correct `color-scheme` through the theme runtime.
-3. **Analyzer — healthy.** Light palettes contain no dark card leftovers; Dark and Medicine Wheel contain no white/light surface leftovers. Semantic injury/trend pills remain purposefully colored.
-4. **Rules and Keepers — healthy.** Cards, tabs, advisor surfaces, and roster rows switch consistently in Light and Dark.
-5. **Polls and Proposals — healthy.** Empty states and collapsed controls use the selected surface and divider tokens.
-6. **Calendar and History — healthy.** Tabs, date cards, tables, and archive surfaces stay within the selected palette.
-7. **Facts and Fees — healthy.** Story cards, stat grids, dues rows, and status colors remain readable and theme-correct.
-8. **Notifications — healthy.** Header, enable prompt, inbox empty state, and accent action all follow the selected palette.
-9. **Shared chrome — healthy by design.** The top bar and anniversary photo remain dark brand anchors in light themes, matching the approved Home/Trade references. Bottom navigation, ticker, page canvas, controls, and content surfaces switch with the theme.
+## Screens reviewed in both Light and Dark
 
-## Fixes made
+1. **Profile / Appearance — healthy.** Four distinct base choices; canonical
+   selected state, warm settings surfaces and readable achievement labels.
+2. **Home — healthy.** Header, navigation, matchup actions and text follow the
+   palette. Broadcast illustrations keep their authored colors.
+3. **Sportsbook — healthy.** Board, odds, tabs and Your matchup follow the
+   palette; selection fills use the primary color with readable action text.
+4. **Trade — healthy.** Workspace and generated offers use the selected ink,
+   surfaces and controls; semantic Fair/Aggressive/Steal colors stay meaningful.
+5. **Team Analyzer — healthy.** Roster, watchlist and lineup surfaces inherit
+   the palette, with semantic status colors retained.
+6. **Clubhouse — healthy.** Week controls, matchup cards and score text match
+   the shell and selected theme.
+7. **Keepers — healthy.** Advisor surfaces and call labels remain readable in
+   both modes; numeric labels use the appropriate ink.
+8. **Rules — healthy.** Tabs, text and dividers match the selected palette.
+9. **History — healthy.** Navigation and champion cards use the correct ink;
+   text-bearing selected archive controls no longer rely on yellow gradients.
 
-- Removed Home's hardcoded local dark palette.
-- Mapped Home surfaces, dividers, type, muted copy, and status movement colors back to global theme tokens.
-- Replaced the Weekly Report's fixed dark-green tint with a palette-derived surface mix.
-- Added a regression test that fails if Home pins page-level background, text, or divider tokens again.
+## Repeatable checks and limits
 
-## Accessibility notes
+`pnpm themes` runs in the standard `pnpm check` pipeline and rejects retired
+crest accents in authored CSS. Runtime regressions cover local and synced alias
+migration, system mode, pinned pages, club preferences, base text contrast and
+startup appearance. All text inks checked against base surfaces and eight
+representative selected controls in each default theme meet 4.5:1 contrast.
 
-Visual review found no obvious light-on-light or dark-on-dark remnants on the audited screens. Screenshot review cannot prove keyboard focus order, screen-reader output, or native popup rendering on every mobile OS; runtime `color-scheme` handling and automated tests cover the native-control theme handoff.
-
-## Evidence limits
-
-Privileged commissioner/admin-only states, transient errors, dialogs, and every possible populated/empty combination were not exhaustively captured. The shared token system and source scan cover those surfaces structurally, but this report does not claim full accessibility conformance from screenshots alone.
+No old UI accents were found in the computed colors of the nine reviewed screens
+in either mode, and no page JavaScript errors were observed. This is not a full
+accessibility conformance claim. Admin-only workflows, every transient dialog,
+native mobile popups and every populated state were not exhaustively exercised.
+NFL/member identity colors, semantic statuses, authored images, share exports and
+the intentional Fairway palette have their own color roles; they are not treated
+as theme leaks. The new `AGENTS.md` records the requirement to audit both mobile
+modes for future color changes.

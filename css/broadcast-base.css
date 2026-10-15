@@ -51,18 +51,18 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
    ===================================================================== */
 [data-mode="light"] .bc-stage,
 [data-mode="light"] .bc-bar {
-  --bg: #0d1117;
-  --bg-2: #131a24;
-  --bg-3: #1b2432;
-  --line: #222b3a;
-  --line-soft: #1a222e;
-  --text: #e8edf5;
-  --body-text: #cdd6e2;
-  --muted: #8b98ab;
-  --chalk: #f5f7fa;
-  --accent: #E67582;
-  --accent-2: #7098E6;
-  --milestone: #d6b254;
+  --bg: #191817;
+  --bg-2: #22201d;
+  --bg-3: #2b2822;
+  --line: #8a8678;
+  --line-soft: #615e52;
+  --text: #f4f1eb;
+  --body-text: #e9e5df;
+  --muted: #ddd8cb;
+  --chalk: #ffffff;
+  --accent: #f5d66c;
+  --accent-2: #f4f1eb;
+  --milestone: #EFC94C;
 }
 
 .bc-stage {
@@ -635,7 +635,7 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 .bc-track[data-heat="1"] .bc-runner-art { animation-duration: .38s }
 .bc-track[data-heat="2"] .bc-runner-art { animation-duration: .3s }
 .bc-track[data-heat="3"] .bc-runner-art { animation-duration: .24s }
-.bc-track[data-heat="3"] { box-shadow: inset 0 0 3vw rgba(229,1,27,.10); }
+.bc-track[data-heat="3"] { box-shadow: inset 0 0 3vw color-mix(in srgb,var(--accent-fill) 10%,transparent); }
 
 
 /* Cinematic shared viewer: the race occupies the scene; chrome stays secondary. */

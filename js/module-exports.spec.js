@@ -338,40 +338,20 @@ describe("the supported golf GPS courses", () => {
     expect(theme).toContain('{ id: "fairway", name: "Fairway Light" }');
     expect(theme).toContain('name === "light" || name === "fairway"');
     expect(theme).toContain('setAttribute("data-palette", name)');
-    expect(memberScope).toContain('"fairway"');
+    expect(memberScope).toContain("normalizeMode");
     expect(schema).toContain("'system', 'dark', 'light', 'fairway', 'medicine'");
   });
 
-  it("offers Medicine Wheel Light, and treats it as a light surface", () => {
-    const theme = fs.readFileSync("js/theme.js", "utf8");
+  it("uses the canonical preference validator when switching members", () => {
     const memberScope = fs.readFileSync("js/member-theme-scope.js", "utf8");
-    const styles = fs.readFileSync("css/style.css", "utf8");
-    const schema = fs.readFileSync("theme_sync_schema.sql", "utf8");
-    expect(theme).toContain('"medicine-light": {');
-    expect(theme).toContain('{ id: "medicine-light", name: "Medicine Wheel Light" }');
-    /*
-      THE THREE LISTS THAT HAVE TO AGREE, and every one of them fails quietly
-      rather than loudly. Out of PICKABLE and the palette cannot be chosen; out
-      of the lightSurface test and the browser draws dark <select> popups and
-      every [data-mode="light"] rule in the CSS stops applying to it; out of
-      the CHECK and the choice is stored as "no preference", so it works on the
-      device that picked it and never follows the member anywhere else.
-    */
-    expect(theme).toContain('const PICKABLE = ["dark", "light", "fairway", "medicine", "medicine-light"]');
-    expect(theme).toContain('name === "medicine-light"');
-    expect(memberScope).toContain('"medicine-light"');
-    expect(schema).toContain("'fairway', 'medicine', 'medicine-light'");
-    /* The bar carries explicit accents so its tiny creed stars remain readable
-       whether the selected palette gives it a light or dark surface. */
-    expect(theme).toContain('s.setProperty("--bar-ink", m.barInk || m.accent)');
-    expect(styles).toContain("color: var(--bar-ink);");
+    expect(memberScope).toContain('applyTheme, normalizeMode');
+    expect(memberScope).toContain('return normalizeMode(value) || ""');
   });
 
   it("keeps the fixed header and anniversary banner on the light surface", () => {
     const theme = fs.readFileSync("js/theme.js", "utf8");
     const styles = fs.readFileSync("css/style.css", "utf8");
     const home = fs.readFileSync("css/home.css", "utf8");
-    expect(theme).toContain('topbarA: "#ffffff", topbarB: "#eef1f6"');
     expect(theme).toContain('topbarA: "#FFFFFF", topbarB: "#F3EDE4"');
     expect(styles).toContain(':root[data-mode="light"] .topbar');
     expect(styles).toContain(':root[data-mode="light"] .brand-text .creed');

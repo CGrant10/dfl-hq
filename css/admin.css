@@ -105,7 +105,7 @@
 #admin-tabs > button.on::before {
   color:var(--on-accent);
   border-color:transparent;
-  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  background:var(--accent-fill);
   box-shadow:0 6px 16px color-mix(in srgb,var(--accent) 24%,transparent);
 }
 

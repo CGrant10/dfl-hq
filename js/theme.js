@@ -1,60 +1,15 @@
-// =====================================================================
-// DFL HQ - one crest, four base palettes
-// ---------------------------------------------------------------------
-// TEAM PALETTES ARE BACK, AND THIS TIME THEY WORK. The first attempt fed
-// NFL team ids into MODES, which only held theme ids, so every choice
-// collapsed to the default - the reason this header used to say the idea
-// was gone for good. The fix was not a bigger map: js/team-theme.js
-// GENERATES a palette from the club's two colours, so there is no lookup
-// to fall out of sync. A raw team colour is never used as text (nine clubs
-// have a primary that is effectively black); it is lifted along its own
-// hue until it clears the contrast bar below.
-//
-// So the picker has five fixed entries - four real palettes and one that
-// is the absence of a choice - and a club palette is offered next to the
-// favourite-club picker on the profile instead of as a 36-entry list. See
-// MODES, PICKABLE and modeOptions() below; those are generated, so if they
-// disagree with this comment, they are right and this is stale.
-//
-//   medicine (default)  Medicine Wheel. A dark palette, and what a device
-//                       that has never touched the picker gets.
-//   system              follow the OS, and keep following it if it changes
-//   dark                force dark
-//   light               force light
-//   fairway             force a golf-inspired blue/green light palette
-//   medicine-light      Medicine Wheel on a bone ground, for daylight
-//
-// This header used to say "one palette, two modes" and that Medicine Wheel
-// was gone. It came back as the default; nobody updated the comment.
-//
-// ---------------------------------------------------------------------
-// THE COLOUR RULE, which is the whole point of this file
-//
-//   --accent        / --accent-2        TEXT. Always legible on the
-//                                       current mode's background.
-//   --accent-fill   / --accent-2-fill   The crest's true #E5011B and
-//                                       #003396, for fills, borders and
-//                                       gradients - things whose job is
-//                                       to be seen, not read.
-//
-// This is deliberately the way round it is. There are ~60 places in the
-// CSS that say `color: var(--accent)` and ~30 that fill with it. Making
-// --accent the readable one means every one of those 60 is correct in both
-// modes without being touched, and only fills had to be renamed.
-//
-// The crest red is a beautiful fill and a poor letter: #E5011B measures
-// 3.9:1 on the dark page and 4.4:1 on the light one. The text reds below
-// are the same hue pushed until they clear 6:1 on their own background.
-// =====================================================================
+// DFL HQ appearance: Medicine Wheel Dark and Light, Fairway, or a club palette.
+// Text accents stay readable; saturated fills carry the identity.
+// Retired Medicine Wheel ids are read as aliases, never offered twice.
 
 import { teamPalette, MEDICINE_GROUND } from "./team-theme.js";
 /* For carrying the choice between a member's devices. Neither of these
    imports theme.js, so there is no cycle. */
 import { db } from "./supabase.js";
 import { currentMember } from "./members.js";
-import { team as nflTeam, nflTeams, teamCode } from "./nfl-teams.js";
+import { team as nflTeam, teamCode } from "./nfl-teams.js";
 
-const MODE_KEY = "dfl.mode";  // "system" | "dark" | "light" | "medicine" | "team:KC"
+const MODE_KEY = "dfl.mode";  // "system" | "dark" | "light" | "fairway" | "team:KC"
 
 /*
   A TEAM MODE IS "team:KC" - ONE KEY, NOT TWO.
@@ -79,27 +34,7 @@ const LEGACY_THEME_KEY = "dfl.theme";  // removed; cleared on sight
    not care what the background is doing. */
 export const CREST = { red: "#E5011B", blue: "#003396", black: "#0A0A0A", white: "#FFFFFF" };
 
-/*
-  WHERE A NEW PALETTE GOES.
-
-  One more entry in MODES, the same id added to PICKABLE and to
-  modeOptions(), and every surface in the app follows it: style.css expresses
-  everything below in these variables and apply() sets them at runtime. The
-  Medicine Wheel entry below IS that shape - it was added with no new
-  plumbing, which is the evidence that the mechanism works.
-
-  The only rule the app enforces is the contrast one stated above: a colour
-  used for TEXT has to clear 6:1 on the background it sits on, or it goes in
-  the fill pair instead.
-
-  Per-mode values. Only two things actually differ: the surfaces, and which
-  end of each hue is readable against them.
-
-  dark  : text reds/blues lightened for the softer slate surfaces
-  light : text reds/blues darkened   - #B8001B is 6.4:1 on #ffffff
-          (the crest red itself is only 4.4:1 there, and it is the colour
-           Grant called hard to read, so light mode does not use it for text)
-*/
+// Base palettes share the same token shape. Club palettes are generated.
 const MODES = {
   dark: {
     // Standard dark and OS dark share the league's Medicine foundation.
@@ -109,129 +44,6 @@ const MODES = {
     onAccent: "#FFFFFF",
   },
   light: {
-    /* Not white-on-white: the page is a shade cooler than the cards so a card
-       still reads as a card without needing a heavier border. */
-    bg: "#eef1f6", bg2: "#ffffff", bg3: "#e6eaf1",
-    line: "#ccd4e0", lineSoft: "#e3e8f0",
-    text: "#11161d", muted: "#4c5868", chalk: "#11161d",
-    bodyText: "#2a323d",
-    hover: "#e0e6ef", hoverSoft: "rgba(16,24,40,.035)",
-    controlLine: "#7C8695", controlBg: "rgba(255,255,255,.82)",
-    /* The crest red is 4.4:1 on white - the colour Grant called hard to read.
-       #B8001B is the same hue at 6.4:1. The blue needs no help: 11.6:1. */
-    accent: "#B8001B", accent2: "#003396",
-    onAccent: "#FFFFFF",
-    // Same statuses, darkened until they read on white.
-    ok: "#0a5c2d", okBg: "rgba(15,122,61,.10)", okLine: "#9fd3b4",
-    warnInk: "#8a5200", warnBg: "rgba(196,124,0,.12)", warnLine: "#e0bd7e",
-    dangerInk: "#a3121a", dangerBg: "rgba(163,18,26,.09)", dangerLine: "#e2a9a5",
-    scUnder: "#0f7a3d", scOver: "#c2371f", scBad: "#a3121a",
-    /* Light mode is light all the way through the shell. Keeping a black band
-       here made the fixed header look detached from the page. */
-    topbarA: "#ffffff", topbarB: "#eef1f6",
-    barInk: "#B8001B", barInk2: "#003396",
-    heroA: "#ffffff", heroWash: "rgba(16,24,40,.04)",
-    toastBg: "#11161d", onToast: "#f5f7fa",
-    milestone: "#8a6410",
-    shadow: "0 1px 3px rgba(16,24,40,.10)",
-  },
-
-  /*
-    FAIRWAY LIGHT.
-
-    A golf-first light palette: bright scorecard surfaces, deep blue
-    structure, and green action/status accents. It deliberately keeps the
-    same token shape as Light so every screen remains accessible and native
-    controls still use their light appearance.
-  */
-  fairway: {
-    bg: "#f4f6f7", bg2: "#ffffff", bg3: "#edf1f3",
-    line: "#b9c7cc", lineSoft: "#dce3e6",
-    text: "#0b2b40", muted: "#5b707a", chalk: "#0b2b40",
-    bodyText: "#294653",
-    hover: "#e8eef0", hoverSoft: "rgba(7,80,119,.045)",
-    controlLine: "#78909a", controlBg: "rgba(255,255,255,.94)",
-    accent: "#056936", accent2: "#075077",
-    fill: "#119b57", fill2: "#0873a6",
-    onAccent: "#ffffff",
-    ok: "#056936", okBg: "rgba(5,105,54,.10)", okLine: "#8bc7a6",
-    warnInk: "#805200", warnBg: "rgba(180,119,0,.11)", warnLine: "#ddc483",
-    dangerInk: "#a12929", dangerBg: "rgba(161,41,41,.09)", dangerLine: "#e1adad",
-    scUnder: "#05723c", scOver: "#bb442f", scBad: "#992727",
-    topbarA: "#ffffff", topbarB: "#edf1f3",
-    barInk: "#056936", barInk2: "#075077",
-    heroA: "#ffffff", heroWash: "rgba(7,80,119,.035)",
-    toastBg: "#082c40", onToast: "#f7fffb",
-    milestone: "#765c0d",
-    shadow: "0 1px 2px rgba(11,43,64,.06)",
-  },
-
-  /*
-    MEDICINE WHEEL.
-
-    Built on the four directional colours - black, red, yellow, white - with
-    slate as the ground, keeping the wheel accents on a softer dark app:
-    this is a dark palette, so every surface, divider and status below is the
-    same shape as the dark one and only the hues move.
-
-    The fills and the text colours are SEPARATE here, same as the crest pair
-    everywhere else in this file. A saturated red is a good fill and a poor
-    letter: #C8102E is 4.4:1 on this ground, under the 6:1 this file holds
-    itself to, so the text red is the same hue lifted until it clears. Yellow
-    needs no help at all - it is 11:1 on black - so the text yellow and the
-    fill yellow are nearly the same colour.
-
-    Statuses stay semantic. There is no green in the four, but "paid" and
-    "unpaid" have to be told apart at a glance on the fees screen, so ok/warn/
-    danger keep their jobs and are only warmed to sit with the rest.
-  */
-  /*
-    THE SURFACES COME FROM team-theme.js, WHICH OWNS THEM NOW.
-
-    A team palette is this palette with different accents, so the ground was
-    being maintained in two files. It is defined once, there, and this entry
-    is the wheel's own accents on top. The notes explaining why warn is an
-    amber and danger is pinker moved with the values they describe.
-  */
-  medicine: {
-    ...MEDICINE_GROUND,
-    /* Yellow and ivory carry text; Medicine crimson stays on action fills. */
-    accent: "#f5d66c", accent2: "#f4f1eb",
-    /* fill pair: the wheel's own red and yellow */
-    fill: "#C8102E", fill2: "#EFC94C",
-    onAccent: "#FFFFFF",
-  },
-
-  /*
-    MEDICINE WHEEL LIGHT.
-
-    The same four directions with the ground turned over: white is the
-    surface, black is the ink, and red and yellow are what move. That is a
-    translation rather than an inversion, and the difference is the yellow.
-
-    WHY THE YELLOW GOES DARK, which is the only interesting decision here.
-    #EFC94C is 11:1 on black and 1.6:1 on white - the same colour that
-    carries the dark palette is invisible on this one, as text and very
-    nearly as a fill. So the yellow direction is taken down its own hue
-    until it reads: #6E4B00 as a letter, #8A5A00 as a fill white sits on.
-    This is exactly what the Light palette does to the crest red, and for
-    the same reason.
-
-    The red goes the other way from the dark palette - deepened rather than
-    lifted - so the wheel's #C8102E stays the fill and #A50E26 does the
-    reading.
-
-    THE GROUND IS BONE, NOT THE GREY OF Light. Light is a cool blue-grey
-    because the crest is red and blue. The wheel is red, yellow, black and
-    white, so its paper is warm, and cards are true white against it.
-
-    EVERY INK BELOW CLEARS 6:1 ON ALL FOUR SURFACES - page, card, recessed
-    and hover - and every fill takes white at 4.5:1 or better. That is
-    stricter than this file's own rule, which only asks for the background a
-    colour actually sits on, and it is why the statuses are darker here than
-    in Light: they have to hold up on the recessed bone as well as on white.
-  */
-  "medicine-light": {
     /* Bone page, white cards, a deeper bone for wells and rows. */
     bg: "#F3EDE4", bg2: "#FFFFFF", bg3: "#E9E1D4",
     line: "#D3C6B2", lineSoft: "#E6DDCE",
@@ -271,11 +83,50 @@ const MODES = {
     milestone: "#684B06",
     shadow: "0 1px 3px rgba(21,17,13,.12)",
   },
+
+  /*
+    FAIRWAY LIGHT.
+
+    A golf-first light palette: bright scorecard surfaces, deep blue
+    structure, and green action/status accents. It deliberately keeps the
+    same token shape as Light so every screen remains accessible and native
+    controls still use their light appearance.
+  */
+  fairway: {
+    bg: "#f4f6f7", bg2: "#ffffff", bg3: "#edf1f3",
+    line: "#b9c7cc", lineSoft: "#dce3e6",
+    text: "#0b2b40", muted: "#5b707a", chalk: "#0b2b40",
+    bodyText: "#294653",
+    hover: "#e8eef0", hoverSoft: "rgba(7,80,119,.045)",
+    controlLine: "#78909a", controlBg: "rgba(255,255,255,.94)",
+    accent: "#056936", accent2: "#075077",
+    fill: "#119b57", fill2: "#0873a6",
+    onAccent: "#ffffff",
+    ok: "#056936", okBg: "rgba(5,105,54,.10)", okLine: "#8bc7a6",
+    warnInk: "#805200", warnBg: "rgba(180,119,0,.11)", warnLine: "#ddc483",
+    dangerInk: "#a12929", dangerBg: "rgba(161,41,41,.09)", dangerLine: "#e1adad",
+    scUnder: "#05723c", scOver: "#bb442f", scBad: "#992727",
+    topbarA: "#ffffff", topbarB: "#edf1f3",
+    barInk: "#056936", barInk2: "#075077",
+    heroA: "#ffffff", heroWash: "rgba(7,80,119,.035)",
+    toastBg: "#082c40", onToast: "#f7fffb",
+    milestone: "#765c0d",
+    shadow: "0 1px 2px rgba(11,43,64,.06)",
+  },
+
 };
 
 /* The modes somebody can actually choose. "system" is not one of them - it
    is the absence of a choice - and anything else in storage is ignored. */
-const PICKABLE = ["dark", "light", "fairway", "medicine", "medicine-light"];
+const PICKABLE = ["dark", "light", "fairway"];
+const MODE_ALIASES = { medicine: "dark", "medicine-light": "light" };
+
+/** One validation path for local, synced and member-switch preferences. */
+export function normalizeMode(value) {
+  const mode = MODE_ALIASES[value] || value;
+  if (mode === "system" || PICKABLE.includes(mode)) return mode;
+  return isTeamMode(mode) ? teamModeFor(codeOfMode(mode)) : null;
+}
 
 /*
   ONE MediaQueryList, held at module scope for the life of the page.
@@ -295,9 +146,9 @@ const media = () => WATCH;
 
   Three states, and telling the last two apart is the whole job:
 
-    a picked theme     dark / light / medicine  -> honoured, always
+    a picked theme     dark / light  -> honoured, always
     "Match my phone"   an explicit choice       -> follow the OS
-    nothing at all     never touched the picker -> Medicine Wheel
+    nothing at all     never touched the picker -> Medicine Wheel Dark
 
   The second and third used to be the SAME state, because choosing "Match
   my phone" deleted the key. That made an explicit preference
@@ -306,16 +157,13 @@ const media = () => WATCH;
   deliberately asked to follow their phone. "system" is now stored as
   itself, and only a genuinely empty slot falls through to the default.
 */
-const DEFAULT_MODE = "medicine";
+const DEFAULT_MODE = "dark";
 
 export function savedMode() {
-  const v = localStorage.getItem(MODE_KEY);
-  if (PICKABLE.includes(v)) return v;
-  if (v === "system") return "system";
-  /* A club that no longer exists - a relocation, or a hand-edited value -
-     falls through to the default rather than painting an empty palette. */
-  if (isTeamMode(v)) return teamModeFor(codeOfMode(v)) || DEFAULT_MODE;
-  return DEFAULT_MODE;                 // no preference recorded at all
+  const stored = localStorage.getItem(MODE_KEY);
+  const mode = normalizeMode(stored);
+  if (mode && mode !== stored) localStorage.setItem(MODE_KEY, mode);
+  return mode || DEFAULT_MODE;
 }
 
 /*
@@ -335,7 +183,7 @@ let pinned = "";
 
 /** Pin the palette to one mode, or pass nothing to release it. */
 export function pinMode(mode) {
-  const next = mode && (PICKABLE.includes(mode) || isTeamMode(mode)) ? mode : "";
+  const next = normalizeMode(mode) || "";
   if (next === pinned) return;
   pinned = next;
   apply();
@@ -369,7 +217,7 @@ function paletteFor(name) {
 export function modeLabel(id) {
   const t = modeTeam(id);
   if (t) return t.name;
-  return modeOptions().find((o) => o.id === id)?.name || id;
+  return modeOptions().find((o) => o.id === normalizeMode(id))?.name || id;
 }
 
 function apply() {
@@ -391,7 +239,7 @@ function apply() {
     is exactly the "popups become completely black" report, and it got
     worse when the event and tee time fields added native pickers.
 
-    medicine is a dark palette, so it declares dark. This is a hint, not a
+    Medicine Wheel Dark declares dark. This is a hint, not a
     repaint: it costs nothing and no other rule can achieve it.
   */
   /*
@@ -401,10 +249,10 @@ function apply() {
     color-scheme hint, which is the only way to tell the browser what to do
     with the things IT draws - a <select> popup, a date picker, scrollbars,
     autofill - and the data-mode token every [data-mode="light"] rule in the
-    CSS already tests for. Medicine Wheel Light joining this list is what
+    CSS already tests for. The warm Light palette in this list is what
     makes those ~30 existing rules apply to it with nothing new written.
   */
-  const lightSurface = name === "light" || name === "fairway" || name === "medicine-light";
+  const lightSurface = name === "light" || name === "fairway";
   s.setProperty("color-scheme", lightSurface ? "light" : "dark");
 
   s.setProperty("--bg", m.bg);
@@ -423,7 +271,7 @@ function apply() {
   /* A mode may bring its own fill pair. Without this the crest red and blue
      were set unconditionally, so a themed palette would have had its buttons,
      bars and gradients still painted in the crest's colours. */
-  const fill = m.fill || CREST.red, fill2 = m.fill2 || CREST.blue;
+  const fill = m.fill, fill2 = m.fill2;
   s.setProperty("--accent-fill", fill);
   s.setProperty("--accent-2-fill", fill2);
   /*
@@ -443,8 +291,7 @@ function apply() {
   /* And vertically, for the edge-lines down the side of a card. */
   s.setProperty("--accent-sweep-v", `linear-gradient(180deg, ${fill}, ${fill2})`);
   s.setProperty("--on-accent", m.onAccent);
-  /* --accent-dim was the darker partner of the old green and is still used
-     for a few borders; the crest blue is the right thing there now. */
+  /* Older border rules share the current secondary fill. */
   s.setProperty("--accent-dim", fill2);
 
   // Scorecard marks: under par, over par, and well over.
@@ -540,9 +387,8 @@ export function saveMode(value) {
   /* "system" is WRITTEN rather than cleared - see savedMode(). Removing the
      key would make an explicit "follow my phone" look like no preference,
      and the next person to change the default would silently overrule it. */
-  const team = isTeamMode(value) ? teamModeFor(codeOfMode(value)) : null;
-  if (team) localStorage.setItem(MODE_KEY, team);
-  else if (PICKABLE.includes(value) || value === "system") localStorage.setItem(MODE_KEY, value);
+  const mode = normalizeMode(value);
+  if (mode) localStorage.setItem(MODE_KEY, mode);
   else localStorage.removeItem(MODE_KEY);
   apply();
   /* Not awaited: the palette has already repainted, and a slow network must
@@ -556,8 +402,6 @@ export function modeOptions() {
     { id: "dark", name: "Dark" },
     { id: "light", name: "Light" },
     { id: "fairway", name: "Fairway Light" },
-    { id: "medicine", name: "Medicine Wheel" },
-    { id: "medicine-light", name: "Medicine Wheel Light" },
   ];
 }
 
@@ -644,8 +488,8 @@ export async function syncThemeFromMember() {
   if (!remote) { if (local) void pushMode(local); return; }
   /* An unknown or retired value - a club that no longer exists - is ignored
      rather than applied, the same way savedMode() ignores it. */
-  if (!PICKABLE.includes(remote) && remote !== "system" && !teamModeFor(codeOfMode(remote))) return;
-  if (remote === local) return;
-  localStorage.setItem(MODE_KEY, remote);
+  const mode = normalizeMode(remote);
+  if (!mode || mode === local) return;
+  localStorage.setItem(MODE_KEY, mode);
   apply();
 }
