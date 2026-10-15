@@ -52,7 +52,9 @@ use Medicine colors.
 `pnpm themes` runs in the standard `pnpm check` pipeline and rejects retired
 crest accents in authored CSS. Runtime regressions cover local and synced alias
 migration, system mode, pinned pages, club preferences, base text contrast and
-startup appearance. All text inks checked against base surfaces and eight
+startup appearance. WebKit additionally passed Home and Appearance in both modes.
+An installed-app update from 1.421.0 retained Light and the selected member while
+replacing the cached blue accent and old action CSS. All text inks checked against base surfaces and eight
 representative selected controls in each default theme meet 4.5:1 contrast.
 
 No old UI accents were found in the computed colors of the nine reviewed screens
