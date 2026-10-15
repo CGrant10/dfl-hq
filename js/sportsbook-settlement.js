@@ -28,3 +28,11 @@ export async function loadBookAccount(client,memberId){
   if(memberId!=null&&String(data.member_id)!==String(memberId))throw Error('Book profile changed');
   return data;
 }
+
+export async function loadBookWallet(client){
+ const {data,error}=await client.rpc('sportsbook_touch_wallet');
+ if(error)throw error;
+ const wallet=data?.[0];
+ if(!wallet||!Number.isFinite(wallet.balance)||!Number.isFinite(wallet.claimable)||!Number.isFinite(wallet.claimable_days))throw Error('Your bankroll could not be loaded. Try again.');
+ return wallet;
+}

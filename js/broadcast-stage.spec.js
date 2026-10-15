@@ -3,11 +3,13 @@ import { nextMoveSlide } from "./home-slides.js";
 import { fitSize, focusShouldPause, renderItem, renderStage, sameStageItem, shouldRun, STAGE_CONTROL } from "./broadcast-stage.js";
 
 describe("editorial Home broadcast", () => {
-  it('uses the two league seals with Medicine Wheel artwork instead of the app shield',()=>{
-    for(const [item,src] of [[{kind:'identity',treatment:'hero',headline:'Draft · Golf · Sin · Fold'},'icons/dfl-seal-512.webp'],[{kind:'season',treatment:'stat',figure:'10',headline:'Seasons'},'assets/dfl-daily-crest.webp']]){
-      const html=renderItem(item,{editorial:true});expect(html).toContain(src);expect(html).toContain('bx-editorial-brand-splatter');expect(html).toContain('assets/dfl-daily-splatter.webp');expect(html).not.toContain('icons/dfl-logo');
-      const full=renderItem({...item,background:'logo'});expect(full).toContain(src);expect(full).not.toContain('icons/dfl-logo');
+  it('keeps identity and season slides clean while preserving the opener artwork',()=>{
+    for(const item of [{kind:'identity',treatment:'hero',headline:'Draft · Golf · Sin · Fold'},{kind:'season',treatment:'stat',figure:'10',headline:'Seasons'}]){
+      for(const options of [{editorial:true},{}]){
+        const html=renderItem({...item,background:'logo'},options);expect(html).not.toContain('bx-art-logo');expect(html).not.toContain('bx-editorial-illustration');expect(html).not.toContain('dfl-seal');expect(html).not.toContain('dfl-daily-crest');expect(html).not.toContain('splatter');expect(html).not.toContain('icons/dfl-logo');
+      }
     }
+    expect(renderItem({homeFeature:true,treatment:'announcement',headline:'Win your',subtitle:'matchup',href:'#/clubhouse'},{editorial:true})).toContain('assets/dfl-daily-hero.webp');
   });
   it('uses the scouted player rather than a cropped editorial wordmark, with an initials fallback', () => {
     const move = {week:5,need:{position:'WR',urgent:true},mine:{sleeper_user_id:'u1'},trade:{player:{id:'6794',name:'Justin Jefferson',position:'WR',team:'MIN'},team:{name:'Rival'}}};

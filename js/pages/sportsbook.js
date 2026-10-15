@@ -10,7 +10,7 @@ import { propLine } from "../sportsbook-core-props.js";
 import { loadPropIndex, loadPropGame, loadMarketOutcomes } from "../sportsbook-loading.js";
 import { readBookState, writeBookState } from "../sportsbook-view-state.js";
 import {mountSportsbookLive} from '../sportsbook-live.js';
-import {createSettlementTracker,loadBookAccount} from '../sportsbook-settlement.js';
+import {createSettlementTracker,loadBookAccount,loadBookWallet} from '../sportsbook-settlement.js';
 import {animateBankroll,revealTicketResult} from '../sportsbook-account-motion.js';
 import {patchGameDay} from '../game-day-dom.js';
 // =====================================================================
@@ -95,7 +95,7 @@ export async function render(view){
   let wallet,ledger,leaders,markets,outcomes,bets,trends,members,pickem,recap,leagueWeek={},feedStatus={};
   let autoReady=true;
   try{
-    const touch=await db().rpc("sportsbook_touch_wallet");if(touch.error)throw touch.error;wallet=touch.data?.[0]||null;
+    wallet=await loadBookWallet(db());
     autoReady=true;
     const providerMarketPages=async()=>{const rows=[];for(let from=0;;from+=1000){const{data,error}=await db().from("sportsbook_markets").select("*").in("category",["Team Totals","Game Totals"]).in("status",["open","locked"]).order("provider_updated_at",{ascending:false}).range(from,from+999);if(error)return{data:rows,error};rows.push(...(data||[]));if((data||[]).length<1000)return{data:rows,error:null}}};
     const[account,mr,propMarkets,propIndex,fantasyMarkets]=await Promise.all([
@@ -129,7 +129,7 @@ export async function render(view){
     ]);
     const err=lr.error||br.error||or.error||btr.error;if(err)throw err;
     wallet.balance=account.balance;ledger=lr.data||[];leaders=br.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];pickem=pickemBoard;recap=recapResult.error?null:recapResult.data;feedStatus=feedResult?.data||{};leagueWeek={season:Number(nfl?.data?.season||pickemBoard?.season),week:Number(nfl?.data?.week||pickemBoard?.week)};
-  }catch(err){if(generation!==renderGeneration)return;if(refreshing)toast('The book could not refresh. Try again.',true);else view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">The Sportsbook could not load.<br><span class="muted tiny">${esc(err.message||String(err))}</span></div></div>`;return}
+  }catch(err){if(generation!==renderGeneration)return;if(refreshing)toast('The book could not refresh. Try again.',true);else{view.innerHTML=`<h1>DFL Sportsbook</h1><section class="state is-error" role="alert"><h2>The book could not load</h2><button class="btn" type="button" data-book-load-retry data-route-retry>Retry</button></section>`;}return}
   if(generation!==renderGeneration)return;
 
   ({markets,outcomes,bets,trends,recap}=currentSportsbookNames({markets,outcomes,bets,trends,recap},members));
