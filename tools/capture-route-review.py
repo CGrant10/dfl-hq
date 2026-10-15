@@ -29,7 +29,7 @@ class Handler(BaseHTTPRequestHandler):
   elif path in STUBS:body=STUBS[path].encode();kind='text/javascript'
   elif path.startswith('js/pages/'):
    name=Path(path).stem
-   body=('export async function render(view){const name='+json.dumps(name)+';if(window.holds[name])await new Promise(resolve=>window.releases[name]=resolve);if(window.fail[name])throw Error("Isolated load failure");if(window.returnError[name]){view.innerHTML=`<div class="state is-error" role="alert"><span class="state-title">Connection interrupted</span><button class="btn" data-retry-page>Retry</button></div>`;return}if(name==="sportsbook")view.dataset.restoreScrollY="900";view.innerHTML=`<section class="fixture-content"><h1>${name}</h1><details data-page-detail="fixture"><summary>Saved section</summary><p>Saved content</p></details><input value="Unsaved local text"></section>`}').encode();kind='text/javascript'
+   body=('export async function render(view){const name='+json.dumps(name)+';if(window.holds[name])await new Promise(resolve=>window.releases[name]=resolve);if(window.fail[name])throw Error("Isolated load failure");if(window.returnError[name]){view.innerHTML=`<div class="state is-error" role="alert"><span class="state-title">Connection interrupted</span><button class="btn" data-retry-page>Retry</button></div>`;return}if(name==="sportsbook")view.dataset.restoreScrollY="900";view.innerHTML=`<section class="fixture-content"><h1>${name}</h1><details data-page-detail="fixture"><summary>Saved section</summary><p>Saved content</p></details><input value="Unsaved local text"></section>`;if(name==="trade"&&location.hash.includes("focus=receipt"))view.insertAdjacentHTML("beforeend",`<aside data-route-focus style="height:200px">Receipt destination</aside>`)}').encode();kind='text/javascript'
   else:
    file=ROOT/path
    if not file.is_file():self.send_error(404);return
@@ -73,6 +73,8 @@ with sync_playwright() as p:
  page.go_forward();ready('sportsbook');clean();check('Forward opens at the top',page.evaluate('scrollY')==0)
  page.go_forward();ready('home');clean();check('separate visits to Home keep separate offsets',page.evaluate('scrollY')==0)
  page.evaluate('scrollTo(0,500)');go('home');check('tapping the current page returns to the top',page.evaluate('scrollY')==0)
+ page.evaluate('location.hash="#/trade?focus=receipt"');ready('trade');clean();check('intentional deep links still focus their destination',page.evaluate('scrollY')>900)
+ page.evaluate('scrollTo(0,500)');go('analyzer');page.go_back();ready('trade');clean();page.wait_for_function('Math.abs(scrollY-500)<2');check('Back restores a deep-linked page instead of repeating its initial jump')
  go('clubhouse');page.evaluate('scrollTo(0,700);history.replaceState(history.state,"","#/clubhouse?match=second")');go('analyzer');page.go_back();ready('clubhouse');clean();page.wait_for_function('Math.abs(scrollY-700)<2')
  check('Back survives same-page query updates',page.evaluate('location.hash')=='#/clubhouse?match=second')
  go('home');check('Home still starts at the top after a Back visit',page.evaluate('scrollY')==0)

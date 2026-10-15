@@ -288,7 +288,7 @@ const setRouteCanvas = color => {
 */
 export async function renderRoute(options={}){
  const visit=(routeHistory||=createRouteHistory()).visit();
- return renderWithArchiveMotion(()=>renderRoutePage({...options,visit}),document.getElementById('view'),location.hash,{back:visit.kind==='back'});
+ return renderWithArchiveMotion(()=>renderRoutePage({...options,visit}),document.getElementById('view'),location.hash,{back:visit.kind==='back',visitId:visit.id});
 }
 async function renderRoutePage({ retry = false, visit } = {}) {
   const routeStarted = performance.now();
@@ -411,7 +411,7 @@ async function renderRoutePage({ retry = false, visit } = {}) {
   const legacyRestore=visit.kind==='back'||retry||visit.kind==='refresh';
   window.scrollTo({top:restoreMemory?.y??(legacyRestore?Number(view.dataset.restoreScrollY)||0:0),behavior:'instant'});
   const focusPost=view.querySelector("[data-wall-focus],[data-route-focus]");
-  if(focusPost){focusPost.scrollIntoView({block:"start"});(focusPost.querySelector("summary")||focusPost).focus({preventScroll:true});}
+  if(focusPost&&!restoreMemory){focusPost.scrollIntoView({block:"start"});(focusPost.querySelector("summary")||focusPost).focus({preventScroll:true});}
   else if (!document.documentElement.dataset.archiveReturning) stopRestore = restoreView(view, restoreMemory||routeMemory, { active: isCurrent,restoreScroll:!!restoreMemory });
   if (retry && !view.dataset.routeFailed) { const title=view.querySelector('h1,.page-title');if(title){title.tabIndex=-1;title.focus({preventScroll:true})} }
   mountedHash = expectedHash; mountedMember = getMemberId();mountedVisit=visit.id;
