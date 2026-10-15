@@ -38,8 +38,6 @@ import { mountBroadcastDepth } from './broadcast-depth.js';
 import { mountHorizontalSwipe } from './horizontal-swipe.js';
 import { animateUi, cancelUiMotion } from './ui-motion.js';
 
-// Broadcast identity uses the league's two seals; the shield belongs to the app shell.
-const broadcastLogo = item => item.kind === 'season' ? 'assets/dfl-daily-crest.webp' : 'icons/dfl-seal-512.webp';
 
 /* The chip that keeps the stage honest. Every item that makes a temporal
    claim shows one, so nothing on this screen is undated by accident. */
@@ -209,24 +207,19 @@ const TREATMENTS = { scoreboard, champion, stat, announcement, event, hero, slat
   THE PLATE A SLIDE SITS ON.
 
   Five backgrounds, and which decorations each one gets is decided HERE,
-  once, rather than by five nearly-identical CSS blocks. The rule the
-  visual language depends on: no slide gets every layer. The weave and the
-  vignette are on everything because they are texture; the crest and the
-  artwork are exclusive, because two focal images is a collage.
+  once, rather than by five nearly-identical CSS blocks. Texture stays behind
+  the story; decorative league logos never compete with the copy.
 */
 function backdrop(item) {
   const bg = item.background || "default";
   const art = bg === "image" && item.image;
-  /* The crest earns its place on a logo slide and on a champion - a title
-     belongs to the league - and nowhere else. The Chip Eater keeps the slot and
-     swaps the mark: same layer, same opacity, a toilet instead of the crest. */
-  const crest = bg === "logo" || item.treatment === "champion";
+  const chipStamp = item.treatment === 'champion' && item.variant === 'chip';
   return `
     ${art ? `<img class="bx-art${Number(item.imageZoom) > 1 ? " is-framed" : ""}" src="${esc(item.image)}" alt="" draggable="false" decoding="async" style="${artworkStyle(item)}">
              <span class="bx-scrim"></span>` : ""}
     <span class="bx-fx bx-corners" aria-hidden="true">
       <span class="bx-weave"></span>
-      ${crest ? `<span class="bx-crest${item.variant === "chip" ? " is-chip" : ""}" style="--bx-brand-art:url('${broadcastLogo(item)}')"></span>` : ""}
+      ${chipStamp ? '<span class="bx-crest is-chip"></span>' : ''}
       <span class="bx-vignette"></span>
       <span class="bx-sweep"></span>
     </span>`;
@@ -409,20 +402,12 @@ export function renderItem(item, { editorial = false } = {}) {
       ? `<img class="bx-editorial-art" src="${esc(item.image)}" alt="" decoding="async" style="${artworkStyle(item)}">`
       : ""
     : backdrop(item);
-  // Short editorial stories leave a real illustration column. Dense data and
-  // authored imagery keep their full width rather than competing with a crest.
-  const crest = editorial && !media && (item.treatment === 'hero' || item.kind === 'season');
-  const brand = crest
-    && String(item.headline || "").length <= 80
-    && [item.subtitle, item.body].filter(Boolean).join(" ").length <= 220;
   const copy = draw(item, { editorial });
-  const illustrated = illustratedChampion || brand;
-  const artKind = illustratedChampion ? item.variant === "chip" ? "chip" : "champion" : "logo";
-  const art = illustratedChampion
-    ? artKind === "chip" ? "assets/dfl-daily-chip-eater.webp" : item.image || "assets/dfl-daily-champion.webp"
-    : broadcastLogo(item);
+  const illustrated = illustratedChampion;
+  const artKind = item.variant === "chip" ? "chip" : "champion";
+  const art = artKind === "chip" ? "assets/dfl-daily-chip-eater.webp" : item.image || "assets/dfl-daily-champion.webp";
   const inner = illustrated
-    ? `<span class="bx-editorial-illustration" aria-hidden="true">${artKind==='logo'?'<img class="bx-editorial-brand-splatter" src="assets/dfl-daily-splatter.webp" alt="" decoding="async">':''}<span class="bx-editorial-subject"><img class="${artKind === "logo" ? "bx-editorial-crest" : "bx-editorial-portrait"}" src="${esc(art)}" alt="" decoding="async"></span></span><div class="bx-editorial-copy">${copy}</div>`
+    ? `<span class="bx-editorial-illustration" aria-hidden="true"><span class="bx-editorial-subject"><img class="bx-editorial-portrait" src="${esc(art)}" alt="" decoding="async"></span></span><div class="bx-editorial-copy">${copy}</div>`
     : media + copy;
   const cls = `bx-slide${illustrated ? ` bx-with-crest bx-art-${artKind}` : ""} is-${esc(item.treatment)} bx-bg-${esc(item.background || "default")} bx-logo-${esc(item.logo || "default")}`;
   /* The whole slide is the link when the item has somewhere to go, so it
@@ -663,7 +648,14 @@ export function startStage(root, deck, { refresh } = {}) {
       try {
         // Insert every overlaid candidate together so measuring them does not
         // force a fresh page layout after each separate innerHTML replacement.
-        probe.innerHTML = items.map(item => renderItem(item, { editorial: true })).join('');
+        const template=document.createElement('template');
+        template.innerHTML = items.map(item => renderItem(item, { editorial: true })).join('');
+        // Templates are inert. Remove image sources before connecting the
+        // measurement cards so hidden slides cannot download their artwork.
+        for(const image of template.content.querySelectorAll('img')){
+          image.removeAttribute('src');image.removeAttribute('srcset');
+        }
+        probe.append(template.content);
         for (const candidate of probe.children) {
           fitHeadlines(candidate);
           deckHeight = Math.max(deckHeight, contentHeight(candidate));

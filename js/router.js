@@ -14,7 +14,7 @@ import { db } from "./supabase.js";
 import { ensureStylesheet } from "./lazy-css.js";
 import { captureView, restoreView, readViewMemory, writeViewMemory } from './view-memory.js';
 import { getMemberId } from './members.js';
-import { canWarmRoutes } from './performance-policy.js';
+import { mountRouteWarmup } from './performance-policy.js';
 import { mountPageMotion } from './ui-motion.js';
 import { syncTabIndicator, mountNavHighlight } from './nav-highlight.js';
 import { routePlaceholder } from './route-placeholder.js';
@@ -439,17 +439,10 @@ export function startRouter() {
   window.addEventListener("hashchange", renderRoute);
   if (!location.hash) location.hash = "#/home";
   else renderRoute();
-  const warmWeeklyRoutes = () => {
-    if (!canWarmRoutes({ connection: navigator.connection, hidden: document.hidden })) return;
-    // Warm one destination at a time; avoid competing with Home's data work.
-    let i = 0;
-    const next = () => {
-      if (!canWarmRoutes({ connection: navigator.connection, hidden: document.hidden })) return;
-      const route = ['trade', 'clubhouse'][i++]; if (!route) return;
-      void loadRoute(route).catch(() => {}).finally(() => setTimeout(next, 300));
-    };
-    next();
-  };
-  if ("requestIdleCallback" in window) window.requestIdleCallback(warmWeeklyRoutes, { timeout: 5000 });
-  else setTimeout(warmWeeklyRoutes, 1800);
+  const stopWarmup=mountRouteWarmup({warm:loadRoute,ready:()=>{
+    const view=document.getElementById('view');
+    return !!view&&!view.inert&&!view.dataset.routeFailed&&!view.classList.contains('is-route-loading')
+      &&!view.querySelector('[data-home-report-slot][aria-busy="true"]');
+  }});
+  window.addEventListener('pagehide',stopWarmup,{once:true});
 }

@@ -21,7 +21,7 @@ const { markets, outcomes, bets, perms, trends, recap, ticketWrite } = vi.hoiste
   ]
 }));
 vi.mock('../supabase.js', () => ({hasPermission:name=>!!perms[name], privilegedFunctionHeaders:()=>({}), edge:()=>({functions:{invoke:async()=>({data:{monthlyEventObjects:0},error:null})}}), db:()=>({
-  rpc:async name=>name==='sportsbook_dismiss_bet'&&ticketWrite.pending?await ticketWrite.pending:({data:name==='sportsbook_touch_wallet'?[{balance:2400}]:name==='sportsbook_my_live_account'?{member_id:1,balance:2400,bets,ledger:[]}:name==='sportsbook_my_bets'?bets:name==='sportsbook_trending_picks'?trends:name==='sportsbook_weekly_recap'?recap:[],error:null}),
+  rpc:async name=>name==='sportsbook_dismiss_bet'&&ticketWrite.pending?await ticketWrite.pending:({data:name==='sportsbook_touch_wallet'?[{balance:2400,claimable:0,claimable_days:0}]:name==='sportsbook_my_live_account'?{member_id:1,balance:2400,bets,ledger:[]}:name==='sportsbook_my_bets'?bets:name==='sportsbook_trending_picks'?trends:name==='sportsbook_weekly_recap'?recap:[],error:null}),
   from:table=>{const query={select:()=>query,order:()=>query,limit:()=>query,range:()=>query,in:()=>query,eq:()=>query,neq:()=>query,then:resolve=>resolve({data:table==='sportsbook_markets'?markets:outcomes,error:null})};return query;}
 })}));
 vi.mock('../members.js',()=>({

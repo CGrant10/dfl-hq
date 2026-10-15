@@ -777,6 +777,8 @@ with sync_playwright() as p:
     card_model = {'player':{'id':'7564','name':'Ja’Marr Chase','position':'WR','nflTeam':'CIN'},'week':5,'ownerLabel':'The Boys','owner':None,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'points':24.6,'recent':[{'week':5,'points':24.6}],'stats':{'items':[]}}
     context.route('**/js/player-card-data.js', lambda route: route.fulfill(status=200,content_type='text/javascript',body='export async function loadPlayerCard(){await new Promise(r=>setTimeout(r,globalThis.reviewCardDelay));if(globalThis.reviewCardHold)await new Promise(r=>globalThis.reviewCardRelease=r);return '+json.dumps(card_model)+'}'))
     page = context.new_page()
+    early_art=set()
+    page.on('request',lambda request:early_art.add(request.url.split('?')[0].rsplit('/',1)[-1]))
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
     html = (OUT / 'index.html').read_text().replace('<head>', f'<head><base href="{url}">', 1)
@@ -786,6 +788,7 @@ with sync_playwright() as p:
     page.locator('[data-bx-go="0"]').click()
     page.evaluate('document.fonts.ready')
     page.wait_for_timeout(1600)
+    assert not {'dfl-daily-champion.webp','dfl-daily-chip-eater.webp'} & early_art, f'Hidden measurement slides downloaded unused artwork: {early_art}'
     moment_effects=check_game_day_moments(page)
     matchup_lineups=check_matchup_lineups(page)
     clubhouse_center=check_clubhouse_center(page)
@@ -981,10 +984,10 @@ with sync_playwright() as p:
             if layout['crest']:
                 art = layout['crest']
                 assert art['imageBox']['left']>=art['left']-1 and art['imageBox']['right']<=art['right']+1 and art['fit']=='contain', f'Art image is cropped: {art}'
-                assert art['hasSplatter']==art['logo'] and art['artWidth']/art['stageWidth']>=.45 and art['opacity']>=.9, f'Artwork is too small or faint: {layout}'
-                if art['logo']:assert art['src'] in ['icons/dfl-seal-512.webp','assets/dfl-daily-crest.webp'], f'Broadcast uses the app shield: {layout}'
+                assert not art['hasSplatter'] and not art['logo'] and art['artWidth']/art['stageWidth']>=.45 and art['opacity']>=.9, f'Artwork is too small or faint: {layout}'
                 assert all(b['right'] <= art['left'] - 8 or b['bottom'] <= art['top'] or b['top'] >= art['bottom'] for b in art['copyBoxes']), f'Broadcast art overlaps text: {layout}'
             layout['injuryRows'] = check_injury_layout(page)
+            assert page.locator('.bx-slide:not(.bx-leaving) :is(.bx-editorial-crest,.bx-editorial-brand-splatter)').count()==0
             metrics['slides'].append(layout)
             if width == 390:
                 page.locator('.bx-stage').screenshot(path=str(OUT / f'slide-{index}-{layout["treatment"]}.png'))

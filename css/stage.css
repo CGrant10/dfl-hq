@@ -190,7 +190,7 @@
   width: 150%; max-width: 720px;
   aspect-ratio: 1 / 1;
   transform: translate(-50%, -50%);
-  background: var(--bx-brand-art,url("../icons/dfl-seal-512.webp")) center / contain no-repeat;
+  background: none;
   border-radius: 0;
   opacity: .07;
 }

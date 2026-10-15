@@ -686,6 +686,7 @@ export async function render(view) {
     const host = view.querySelector(".home-broadcast");
     if (!host) return;
     const ordered = homeBroadcastDeck(deck, {week: homeBroadcastWeek});
+    if(stage&&host.querySelector('[data-bx-stage]')){stage.update(ordered);return;}
     try { stage?.stop(); } catch {}
     host.classList.remove("is-loading");
     host.innerHTML = renderStage(ordered, { editorial: true });
@@ -693,6 +694,11 @@ export async function render(view) {
     if (root) stage = startStage(root, ordered, { refresh });
     finishLoadingContent(host);
   };
+
+  // The opener and league stories are usable before the full player model.
+  // Enrich the existing controller once that model is ready; preserve pauses
+  // and the currently open story instead of restarting the carousel.
+  startHomeStage(fallbackDeck);
 
   Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertsPromise, injuryPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlerts, injuries]) => {
     if (mine !== generation) return;
@@ -777,9 +783,7 @@ export async function render(view) {
     if (extras.length) {
       liveSlides = extras;
     }
-    /* Commit the carousel once, after every startup source has contributed.
-       The broadcast starts in editorial order instead of showing partial decks
-       replace one another as they load. */
+    /* Enrich the same carousel after all weekly sources have contributed. */
     startHomeStage(build(golfDayNow));
   }).catch((err) => {
     console.warn("clubhouse unavailable", err);
