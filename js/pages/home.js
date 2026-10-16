@@ -48,10 +48,9 @@ import { factOfTheDay, funFacts } from "../funfacts.js";
 import { buildClubhouseWeekly, homeRivalryStory } from "../home-clubhouse.js";
 import { buildHomeWeekOutlook, HOME_OUTLOOK_POSITIONS } from "../home-week-outlook.js";
 import { buildNextMove } from "../next-move.js";
-import { weekHasStarted } from "../league-trajectory.js";
 import { teamPortrait } from "../team-presentation.js";
 import { startAssembly } from "../scroll-assembly.js";
-import { matchupFirst, currentMatchupWeek, nextMoveSlide, playoffPictureSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
+import { currentMatchupWeek, nextMoveSlide, playoffPictureSlide, tradeAlertSlide } from "../home-slides.js";
 import { buildLeagueStakes } from "../league-stakes.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity } from "../player-presentation.js";
@@ -296,12 +295,12 @@ const STAGE_UTILITY = new Set(["events", "poll", "news", "dues"]);
 function editorialStage(ctx, { custom = [], off = new Set(), overrides = new Map() } = {}) {
   // GameDay owns the personal matchup in every phase of the week.
   const ranked = buildDeck(ctx, { custom, off: new Set([...off, "myMatchup"]), overrides, max: 20 });
-  const picked = matchupFirst(ranked.filter((it) => {
+  const picked = ranked.filter((it) => {
     if (it.source === "manual" || it.pinned) return true;
     if (STAGE_UTILITY.has(it.generator)) return false;
     if ((it.generator === "golf" || it.generator === "fantasy") && it.temporal === "upcoming") return false;
     return true;
-  }));
+  });
   if (picked.length) return picked;
   return ranked.filter((it) => it.generator === "identity").slice(0, 1);
 }
@@ -337,9 +336,9 @@ export function homeTradeWire(alerts) {
 }
 
 /* Sleeper supplies the current league fixtures before the first score sync.
-   The broadcast slate and weekly model share those fixtures; GameDay owns
+   The weekly model uses these fixtures; GameDay owns
    the personal matchup view. */
-async function weekAheadSlide({ analysis, weekly, meSleeperId }) {
+async function loadWeekFixtures({ analysis, weekly, meSleeperId }) {
   if (!weekly?.week || !meSleeperId || analysis?.state !== "ready") return null;
   const week = currentMatchupWeek(weekly.week);
   /* The report owns the completed week on Tuesday; this surface owns the new
@@ -348,10 +347,7 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId }) {
   const leagueId = analysis.league?.sleeper_league_id;
   if (!leagueId) return null;
   const weekRows = (analysis.matchups || []).filter(row => Number(row.week) === week);
-  const weekStarted = weekHasStarted(weekRows);
-  /* This function only runs for Sleeper's current week. Non-zero scores on
-     every side Sunday night do not make it final while Monday players remain;
-     keep the league slate until Sleeper advances the week. */
+  // Fixtures feed the weekly outlook and playoff stakes, not a second scoreboard.
 
   let raw;
   try {
@@ -411,9 +407,7 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId }) {
   }
   if (!fixtures.length) return null;
 
-  const slides = [];
-  slides.push(weekSlateSlide({ fixtures, season: weekly.season, week, meSleeperId, live: weekStarted }));
-  return { slides: slides.filter(Boolean), fixtures };
+  return { fixtures };
 }
 
 export async function render(view) {
@@ -715,9 +709,9 @@ export async function render(view) {
     if(injuries)injuryReport=buildInjuryReport(injuries.payload,{analysis,now:injuries.checkedAt});
     injuryPanel.update();
     lore = got?.error ? null : got;
-    const aheadData = await weekAheadSlide({
+    const aheadData = await loadWeekFixtures({
       analysis, weekly, meSleeperId: myMember?.sleeper_user_id || null,
-    }) || { slides: [], fixtures: [] };
+    }) || { fixtures: [] };
     const pulse = powerPulseView({
       analysis, meSleeperId: myMember?.sleeper_user_id || null,
       standings: analysis?.standings?.length ? analysis.standings : standings.data || [], currentWeek: weekly?.week || analysis?.liveWeek || null,
@@ -785,8 +779,7 @@ export async function render(view) {
 
     /* What the dashboard carried that nothing else does: the completed-trade
        verdict and the auto-scout. Both go to the stage as slides. */
-    const ahead = aheadData.slides;
-    const extras = [...ahead, playoffPictureSlide(pulse?.stakes, myMember?.sleeper_user_id), tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
+    const extras = [playoffPictureSlide(pulse?.stakes, myMember?.sleeper_user_id), tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
     if (extras.length) {
       liveSlides = extras;
     }

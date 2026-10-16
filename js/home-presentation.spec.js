@@ -25,6 +25,16 @@ describe('selected Home presentation', () => {
     expect(deck[0].href).toBeNull();
     expect(homeBroadcastDeck(deck)).toHaveLength(3);
   });
+  it('replaces repeated matchup coverage with editorial stories, including refreshed decks', () => {
+    const now = new Date('2026-10-16T12:00:00Z');
+    const stories = [{id:'scout',generator:'nextMove'}, {id:'champ',kind:'champion'},
+      {id:'authored',source:'manual',headline:'League news'}];
+    const repeated = ['myMatchup','matchupPreview','weekSlate'].map(generator=>({generator,pinned:true}));
+    const deck = homeBroadcastDeck([...repeated,...stories],{now});
+    expect(deck.slice(1)).toEqual(stories);
+    expect(deck[0].dwell).toBe(5000);
+    expect(homeBroadcastDeck([...deck,...repeated],{now})).toEqual(deck);
+  });
   it('uses strict boundaries and delays cold until halftime while keeping zero honest', () => {
     const starters = [player('hot', 15.01, 'live'), player('15', 15), player('10', 10),
       player('early', 0, 'live'), player('unknown', null), player('cold', 9.99, 'live', 'TE', true), player('zero', 0)];
