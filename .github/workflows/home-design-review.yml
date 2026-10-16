@@ -127,7 +127,7 @@ jobs:
           printf 'DFL_REVIEW_CHROMIUM=%s\n' "$dfl_review_browser" >> "$GITHUB_ENV"
       - run: node tools/render-home-review.mjs
       - run: python tools/capture-home-review.py
-      - name: Check blended award compositions
+      - name: Check award artwork spacing
         run: python tools/capture-award-review.py
       - name: Check broadcast first-read timing
         run: python tools/capture-broadcast-review.py

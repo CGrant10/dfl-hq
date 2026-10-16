@@ -28,22 +28,23 @@ html[data-ui-motion="off"] #home-wrap .bx-season-story .bx-season-years b {anima
 @media(max-width:360px){#home-wrap .bx-stat-story-main{grid-template-columns:108px minmax(0,1fr);gap:12px;}#home-wrap .bx-stat-metric{min-height:108px;}#home-wrap .bx-season-number{font-size:120px;}}
 @media(prefers-reduced-motion:reduce){#home-wrap .bx-season-story .bx-season-years b{animation:none!important;}}
 /* Award posters share the app's type, not an identical champion template. */
-#home-wrap .bx-award-story{display:grid;align-content:start;gap:18px;min-height:250px;isolation:isolate;overflow:hidden}
-#home-wrap .bx-award-story>.bx-kicker{z-index:2;align-self:start;margin:0}
-#home-wrap .bx-award-copy{display:grid;align-content:start;justify-items:start;gap:12px;width:78%;max-width:360px;min-width:0;z-index:2}
+#home-wrap .bx-award-story{display:grid;grid-template-columns:64px minmax(0,1fr);grid-template-rows:auto auto auto;align-content:start;gap:14px 16px;min-height:250px;isolation:isolate;overflow:hidden}
+#home-wrap .bx-award-story>.bx-kicker{grid-column:1 / -1;z-index:2;align-self:start;margin:0}
+#home-wrap .bx-award-copy{grid-column:1 / -1;display:grid;align-content:start;justify-items:start;gap:8px;width:100%;min-width:0;z-index:2}
 #home-wrap .bx-award-story .bx-name{font:400 clamp(30px,8vw,36px)/1.08 Anton,var(--font-display);text-align:left;margin:0;max-width:100%;text-wrap:balance;overflow-wrap:anywhere}
-#home-wrap .bx-award-story .bx-sub{font:600 15px/1.4 var(--home-ui-font);color:var(--body-text);text-align:left;margin:0;max-width:260px;overflow-wrap:anywhere}
-#home-wrap .bx-award-call{font:700 15px/1.3 var(--home-ui-font);color:var(--accent);max-width:260px}
-#home-wrap .bx-award-word{position:absolute;right:0;top:24px;z-index:0;color:color-mix(in srgb,var(--text) 7%,transparent);font:400 clamp(76px,26vw,120px)/1 Anton,sans-serif;letter-spacing:-.025em;pointer-events:none}
-#home-wrap .bx-award-chip .bx-award-word{top:auto;bottom:0;font-size:clamp(100px,35vw,150px);color:color-mix(in srgb,var(--accent) 9%,transparent)}
-/* The whole illustration sits inside the card as a tonal backdrop. A soft
-   left/bottom dissolve ties transparent cutouts and member photos to the
-   surface, rather than leaving a small, sharply edged sticker beside copy. */
-#home-wrap .bx-award-story .bx-editorial-illustration{position:absolute;inset:0;width:100%;height:100%;z-index:1;overflow:hidden;pointer-events:none;mask-image:linear-gradient(90deg,transparent,rgba(0,0,0,.18) 30%,#000 72%)}
-#home-wrap .bx-award-story .bx-editorial-illustration::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,var(--bg),transparent 28%,transparent 82%,color-mix(in srgb,var(--bg) 65%,transparent))}
-#home-wrap .bx-award-story .bx-editorial-subject{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;opacity:var(--bx-award-opacity,.38)}
-#home-wrap .bx-award-story .bx-editorial-portrait{display:block;width:100%;height:100%;object-fit:contain;object-position:right bottom;transform:none;filter:grayscale(.55) saturate(.7)}
-:root[data-mode="light"] #home-wrap .bx-award-story{--bx-award-opacity:.26}
+#home-wrap .bx-award-story .bx-sub{font:600 15px/1.4 var(--home-ui-font);color:var(--body-text);text-align:left;margin:0;max-width:100%;overflow-wrap:anywhere}
+#home-wrap .bx-award-call{font:700 15px/1.3 var(--home-ui-font);color:var(--accent);max-width:100%}
+/* Copy owns the upper rows. The faint award stamp and full, contained
+   illustration each have their own space below; none sits under a word. */
+#home-wrap .bx-award-word{position:relative;inset:auto;grid-column:1;grid-row:3;align-self:center;justify-self:center;z-index:0;width:64px;height:196px;color:color-mix(in srgb,var(--text) 10%,transparent);font:400 36px/1 Anton,sans-serif;letter-spacing:.02em;pointer-events:none}
+#home-wrap .bx-award-word svg{display:block;width:100%;height:100%;fill:currentColor}
+#home-wrap .bx-award-chip .bx-award-word{color:color-mix(in srgb,var(--accent) 12%,transparent)}
+#home-wrap .bx-award-story .bx-editorial-illustration{position:relative;inset:auto;grid-column:2;grid-row:3;align-self:stretch;justify-self:end;width:100%;max-width:320px;height:196px;z-index:1;overflow:hidden;pointer-events:none;transform:none!important;mask-image:linear-gradient(0deg,transparent,#000 18%,#000 92%,transparent)}
+#home-wrap .bx-award-story .bx-editorial-illustration::after{display:none}
+#home-wrap .bx-award-story .bx-editorial-subject{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;opacity:var(--bx-award-opacity,.65)}
+#home-wrap .bx-award-story .bx-editorial-portrait{display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom;transform:none;filter:grayscale(.3) saturate(.85)}
+:root[data-mode="light"] #home-wrap .bx-award-story{--bx-award-opacity:.55}
+@media(max-width:360px){#home-wrap .bx-award-story .bx-editorial-illustration,#home-wrap .bx-award-word{height:180px}}
 /* One composed entrance: copy leads, supporting detail and artwork settle once. */
 #home-wrap .bx-slide.bx-in :is(.bx-kicker,.bx-home-week){animation:bx-editorial-copy-in 240ms ease-out both}
 #home-wrap .bx-slide.bx-in :is(.bx-head,.bx-name,.bx-home-title,.bx-stat-story-main,.bx-season-lockup){animation:bx-editorial-copy-in 340ms cubic-bezier(.2,.75,.25,1) 45ms both}
@@ -65,4 +66,4 @@ html[data-ui-motion="off"] #home-wrap .bx-stage :is(.bx-home-art,.bx-editorial-i
 @media(prefers-reduced-motion:reduce){#home-wrap .bx-stage :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image){transition:none!important}}
 
 #home-wrap .bx-award-story.bx-in .bx-editorial-subject{animation-name:bx-award-art-in}
-@keyframes bx-award-art-in{from{opacity:0;translate:6px 0}to{opacity:var(--bx-award-opacity,.38);translate:0 0}}
+@keyframes bx-award-art-in{from{opacity:0;translate:6px 0}to{opacity:var(--bx-award-opacity,.65);translate:0 0}}

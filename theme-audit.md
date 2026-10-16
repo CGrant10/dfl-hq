@@ -356,3 +356,28 @@ for reduced motion and for in-app motion off. No persistent animation frame loop
 was added. Browser regressions cover reversal, exact score endpoints, live score
 changes, no layout shifts, reveal-once behavior, decorative settling and cleanup.
 Physical-device GPU/frame-rate measurement remains outside desktop certification.
+
+
+### 1.435 — Named scroll scoreboard and separated award artwork
+
+The prior award backdrop deliberately sat behind text; user feedback rejected
+that overlap. Copy now owns full-width upper rows. The faint vertical CHAMP/LAST
+stamp and contained picture have separate columns below, with measured gaps
+between all text and the image. Award artwork stays anchored during decorative
+depth so scrolling cannot move it into text. A shared grid-row measurement counts
+its bottom row once, avoiding a tall empty carousel. Light/Dark screenshots and
+24 layouts cover 320px, 390px, 430px and 832px, including custom artwork. No image
+files changed. Surface, type and washes retain shared Medicine Wheel tokens.
+
+The scroll scoreboard now includes each current team name both in motion and
+in its compact destination. Labels wrap fully, share name/score rows so scores
+stay aligned, and refresh from the same team-name nodes as the main matchup.
+Six decorative copies move using cached geometry; name copies retain the target
+wrapping and use uniform scale. Tests cover 320px/390px/430px in Light/Dark,
+reversal, score/name updates, aligned wrapped names, reduced motion, motion off,
+layout stability and cleanup. Native physical-device frame rates remain outside
+desktop browser certification.
+
+Home section jumps also reserve the compact scoreboard's measured height. Native
+swipe regression points are checked against the visible carousel surface, so
+they cannot accidentally start underneath the newly taller named scoreboard.
