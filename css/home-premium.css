@@ -1,5 +1,5 @@
 /* Room for the broadcast without shrinking team names or hiding useful scores. */
-#home-wrap{padding-top:14px;--home-section-gap:30px}
+#home-wrap{padding-top:16px;--home-section-gap:30px}
 #home-wrap>.home-newspaper-masthead{margin-bottom:10px;padding-bottom:8px;gap:3px 14px}
 #home-wrap .home-newspaper-name h1{font-size:clamp(27px,8vw,32px);line-height:1.1}
 #home-wrap .home-frontpage{gap:14px}
