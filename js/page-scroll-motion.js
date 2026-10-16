@@ -52,8 +52,8 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
   const copy=dock.querySelector('.dfl-scroll-copy'),title=copy.querySelector('strong'),section=copy.querySelector('small');
   const value=dock.querySelector('.dfl-scroll-value'),scores=dock.querySelector('.dfl-scroll-scores'),progress=dock.querySelector('.dfl-scroll-read');
   const originalTop=root.style.getPropertyValue('--dfl-scroll-top'),originalHeight=root.style.getPropertyValue('--dfl-scroll-height');
-  let stopped=false,frame=0,dirty=true,hero=null,heading=null,headings=[],activeSection=null,compact=false,shown=false,lastScroll=window.scrollY,paintedScroll=window.scrollY,scrolledAt=-Infinity,scoreAnchor=null,scoreKey='';
-  const seen=new WeakSet(),observed=new Set(),labels=new WeakMap(),rising=new Set(),focusRestores=new Map();
+  let stopped=false,frame=0,dirty=true,hero=null,heading=null,headings=[],sectionPositions=[],activeSection=null,compact=false,shown=false,lastScroll=window.scrollY,paintedScroll=window.scrollY,scrolledAt=-Infinity,scoreAnchor=null,scoreKey='';
+  const seen=new WeakSet(),observed=new Set(),layoutNodes=new Set(),labels=new WeakMap(),rising=new Set(),focusRestores=new Map();
   const current=()=>!stopped&&root.isConnected;
   const markVisible=nodes=>nodes.forEach(node=>{seen.add(node);intersection?.unobserve(node);observed.delete(node)});
   const intersection=globalThis.IntersectionObserver?new IntersectionObserver(entries=>{
@@ -63,12 +63,12 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
       markVisible([entry.target]);
       // An async score/data render is not a scroll entrance.
       if(allowed()&&performance.now()-scrolledAt<900){
-        const animation=animate?.(entry.target,[{opacity:.65,transform:'translateY(10px)'},{opacity:1,transform:'translateY(0)'}],{duration:300});
+        const animation=animate?.(entry.target,[{opacity:.8,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],{duration:320});
         if(animation){rising.add(entry.target);const finish=()=>rising.delete(entry.target);animation.finished.then(finish,finish);}
       }
     }
   },{threshold:.15,rootMargin:'-90px 0px -8% 0px'}):null;
-  const resize=new ResizeObserver(()=>schedule());resize.observe(root);resize.observe(dock);
+  const resize=new ResizeObserver(entries=>{if(entries.some(entry=>entry.target!==dock))dirty=true;schedule()});resize.observe(root);resize.observe(dock);
   function restoreHeading(){
     if(!heading)return;
     heading.removeAttribute('data-scroll-title');heading.style.removeProperty('--dfl-title-leave');heading=null;
@@ -81,6 +81,11 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
     if(nextHeading!==heading){restoreHeading();heading=nextHeading;if(heading)heading.dataset.scrollTitle='1';}
     headings=[...root.querySelectorAll('h2')].filter(node=>!node.closest('.home-broadcast,dialog')).slice(0,30);
     headings.forEach(node=>labels.set(node,cleanHeading(node)));
+    // Layout changes are observed; scroll frames reuse document offsets.
+    sectionPositions=headings.filter(displayed).map(node=>({node,top:node.getBoundingClientRect().top+window.scrollY}));
+    const nextLayoutNodes=new Set(sectionPositions.map(item=>item.node.parentElement).filter(node=>node!==root&&node!==hero));
+    for(const node of layoutNodes)if(!nextLayoutNodes.has(node)){resize.unobserve(node);layoutNodes.delete(node)}
+    for(const node of nextLayoutNodes)if(!layoutNodes.has(node)){resize.observe(node);layoutNodes.add(node)}
     for(const node of observed)if(!root.contains(node)||!displayed(node)){intersection?.unobserve(node);observed.delete(node);}
     for(const node of headings){
       if(seen.has(node)||observed.has(node)||!displayed(node))continue;
@@ -132,7 +137,7 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
     const bounds=root.getBoundingClientRect(),heroBox=hero.getBoundingClientRect();
     const top=scrollChromeBottom();
     const fromHeight=dock.hidden?null:dock.getBoundingClientRect().height,height=fromHeight||52;
-    const visibleHeadings=headings.filter(displayed),tops=visibleHeadings.map(node=>node.getBoundingClientRect().top);
+    const visibleHeadings=sectionPositions.map(item=>item.node),tops=sectionPositions.map(item=>item.top-window.scrollY);
     // Keep the tracking boundary independent of caption wrapping or the
     // score row's animated height, so labels cannot trigger each other.
     const index=scrollSectionIndex(tops,top+70,visibleHeadings.indexOf(activeSection));
@@ -160,8 +165,8 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
     const layoutChanged=title.textContent!==nextTitle||labelChanged||hadScore!==(scoreData.length===2);
     paintedScroll=window.scrollY;
     compact=nextCompact;
-    dock.style.left=`${bounds.left}px`;dock.style.width=`${bounds.width}px`;dock.style.top=`${top}px`;
-    root.style.setProperty('--dfl-scroll-top',`${top}px`);root.style.setProperty('--dfl-scroll-height',`${height}px`);
+    for(const [key,next]of [['left',`${bounds.left}px`],['width',`${bounds.width}px`],['top',`${top}px`]])if(dock.style[key]!==next)dock.style[key]=next;
+    for(const [key,next]of [['--dfl-scroll-top',`${top}px`],['--dfl-scroll-height',`${height}px`]])if(root.style.getPropertyValue(key)!==next)root.style.setProperty(key,next);
     if(heading)heading.style.setProperty('--dfl-title-leave',allowed()&&!hero.contains(document.activeElement)?String(leave):'0');
     setText(title,nextTitle);setText(section,nextSection);section.hidden=!section.textContent;
     value.hidden=!bank;if(bank)setText(value,`${bank} SIN`);
@@ -214,9 +219,10 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
   const reset=()=>{dirty=true;if(!allowed()){intersection?.disconnect();observed.clear();for(const node of rising)cancel?.(node);cancel?.(dock);cancel?.(section);cancel?.(scores);dock.hidden=!shown;}schedule();};
   const visibility=()=>{if(!document.hidden){dirty=true;schedule();}};
   dock.addEventListener('click',jump);dock.addEventListener('focusout',schedule);
-  window.addEventListener('scroll',scroll,{passive:true});window.addEventListener('dfl:scroll-chrome',schedule);window.addEventListener('resize',schedule);
+  const layout=()=>{dirty=true;schedule()};
+  window.addEventListener('scroll',scroll,{passive:true});window.addEventListener('dfl:scroll-chrome',schedule);window.addEventListener('resize',layout);
   window.addEventListener('dfl:ui-motion-change',reset);document.addEventListener('visibilitychange',visibility);
-  reduced.addEventListener('change',reset);document.fonts?.addEventListener('loadingdone',schedule);
+  reduced.addEventListener('change',reset);document.fonts?.addEventListener('loadingdone',layout);
   paint();
   return ()=>{
     stopped=true;stopHomeScore();cancelAnimationFrame(frame);observer.disconnect();resize.disconnect();intersection?.disconnect();
@@ -225,7 +231,7 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
     root.style.removeProperty('--dfl-scroll-top');root.style.removeProperty('--dfl-scroll-height');
     if(originalTop)root.style.setProperty('--dfl-scroll-top',originalTop);if(originalHeight)root.style.setProperty('--dfl-scroll-height',originalHeight);
     dock.removeEventListener('click',jump);dock.removeEventListener('focusout',schedule);
-    window.removeEventListener('scroll',scroll);window.removeEventListener('dfl:scroll-chrome',schedule);window.removeEventListener('resize',schedule);window.removeEventListener('dfl:ui-motion-change',reset);
-    document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',reset);document.fonts?.removeEventListener('loadingdone',schedule);
+    window.removeEventListener('scroll',scroll);window.removeEventListener('dfl:scroll-chrome',schedule);window.removeEventListener('resize',layout);window.removeEventListener('dfl:ui-motion-change',reset);
+    document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',reset);document.fonts?.removeEventListener('loadingdone',layout);
   };
 }
