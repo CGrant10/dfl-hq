@@ -80,6 +80,7 @@ function offerMarkup(offer, pool) {
     <div class="tb-offer-flow">${offerPackage(offer.sendA,pool,'YOU SEND',offer.other.id+':'+offer.sendB.join(','))}${offerPackage(offer.sendB,pool,'YOU GET',offer.other.id+':'+offer.sendA.join(','))}</div>
     ${tradeDecisionMarkup(offer,pool,{compact:true})}
     ${offer.partnerFit?`<p class="tb-incoming-fit">${esc(offer.partnerFit)}</p>`:!offer.windowDeltas&&Array.isArray(offer.startingIncomingA)?`<p class="tb-incoming-fit"><b>${starters.length?'Incoming starters':'No incoming starter'}</b>${starters.length?` · ${esc(starters.join(', '))}`:''}</p>`:''}
+    ${offer.sendA.length===1&&offer.sendB.length===1?`<button type="button" class="linkbtn" data-player-compare="${esc(offer.sendA[0])}" data-compare-with="${esc(offer.sendB[0])}">Compare players</button>`:''}
     <button type="button" class="tb-offer-analyze" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(','))}" data-send-b="${esc(offer.sendB.join(','))}" data-weekly-delta="${Number(offer.weeklyDeltaA)||0}">Analyze trade <span aria-hidden="true">→</span></button>
   </article>`;
 }

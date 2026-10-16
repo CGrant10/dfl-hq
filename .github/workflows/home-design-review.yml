@@ -41,6 +41,11 @@ on:
       - 'js/route-motion.js'
       - 'tools/*route-review*'
       - 'js/player-card*'
+      - 'js/player-compare*'
+      - 'js/daily-broadcast*'
+      - 'css/broadcast-premium.css'
+      - 'css/player-compare.css'
+      - 'tools/*comparison-review*'
       - 'js/connected-portrait*'
       - 'js/view-memory.js'
       - 'js/analyzer-live-refresh*'
@@ -109,6 +114,10 @@ jobs:
         run: |
           node tools/render-sheet-review.mjs
           python tools/capture-sheet-review.py
+      - name: Check player comparisons
+        env:
+          DFL_COMPARE_REVIEW_DIR: ${{ github.workspace }}/home-review-output/comparison
+        run: python tools/capture-comparison-review.py
       - name: Check continuous tab glides
         env:
           DFL_TAB_REVIEW_DIR: ${{ github.workspace }}/home-review-output/tabs

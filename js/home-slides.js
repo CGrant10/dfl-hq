@@ -101,15 +101,13 @@ export function playoffPictureSlide(stakes, meSleeperId) {
   const mine = stakes?.rows?.find(row => String(row.sleeperUserId) === String(meSleeperId));
   if (!mine?.projection) return null;
   const odds = Math.round((Number(mine.projection.playoffOdds) || 0) * 100);
-  const game = stakes.gameOfWeek;
-  const gameLine = game ? `Game of the week: ${game.a.name} vs ${game.b.name} · ${game.spread.toFixed(1)} projected points apart.` : "The playoff picture updates after every completed week.";
   return {
     source: "auto", pinned: true, id: "playoff-picture", generator: "playoffPicture",
     kind: "league", treatment: "stat", temporal: mine.status === "clinched" || mine.status === "eliminated" ? "recent" : "upcoming",
     priority: P.MINE + 5, dwell: 3500,
     kicker: `${stakes.season} · WEEK ${stakes.week} · PLAYOFF PICTURE`,
-    figure: `${odds}%`, headline: stakeLine(mine),
-    subtitle: `${mine.name} projects as the ${ordinal(Math.round(Number(mine.projection.seed) || mine.rank || 1))} seed. ${gameLine}`,
+    figure: `${odds}%`, figureLabel:'Playoff odds', headline: stakeLine(mine),
+    subtitle: `${mine.name} · Projected ${ordinal(Math.round(Number(mine.projection.seed) || mine.rank || 1))} seed.`,
     href: "#/stakes",
   };
 }

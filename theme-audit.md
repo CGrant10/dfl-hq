@@ -220,3 +220,31 @@ existing behavior. Unchanged player scores retain their DOM node and hot/cold
 visual rather than restarting on each sync. Chromium and WebKit checks verify
 refresh anchoring; the trade workspace review covers three widths with no browser
 errors or horizontal overflow. No backend/schema changes or league writes occur.
+
+## 1.429.0 — Shared daily broadcast and player comparisons
+
+Reviewed actual Home broadcast slides in Medicine Wheel Dark and Light at 390px,
+including the daily opener, playoff odds dial, anniversary timeline, champion,
+Chip Eater, scout and archive. The opener retains its existing artwork and uses
+one Chicago calendar date and a curated 60-day saying rotation for every member.
+It has no personal matchup, promoted transaction or hidden destination. All 60
+sayings were measured at 320px/390px in both modes without clipping. The new
+number/anniversary compositions use shared text, accent, surface and line tokens;
+champion artwork remains uncropped and decorative logos are not added elsewhere.
+
+Reviewed the comparison sheet in Light/Dark at 320px/390px with production CSS and
+controllers, both deterministic intercepted reads and guarded actual league
+reads. Existing player portraits, compact DFL type and theme colors carry into
+the two-column comparison. Chromium checks cover visible text contrast, long
+names, search, tab keyboard controls, stale request rejection, refresh/retry,
+current owner names, focus return, header drag dismissal and keyboard viewport
+bounds. WebKit captures cover the same phone widths, selection, refresh/retry,
+keyboard tabs and reduced motion. Native phone frame-rate, physical keyboard
+behavior and VoiceOver/TalkBack are not certified by these browser checks.
+
+Weekly projections, league-scored completed games, FantasyPros rest-of-season
+ranks and DFL trade values remain separate. Missing or stale game evidence is not
+turned into zero; partial current games are excluded from the completed sample.
+The comparison loads on demand and adds no startup/Home module requests. App
+motion-off and reduced motion keep static, usable controls. No backend/schema
+changes, production trades, posts, notifications or bets were made.

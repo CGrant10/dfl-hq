@@ -345,14 +345,22 @@ function fitHeadlines(slide) {
 export function renderItem(item, { editorial = false } = {}) {
   if (!item) return "";
   if (editorial && item.homeFeature) {
-    return `<a class="bx-slide bx-home-feature is-announcement"${item.storyKey ? ` data-home-story="${esc(item.storyKey)}"` : ''} href="${esc(item.href)}">
+    const tag=item.href?'a':'section';
+    return `<${tag} class="bx-slide bx-home-feature is-announcement"${item.href?` href="${esc(item.href)}"`:''}>
       <img class="bx-home-art" src="assets/dfl-daily-hero.webp" width="1555" height="1011" alt="" fetchpriority="high">
       <span class="bx-home-shade" aria-hidden="true"></span>
       <span class="bx-home-week">${esc(item.kicker)}</span>
       <h2 class="bx-home-title">${esc(item.headline)}<span>${esc(item.subtitle)}</span></h2>
-      <p class="bx-sub">${item.bodyLines ? item.bodyLines.map(line => `<span>${esc(line)}</span>`).join('') : esc(item.body)}</p>
-      <span class="bx-home-action">${esc(item.actionLabel)}<svg class="ico" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>
-    </a>`;
+      ${item.body?`<p class="bx-sub">${esc(item.body)}</p>`:''}
+      ${item.actionLabel?`<span class="bx-home-action">${esc(item.actionLabel)}<svg class="ico" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>`:''}
+    </${tag}>`;
+  }
+  if(editorial&&item.kind==='season')return `<a class="bx-slide bx-season-story is-stat" href="${esc(item.href||'#/history')}"><span class="bx-kicker">${Number(item.figure)%10===0?'ANNIVERSARY SEASON':esc(item.kicker)}</span><div class="bx-season-lockup"><strong class="bx-season-number">${esc(item.figure)}</strong><h2 class="bx-head">${esc(item.headline)}</h2></div><div class="bx-season-years"><span>${esc(item.subtitle)}</span><i aria-hidden="true">${Array.from({length:Math.min(20,Math.max(1,Number(item.figure)||1))},()=>'<b></b>').join('')}</i></div><span class="bx-story-action">The league archive <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span></a>`;
+  if(editorial&&item.treatment==='stat'&&!['fact','record','trade'].includes(item.kind)){
+    const percent=/^\d+(?:\.\d+)?%$/.test(String(item.figure)),value=percent?Math.max(0,Math.min(100,parseFloat(item.figure))):0;
+    const metric=`<div class="bx-stat-metric${percent?' is-dial':''}">${percent?`<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="53"/><circle cx="60" cy="60" r="53" pathLength="100" stroke-dasharray="${value} 100"/></svg>`:''}<strong class="bx-figure">${esc(item.figure??'—')}</strong>${item.figureLabel?`<small>${esc(item.figureLabel)}</small>`:''}</div>`;
+    const inner=`<span class="bx-kicker">${esc(item.kicker)}</span><div class="bx-stat-story-main">${metric}<h2 class="bx-head">${esc(item.headline)}</h2></div>${item.subtitle?`<p class="bx-body">${esc(item.subtitle)}</p>`:''}${chip(item)}`;
+    return item.href?`<a class="bx-slide bx-number-story is-stat" href="${esc(item.href)}">${inner}</a>`:`<div class="bx-slide bx-number-story is-stat">${inner}</div>`;
   }
   if (editorial && item.generator === 'nextMove' && item.scoutPlayer) {
     const player = item.scoutPlayer;

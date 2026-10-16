@@ -1,4 +1,4 @@
-import {homeLeadStory} from './home-lead-story.js';
+import {dailyBroadcast} from './daily-broadcast.js';
 import { playerScorePhase } from './game-day-player-rows.js';
 import { matchupPhase, matchupSummary } from './clubhouse-matchup-model.js';
 import { esc } from './ui.js';
@@ -22,30 +22,26 @@ export function homeSectionLinks() {
 }
 
 /** Current stories lead; the archive gets one dated, rotating feature. */
-export function homeBroadcastDeck(deck = [], { week = null, now = new Date(), edition = {}, coveredTrade = "" } = {}) {
+export function homeBroadcastDeck(deck = [], { now = new Date(), coveredTrade = "" } = {}) {
   const transaction=href=>{try{return new URLSearchParams(String(href||" ").split("?")[1]||"").get("tx")}catch{return null}};
   const covered=transaction(coveredTrade);
   if(covered){const filtered=deck.filter(item=>transaction(item?.href)!==covered);if(filtered.length!==deck.length)deck=filtered.filter(item=>!item.homeFeature);}
-  if (deck[0]?.key === 'home:clubhouse-opener') return deck;
-  const day = now.toLocaleDateString(undefined, { weekday: 'long' });
+  const daily=dailyBroadcast(now);
+  if (deck[0]?.key === 'home:clubhouse-opener'&&deck[0].dailyDate===daily.date) return deck;
   const opener = {
     key: 'home:clubhouse-opener', treatment: 'announcement', homeFeature: true,
-    headline: 'The boys.', subtitle: 'The fucking receipts.',
+    ...daily,dailyDate:daily.date,
     body: '',
-    kicker: week ? `Week ${week}` : day,
-    href: '#/clubhouse', actionLabel: 'Clubhouse', temporal: 'none',
+    href: null, actionLabel: '', temporal: 'none',
     background: 'default',
   };
   const stories = deck.filter(item => item && item.key !== opener.key);
   const archive = stories.filter(item => !item.pinned && !item.featured && item.source !== 'manual'
     && ['past', 'record', 'fact'].includes(item.kind));
-  const date = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const date = Date.parse(daily.date+'T12:00:00Z');
   const feature = archive.length ? archive[Math.floor(date / 86400000) % archive.length] : null;
-  const lead = homeLeadStory({deck: stories, archive:feature, now, ...edition});
-  if (lead) Object.assign(opener, lead, {id: 'home:lead:'+lead.storyKey});
   const brand = stories.find(item => item.kind === 'season') || stories.find(item => item.kind === 'identity');
   return [opener, ...stories.filter(item => {
-    if (lead?.sourceKey && (item.key || item.id) === lead.sourceKey) return false;
     if (item.pinned || item.featured || item.source === 'manual') return true;
     if (archive.includes(item)) return item === feature;
     if (['season', 'identity'].includes(item.kind)) return item === brand;

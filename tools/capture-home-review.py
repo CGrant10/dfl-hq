@@ -835,6 +835,7 @@ def check_home_editions(page):
     scenarios=[('live',{'model':{'season':2026,'week':5,'games':[game('live',a,b)]}},'0.40 apart.'),
       ('final',{'model':{'season':2026,'week':5,'completed':True,'games':[game('final',a,{**b,'live':0})]}},'0.40 points.'),
       ('rivalry',{'model':{'season':2026,'week':5,'games':[game('rivalry',{**a,'score':0},{**b,'score':0,'live':0})]},'history':[{'season':2026,'week':w,'user1':a['uid'],'user2':b['uid'],'score1':100,'score2':90} for w in [3,4]]},'2 straight.')]
+    shared_headline=page.locator('.bx-home-title').text_content()
     checks=[]
     for mode in ['dark','light']:
         page.evaluate('window.reviewSetTheme',mode)
@@ -844,10 +845,10 @@ def check_home_editions(page):
                 page.evaluate('window.reviewSetEdition',edition)
                 page.locator('.bx-stage').evaluate("e=>e.scrollIntoView({block:'center',behavior:'instant'})")
                 page.wait_for_timeout(500)
-                page.wait_for_function('text=>document.querySelector(".bx-home-title")?.textContent.includes(text)',arg=headline)
+                assert page.locator('.bx-home-title').text_content()==shared_headline, 'Personal events changed the shared daily card'
                 result=page.evaluate('''()=>{const stage=document.querySelector('.bx-stage'),box=stage.getBoundingClientRect(),slide=stage.querySelector('.bx-home-feature');return {story:slide.dataset.homeStory,href:slide.getAttribute('href'),fits:[...slide.querySelectorAll('.bx-home-week,.bx-home-title,.bx-sub')].every(e=>{const b=e.getBoundingClientRect();return b.left>=box.left-1&&b.right<=box.right+1&&b.top>=box.top-1&&b.bottom<=box.bottom-1&&e.scrollWidth<=e.clientWidth+1}),overflow:document.documentElement.scrollWidth>innerWidth,contrast:window.reviewTextContrast().failures}}''')
                 assert result['fits'] and not result['overflow'] and not result['contrast'],(mode,width,name,result)
-                assert 'matchup='+name in result['href'],result
+                assert result['href'] is None and result.get('story') is None,result
                 if width in [320,390]:page.locator('.bx-stage').screenshot(path=str(OUT/f'edition-{mode}-{width}-{name}.png'))
                 checks.append({'mode':mode,'width':width,'kind':name,**result})
     page.evaluate('window.reviewSetEdition',None)
@@ -1127,7 +1128,7 @@ with sync_playwright() as p:
     page.wait_for_timeout(200)
     metrics['reducedMotion'] = page.locator('canvas.gd-vfx-canvas').evaluate('(e)=>e.dataset.running')
     assert metrics['reducedMotion'] == 'false', 'Reduced motion did not stop score effects'
-    assert page.locator('.bx-home-feature').get_attribute('href') == '#/clubhouse'
+    assert page.locator('.bx-home-feature').get_attribute('href') is None
     page.evaluate("""() => {
         const stage=document.querySelector('[data-bx-stage]');
         window.reviewOpener=stage.querySelector('.bx-home-feature');
