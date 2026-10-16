@@ -29,10 +29,10 @@ function setup() {
   mountScoreVfx(dialog);
   const dismiss = (options = {}) => {
     if (!dialog.dataset.uiClosing && !options.immediate) {
-      stopConnection();
+      const origin=stopConnection.position?.();stopConnection();
       const source = returnTarget();
       const target = source?.querySelector('.dfl-player-portrait') || source?.closest('.dfl-player')?.querySelector('.dfl-player-portrait');
-      stopConnection = connectPortrait(body.querySelector('.dfl-player-portrait'), target, { motion:dialog.dataset.motion !== 'off', duration:160, hideSource:true });
+      stopConnection = connectPortrait(body.querySelector('.dfl-player-portrait'), target, { motion:dialog.dataset.motion !== 'off', duration:220, hideSource:true, origin });
     }
     exitSheet(dialog, () => {sheetDrag.reset();dialog.close();}, options);
   };
@@ -56,6 +56,7 @@ function render(model) {
   const club = team(p.nflTeam);
   const heroStyle = club ? ` style="--player-primary:${esc(club.primary)};--player-secondary:${esc(club.secondary)}"` : '';
   body.innerHTML = `<section class="player-card-hero"${heroStyle} aria-label="Player identity">${playerIdentity({ ...p, injuryStatus: '' })}<div class="player-card-owner"><small>DFL ROSTER</small>${model.owner?.memberId ? `<a href="#/profile?id=${esc(model.owner.memberId)}">${esc(model.ownerLabel)}</a>` : `<strong>${esc(model.ownerLabel)}</strong>`}</div></section><div class="player-card-availability" data-availability="${availability}"><b>${esc(model.injury.tag)}</b><span>${esc([model.injury.availability, model.injury.body].filter(Boolean).join(' · '))}</span></div><div class="gameday-spotlight-score"><span>${thermalScore(model.points, playerScoreTemperature({ ...p, points: model.points, state: model.state, afterHalftime: model.afterHalftime }), { tag: 'strong' })}<small>Fantasy points</small></span><span>${esc(state)} · Week ${model.week}</span></div>${playerFormHtml(model)}${model.stats.items.length ? `<section class="player-card-game-stats" aria-label="Game stats"><h3>Week ${model.week} box score</h3><dl class="gameday-stat-grid">${model.stats.items.map(s => `<div><dt>${esc(s.label)}</dt><dd>${esc(s.value)}</dd></div>`).join('')}</dl></section>` : '<p class="player-card-empty">Game stats unavailable.</p>'}<nav class="player-card-actions" aria-label="Player actions"><button type="button" class="linkbtn" data-player-watch aria-pressed="false">Watch player</button>${props ? `<a class="linkbtn" href="#/sportsbook?player=${encodeURIComponent(p.name)}">Player props</a>` : ''}${trade ? `<a class="linkbtn" href="#/trade?team=${encodeURIComponent(model.myRosterId)}&target=${encodeURIComponent(p.id)}&partner=${encodeURIComponent(model.owner.id)}">Explore a trade</a>` : ''}<a class="linkbtn" href="#/analyzer">Team analyzer</a></nav>${model.stats.updatedAt ? `<time class="gameday-stat-time" datetime="${esc(new Date(model.stats.updatedAt).toISOString())}">Stats · ${esc(new Date(model.stats.updatedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }))}</time>` : ''}`;
+  body.querySelector('.gameday-spotlight-score > span').dataset.scoreStamp=JSON.stringify([model.points,playerScoreTemperature({...p,points:model.points,state:model.state,afterHalftime:model.afterHalftime})]);
 }
 export async function openPlayerCard(selection, { context = null, motion = true, source = document.activeElement } = {}) {
   setup(); stopConnection(); cancelUiExit(dialog); sheetDrag.reset(); cancelUiMotion(body); const token = ++request; opener = source; returnContainer = source?.closest('dialog') || source?.closest('#view'); activeContext = context;
@@ -89,7 +90,8 @@ export function updatePlayerCard(context, motion = true) {
   if (!dialog?.open || !activeContext || String(activeContext.id) !== String(context?.id)) return;
   activeContext = context; dialog.dataset.motion = motion ? 'on' : 'off';
   const score = body.querySelector('.gameday-spotlight-score > span');
-  if (score) score.innerHTML = `${thermalScore(context.points, playerScoreTemperature(context), { tag: 'strong' })}<small>Fantasy points</small>`;
+  const scoreStamp=JSON.stringify([context.points,playerScoreTemperature(context)]);
+  if (score&&score.dataset.scoreStamp!==scoreStamp) {score.innerHTML = `${thermalScore(context.points, playerScoreTemperature(context), { tag: 'strong' })}<small>Fantasy points</small>`;score.dataset.scoreStamp=scoreStamp;}
   const status = body.querySelector('.gameday-spotlight-score > span:last-child');
   const formState = body.querySelector('[data-player-form-current-state]');
   if (formState) formState.textContent = { live:'Live', final:'Final', upcoming:'Yet to play', unknown:'Pending' }[context.state] || 'Recorded';

@@ -194,3 +194,29 @@ An isolated Chromium comparison of the old/new Home controllers over the same
 that sequence. This measures that controller's layout work, not a physical phone
 frame-rate guarantee. Native iOS/Android hardware profiling remains unverified.
 No palettes, backend data, posts, notifications, bets or trades were changed.
+
+## 1.428.0 — Connected player interactions and steady refreshes
+
+Reviewed the production player-card controller in Medicine Wheel Light and Dark
+at phone widths, with labeled sample data and intercepted reads. Chromium sheet
+captures cover 320px/390px/600px; WebKit player-card captures cover 320px/390px.
+The card's typography, identity colors and shared theme tokens are unchanged.
+Buttons, selections and disclosures share brief press feedback. Tab geometry
+stays fixed for the travelling underline; its press wash uses accent/bg tokens.
+Reduced motion and the app motion switch retain static, usable controls.
+
+An interrupted portrait return begins at the visible travelling copy's rectangle
+rather than jumping to the stationary card image. Flights clean up on scrolling,
+viewport changes, visibility changes and motion-setting changes. Browser checks
+exercise interrupted reversal, native body scrolling, drag cancellation,
+keyboard-viewport math, early dismissal and focus return. WebKit reversal checks
+pause the flight deterministically; native hardware frame-rate and screen-reader
+behavior are not certified by these synthetic checks.
+
+Trade/Analyzer refreshes wait for scroll/finger activity to settle, preserve the
+visible player or section before repaint, and restore open disclosures. Missing
+anchors use the previous offset. Ordinary route visits and Back memory keep their
+existing behavior. Unchanged player scores retain their DOM node and hot/cold
+visual rather than restarting on each sync. Chromium and WebKit checks verify
+refresh anchoring; the trade workspace review covers three widths with no browser
+errors or horizontal overflow. No backend/schema changes or league writes occur.

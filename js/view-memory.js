@@ -21,6 +21,26 @@ export function writeViewMemory(member, name, data, storage = globalThis.session
 export function captureView(view, y = globalThis.scrollY || 0) {
   return { y: Math.max(0, Number(y) || 0), details: [...view.querySelectorAll('details[id],details[data-page-detail],details[data-watch-bench]')].filter(d => !d.closest('dialog')).map(d => ({ key: d.id ? `#${d.id}` : d.dataset.pageDetail ? `[data-page-detail="${CSS.escape(d.dataset.pageDetail)}"]` : `[data-watch-bench="${CSS.escape(d.dataset.watchBench)}"]`, open: d.open })), strips: [...view.querySelectorAll('.tabs[id]')].map(d => ({ id: d.id, x: d.scrollLeft })) };
 }
+
+// Background refreshes keep the visible player/section in place even when
+// updated content above it changes height. Route Back keeps its visit offset.
+export function captureRefreshView(view) {
+  const memory=captureView(view),candidates=[...view.querySelectorAll('[data-player-card],h2')];
+  const node=candidates.filter(node=>node.getClientRects().length&&!node.closest('dialog,[hidden],details:not([open])')).map(node=>({node,box:node.getBoundingClientRect()})).filter(item=>item.box.top>=44&&item.box.bottom<=innerHeight).sort((a,b)=>a.box.top-b.box.top)[0]?.node;
+  if(node){const selector=node.dataset.playerCard?`[data-player-card="${CSS.escape(node.dataset.playerCard)}"]`:'h2',text=node.tagName==='H2'?node.textContent:null;
+    const matches=[...view.querySelectorAll(selector)].filter(item=>text==null||item.textContent===text);
+    memory.anchor={selector,text,index:matches.indexOf(node),top:node.getBoundingClientRect().top};
+  }
+  return memory;
+}
+export function restoreRefreshView(view,memory,options={}) {
+  if(!memory||options.active&&!options.active())return()=>{};
+  restoreView(view,memory,{...options,restoreScroll:false});
+  const anchor=memory.anchor,node=anchor&&[...view.querySelectorAll(anchor.selector)].filter(item=>anchor.text==null||item.textContent===anchor.text)[anchor.index];
+  const y=node?.getClientRects().length?Math.max(0,scrollY+node.getBoundingClientRect().top-anchor.top):memory.y;
+  (options.scroll||((top)=>window.scrollTo({top,behavior:'instant'})))(y);
+  return restoreView(view,{...memory,y},options);
+}
 export function restoreView(view, memory, { active = () => true, scroll = y => window.scrollTo({ top: y, behavior: 'instant' }), restoreScroll = true } = {}) {
   if (!memory) return () => {};
   for (const d of memory.details || []) { const node = view.querySelector(d.key); if (node) node.open = !!d.open; }
