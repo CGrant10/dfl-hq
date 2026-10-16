@@ -168,3 +168,29 @@ refreshes, focus return and reduced motion. Recap frames use observed sync times
 not invented NFL play timestamps or predicted winners. Live week data may have
 no saved moments yet; the replay states were verified with labeled fixtures
 using the production controller. No external messages, trades or bets were made.
+
+## 1.427.0 — Smoother scrolling
+
+Reviewed the Home score-to-dock transition in canonical Medicine Wheel Dark and
+Light at 320px and 390px with guarded real league reads. Isolated production
+controller captures cover 320px, 390px and 430px in both palettes. Shared colors,
+text sizes and navigation are unchanged. The original team labels recede while
+decorative score/identity copies move, then return when scrolling back. Document
+height and following content positions stay fixed.
+
+Home now measures flight endpoints on data/layout changes and moves copies with
+transforms. It eases at both ends without adding a trailing scroll loop. Shared
+page headers cache section offsets until observed layout/data changes; heading
+entrances move 6px with a softer fade. Reading progress follows the scroll frame
+directly. GameDay's compact scoreboard has a 12px reversal buffer to avoid
+threshold flicker. Browser checks cover reversal, changed scores, resizing,
+layout invalidation, reduced motion, the in-app motion switch and cleanup.
+The dedicated controller checks pass in both Chromium and WebKit. Number copies
+scale uniformly to the destination font size, with a regression check immediately
+before the dock handoff to catch distorted or abruptly resized glyphs.
+
+An isolated Chromium comparison of the old/new Home controllers over the same
+120-frame scroll sequence recorded 120 versus 0 layout recalculations during
+that sequence. This measures that controller's layout work, not a physical phone
+frame-rate guarantee. Native iOS/Android hardware profiling remains unverified.
+No palettes, backend data, posts, notifications, bets or trades were changed.

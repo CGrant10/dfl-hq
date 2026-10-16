@@ -1,12 +1,13 @@
 // Keep the expanded dashboard's space in the document. Shrinking the pinned
 // surface must not move the lineup underneath a reader or their focused player.
+export const watchScoreCompact=(anchorTop,dialogTop,wasCompact=false)=>anchorTop<dialogTop+(wasCompact?-12:-24);
 export function mountWatchScoreCollapse(dialog) {
  let stopped=false,frame=0,width=0;
  const paint=()=>{
   frame=0;if(stopped||!dialog.open)return;
   const anchor=dialog.querySelector('[data-watch-score-anchor]');
   if(!anchor){dialog.classList.remove('is-score-compact');return}
-  const compact=anchor.getBoundingClientRect().top<dialog.getBoundingClientRect().top-24;
+  const compact=watchScoreCompact(anchor.getBoundingClientRect().top,dialog.getBoundingClientRect().top,dialog.classList.contains('is-score-compact'));
   dialog.classList.toggle('is-score-compact',compact);
  };
  const schedule=()=>{if(!frame&&!stopped)frame=requestAnimationFrame(paint)};

@@ -147,7 +147,7 @@
 [data-dock-mark] .gameday-faceoff-mark {width:100%!important;height:100%!important;font-size:10px;}
 [data-dock-score] {font:700 23px/1 var(--home-ui-font,var(--font-body));font-variant-numeric:tabular-nums;}
 .home-score-flight {position:fixed;inset:0;z-index:111;pointer-events:none;}
-.home-score-moving {position:fixed!important;box-sizing:border-box;margin:0!important;pointer-events:none;}
+.home-score-moving {position:fixed!important;box-sizing:border-box;margin:0!important;pointer-events:none;transform-origin:0 0;will-change:transform;}
 .home-score-moving:is(b) {display:flex;align-items:center;font-family:var(--home-ui-font,var(--font-body));font-weight:700;line-height:1;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--text);}
 .dfl-connected-artwork {max-width:none!important;max-height:none!important;outline:0;overflow:hidden;}
 .dfl-connected-artwork::backdrop {background:transparent;}
