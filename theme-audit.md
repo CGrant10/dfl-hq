@@ -294,3 +294,26 @@ Reviewed the actual shared watermark and identity-plate styles at 320px and
 390px in Medicine Wheel Light/Dark, including the share-card seal. Text remains
 above the decorative mark, existing opacity/inversion rules remain intact, and
 neither phone width overflows. No new colors, theme options or motion were added.
+
+### 1.432 — Arena watch controls and past races
+
+Reviewed the compact fullscreen watch toolbar, all three cameras, racer picker,
+commissioner controls, portrait editor and past-race removal in Medicine Wheel
+Light/Dark. Camera controls stay inside both native fullscreen and the landscape
+fallback, with 44px targets. The canvas heading now uses 30–44px instead of
+94–128px; the callout is a compact separate row and does not cover the field.
+Portrait pages at 320px/390px/768px retain accessible management controls without
+horizontal overflow. Past-race cards, confirmation, errors and empty state use
+theme tokens; text contrast is checked in both themes. Stadium watch surfaces
+retain their existing dark lighting and motion preferences.
+
+Browser tests cover live reset/cancel, camera selection without exiting watch,
+deletion/cancel/stale revisions, spectator restrictions, shared racer-kit
+preservation, a removed race's viewers, final order and subscription cleanup.
+Isolated PostgreSQL tests cover the actual command functions, atomic live reset,
+locked finishes, linked result deletion, legacy completed races and public/private
+permissions. The existing Arena permission gate remains in place; no real races
+were reset or removed. The Arena winner generator and result-to-slide trigger
+are removed; existing generated Arena Aftermath cards are inactive. In broadcast,
+league champion/Chip Eater slides are retained. Native physical-device orientation
+and assistive-technology behavior remain outside desktop browser certification.

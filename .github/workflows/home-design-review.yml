@@ -8,6 +8,15 @@ on:
       - 'css/stadium-arena.css'
       - 'js/pages/arena-stadium.js'
       - 'js/arena/stadium-orientation*'
+      - 'js/arena/stadium-data*'
+      - 'js/arena/stadium-renderer*'
+      - 'supabase/migrations/*arena*'
+      - 'supabase/tests/*arena*'
+      - 'arena_schema.sql'
+      - 'arena_broadcast_schema.sql'
+      - 'broadcast_items_schema.sql'
+      - 'engagement_home_schema.sql'
+      - 'js/broadcast-deck*'
       - 'js/matchup-route-motion*'
       - 'tools/capture-stadium-arena.py'
       - 'tools/capture-matchup-review.py'
@@ -176,3 +185,30 @@ jobs:
           name: stadium-controls-review
           path: arena-review-output/
           retention-days: 7
+
+  arena-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check race maintenance and permissions in isolated PostgreSQL
+        env:
+          DFL_ARENA_TEST_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker exec "$DFL_ARENA_TEST_CONTAINER" mkdir -p /qa/supabase
+          docker cp arena_schema.sql "$DFL_ARENA_TEST_CONTAINER:/qa/"
+          docker cp arena_broadcast_schema.sql "$DFL_ARENA_TEST_CONTAINER:/qa/"
+          docker cp broadcast_items_schema.sql "$DFL_ARENA_TEST_CONTAINER:/qa/"
+          docker cp supabase/migrations "$DFL_ARENA_TEST_CONTAINER:/qa/supabase/"
+          docker cp supabase/tests "$DFL_ARENA_TEST_CONTAINER:/qa/supabase/"
+          docker exec "$DFL_ARENA_TEST_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 -f /qa/supabase/tests/arena_fixture.sql
