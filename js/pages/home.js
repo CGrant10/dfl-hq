@@ -663,6 +663,7 @@ export async function render(view) {
     broadcastContext({ home: homeData, lore, golfDay: day, member: me }),
     { custom: [...custom, ...liveSlides].filter(Boolean), off, overrides },
   );
+  const coveredTrade=()=>document.querySelector(".breaking-trade:not([hidden])")?.dataset.coveredTrade||"";
   const refresh = async () => {
     const [day, fresh] = await Promise.all([
       golfRow ? loadGolfDay(golfRow.id) : null,
@@ -670,7 +671,7 @@ export async function render(view) {
     ]);
     custom = fresh;
     golfDayNow = day;
-    return homeBroadcastDeck(build(day), {week:homeBroadcastWeek,edition:homeEdition});
+    return homeBroadcastDeck(build(day), {week:homeBroadcastWeek,edition:homeEdition,coveredTrade:coveredTrade()});
   };
 
   const updateInjuries=async()=>{
@@ -685,7 +686,7 @@ export async function render(view) {
     if (mine !== generation || !view.isConnected) return;
     const host = view.querySelector(".home-broadcast");
     if (!host) return;
-    const ordered = homeBroadcastDeck(deck, {week: homeBroadcastWeek, edition: homeEdition});
+    const ordered = homeBroadcastDeck(deck, {week: homeBroadcastWeek, edition: homeEdition,coveredTrade:coveredTrade()});
     const chirp=view.querySelector("[data-gameday-chirp]");
     if(chirp)chirp.hidden=!!ordered[0]?.storyKey?.startsWith("rivalry:");
     if(stage&&host.querySelector('[data-bx-stage]')){stage.update(ordered);return;}
@@ -702,7 +703,9 @@ export async function render(view) {
   // and the currently open story instead of restarting the carousel.
   startHomeStage(fallbackDeck);
   refreshEdition=()=>{if(mine===generation&&view.isConnected)startHomeStage(build(golfDayNow))};
-  deferredStops.push(()=>{refreshEdition=null});
+  const coverageChanged=()=>refreshEdition?.();
+  window.addEventListener("dfl:home-coverage",coverageChanged);
+  deferredStops.push(()=>{refreshEdition=null;window.removeEventListener("dfl:home-coverage",coverageChanged)});
 
   Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertsPromise, injuryPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlerts, injuries]) => {
     if (mine !== generation) return;

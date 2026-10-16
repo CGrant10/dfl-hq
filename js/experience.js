@@ -1,3 +1,4 @@
+import {readableText,setReadableText,startReadingPreferences} from './reading-preferences.js';
 // =====================================================================
 // experience.js - optional tactile/audio feedback and contextual atmosphere
 // =====================================================================
@@ -56,7 +57,8 @@ export function feedback(kind = "tick") {
 }
 
 export function experienceSettingsMarkup() {
-  return `<div class="experience-settings" aria-label="App feedback">
+  return `<div class="experience-settings" aria-label="Reading and app feedback">
+    <label><span><strong>Readable text</strong></span><input type="checkbox" data-readable-text ${readableText()?"checked":""}></label>
     <label><span><strong>Haptic feedback</strong><small>Short phone taps for controls and completed actions.</small></span><input type="checkbox" data-experience-haptics ${hapticsEnabled() ? "checked" : ""}></label>
     <label><span><strong>Sound effects</strong><small>Optional result, alert and payout stings. Muted by default.</small></span><input type="checkbox" data-experience-sound ${soundEnabled() ? "checked" : ""}></label>
     <button type="button" class="btn ghost small" data-experience-preview>Preview feedback</button>
@@ -64,6 +66,7 @@ export function experienceSettingsMarkup() {
 }
 
 export function wireExperienceSettings(root) {
+  root?.querySelector?.("[data-readable-text]")?.addEventListener("change",event=>setReadableText(event.currentTarget.checked));
   root?.querySelector?.("[data-experience-haptics]")?.addEventListener("change", event => {
     setHapticsEnabled(event.currentTarget.checked);
     if (event.currentTarget.checked) vibrate("success");
@@ -90,6 +93,7 @@ export function syncExperience(view, route) {
 }
 
 export function startExperience() {
+  startReadingPreferences();
   startLiveScorePresentation();
   document.addEventListener("click", event => {
     if (location.hash.startsWith("#/golf")) return;

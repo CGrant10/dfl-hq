@@ -57,12 +57,15 @@ function compactMarkup(alert){
 
 function hide() {
   if (!host) return;
+  const hadCoverage=!host.hidden&&!!host.dataset.coveredTrade;
   host.hidden = true;
   host.replaceChildren();
   scrollDock?.update('');
   document.body.classList.remove("has-breaking-trade");
   currentId = null;
   currentAlert = null;
+  delete host.dataset.coveredTrade;
+  if(hadCoverage)window.dispatchEvent(new Event("dfl:home-coverage"));
 }
 
 async function refresh({ force = false } = {}) {
@@ -85,7 +88,9 @@ async function refresh({ force = false } = {}) {
     currentAlert = alert;
     host.innerHTML = markup(alert);
     scrollDock?.update(compactMarkup(alert));
+    host.dataset.coveredTrade = alert.kind === "custom" ? "" : alert.href || "";
     host.hidden = false;
+    window.dispatchEvent(new Event("dfl:home-coverage"));
     document.body.classList.add("has-breaking-trade");
     if (String(announcedId) !== String(alert.id)) {
       announcedId = alert.id;

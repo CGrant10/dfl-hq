@@ -22,7 +22,10 @@ export function homeSectionLinks() {
 }
 
 /** Current stories lead; the archive gets one dated, rotating feature. */
-export function homeBroadcastDeck(deck = [], { week = null, now = new Date(), edition = {} } = {}) {
+export function homeBroadcastDeck(deck = [], { week = null, now = new Date(), edition = {}, coveredTrade = "" } = {}) {
+  const transaction=href=>{try{return new URLSearchParams(String(href||" ").split("?")[1]||"").get("tx")}catch{return null}};
+  const covered=transaction(coveredTrade);
+  if(covered){const filtered=deck.filter(item=>transaction(item?.href)!==covered);if(filtered.length!==deck.length)deck=filtered.filter(item=>!item.homeFeature);}
   if (deck[0]?.key === 'home:clubhouse-opener') return deck;
   const day = now.toLocaleDateString(undefined, { weekday: 'long' });
   const opener = {

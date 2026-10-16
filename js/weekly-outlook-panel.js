@@ -118,21 +118,23 @@ async function draw(host) {
     rosterPositions:data.league?.roster_positions,stale:!!projections.stale,
   });
   if (!host.isConnected || host.drawGeneration !== token) return;
-  host.stopWatchlist?.();
+  host.stopWatchlist?.();host.stopExtras?.();host.toolsHost?.remove();
   host.innerHTML = markup({
     week,
     team: team.team_name || team.ownerName || "Your team",
     advice, trending, defense, stale: projections.stale,
     showScore: !!host.closest('[data-route="analyzer"]'),
   });
-  const watch=document.createElement('div');host.append(watch);host.stopWatchlist=mountPlayerWatchlist(watch,{data,season,week});
-  if(new URLSearchParams(location.hash.split('?')[1]||'').get('watchlist')==='1'&&!host.dataset.watchJumped){host.dataset.watchJumped='1';watch.querySelector('.player-watchlist')?.scrollIntoView({block:'start'});}
-  const coach=document.createElement('div');host.append(coach);mountRosterCoach(coach,{data,team,season,week});
-  const receipts=document.createElement('div');host.append(receipts);mountAdviceReceipts(receipts,{leagueId:data.league.sleeper_league_id,season,week,rosterId:team.id,history:true,teamNames:new Map(data.teams.map(t=>[String(t.id),t.team_name||t.ownerName]))});
+  const extras=document.createElement('div');extras.className='analyzer-followups';host.toolsHost=extras;host.parentElement.querySelector('[data-ta-body]').insertAdjacentElement('afterend',extras);
+  const stops=[];host.stopExtras=()=>stops.forEach(stop=>stop?.());
+  const watch=document.createElement('div');extras.append(watch);host.stopWatchlist=mountPlayerWatchlist(watch,{data,season,week});
+  if(new URLSearchParams(location.hash.split('?')[1]||'').get('watchlist')==='1'&&!host.dataset.watchJumped){host.dataset.watchJumped='1';watch.querySelector('.player-watchlist').open=true;watch.querySelector('.player-watchlist')?.scrollIntoView({block:'start'});}
+  const coach=document.createElement('div');extras.prepend(coach);stops.push(mountRosterCoach(coach,{data,team,season,week}));
+  const receiptFold=document.createElement('details');receiptFold.className='page-disclosure';receiptFold.dataset.pageDetail='analyzer-advice-history';receiptFold.innerHTML='<summary>Advice receipts</summary><div data-advice-history></div>';extras.append(receiptFold);const receipts=receiptFold.querySelector('[data-advice-history]');stops.push(mountAdviceReceipts(receipts,{leagueId:data.league.sleeper_league_id,season,week,rosterId:team.id,history:true,teamNames:new Map(data.teams.map(t=>[String(t.id),t.team_name||t.ownerName]))}));
   const game=(data.matchups||[]).find(g=>Number(g.season)===season&&Number(g.week)===week&&[g.roster1,g.roster2].map(String).includes(String(team.id)));
   const opponent=game?data.teams.find(t=>String(t.id)===String(String(game.roster1)===String(team.id)?game.roster2:game.roster1)):null;
-  const lab=document.createElement('div');lab.innerHTML=disclosure("analyzer-tools","Try a lineup swap or read this week’s strategy","Lineup lab and weekly lesson",'<div data-lab-tools></div>');host.append(lab);mountLineupLab(lab.querySelector("[data-lab-tools]"),{team,opponent,weekly:pool,week,season,defense,fetchedAt:projections.fetchedAt,stale:projections.stale});
-  wirePageDisclosures(host);
+  const lab=document.createElement('div');lab.innerHTML=disclosure("analyzer-tools","Try a lineup swap or read this week’s strategy","Lineup lab and weekly lesson",'<div data-lab-tools></div>');extras.append(lab);mountLineupLab(lab.querySelector("[data-lab-tools]"),{team,opponent,weekly:pool,week,season,defense,fetchedAt:projections.fetchedAt,stale:projections.stale});
+  wirePageDisclosures(host);wirePageDisclosures(extras);
 }
 
 let activeWatchHost=null;
@@ -154,7 +156,7 @@ function attach() {
       if(currentHost&&event.target?.matches?.("[data-ta-team-select]"))void draw(currentHost).catch(()=>{});
     });
   }
-  if(activeWatchHost!==host)activeWatchHost?.stopWatchlist?.();
+  if(activeWatchHost!==host){activeWatchHost?.stopWatchlist?.();activeWatchHost?.stopExtras?.();}
   activeWatchHost=host;
   void draw(host).catch(() => { host.stopWatchlist?.();host.innerHTML = ""; });
   return true;
@@ -162,7 +164,7 @@ function attach() {
 
 export function mountWeeklyOutlook() {
   const enter = async (name) => {
-    if (name !== "analyzer") { activeWatchHost?.stopWatchlist?.();activeWatchHost=null;return; }
+    if (name !== "analyzer") { activeWatchHost?.stopWatchlist?.();activeWatchHost?.stopExtras?.();activeWatchHost=null;return; }
     await ensureStylesheet("css/weekly-outlook.css");
     /* analyzer.js paints a loading shell first and swaps in the real markup
        after its data resolves, so the mount point may not exist yet. */

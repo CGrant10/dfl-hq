@@ -30,9 +30,9 @@ export const SECONDARY_SEASON_ROUTES = [
 ];
 
 export const SECONDARY_SEASON_GROUPS = [
-  { label: "League life", routes: ["wall", "polls", "arena", "golf"] },
   { label: "Football & records", routes: ["stakes", "history", "facts", "keepers"] },
   { label: "League business", routes: ["calendar", "finances", "rules", "proposals"] },
+  { label: "League life", routes: ["arena", "golf", "polls", "wall"] },
   { label: "Your account", routes: ["notifications", "profile", "admin"] },
 ];
 const navLabel=label=>label;

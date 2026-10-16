@@ -1,3 +1,4 @@
+import {mountMomentRecap} from './moment-recap.js';
 import {connectArtwork} from './connected-artwork.js';
 import {db} from './supabase.js';
 import {currentMember} from './members.js';
@@ -21,9 +22,10 @@ import {WATCH_TABS,closeGameHtml,momentsPanel,leaguePanel} from './game-day-pane
 
 export function mountGameDayWatch(root,{getModel,getHistory,getMotion,members,onRefresh,onMotion,getTimeline=()=>null,onMoreMoments=async()=>{},onRetryMoments=async()=>{},onMoments=async()=>{}}){
  const dialog=document.createElement('dialog');dialog.className='gameday-watch';dialog.setAttribute('aria-labelledby','gameday-watch-title');
- dialog.innerHTML='<header class="gd-watch-header"><h2 id="gameday-watch-title" tabindex="-1" autofocus>GameDay</h2><button type="button" class="linkbtn" data-watch-close aria-label="Close GameDay watch mode">Close</button></header><div data-watch-content></div>';
+ dialog.innerHTML='<header class="gd-watch-header"><h2 id="gameday-watch-title" tabindex="-1" autofocus>GameDay</h2><span class="sr-only" role="status" data-watch-score-announcement></span><button type="button" class="linkbtn" data-watch-close aria-label="Close GameDay watch mode">Close</button></header><div data-watch-content></div>';
  root.append(dialog);
  const content=dialog.querySelector('[data-watch-content]'),heading=dialog.querySelector('h2');
+ const recap=mountMomentRecap({getMotion,returnFocus:()=>heading});
  const scoreCollapse=mountWatchScoreCollapse(dialog);
  const vfx=mountScoreVfx(dialog),spotlight=mountPlayerSpotlight(dialog,{getModel,getMotion});
  let stopped=false,gameId='',intro=false,reelIndex=0,timer=null,rows=[],loading=false,saving=false,request=0,restore=null,animations=[],stopScores=()=>{},scopeKey='',reactionMessage='',pointer=null;
@@ -76,6 +78,7 @@ export function mountGameDayWatch(root,{getModel,getHistory,getMotion,members,on
   const versus=content.querySelector('.gd-entrance-vs');if(versus?.animate)animations.push(versus.animate([{opacity:0,transform:'scale(.85)'},{opacity:1,transform:'scale(1)'}],{duration:550,delay:220,fill:'backwards'}));
  };
  const updateFreshness=()=>{const node=content.querySelector('[data-watch-checked]'),model=getModel();if(!node||!model)return;const view=scoreFreshness({checkedAt:model.checkedAt,state:model.scoreStatus,nflAvailable:model.nflAvailable,playersAvailable:model.playersAvailable,completed:model.completed});if(node.textContent!==view.text)node.textContent=view.text;node.dataset.scoreFreshness=view.state};
+ let announcedScore='';
  const render=()=>{
   cancelAnimations();const model=getModel(),game=selected();if(!model||!game)return;
   const scroll=dialog.scrollTop,focused=document.activeElement,focusPlayer=focused?.dataset?.gamedayPlayer,focusRoster=focused?.dataset?.playerRoster,focusAction=focused?.dataset?.reelStep;
@@ -88,6 +91,8 @@ export function mountGameDayWatch(root,{getModel,getHistory,getMotion,members,on
   if(intro){const entrance=matchupEntrance(model,game,getHistory());patchGameDay(content,`<section class="gd-watch-entrance" data-rivalry="${rivalry?1:0}" aria-label="Matchup introduction"><small>${model.season} · Week ${model.week}</small><div class="gd-entrance-teams"><span class="gd-entrance-crossfire" aria-hidden="true"><span class="gd-entrance-beam is-left"></span><span class="gd-entrance-beam is-right"></span><span class="gd-entrance-seam"></span></span>${game.sides.map((t,i)=>`${i?'<span class="gd-entrance-vs" aria-hidden="true">vs</span>':''}<div class="gd-entrance-team"><button type="button" class="gd-entrance-crest" data-watch-hype aria-label="Replay matchup hype for ${esc(t.name)}">${teamPortrait({team_name:t.name,identity:t.identity})}</button><h3>${esc(t.name)}</h3></div>`).join('')}</div><p class="gd-entrance-record">${esc(entrance.record)}</p><p data-entrance-banter>${esc(rivalry?"Talk your shit. The scoreboard will answer.":entrance.banter)}</p><button type="button" class="btn ghost small" data-watch-start>Enter matchup</button></section>`);animateEntrance();return}
   patchGameDay(content,`<div class="gd-watch-toolbar"><label class="sr-only" for="gd-watch-matchup">Choose matchup</label><select id="gd-watch-matchup" data-watch-matchup>${model.games.map(g=>`<option value="${esc(g.id)}"${g.id===gameId?' selected':''}>${esc(g.sides.map(t=>t.name).join(' vs '))}</option>`).join('')}</select><button type="button" class="linkbtn" data-watch-reel>Reel</button><button type="button" class="linkbtn" data-watch-replay>Intro</button><button type="button" class="linkbtn" data-watch-refresh>Refresh</button><button type="button" class="linkbtn" data-watch-motion aria-pressed="${getMotion()}">Motion ${getMotion()?'on':'off'}</button></div><div class="gd-watch-live"><span class="gameday-beacon" aria-hidden="true"></span><span>${esc(phase.label)}</span><span class="live-score-freshness" data-watch-checked></span></div><div data-watch-score-anchor aria-hidden="true"></div><div class="gd-watch-dashboard" style="${esc(content.querySelector('.gd-watch-dashboard')?.getAttribute('style')||'')}"><div class="gd-watch-dashboard-inner"><section class="gd-watch-scoreboard" aria-label="Matchup scores">${game.sides.map(t=>`<div class="gd-watch-score-team" data-gameday-team="${esc(t.roster)}" style="--faceoff-accent:${esc(accentOf(t.identity))}">${teamPortrait({team_name:t.name,identity:t.identity})}<h3>${esc(t.name)}</h3>${thermalScore(t.score,teamRosterTemperature(t,model.completed),{tag:'strong'})}<small>Actual points</small></div>`).join('<span class="gd-watch-versus" aria-hidden="true">vs</span>')}</section><div class="gd-watch-tabs" role="tablist" aria-label="GameDay views">${WATCH_TABS.map(([id,label])=>`<button type="button" role="tab" id="watch-tab-${id}" aria-controls="watch-panel-${id}" aria-selected="${id===tab}" tabindex="${id===tab?0:-1}" data-watch-tab="${id}">${label}</button>`).join('')}</div></div></div><section role="tabpanel" id="watch-panel-matchup" aria-labelledby="watch-tab-matchup"${tab==='matchup'?'':' hidden'}>${matchupLineupHtml(game,{completed:model.completed})}${closeGameHtml(game)}${reactionHtml()}${rivalryStoryHtml({history:getHistory(),left:{...a,score:a.score},right:{...b,score:b.score},season:model.season,week:model.week,completed:model.completed,calls:(calls||[]).filter(c=>Number(c.matchup_id)===Number(game.id)),members},{callsAvailable:calls!==null})}</section><section role="tabpanel" id="watch-panel-moments" aria-labelledby="watch-tab-moments"${tab==='moments'?'':' hidden'}>${momentsPanel(getTimeline(),gameId,momentScope)}</section><section role="tabpanel" id="watch-panel-league" aria-labelledby="watch-tab-league"${tab==='league'?'':' hidden'}>${tab==='league'?leaguePanel(model,{filter,includeBench}):''}${reelHtml()}</section>`);
   updateFreshness();
+  const stamp=JSON.stringify([game.id,...game.sides.map(t=>t.score)]);
+  if(stamp!==announcedScore){if(announcedScore&&game.sides.every(t=>t.score!=null))dialog.querySelector('[data-watch-score-announcement]').textContent=game.sides.map(t=>`${t.name}: ${Number(t.score).toFixed(2)} points`).join('. ');announcedScore=stamp;}
   const close=content.querySelector('.gd-close-game'),nextClose=close?`${game.id}:${game.leader||'tie'}`:'';if(close&&nextClose!==closeKey&&motion()&&close.animate)animations.push(close.animate([{backgroundColor:'rgba(239,201,76,.14)'},{backgroundColor:'transparent'}],{duration:950,easing:'ease-out'}));closeKey=nextClose;
   paintReactions();dialog.scrollTop=scroll;scoreCollapse.refresh();
   if(focusPlayer)content.querySelector(`[data-gameday-player="${CSS.escape(focusPlayer)}"][data-player-roster="${CSS.escape(focusRoster)}"]`)?.focus({preventScroll:true});
@@ -128,6 +133,7 @@ export function mountGameDayWatch(root,{getModel,getHistory,getMotion,members,on
   const panel=target.closest('[data-watch-tab]');if(panel){tab=panel.dataset.watchTab;savePageChoice('watch-tab',tab);render();if(tab==='moments')void onMoments();content.querySelector(`[data-watch-tab="${tab}"]`)?.focus({preventScroll:true});return}
   const leagueFilter=target.closest('[data-league-filter]');if(leagueFilter){filter=leagueFilter.dataset.leagueFilter;savePageChoice('watch-league-filter',filter);render();return}
   const scopeControl=target.closest('[data-moment-scope]');if(scopeControl){momentScope=scopeControl.dataset.momentScope;savePageChoice('watch-moment-scope',momentScope);render();return}
+  if(target.closest('[data-moments-recap]')){recap.open(getTimeline()?.items||[],momentScope==='league'?null:gameId);return}
   if(target.closest('[data-moments-more]')){await onMoreMoments();return}
   if(target.closest('[data-moments-retry]')){await onRetryMoments();return}
   const reaction=target.closest('[data-matchup-reaction]');if(reaction)void react(reaction);
@@ -145,6 +151,6 @@ export function mountGameDayWatch(root,{getModel,getHistory,getMotion,members,on
   wantsMoments(){return dialog.open&&!intro&&tab==='moments'},
   redraw(){if(dialog.open&&!stopped)render()},
   setMotion,
-  stop(){stopped=true;clearTimeout(closeTimer);stopBadges();request++;clearTimeout(timer);cancelAnimations();reduced.removeEventListener('change',onReduce);scoreCollapse.stop();spotlight.stop();vfx.stop();dialog.close();dialog.remove()}
+  stop(){stopped=true;recap.stop();clearTimeout(closeTimer);stopBadges();request++;clearTimeout(timer);cancelAnimations();reduced.removeEventListener('change',onReduce);scoreCollapse.stop();spotlight.stop();vfx.stop();dialog.close();dialog.remove()}
  };
 }

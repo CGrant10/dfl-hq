@@ -1,0 +1,13 @@
+/* Optional reading preference; the default compact scale stays intact. */
+html[data-readability="comfortable"] #view :is(.ss-source,.ss-form,.ss-locks,.ss-status,.ss-data-warning,.ss-pair time,.ss-pair>section>small,.ss-pair .dfl-player-copy>small,.wo-head small,.wo-meta,.wo-tag,.home-weekly-digest small,.home-lineup-context,.tb-setup-summary em,.tb-setup-summary small,.tb-package>small,.tb-package .dfl-player-copy>small,.tb-package .dfl-player>em,.td-decision dt,.td-fit-call small,.player-watchlist>summary small){font-size:.875rem;line-height:1.5}
+html[data-readability="comfortable"] #view :is(.ss-source,.ss-form,.ss-locks,.ss-pair time,.ss-pair .dfl-player-copy>small,.wo-meta,.home-lineup-context,.tb-setup-summary em,.tb-package .dfl-player-copy>small,.td-fit-call small){color:var(--body-text)}
+html[data-readability="comfortable"] #view :is(.player-card-trigger,.ss-hold,.tb-setup-summary strong,.tb-supporting>summary,.wo-lineup .wo-name){font-size:1rem;line-height:1.45;white-space:normal;overflow-wrap:anywhere}
+html[data-readability="comfortable"] #view :is(.td-decision dl,.tb-offer>header){flex-wrap:wrap}
+html[data-readability="comfortable"] #more .quicknav-group h2{font-size:.8125rem;color:var(--body-text)}
+html[data-readability="comfortable"] .gd-moment-recap :is(small,time,.moment-recap-count){font-size:.875rem;line-height:1.5}
+html[data-readability="comfortable"] .gameday-watch :is(.gd-player-stat-line,.gameday-player-meta){font-size:.875rem;line-height:1.5}
+#view :is(.tb-setup-summary,.tb-supporting>summary,.tb-offer-analyze):focus-visible,.gd-moment-recap :is(button,h2):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(forced-colors:active){.moment-recap-progress i.is-seen{background:Highlight}.moment-recap-frame{border-color:CanvasText}#view .tb-offer-analyze{border-color:ButtonText}}
+html[data-readability="comfortable"] #view .td-decision dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,8rem),1fr));gap:12px}
+html[data-readability="comfortable"] #view .td-decision dt{white-space:normal;overflow-wrap:anywhere}
+html[data-readability="comfortable"] #view :is(h1,h2,h3){overflow-wrap:anywhere;min-width:0}

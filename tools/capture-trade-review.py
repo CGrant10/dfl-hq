@@ -67,6 +67,17 @@ with sync_playwright() as p:
             page.wait_for_function(r"[...document.querySelectorAll('.tb-intent-options [data-tb-intent-count]')].length===3&&[...document.querySelectorAll('.tb-intent-options [data-tb-intent-count]')].every(e=>/^\(\d+\)$/.test(e.textContent))")
             return page.locator('.tb-intent-options [data-tb-intent]').evaluate_all("es=>Object.fromEntries(es.map(e=>[e.dataset.tbIntent,Number(e.querySelector('[data-tb-intent-count]').textContent.replace(/[()]/g,''))]))")
         counts=settled_counts()
+        click('[data-tb-view-offers]')
+        assert not page.locator('.tb-setup').evaluate('e=>e.open')
+        assert page.locator('[data-tb-intent="fair"]').evaluate('e=>e===document.activeElement')
+        page.screenshot(path=str(output/f'trade-{width}-compact-search.png'))
+        click('.tb-setup > summary')
+        supporting=page.locator('.tb-supporting').first
+        if supporting.count():
+            key=supporting.get_attribute('data-page-detail');supporting.locator('summary').click();page.wait_for_timeout(50)
+            if not page.locator('[data-tb-generate]').is_disabled():
+                click('[data-tb-generate]');page.wait_for_function('key=>[...document.querySelectorAll(".tb-supporting")].some(d=>d.dataset.pageDetail===key&&d.open)',arg=key)
+            page.evaluate('key=>{const d=[...document.querySelectorAll(".tb-supporting")].find(d=>d.dataset.pageDetail===key);if(d)d.open=false}',key)
         page.evaluate("scrollTo({top:0,behavior:'instant'})")
         page.screenshot(path=str(output/f'trade-{width}-workbench.png'))
         # Price, actual roster fit and data risk remain separate on each offer.

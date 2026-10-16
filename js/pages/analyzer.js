@@ -269,7 +269,7 @@ function page(data) {
   });
   let projections=project(),stakes=buildStakes();
   return {
-    markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><section class="ta-toolbar-section" aria-label="Choose a roster"><div class="ta-toolbar"><label class="ta-team-picker"><span class="sr-only">Reading team</span><span class="ta-team-identity" data-ta-identity></span><i aria-hidden="true">⌄</i><select aria-label="Reading team" data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label></div></section><main class="ta-report" data-ta-body></main>`,
+    markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><section class="ta-toolbar-section" aria-label="Choose a roster"><div class="ta-toolbar"><label class="ta-team-picker"><span class="sr-only">Reading team</span><span class="ta-team-identity" data-ta-identity></span><i aria-hidden="true">⌄</i><select aria-label="Reading team" data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label></div></section><section class="ta-report" data-ta-body></section>`,
     wire(view) {
       const body = view.querySelector("[data-ta-body]");
       const draw = () => {

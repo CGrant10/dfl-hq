@@ -24,9 +24,17 @@ export function tradeSuggestionQuality(result){
  return {group,score:Math.min(...impacts.map(cap))*12+gains.map(cap).reduce((a,b)=>a+b,0)*5+impacts.map(cap).reduce((a,b)=>a+b,0)*2-riskCount*2};
 }
 
+const packageSize=offer=>Array.isArray(offer.sends)?offer.sends.reduce((n,ids)=>n+ids.length,0):(offer.sendA?.length||0)+(offer.sendB?.length||0);
+const riskCount=offer=>['missing','stale','fallback','injuries'].reduce((n,key)=>n+(offer.projectionEvidence?.[key]?.length||0),0);
 export function compareTradeSuggestions(a,b){
- return (b.utility?.group??tradeSuggestionQuality(b).group)-(a.utility?.group??tradeSuggestionQuality(a).group)
-  ||b.score-a.score||b.fairness-a.fairness;
+ const qa=a.utility||tradeSuggestionQuality(a),qb=b.utility||tradeSuggestionQuality(b);
+ // Fixed bands keep sorting transitive. Simplicity only breaks a comparable
+ // fit/price band; a materially stronger lineup still wins its higher band.
+ return qb.group-qa.group
+  ||Math.floor(qb.score/10)-Math.floor(qa.score/10)
+  ||Math.floor(n(b.fairness)/10)-Math.floor(n(a.fairness)/10)
+  ||riskCount(a)-riskCount(b)||packageSize(a)-packageSize(b)
+  ||n(b.score)-n(a.score)||n(b.fairness)-n(a.fairness);
 }
 
 export function tradePartnerFit(mine,other,offer,pool){

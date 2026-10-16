@@ -426,7 +426,7 @@ export function renderItem(item, { editorial = false } = {}) {
  * called on the resulting element, so the markup is safe to build on the
  * server-ish path (a template string) and safe to re-render.
  *
- * aria-live="off" IS LOAD-BEARING. #view is aria-live="polite", so without
+ * aria-live="off" IS LOAD-BEARING. #view may be embedded in a live region, so without
  * this every slide change would be read aloud, forever, over whatever the
  * user was actually trying to listen to. A rotating billboard is decorative
  * motion, not an announcement. The dots carry the state for anyone

@@ -604,11 +604,40 @@ def check_clubhouse_center(page):
         page.set_viewport_size({'width':390,'height':844})
     return result
 
+def check_readable_text(page):
+    page.evaluate("""async()=>{
+      const reading=await import('./js/reading-preferences.js'),experience=await import('./js/experience.js');
+      window.readingReview={reading,before:localStorage.getItem('dfl.readability')};reading.startReadingPreferences();
+      const panel=document.createElement('section');panel.id='reading-review';panel.innerHTML=experience.experienceSettingsMarkup();document.body.append(panel);experience.wireExperienceSettings(panel);
+      window.reviewStage?.suspend('reading-review',true);
+    }""")
+    results=[]
+    try:
+        page.locator('[data-readable-text]').check()
+        assert page.evaluate('document.documentElement.dataset.readability')=='comfortable'
+        assert page.evaluate('localStorage.getItem("dfl.readability")')=='comfortable'
+        for theme in ['light','dark']:
+            page.evaluate('window.reviewSetTheme',theme)
+            for width in [320,390]:
+                page.set_viewport_size({'width':width,'height':844})
+                page.evaluate('scrollTo(0,0)')
+                assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(theme,width)
+                page.screenshot(path=str(OUT/f'readable-{theme}-{width}.png'))
+                page.evaluate('document.documentElement.style.fontSize="200%"')
+                assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),('200% root text',theme,width)
+                page.evaluate('document.documentElement.style.fontSize=""')
+                results.append({'theme':theme,'width':width,'rootText200':True})
+        page.locator('[data-readable-text]').uncheck()
+        assert page.evaluate('document.documentElement.dataset.readability')=='compact'
+        return {'layouts':results,'optIn':True,'persisted':True,'defaultRestored':True}
+    finally:
+        page.evaluate("""()=>{document.documentElement.style.fontSize='';const f=readingReview;f.reading.setReadableText(f.before==='comfortable');if(f.before==null)localStorage.removeItem('dfl.readability');document.querySelector('#reading-review').remove();window.reviewStage?.suspend('reading-review',false);delete window.readingReview;window.reviewSetTheme('light')}""")
+
 def check_watch_score_strip(page):
     """Real Watch controller, with isolated reads and labeled sample teams."""
     source=(ROOT/'js/game-day-watch.js').read_text().split('export function mountGameDayWatch')[1]
     page.evaluate("""async source=>{
-      const helpers=Object.assign({},...await Promise.all(['ui','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','clubhouse-matchup-model','watch-score-collapse'].map(name=>import(`./js/${name}.js`))));
+      const helpers=Object.assign({},...await Promise.all(['ui','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','clubhouse-matchup-model','watch-score-collapse','moment-recap'].map(name=>import(`./js/${name}.js`))));
       const {buildGameDay}=await import('./js/game-day-model.js');
       const members=[1,2,3,4].map(id=>({id,sleeper_user_id:`strip-${id}`,team_name:id===1?'The Very Long Championship Bayou Bombers':id===2?'Klutch Sports Group':`Demo Team ${id}`}));
       const week={season:2099,week:6,leagueId:'strip-demo',completed:false,games:[1,2].map(id=>({matchup_id:id,user1:`strip-${id*2-1}`,user2:`strip-${id*2}`,roster1:id*2-1,roster2:id*2}))};
@@ -619,7 +648,8 @@ def check_watch_score_strip(page):
       const root=document.createElement('section');document.querySelector('#view').append(root);
       const mount=Function(...Object.keys(helpers),'db','currentMember','mountScoreVfx','mountPlayerSpotlight','loadRivalryCalls','rivalryStoryHtml','return function mountGameDayWatch'+source)(...Object.values(helpers),()=>({from:()=>({select:()=>({match:()=>({order:()=>({order:()=>({limit:async()=>({data:[]})})})})})})}),()=>null,()=>({stop(){}}),()=>({stop(){},update(){},setMotion(){}}),async()=>[],()=>'<p>Demo rivalry · sample matchup only</p>');
       helpers.savePageChoice('watch-matchup-2099-6','1');helpers.savePageChoice('watch-tab','matchup');
-      const watch=mount(root,{getModel:()=>model,getHistory:()=>[],getMotion:()=>motion,members,onRefresh:async()=>{},onMotion:()=>{motion=!motion;watch.setMotion()}});
+      const timeline={items:[{key:'demo-1',kind:'lead',text:'Demo Team takes the lead · 45.00 – 42.00',at:Date.UTC(2099,9,1,18),matchupId:'1',team:{team_name:members[0].team_name}},{key:'demo-2',kind:'surge',text:'Demo Player: +8.00 fantasy points since the previous sync',at:Date.UTC(2099,9,1,19),matchupId:'1',player:{id:'6794',name:'Demo Player',position:'WR',nflTeam:'MIN'}}]};
+      const watch=mount(root,{getModel:()=>model,getHistory:()=>[],getTimeline:()=>timeline,getMotion:()=>motion,members,onRefresh:async()=>{},onMotion:()=>{motion=!motion;watch.setMotion()}});
       watch.open({tab:'matchup'});
       const dialog=root.querySelector('dialog');
       window.watchStripFixture={root,watch,dialog,get model(){return model},setMotion(value){motion=value;watch.setMotion()},setPhase(state){model.games[0].sides.forEach(t=>{t.live=state==='live'?9:0;t.known=state!=='unknown';t.starters.forEach(p=>p.state=state);t.lineup.forEach(p=>p.state=state)});watch.update()},final(){model.completed=true;watch.update()},stop(){watch.stop();root.remove()}};
@@ -669,6 +699,34 @@ def check_watch_score_strip(page):
           f.setMotion(false);check(getComputedStyle(d.querySelector('.gd-watch-scoreboard')).transitionDuration==='0s','Motion off still animates strip');
           return {compactPreserved:true,scrollPreserved:true,focusPreserved:true,benchPreserved:true,selectedMatchupStatus:true,unknownHonest:true,completedFinal:true,motionOff:true};
         }""")
+        page.locator('[data-watch-tab="moments"]').click()
+        page.locator('[data-moments-recap]').click()
+        recap=page.locator('.gd-moment-recap[open]')
+        assert recap.locator('h2').evaluate('e=>e===document.activeElement')
+        assert recap.locator('.moment-recap-frame > small').text_content()=='Lead change'
+        recap.locator('[data-recap-next]').click()
+        assert 'since the previous sync' in recap.inner_text()
+        page.evaluate('watchStripFixture.watch.redraw()')
+        assert recap.is_visible() and 'since the previous sync' in recap.inner_text()
+        page.keyboard.press('Escape')
+        assert page.locator('.gameday-watch[open]').count()==1
+        assert page.locator('[data-moments-recap]').evaluate('e=>e===document.activeElement')
+        result['momentRecap']={'manualControls':True,'savedObservations':True,'refreshPreservesFrame':True,'focusReturned':True}
+        for mode in ['light','dark']:
+            page.evaluate('window.reviewSetTheme',mode)
+            for width in [320,390]:
+                page.set_viewport_size({'width':width,'height':844});page.locator('[data-moments-recap]').click()
+                recap=page.locator('.gd-moment-recap[open]');page.wait_for_timeout(300)
+                assert recap.evaluate('e=>e.scrollWidth<=e.clientWidth')
+                assert recap.locator('footer button').evaluate_all('es=>es.every(e=>e.offsetHeight>=44)')
+                page.screenshot(path=str(OUT/f'moment-recap-{mode}-{width}.png'))
+                page.keyboard.press('Escape')
+        page.locator('[data-moments-recap]').click();recap=page.locator('.gd-moment-recap[open]')
+        recap.locator('[data-recap-play]').click();page.wait_for_timeout(4700)
+        assert recap.locator('.moment-recap-count').text_content()=='2 of 3'
+        recap.locator('[data-recap-play]').click();page.wait_for_timeout(4700)
+        assert recap.locator('.moment-recap-count').text_content()=='2 of 3'
+        page.keyboard.press('Escape');result['momentRecap']['playPause']=True
         page.emulate_media(reduced_motion='reduce')
         assert page.locator('.gd-watch-scoreboard').evaluate("e=>getComputedStyle(e).transitionDuration")=='0s'
         result['reducedMotion']=True
@@ -1418,6 +1476,7 @@ with sync_playwright() as p:
     metrics['clubhouseCenter']=clubhouse_center
     metrics['playerForm']=check_player_form(page)
     metrics['watchScoreStrip'] = check_watch_score_strip(page)
+    metrics['readableText'] = check_readable_text(page)
     metrics['lineupReadiness'] = check_lineup_readiness(page)
     metrics['gameDayScope'] = check_game_day_scope(page)
     metrics['matchupInteractions'] = check_matchup_interactions(page)
