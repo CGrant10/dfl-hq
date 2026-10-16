@@ -1,7 +1,7 @@
 /* DFL HQ splash/header polish — v1.109.9
    Pure presentation. The app still boots underneath the splash exactly as before. */
 
-/* Give the DFL shield a little more presence without changing topbar height. */
+/* Give the DFL brand a little more presence without changing topbar height. */
 .brand-mark {
   width: 36px !important;
   height: 36px !important;

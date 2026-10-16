@@ -282,3 +282,15 @@ posts and notifications; race mutations are exercised only against the local
 fixture. Physical device orientation-lock behavior, native Safari fullscreen and
 VoiceOver/TalkBack are not certified by desktop browser checks. No database,
 permissions, scoring, race draw or notification policy changes were made.
+
+### 1.431 — round in-app branding
+
+Restored the approved black-and-white circular seal at the shared logo paths
+used by card watermarks, identity plates, headers, splash and share cards. Arena
+field branding uses the same round mark. The brand asset builder preserves these
+approved seal bytes; only launcher assets are generated from the shield. App
+icons, notification icon assets and the update-screen shield are unchanged.
+Reviewed the actual shared watermark and identity-plate styles at 320px and
+390px in Medicine Wheel Light/Dark, including the share-card seal. Text remains
+above the decorative mark, existing opacity/inversion rules remain intact, and
+neither phone width overflows. No new colors, theme options or motion were added.

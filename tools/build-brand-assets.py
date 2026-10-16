@@ -1,4 +1,4 @@
-"""Export the approved shield SVG through Chromium; never redraw the brand artwork.
+"""Export the shield for app icons; preserve the round seal for in-app branding.
 Run against the local static server: python tools/build-brand-assets.py
 """
 import base64, json, os
@@ -28,9 +28,6 @@ with sync_playwright() as p:
    return canvas.toDataURL(format,.96).split(',')[1];
   };
   return {bounds,files:{
-   'icons/dfl-logo-512.webp':render(512,.96,false,'image/webp'),
-   'icons/dfl-logo-64.webp':render(64,.96,false,'image/webp'),
-   'icons/dfl-logo-tile-256.webp':render(256,.86,true,'image/webp'),
    'icons/app-192-1410.png':render(192,.86,true),
    'icons/app-512-1410.png':render(512,.86,true),
    'icons/app-maskable-512-1410.png':render(512,.56,true),
@@ -41,6 +38,10 @@ with sync_playwright() as p:
  }''',base+'icons/app-update-aligned.svg')
  browser.close()
 for name,data in result['files'].items():(ROOT/name).write_bytes(base64.b64decode(data))
+# Generic logo paths belong to the round seal, including the legacy share tile.
+# Keep the approved bytes intact; only launcher assets are rendered from the shield.
+for target,source in {'dfl-logo-512.webp':'dfl-seal-512.webp','dfl-logo-64.webp':'dfl-seal-64.webp','dfl-logo-tile-256.webp':'dfl-seal-512.webp'}.items():
+ (ROOT/'icons'/target).write_bytes((ROOT/'icons'/source).read_bytes())
 # Stable paths serve existing notification payloads and old bookmarked install URLs.
 for target,source in {'app-192.png':'app-192-1410.png','app-512.png':'app-512-1410.png','app-maskable-512.png':'app-maskable-512-1410.png','apple-touch-icon.png':'apple-touch-icon-1410.png','icon-192.png':'app-192-1410.png'}.items():
  (ROOT/'icons'/target).write_bytes((ROOT/'icons'/source).read_bytes())
