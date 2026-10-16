@@ -5752,14 +5752,15 @@ html[data-ui-motion="off"] #home-wrap .bx-season-story .bx-season-years b {anima
 #home-wrap .bx-award-call{font:700 15px/1.3 var(--home-ui-font);color:var(--accent);max-width:100%}
 /* Copy owns the upper rows. The faint award stamp and full, contained
    illustration each have their own space below; none sits under a word. */
-#home-wrap .bx-award-word{position:relative;inset:auto;grid-column:1;grid-row:3;align-self:center;justify-self:center;z-index:0;writing-mode:vertical-rl;color:color-mix(in srgb,var(--text) 10%,transparent);font:400 44px/1.3 Anton,sans-serif;letter-spacing:.02em;pointer-events:none}
+#home-wrap .bx-award-word{position:relative;inset:auto;grid-column:1;grid-row:3;align-self:center;justify-self:center;z-index:0;width:64px;height:196px;color:color-mix(in srgb,var(--text) 10%,transparent);font:400 36px/1 Anton,sans-serif;letter-spacing:.02em;pointer-events:none}
+#home-wrap .bx-award-word svg{display:block;width:100%;height:100%;fill:currentColor}
 #home-wrap .bx-award-chip .bx-award-word{color:color-mix(in srgb,var(--accent) 12%,transparent)}
 #home-wrap .bx-award-story .bx-editorial-illustration{position:relative;inset:auto;grid-column:2;grid-row:3;align-self:stretch;justify-self:end;width:100%;max-width:320px;height:196px;z-index:1;overflow:hidden;pointer-events:none;transform:none!important;mask-image:linear-gradient(0deg,transparent,#000 18%,#000 92%,transparent)}
 #home-wrap .bx-award-story .bx-editorial-illustration::after{display:none}
 #home-wrap .bx-award-story .bx-editorial-subject{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;opacity:var(--bx-award-opacity,.65)}
 #home-wrap .bx-award-story .bx-editorial-portrait{display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom;transform:none;filter:grayscale(.3) saturate(.85)}
 :root[data-mode="light"] #home-wrap .bx-award-story{--bx-award-opacity:.55}
-@media(max-width:360px){#home-wrap .bx-award-story .bx-editorial-illustration{height:180px}}
+@media(max-width:360px){#home-wrap .bx-award-story .bx-editorial-illustration,#home-wrap .bx-award-word{height:180px}}
 /* One composed entrance: copy leads, supporting detail and artwork settle once. */
 #home-wrap .bx-slide.bx-in :is(.bx-kicker,.bx-home-week){animation:bx-editorial-copy-in 240ms ease-out both}
 #home-wrap .bx-slide.bx-in :is(.bx-head,.bx-name,.bx-home-title,.bx-stat-story-main,.bx-season-lockup){animation:bx-editorial-copy-in 340ms cubic-bezier(.2,.75,.25,1) 45ms both}
