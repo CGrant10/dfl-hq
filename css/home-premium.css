@@ -2,7 +2,7 @@
 #home-wrap{padding-top:16px;--home-section-gap:30px}
 #home-wrap>.home-newspaper-masthead{margin-bottom:10px;padding-bottom:8px;gap:3px 14px}
 #home-wrap .home-newspaper-name h1{font-size:clamp(27px,8vw,32px);line-height:1.1}
-#home-wrap .home-frontpage{gap:14px}
+#home-wrap .home-frontpage{gap:16px}
 #home-wrap .gameday-matchup{padding-top:6px;gap:16px}
 #home-wrap .gameday-matchup>.gameday-faceoff-team{grid-template-columns:40px minmax(0,1fr);grid-template-rows:minmax(48px,1fr) auto;gap:6px 7px}
 #home-wrap .gameday-matchup>.gameday-faceoff-team:nth-of-type(2){grid-template-columns:minmax(0,1fr) 40px}
@@ -28,6 +28,7 @@
 #home-wrap [data-gameday-chirp]:empty{display:none}
 #home-wrap [data-gameday-chirp] .dfl-chirp{margin-top:12px;border-left:2px solid var(--accent);padding-left:10px}
 @media(min-width:800px){#home-wrap .home-league-stories{display:grid;grid-template-columns:1.2fr 1fr;gap:0 24px}#home-wrap .home-league-story.is-featured{grid-column:1;grid-row:1 / span 3;border:0}#home-wrap .home-league-story:not(.is-featured){grid-column:2}#home-wrap .home-league-story.is-featured .home-story-art{height:190px}}
+@media(min-width:1000px){#home-wrap .home-frontpage{gap:24px}}
 html[data-matchup-transition]::view-transition-group(*){animation-duration:300ms;animation-timing-function:cubic-bezier(.2,.75,.25,1)}
 html[data-matchup-transition]::view-transition-old(root),html[data-matchup-transition]::view-transition-new(root){animation:none}
 html[data-matchup-transition]{view-transition-name:none}
