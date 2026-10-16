@@ -24,10 +24,10 @@ describe('the Home lead follows verified league events',()=>{
   const g=game('1',null,70);g.sides[1].live=1;
   expect(homeLeadStory({model:model([g]),now})).toBeNull();
  });
- it('promotes a recent trade once and retains the exact receipt link',()=>{
+ it('keeps a recent trade separate from the shared daily opener and retains its exact receipt link',()=>{
   const t=trade(now);const deck=homeBroadcastDeck([t],{week:6,now});
-  expect(deck[0]).toMatchObject({sourceKey:'trade:exact',href:'#/trade?tx=exact'});expect(deck[0].body).toContain('Star');
-  expect(deck).toHaveLength(1);expect(homeBroadcastDeck(deck,{now})).toEqual(deck);
+  expect(deck[0].homeFeature).toBe(true);expect(deck[0].href).toBeNull();expect(deck[1]).toBe(t);
+  expect(deck[1].href).toBe('#/trade?tx=exact');expect(deck).toHaveLength(2);expect(homeBroadcastDeck(deck,{now})).toEqual(deck);
  });
  it.each(['2026-10-11T20:00:00Z','2026-10-16T20:00:00Z',null])('does not hype an undated, stale or future trade: %s',at=>{
   expect(homeLeadStory({deck:[trade(at)],now})).toBeNull();
@@ -47,10 +47,10 @@ describe('the Home lead follows verified league events',()=>{
  });
 });
 
-it('labels a quiet-day archive lead as history and avoids showing that card twice',()=>{
+it('retains a quiet-day archive once after the independent daily card',()=>{
  const record={id:'record:one',kind:'record',temporal:'historical',headline:'A team scored 190.40 in 2024.',href:'#/history'};
  const deck=homeBroadcastDeck([record],{now});
- expect(deck[0].kicker).toBe('DFL ARCHIVE');expect(deck[0].body).toBe(record.headline);expect(deck).toHaveLength(1);
+ expect(deck[0].kicker).toContain('DFL DAILY');expect(deck[1]).toBe(record);expect(deck).toHaveLength(2);
 });
 it('leaves unusually long archival copy in its full story instead of squeezing it into the hero',()=>{
  expect(homeLeadStory({archive:{id:'long',headline:'A'.repeat(90)},now})).toBeNull();

@@ -12,6 +12,7 @@ export function startSitMove(swap){
   <header><strong>${esc(call)}</strong><span>${swap.urgent?'':`+${points(swap.gain)} projected pts`}</span></header>
   <div class="ss-pair"><section><small>START${swap.slot?` · ${esc(swap.slot)}`:''}</small>${who(start)}<b>${points(start.points)} <small>proj.</small></b>${start.injuryStatus?`<span class="ss-status">${esc(start.injuryStatus)}</span>`:''}${form(start)}<time>${esc(when(start))}</time></section>
    <section><small>BENCH</small>${who(sit)}<b>${points(sit.points)} <small>proj.</small></b>${sit.injuryStatus?`<span class="ss-status">${esc(sit.injuryStatus)}</span>`:sit.hasGame===false?'<span class="ss-status">No game</span>':''}${form(sit)}<time>${esc(when(sit))}</time></section></div>
+  <button type="button" class="linkbtn" data-player-compare="${esc(start.id)}" data-compare-with="${esc(sit.id)}">Compare players</button>
   ${swap.reassign?.length?`<p class="ss-adjustment">${swap.reassign.map(move=>`Set ${esc(move.player.name)} at ${esc(move.to)}`).join(' · ')}</p>`:''}
   ${swap.backup?`<p class="ss-backup"><b>If inactive</b> ${esc(swap.backup.name)} · ${points(swap.backup.points)} proj.${when(swap.backup)?` · ${esc(when(swap.backup))}`:''}</p>`:''}
   ${start.isRisky&&!swap.backup?'<p class="ss-status">No confirmed healthy backup after kickoff.</p>':''}

@@ -3,6 +3,14 @@ import { nextMoveSlide } from "./home-slides.js";
 import { fitSize, focusShouldPause, renderItem, renderStage, sameStageItem, shouldRun, STAGE_CONTROL } from "./broadcast-stage.js";
 
 describe("editorial Home broadcast", () => {
+  it('keeps the daily opener independent and gives odds and anniversary cards their own composition',()=>{
+    const daily=renderItem({homeFeature:true,headline:'Talk your shit.',subtitle:'Set your lineup.',kicker:'DFL DAILY'},{editorial:true});
+    expect(daily).toContain('<section');expect(daily).not.toContain('href=');expect(daily).not.toContain('bx-home-action');
+    const odds=renderItem({kind:'playoffs',treatment:'stat',figure:'63%',figureLabel:'Playoff odds',headline:'Playoff path'},{editorial:true});
+    expect(odds).toContain('stroke-dasharray="63 100"');expect(odds).toContain('Playoff odds');
+    const season=renderItem({kind:'season',treatment:'stat',figure:10,headline:'Seasons',subtitle:'2017 → 2026'},{editorial:true});
+    expect(season).toContain('ANNIVERSARY SEASON');expect(season).toContain('bx-season-number');expect(season).toContain('The league archive');
+  });
   it('keeps identity and season slides clean while preserving the opener artwork',()=>{
     for(const item of [{kind:'identity',treatment:'hero',headline:'Draft · Golf · Sin · Fold'},{kind:'season',treatment:'stat',figure:'10',headline:'Seasons'}]){
       for(const options of [{editorial:true},{}]){

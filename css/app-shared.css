@@ -5705,3 +5705,91 @@ html[data-readability="comfortable"] .gameday-watch :is(.gd-player-stat-line,.ga
 html[data-readability="comfortable"] #view .td-decision dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,8rem),1fr));gap:12px}
 html[data-readability="comfortable"] #view .td-decision dt{white-space:normal;overflow-wrap:anywhere}
 html[data-readability="comfortable"] #view :is(h1,h2,h3){overflow-wrap:anywhere;min-width:0}
+
+
+/* Source: css/broadcast-premium.css */
+/* Same DFL type and theme, with a composition that belongs to each story. */
+#home-wrap .bx-home-feature .bx-home-title {width:62%;max-width:62%;font-size:clamp(28px,8vw,34px);line-height:1.08;text-wrap:balance;}
+#home-wrap .bx-home-feature .bx-home-shade {background:linear-gradient(90deg,color-mix(in srgb,var(--bg) 97%,transparent),color-mix(in srgb,var(--bg) 88%,transparent) 44%,color-mix(in srgb,var(--bg) 50%,transparent) 64%,transparent 86%);}
+#home-wrap .bx-number-story {display:grid;align-content:start;gap:14px;}
+#home-wrap .bx-number-story .bx-kicker {margin:0;}
+#home-wrap .bx-stat-story-main {display:grid;grid-template-columns:120px minmax(0,1fr);gap:18px;align-items:center;width:100%;}
+#home-wrap .bx-stat-story-main .bx-head {font-size:28px;line-height:1.12;text-wrap:balance;margin:0;}
+#home-wrap .bx-stat-metric {position:relative;display:grid;align-content:center;justify-items:center;min-height:120px;gap:4px;}
+#home-wrap .bx-stat-metric .bx-figure {font-size:64px;line-height:1;margin:0;}
+#home-wrap .bx-stat-metric.is-dial .bx-figure {font-size:40px;}
+#home-wrap .bx-stat-metric .bx-figure::after {display:none;}
+#home-wrap .bx-stat-metric > small {font:700 11px/1.2 var(--home-ui-font);color:var(--body-text);}
+#home-wrap .bx-stat-metric svg {position:absolute;inset:0;width:100%;height:100%;fill:none;stroke-width:3;stroke:var(--line);}
+#home-wrap .bx-stat-metric svg circle:last-child {stroke:var(--accent);stroke-linecap:round;transform:rotate(-90deg);transform-origin:center;}
+#home-wrap .bx-number-story .bx-body {font:500 15px/1.4 var(--home-ui-font);color:var(--body-text);margin:0;}
+#home-wrap .bx-number-story .bx-when {justify-self:start;}
+#home-wrap .bx-season-story {display:grid;align-content:space-between;gap:12px;}
+#home-wrap .bx-season-lockup {display:flex;align-items:end;gap:18px;width:100%;}
+#home-wrap .bx-season-number {font:400 132px/.85 'Anton',var(--font-display);letter-spacing:-.06em;color:var(--text);}
+#home-wrap .bx-season-lockup .bx-head {font-size:32px;line-height:1;margin:0 0 5px;}
+#home-wrap .bx-season-years {display:grid;gap:12px;width:100%;font:600 16px/1.3 var(--home-ui-font);color:var(--body-text);}
+#home-wrap .bx-season-years > i {display:flex;gap:5px;width:100%;height:7px;overflow:hidden;}
+#home-wrap .bx-season-years b {flex:1;background:var(--accent);opacity:.35;}
+#home-wrap .bx-season-years b:last-child {opacity:1;}
+#home-wrap .bx-season-story.bx-in .bx-season-years b:last-child {animation:bx-anniversary-tick 900ms ease-out;}
+@keyframes bx-anniversary-tick {from{opacity:.25;transform:scaleX(.3)}to{opacity:1;transform:scaleX(1)}}
+html[data-ui-motion="off"] #home-wrap .bx-season-story .bx-season-years b {animation:none!important;}
+@media(max-width:360px){#home-wrap .bx-stat-story-main{grid-template-columns:108px minmax(0,1fr);gap:12px;}#home-wrap .bx-stat-metric{min-height:108px;}#home-wrap .bx-season-number{font-size:120px;}}
+@media(prefers-reduced-motion:reduce){#home-wrap .bx-season-story .bx-season-years b{animation:none!important;}}
+
+
+/* Source: css/player-compare.css */
+.dfl-player-compare {width:min(620px,calc(100vw - 24px));max-width:calc(100vw - 24px);height:min(760px,86dvh,var(--dialog-viewport-height,86dvh));max-height:var(--dialog-viewport-height,86dvh);padding:0;overflow:hidden;border-radius:14px;color:var(--text);background:var(--bg);top:var(--dialog-viewport-top,0px);bottom:var(--dialog-viewport-bottom,0px);}
+.dfl-player-compare[open] {display:flex;flex-direction:column;}
+.dfl-player-compare[data-sheet-ready] {animation:none!important;}
+.dfl-player-compare::backdrop {background:rgb(0 0 0 / .48);opacity:var(--sheet-dim,1);}
+.dfl-player-compare[data-ui-closing]::backdrop {animation:ui-backdrop-out 220ms ease forwards;}
+.dfl-player-compare > header {position:relative;display:flex;align-items:center;gap:8px;flex:none;margin:0;padding:20px 14px 10px;background:var(--bg-2);border-bottom:1px solid var(--line);touch-action:none;user-select:none;}
+.dfl-player-compare > header h2 {flex:1;min-width:0;margin:0;font:700 18px/1.3 var(--font-display);}
+.dfl-player-compare > header .linkbtn {min-width:44px;min-height:44px;}
+.dfl-player-compare .dfl-sheet-grip {position:absolute;top:7px;left:calc(50% - 18px);width:36px;height:4px;border-radius:4px;background:var(--muted);opacity:.7;}
+.pc-compare-body {min-height:0;overflow:auto;overscroll-behavior:contain;padding:16px 14px max(20px,env(safe-area-inset-bottom));}
+.pc-compare-heads {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:84px auto auto auto 44px;gap:5px 14px;}
+.pc-compare-heads > section {display:grid;grid-row:span 5;grid-template-rows:subgrid;align-content:start;justify-items:center;min-width:0;text-align:center;}
+.pc-compare-heads .dfl-player-portrait {width:72px;height:84px;border-radius:10px;}
+.dfl-player-compare .dfl-player-portrait {position:relative;display:block;flex:none;overflow:hidden;border:1px solid var(--line);background:var(--bg-3);}
+.dfl-player-compare .dfl-player-portrait i {position:absolute;inset:0;display:grid;place-items:center;font:700 18px var(--font-display);font-style:normal;color:var(--text);}
+.dfl-player-compare .dfl-player-portrait.has-photo i {display:none;}
+.dfl-player-compare .dfl-player-portrait img {position:relative;display:block;width:100%;height:100%;object-fit:cover;object-position:center top;}
+.dfl-player-compare .dfl-player-portrait.is-team img {object-fit:contain;object-position:center;padding:4px;}
+.pc-compare-heads .dfl-player-portrait img {width:100%;height:100%;object-fit:cover;object-position:center top;}
+.pc-compare-heads strong {font:700 17px/1.2 var(--font-display);overflow-wrap:anywhere;}
+.pc-compare-heads :is(small,span:not(.dfl-player-portrait)) {font:500 12px/1.35 var(--font-body);color:var(--body-text);overflow-wrap:anywhere;}
+.pc-compare-heads .linkbtn {min-height:44px;padding:4px 8px;font-size:12px;}
+.pc-compare-add {display:grid;grid-row:1 / -1;place-content:center;gap:10px;width:100%;min-height:142px;border:1px dashed var(--control-line);border-radius:10px;color:var(--accent);background:var(--bg-2);font:700 14px var(--font-body);}
+.pc-compare-add b {font-size:32px;line-height:1;}
+.pc-compare-tabs {position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:12px;border-bottom:1px solid var(--line);}
+.pc-compare-tabs > i {position:absolute;bottom:-1px;left:0;width:50%;height:2px;background:var(--accent);transform:translateX(calc(var(--compare-tab,0)*100%));transition:transform 260ms cubic-bezier(.2,.75,.25,1);}
+.pc-compare-tabs button {min-height:44px;border:0;border-radius:0;background:transparent;color:var(--body-text);font:600 14px var(--font-body);}
+.pc-compare-tabs [aria-selected="true"] {color:var(--text);}
+.pc-compare-body h3 {margin:18px 0 6px;font:700 13px/1.4 var(--font-display);color:var(--body-text);text-transform:uppercase;letter-spacing:.04em;}
+.pc-compare-row {display:grid;grid-template-columns:80px repeat(2,minmax(0,1fr));gap:8px;align-items:center;min-height:44px;padding:8px 0;border-bottom:1px solid var(--line-soft);}
+.pc-compare-row > span {font:500 12px/1.35 var(--font-body);color:var(--body-text);}
+.pc-compare-row > b {font:600 15px/1.35 var(--font-body);text-align:center;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;}
+.pc-compare-row .is-edge {color:var(--accent);}
+.pc-compare-history {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:12px;}
+.pc-compare-history > div {display:flex;justify-content:space-around;gap:4px;}
+.pc-compare-history span {display:grid;gap:5px;text-align:center;font-size:13px;}
+.pc-compare-history small {font-size:11px;color:var(--muted);}
+.pc-compare-source,.pc-compare-status {margin:12px 0 0;color:var(--body-text);font:500 12px/1.4 var(--font-body);}
+.pc-compare-status:empty {display:none;}
+.pc-compare-search {display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:8px;margin:16px 0 8px;}
+.pc-compare-search :is(label,input,select) {min-width:0;width:100%;}
+.pc-compare-search :is(input,select) {box-sizing:border-box;min-height:44px;font-size:14px;}
+.pc-compare-result {display:grid;grid-template-columns:36px minmax(0,1fr) 20px;gap:10px;align-items:center;width:100%;min-height:58px;padding:9px 0;background:transparent;border:0;border-bottom:1px solid var(--line-soft);border-radius:0;color:var(--text);text-align:left;}
+.pc-compare-result .dfl-player-portrait {width:36px;height:42px;}
+.pc-compare-result > span:not(.dfl-player-portrait) {display:grid;gap:4px;min-width:0;}
+.pc-compare-result strong {font:600 15px/1.3 var(--font-body);overflow-wrap:anywhere;}
+.pc-compare-result small {font:500 12px/1.3 var(--font-body);color:var(--body-text);overflow-wrap:anywhere;}
+.dfl-player-compare [hidden] {display:none!important;}
+.dfl-player-compare :is(button,input,select):focus-visible {outline:2px solid var(--accent);outline-offset:2px;}
+.dfl-player-compare[data-ui-closing] {pointer-events:none;}
+html[data-ui-motion="off"] .dfl-player-compare *,html[data-ui-motion="off"] .dfl-player-compare,html[data-ui-motion="off"] .dfl-player-compare::backdrop {animation:none!important;transition:none!important;}
+@media(max-width:600px){.dfl-player-compare{margin: auto 12px 12px;width:calc(100vw - 24px);}}
+@media(prefers-reduced-motion:reduce){.dfl-player-compare *,.dfl-player-compare,.dfl-player-compare::backdrop {animation:none!important;transition:none!important;}}

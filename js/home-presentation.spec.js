@@ -21,7 +21,8 @@ describe('selected Home presentation', () => {
     const original = [{ key: 'manual', headline: 'Commissioner update' }, { key: 'slate' }];
     const deck = homeBroadcastDeck(original, { week: 5, now: new Date('2026-10-05T12:00:00Z') });
     expect(deck.slice(1)).toEqual(original);
-    expect(deck[0].kicker).toContain('Week 5');
+    expect(deck[0].kicker).toContain('DFL DAILY');
+    expect(deck[0].href).toBeNull();
     expect(homeBroadcastDeck(deck)).toHaveLength(3);
   });
   it('uses strict boundaries and delays cold until halftime while keeping zero honest', () => {

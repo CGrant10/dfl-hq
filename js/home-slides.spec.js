@@ -350,7 +350,8 @@ describe("playoff picture slide", () => {
     }], gameOfWeek: { a: { name: "Alpha" }, b: { name: "Beta" }, spread: 2.4 } }, "me");
     expect(slide.figure).toBe("63%");
     expect(slide.headline).toBe("INSIDE THE PROJECTED FIELD");
-    expect(slide.subtitle).toContain("Game of the week: Alpha vs Beta");
+    expect(slide.subtitle).toBe("My Team · Projected 4TH seed.");
+    expect(slide.figureLabel).toBe('Playoff odds');
   });
 });
 

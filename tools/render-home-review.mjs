@@ -8,7 +8,7 @@ import { homeInjuryPanelMarkup } from '../js/home-injury-panel.js';
 import { renderStage } from '../js/broadcast-stage.js';
 import { homeRivalryStory } from '../js/home-clubhouse.js';
 import { primarySeasonNavMarkup } from '../js/season-nav.js';
-import { matchupPreviewSlide, tradeAlertSlide, nextMoveSlide } from '../js/home-slides.js';
+import { matchupPreviewSlide, tradeAlertSlide, nextMoveSlide, playoffPictureSlide } from '../js/home-slides.js';
 import { disclosure } from '../js/page-disclosure.js';
 import { MEDICINE_GROUND, teamPalette } from '../js/team-theme.js';
 import { activityLine } from '../js/activity.js';
@@ -119,6 +119,7 @@ const deck = homeBroadcastDeck([
   { id: 'fixture:slate', treatment: 'slate', kicker: '2026 · Week 5', fixtures: [{ key: 'fixture:matchup', a: { name: 'Klutch Sports Group', score: '124.80', status: '3 still playing', identity: { display_name: 'Grant' } }, b: { name: 'Dream Enders', score: '118.20', status: 'Final', identity: { display_name: 'Mike' } } }], temporal: 'live', href: '#/clubhouse' },
   { id: 'fixture:event', treatment: 'event', kicker: 'League calendar', headline: 'Anniversary golf weekend', subtitle: 'The next chapter starts on the first tee.', body: 'Saturday, October 10 · 9:00 AM', temporal: 'upcoming', href: '#/calendar' },
   { id: 'fixture:hero', treatment: 'hero', kicker: 'Ten seasons of DFL', headline: 'Draft. Golf. Repeat.', subtitle: 'A decade of matchups, rivalries and receipts.', temporal: 'none' },
+  playoffPictureSlide({season:2026,week:6,rows:[{sleeperUserId:'me',name:'The Bayou Bombers',status:'alive',projection:{playoffOdds:1,seed:1}}]},'me'),
   { id: 'fixture:season',kind:'season',treatment:'stat',figure:'10',headline:'Seasons',kicker:'DFL',subtitle:'2017 → 2026',temporal:'none',href:'#/history' },
   { id: 'fixture:image', treatment: 'announcement', kicker: 'League highlight', headline: 'Under the lights.', body: 'Follow the matchup stories from kickoff to the final whistle.', background: 'image', image: 'assets/home-broadcast-stadium.webp', href: '#/clubhouse', temporal: 'live' },
   { id:'fixture:archive-record',kind:'record',storyKind:'nailbiter',treatment:'stat',figure:0.04000001,headline:'Won by 0.04',subtitle:'Klutch Sports Group — azhee28 102.00 – 101.96 Waddle Waddle — Brandooooo24 · 2025 Week 3',href:'#/history',temporal:'historical' },
@@ -202,7 +203,7 @@ html = html.replace('</body>', `<script type="module">
   window.reviewInjuryPanel=mountHomeInjuryPanel(document.querySelector('.home-injury-panel'),{getReport:()=>window.reviewInjuryReport});window.reviewInjuryPanel.update();
   window.reviewStage = startStage(document.querySelector('[data-bx-stage]'), deck);
   if (window.reviewHoldInitialStage) window.reviewStage.suspend('initial-review', true);
-  window.reviewSetEdition = edition => window.reviewStage.update(homeBroadcastDeck(deck.filter(item=>!item.homeFeature),{week:5,edition:edition||{}}));
+  window.reviewSetEdition = edition => window.reviewStage.update(homeBroadcastDeck(deck.filter(item=>!item.homeFeature),{week:5,edition:edition||{},now:new Date('2026-10-05T12:00:00Z')}));
   window.reviewVfx = mountScoreVfx(document.querySelector('[data-home-live-slot]'));
   mountSeasonNavigation();
   document.querySelector('#tabbar [data-route="home"]').classList.add('on');
