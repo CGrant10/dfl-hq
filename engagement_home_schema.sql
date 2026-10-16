@@ -1,4 +1,4 @@
--- DFL HQ engagement pass: Wall reactions + automatic Arena aftermath slides.
+-- DFL HQ engagement pass: Wall reactions. Arena aftermath slides are retired.
 -- Safe to re-run.
 
 create table if not exists public.wall_reactions (
@@ -42,48 +42,9 @@ create trigger wall_reactions_touch
 before update on public.wall_reactions
 for each row execute function public.dfl_touch_wall_reaction();
 
--- A finished Arena race should leave a little smoke behind on Home. The
--- winning result creates one temporary hand-written-style Broadcast item.
--- It expires after three days and is deduplicated by its result link.
-create or replace function public.dfl_arena_aftermath_broadcast()
-returns trigger
-language plpgsql
-security definer
-set search_path=public
-as $$
-declare
-  winner_name text;
-  event_name text;
-  result_href text;
-begin
-  if new.place <> 1 then return new; end if;
-
-  select coalesce(m.display_name, 'Somebody'), coalesce(e.name, 'DFL Arena')
-    into winner_name, event_name
-  from public.arena_events e
-  left join public.members m on m.id = new.member_id
-  where e.id = new.event_id;
-
-  if winner_name is null then return new; end if;
-  result_href := '#/arena-results?id=' || new.event_id::text;
-
-  if not exists (
-    select 1 from public.broadcast_items
-    where href = result_href and kicker = 'ARENA AFTERMATH'
-  ) then
-    insert into public.broadcast_items(
-      treatment,kicker,headline,subtitle,href,temporal,active,
-      starts_at,ends_at,dwell_seconds,background,sort_order
-    ) values (
-      'champion','ARENA AFTERMATH',winner_name || ' just folded everyone',event_name,
-      result_href,'recent',true,now(),now() + interval '3 days',5,'default',0
-    );
-  end if;
-
-  return new;
-end $$;
-
+-- Retire both automatic and saved Arena winner slides; keep race results intact.
 drop trigger if exists arena_result_aftermath_broadcast on public.arena_results;
-create trigger arena_result_aftermath_broadcast
-after insert on public.arena_results
-for each row execute function public.dfl_arena_aftermath_broadcast();
+drop function if exists public.dfl_arena_aftermath_broadcast();
+update public.broadcast_items set active=false
+ where kicker='ARENA AFTERMATH' and treatment='champion'
+ and (href like '#/arena-results?id=%' or href like '#/arena?id=%');

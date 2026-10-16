@@ -764,23 +764,6 @@ function loreItems(ctx) {
   }));
 }
 
-function arenaItem(ctx) {
-  const results = ctx.lore?.arenaResults || [];
-  const events = ctx.lore?.arenaEvents || [];
-  const byMember = new Map((ctx.members || []).map((m) => [String(m.id), m]));
-  for (const ev of events) {
-    const w = results.find((r) => String(r.event_id) === String(ev.id) && r.place === 1);
-    if (!w) continue;
-    const m = byMember.get(String(w.member_id));
-    return [item({
-      kind: "arena", treatment: "champion", temporal: "historical", priority: P.HISTORY,
-      kicker: "DFL Arena", headline: m?.display_name || "Somebody",
-      subtitle: ev.name || "", href: `#/arena?id=${ev.id}`,
-    })];
-  }
-  return [];
-}
-
 /*
   TODAY'S FUN FACT.
 
@@ -839,7 +822,6 @@ export const GENERATORS = [
   ["seasonStat", seasonStatItem],
   ["dues", duesItem],
   ["lore", loreItems],
-  ["arena", arenaItem],
   ["funfact", funFactItem],
   ["identity", identityItem],
 ];

@@ -11,7 +11,7 @@ root=Path(__file__).resolve().parents[1];out=Path(os.environ.get('DFL_ARENA_REVI
 members=[{'id':i+1,'display_name':name,'team_name':team,'active':True,'profile_image':'','accent_color':''} for i,(name,team) in enumerate([('Cody Grant','The Bayou Bombers'),('Kirk Franklin','Dakota Thunder'),('Marcus Williams','Full Send Football'),('David Jefferson','Fourth & Fuck It'),('Brandon Thomas','The Longest Team Name In The Entire League'),('Nathan Lewis','Red River Renegades'),('Chris Brown','Monday Night Mayhem'),('Andrew Martin','Big Sack Energy'),('Tyler James','Bison Stampede'),('Matt Robertson','No Punt Intended'),('Alex Johnson','The Bench Mob'),('Jesse Peterson','Saturday’s Hangover')])]
 event={'id':999,'name':'2026 Draft Order','race_engine':'stadium-v1','race_duration_ms':60000,'race_revision':1,'race_manifest':None,'status':'setup','bc_state':'idle','bc_offset_ms':0,'bc_started_at':None}
 participants=[{'member_id':m['id'],'sort_order':i,'number':i+1,'color':None} for i,m in enumerate(members)]
-kits={};kit_saves=[];results=[];commands=[];base=time.time()*1000;elapsed=0;started=time.time();freeze=False;lock=threading.RLock()
+removed=False;kits={};kit_saves=[];results=[];commands=[];base=time.time()*1000;elapsed=0;started=time.time();freeze=False;lock=threading.RLock()
 def server_ms():return time.time()*1000
 def shared_elapsed():return elapsed+(0 if freeze else (time.time()-started)*1000)
 def set_elapsed(value,paused=False):
@@ -26,7 +26,7 @@ def snapshot(role):
   if event['bc_state']=='running' and shared_elapsed()>=event['race_duration_ms']:
    results=[{'member_id':int(x),'place':i+1,'finish_ms':round(event['race_duration_ms']*(.975+.025*i/(len(participants)-1)))} for i,x in enumerate(event['race_manifest']['order'])];event['bc_state']='finished';event['status']='complete';event['bc_offset_ms']=event['race_duration_ms'];event['bc_started_at']=None;event['race_revision']+=1
   return copy.deepcopy({'event':event,'participants':participants,'results':results,'server_ms':server_ms(),'can_control':role=='commissioner','racer_kits':list(kits.values())})
-stub="""export const db=()=>({rpc:async(name,args)=>{const r=await fetch('/qa/'+name,{method:'POST',headers:{'Content-Type':'application/json','X-Role':localStorage.getItem('qaRole')||'spectator','X-Member':localStorage.getItem('qaMember')||'1'},body:JSON.stringify(args)});const data=await r.json();return r.ok?{data,error:null}:{data:null,error:data}},from:table=>{let id=0;const q={select(){return q},order(){return q},limit(){return q},then:async resolve=>{const r=await fetch('/qa/arena_stadium_snapshot',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});resolve({data:[(await r.json()).event],error:null})},eq(k,v){id=v;return q},maybeSingle:async()=>{const r=await fetch('/qa/qa_load_racer_kit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({member_id:id})});return {data:await r.json(),error:null}}};return q},channel:()=>{const c={on(){return c},subscribe(){return c},unsubscribe(){window.qaUnsubscribed=(window.qaUnsubscribed||0)+1},presenceState(){return {}},track(){}};return c}});"""
+stub="""export const db=()=>({rpc:async(name,args)=>{const r=await fetch('/qa/'+name,{method:'POST',headers:{'Content-Type':'application/json','X-Role':localStorage.getItem('qaRole')||'spectator','X-Member':localStorage.getItem('qaMember')||'1'},body:JSON.stringify(args)});const data=await r.json();return r.ok?{data,error:null}:{data:null,error:data}},from:table=>{let id=0;const q={select(){return q},order(){return q},limit(){return q},then:async resolve=>{const r=await fetch('/qa/arena_stadium_snapshot',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});const value=await r.json();resolve({data:value.event?[value.event]:[],error:null})},eq(k,v){id=v;return q},maybeSingle:async()=>{const r=await fetch('/qa/qa_load_racer_kit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({member_id:id})});return {data:await r.json(),error:null}}};return q},channel:()=>{const c={on(){return c},subscribe(){return c},unsubscribe(){window.qaUnsubscribed=(window.qaUnsubscribed||0)+1},presenceState(){return {}},track(){}};return c}});"""
 head=(root/'index.html').read_text().split('</head>')[0].replace('<head>','<head><base href="/">')+'</head>'
 html=head+'''<body><div class="app"><header class="topbar" style="height:52px"><b>DFL HQ</b></header><main id="view" class="view page-in" data-route="arena"></main><nav class="bottomnav" style="height:54px"><b>DFL</b><span>Home</span><span>GameDay</span><span>Clubhouse</span></nav></div><div id="toast" class="hidden" role="status"></div><script type="module">import {render,leave} from './js/pages/arena-stadium.js';import {saveMode} from './js/theme.js';window.qaTheme=saveMode;window.qaLeave=leave;window.qaRefresh=()=>render(document.querySelector('#view'));await qaRefresh();window.qaReady=true;</script></body></html>'''
 class Handler(SimpleHTTPRequestHandler):
@@ -41,9 +41,11 @@ class Handler(SimpleHTTPRequestHandler):
   if body is not None:self.send_response(200);self.send_header('Content-Type','text/html' if name=='/qa.html' else 'text/javascript');self.end_headers();self.wfile.write(body.encode());return
   super().do_GET()
  def do_POST(self):
-  global elapsed,freeze,started,participants
+  global elapsed,freeze,started,participants,results,removed
   body=json.loads(self.rfile.read(int(self.headers['Content-Length'])));role=self.headers.get('X-Role');me=int(self.headers.get('X-Member') or 1);error=None
   with lock:
+   if removed and self.path.endswith('arena_stadium_snapshot'):
+    self.send_response(400);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(json.dumps({'code':'22023','message':'Race not found.'}).encode());return
    if self.path.endswith('profile_lock_status') or self.path.endswith('qa_load_racer_kit') or self.path.endswith('arena_save_racer_kit'):
     data=False
     if self.path.endswith('qa_load_racer_kit'):data=kits.get(int(body['member_id']))
@@ -63,7 +65,13 @@ class Handler(SimpleHTTPRequestHandler):
      if event['bc_state']=='paused':elapsed=elapsed/event['race_duration_ms']*(body['p_duration_seconds']*1000) if elapsed>=0 else elapsed
      event['race_duration_ms']=body['p_duration_seconds']*1000;event['name']=body['p_name'];event['race_revision']+=1
      if event['bc_state']=='idle':participants=[{'member_id':id,'sort_order':i,'number':i+1} for i,id in enumerate(body['p_member_ids'])]
-    elif action=='reset':event['bc_state']='idle';event['race_manifest']=None;event['race_revision']+=1
+    elif action=='reset':
+     if event['bc_state']=='finished':error={'code':'22023','message':'The finish is locked.'}
+     else:event['race_revision']+=2 if event['bc_state']=='running' else 1;event['bc_state']='idle';event['status']='setup';event['race_manifest']=None;event['seed']=None;event['bc_offset_ms']=0;event['bc_started_at']=None;elapsed=0;freeze=True;results=[]
+    elif action=='remove':
+     if event['bc_state']!='finished':error={'code':'22023','message':'Only past races can be removed.'}
+     else:
+      removed=True;self.send_response(200);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(json.dumps({'removed_id':event['id']}).encode());return
    self.send_response(400 if error else 200);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(json.dumps(error or snapshot(role)).encode())
  def translate_path(self,path):return str(root/path.split('?')[0].lstrip('/'))
  def log_message(self,*args):pass
@@ -87,6 +95,19 @@ with sync_playwright() as p:
   return c,page
  c,admin=context('commissioner');d,watch=context()
  check('commissioner opens with accessible controls instead of forced fullscreen',not admin.evaluate('qaStartedExpanded') and admin.locator('[data-edit]').is_visible())
+ admin.locator('[data-expand]').click();admin.wait_for_function('document.fullscreenElement===document.querySelector(".sr-stage")||document.querySelector(".sr-stage").classList.contains("sr-expanded")')
+ for mode in ['field','follow','auto']:
+  admin.locator('[data-camera='+mode+']').click();check('fullscreen '+mode+' camera stays inside watch view',admin.locator('[data-camera='+mode+']').evaluate('e=>{const s=e.closest(".sr-stage").getBoundingClientRect(),r=e.getBoundingClientRect();return e.getAttribute("aria-pressed")==="true"&&r.top>=s.top&&r.bottom<=s.bottom&&r.height>=44}'))
+  if mode=='follow':
+   admin.locator('[data-follow-select]').select_option('5');check('fullscreen racer can be chosen',admin.locator('[data-follow-select]').input_value()=='5' and admin.locator('[data-camera=follow]').get_attribute('aria-pressed')=='true')
+ print('FULLSCREEN LAYOUT',admin.evaluate("()=>({h:innerHeight,native:!!document.fullscreenElement,rows:[...document.querySelectorAll('.sr-stage,.sr-watch-toolbar,.sr-watch-surface,canvas,.sr-moment,.sr-controls')].map(e=>({c:e.className,h:e.getBoundingClientRect().height,css:getComputedStyle(e).height,flex:getComputedStyle(e).flex}))})"),flush=True)
+ admin.screenshot(path=str(out/'fullscreen-layout.png'))
+ check('compact fullscreen toolbar gives most height to the race',admin.locator('canvas').evaluate('e=>e.getBoundingClientRect().height>=innerHeight*.55'))
+ check('stadium heading uses at most 44px',admin.locator('.sr-stage').evaluate('e=>parseFloat(e.style.getPropertyValue("--sr-field-top"))<=44'))
+ for mode in ['dark','light']:
+  admin.evaluate('m=>qaTheme(m)',mode);admin.screenshot(path=str(out/('fullscreen-'+mode+'.png')))
+ admin.locator('[data-expand]').click();admin.wait_for_function('!document.fullscreenElement&&!document.querySelector(".sr-stage").classList.contains("sr-expanded")')
+
  admin.set_viewport_size({'width':390,'height':844});admin.wait_for_selector('.sr-orientation-gate[open]')
  check('portrait gate only covers the field',admin.locator('.sr-orientation-gate').evaluate('e=>!e.matches(":modal")') and admin.locator('[data-edit]').is_enabled())
  admin.locator('[data-edit]').click();admin.wait_for_selector('.sr-editor input[name=name]');admin.locator('[name=name]').fill('Portrait edit draft');check('commissioner can edit in portrait',admin.locator('[name=name]').input_value()=='Portrait edit draft');admin.wait_for_timeout(700);admin.screenshot(path=str(out/'commissioner-portrait-editor.png'));
@@ -111,6 +132,9 @@ with sync_playwright() as p:
  admin.locator('[data-all]').click();admin.locator('[type=submit]').click();check('requires at least two selected racers',admin.locator('.sr-form-error').is_visible());admin.locator('[data-all]').click();admin.locator('[name=name]').fill('The Boys • Draft Order');admin.locator('[data-duration="90"]').click();admin.locator('[type=submit]').click();admin.wait_for_function('document.querySelector("[data-name]").textContent.includes("The Boys")')
  check('saved duration displayed',admin.locator('[data-duration-label]').inner_text()=='1:30');check('race editor closes',not admin.locator('.sr-editor-host').is_visible())
  admin.locator('[data-command=start]').click();admin.wait_for_selector('[data-command=pause]');watch.wait_for_function('document.querySelector("[data-state-label]").textContent==="Live"');check('both viewers receive shared start')
+ admin.locator('[data-reset]').click();admin.locator('[data-cancel-reset]').click();check('cancel reset keeps the live draw',event['bc_state']=='running')
+ before=len(commands);admin.locator('[data-reset]').click();admin.locator('[data-confirm]').click();admin.wait_for_selector('[data-command=start]');check('running reset is one maintenance command',len(commands)==before+1 and commands[-1]['p_action']=='reset');check('reset clears the draw and keeps racers',event['race_manifest'] is None and len(participants)==12)
+ admin.locator('[data-command=start]').click();admin.wait_for_selector('[data-command=pause]')
  admin.locator('[data-command=pause]').click();admin.wait_for_selector('[data-command=resume]');watch.wait_for_function('document.querySelector("[data-overlay]").textContent==="HOLD THE LINE"');positions=watch.locator('.sr-position').evaluate_all('es=>es.map(e=>e.style.transform)');watch.wait_for_timeout(900);check('paused positions do not advance',positions==watch.locator('.sr-position').evaluate_all('es=>es.map(e=>e.style.transform)'))
  admin.locator('[data-command=resume]').click();admin.wait_for_selector('[data-command=pause]');set_elapsed(36000);admin.wait_for_timeout(2400)
  admin.locator('[data-camera=field]').click();admin.wait_for_timeout(700);admin.evaluate('scrollTo({top:0,behavior:"instant"})');admin.screenshot(path=str(out/'arena-full-field-racing.png'));check('full-field overlay stays within map',admin.locator('.sr-stage').get_attribute('data-field-overview')=='true');admin.locator('[data-camera=auto]').click();admin.wait_for_timeout(700);admin.evaluate('scrollTo({top:0,behavior:"instant"})');admin.screenshot(path=str(out/'arena-390-racing.png'));watch.screenshot(path=str(out/'arena-390-spectator.png'))
@@ -128,6 +152,18 @@ with sync_playwright() as p:
  admin.set_viewport_size({'width':844,'height':390});admin.wait_for_timeout(200);check('landscape has no overflow',admin.evaluate('document.documentElement.scrollWidth<=innerWidth'));
  if admin.locator('.sr-stage').evaluate("e=>e.classList.contains('sr-expanded')"):admin.locator('[data-expand]').click()
  reduced_c,reduced=context(reduced='reduce');check('reduced motion respected',reduced.locator('.sr-room').get_attribute('data-motion')=='off');reduced.locator('[data-my-racer]').click();reduced.wait_for_selector('.sr-kit-dialog[open]');reduced.evaluate('async()=>{const {loadRacerArt}=await import("/js/arena/racer-kit-art.js");await loadRacerArt()}');check('uniform preview updates immediately with reduced motion',reduced.evaluate("""()=>{const d=document.querySelector('.sr-kit-dialog'),c=d.querySelector('canvas'),sum=()=>c.getContext('2d').getImageData(0,0,c.width,c.height).data.reduce((a,v,i)=>a+(i%4===3?0:v),0);d.querySelector('[data-kit-part=jersey]').click();d.querySelector('[data-kit-color="#bb2038"]').click();const red=sum();d.querySelector('[data-kit-color="#ffffff"]').click();return sum()>red&&d.querySelector('[name=jersey]').value==='#ffffff'}"""));reduced.keyboard.press('Escape');reduced.wait_for_function('!document.querySelector(".sr-kit-dialog")');admin.locator('button[data-motion]').click();check('motion toggle stored',admin.evaluate("localStorage.getItem('dfl.reduceRaceMotion')==='1'"))
+ admin.set_viewport_size({'width':390,'height':844});admin.evaluate('async()=>{location.hash="#/arena";await qaRefresh()}');watch.evaluate('async()=>{location.hash="#/arena";await qaRefresh()}');check('spectators cannot remove past races',watch.locator('[data-remove-race]').count()==0)
+ denied=watch.evaluate('async()=>{const {db}=await import("/js/supabase.js");return (await db().rpc("arena_stadium_command",{p_event_id:999,p_action:"remove",p_revision:'+str(event['race_revision'])+'})).error?.code}')
+ check('unauthorized deletion is rejected by server fixture',denied=='42501')
+ admin.locator('[data-remove-race]').click();admin.locator('[data-cancel-remove]').click();check('cancel removal keeps official results',not removed and len(results)==12)
+ admin.locator('[data-remove-race]').click();event['race_revision']+=1;admin.locator('[data-confirm-remove]').click();admin.wait_for_selector('.sr-remove-confirm [role=alert]:not([hidden])');check('stale removal keeps the past race',not removed)
+ admin.evaluate('async()=>{await qaRefresh()}')
+ for mode in ['dark','light']:
+  admin.evaluate('m=>qaTheme(m)',mode);admin.locator('[data-remove-race]').click()
+  check(mode+' past-race title has readable contrast',admin.locator('.sr-history-row .sr-event').evaluate('''e=>{const rgb=v=>(v.match(/[\d.]+/g)||[]).slice(0,3).map(Number),l=v=>rgb(v).map(x=>x/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4).reduce((n,x,i)=>n+x*[.2126,.7152,.0722][i],0),s=getComputedStyle(e),a=l(s.color),b=l(s.backgroundColor);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)>=4.5}'''))
+  admin.screenshot(path=str(out/('past-race-'+mode+'.png')));admin.locator('[data-cancel-remove]').click()
+ admin.locator('[data-remove-race]').click();admin.locator('[data-confirm-remove]').click();admin.wait_for_function('!document.querySelector(".sr-history-row")');check('commissioner removes a past race from the lobby',removed);check('removing a race keeps shared racer kits',len(kits)==2)
+ late.evaluate('window.dispatchEvent(new Event("online"))');late.wait_for_function('document.querySelector("#view").textContent.includes("Race removed.")');check('open viewers leave a removed race cleanly')
  admin.evaluate('window.qaLeave()');watch.evaluate('window.qaLeave()');check('leaving removes gate and portrait scroll lock',not admin.locator('.sr-orientation-gate').count() and not watch.locator('.sr-orientation-gate').count() and not watch.evaluate('document.body.classList.contains("sr-landscape-required")'));check('subscriptions cleaned up',admin.evaluate('window.qaUnsubscribed')>=1 and watch.evaluate('window.qaUnsubscribed')==1)
  check('no browser errors',not report['errors']);browser.close()
 server.shutdown()

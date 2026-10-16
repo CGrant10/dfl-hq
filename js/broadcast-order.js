@@ -43,7 +43,6 @@ export const GENERATOR_LABELS = new Map([
   ["seasonStat",    ["Season stats", "Figures from the current season"]],
   ["dues",          ["Dues", "What the league is owed"]],
   ["lore",          ["Moments", "Rivalries and league history"]],
-  ["arena",         ["Arena", "Racer events"]],
   ["funfact",       ["Did you know?", "The day's fantasy fun fact"]],
 ]);
 
@@ -84,7 +83,6 @@ export const GENERATOR_BASE = new Map([
   ["chipEater",     P.HISTORY + 10],
   ["records",       P.HISTORY],
   ["lore",          P.HISTORY],
-  ["arena",         P.HISTORY],
   ["identity",      P.IDENTITY],
 ]);
 

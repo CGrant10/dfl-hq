@@ -75,7 +75,7 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
   if(closed)return;getSize();lastFrame=frame;lastOptions={state,runId,now,replay,celebration};const enabled=motion(),dt=Math.min(.08,Math.max(.001,(now-lastTime)/1000));lastTime=now;
   const overview=camera().mode==='field';
   const sideBattle=overview&&width>height*1.55,trackWidth=sideBattle?Math.round(width*.68):width;
-  const n=racers.length,top=Math.max(94,Math.min(128,height*.27)),available=height-top-22,fieldH=overview&&!sideBattle?Math.max(90,Math.min(width/2.35,available-116)):available,laneH=Math.max(26,fieldH/n),worldH=laneH*n;
+  const n=racers.length,top=Math.max(30,Math.min(44,height*.11)),available=height-top-22,fieldH=overview&&!sideBattle?Math.max(90,Math.min(width/2.35,available-116)):available,laneH=Math.max(26,fieldH/n),worldH=laneH*n;
   const layout=`${overview}:${top}:${fieldH}:${trackWidth}`;if(layout!==lastLayout){lastLayout=layout;onLayout({overview,top,fieldHeight:fieldH,fieldWidth:trackWidth});}
   const live=state==='running'||replay,elapsed=Math.max(0,frame?.elapsed||0),u=frame?.u||0,rows=frame?.rows||racers.map((r,index)=>({id:String(r.id),index,progress:0,speed:0,finished:false}));
   const leaders=frame?.ranked||rows,leader=leaders[0];
@@ -92,8 +92,7 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
   if(stadium.complete&&stadium.naturalWidth)ctx.drawImage(stadium,0,0,stadium.naturalWidth,stadium.naturalHeight*.65,0,0,width,top);
   else {const gradient=ctx.createLinearGradient(0,0,0,top);gradient.addColorStop(0,'#07111f');gradient.addColorStop(1,'#351625');ctx.fillStyle=gradient;ctx.fillRect(0,0,width,top);}
   const shade=ctx.createLinearGradient(0,top-28,0,top+10);shade.addColorStop(0,'#09101b00');shade.addColorStop(1,'#0b1821');ctx.fillStyle=shade;ctx.fillRect(0,top-28,width,38);
-  ctx.fillStyle='#dfcdae';ctx.font='700 22px Anton, Rajdhani, sans-serif';ctx.textAlign='center';ctx.fillText('DFL STADIUM',width/2,top-36);
-  ctx.fillStyle='#faf7ef';ctx.font='700 11px Rajdhani, sans-serif';ctx.fillText(following?racers[following.index].name.toUpperCase():view.mode==='field'?'FULL FIELD':state==='finished'&&!replay?'OFFICIAL FINISH':battle?'BATTLE CAM':u>.90?'THE FINAL SPRINT':'THE LEAGUE’S STARTING LINE',width/2,top-16,width-32);
+  ctx.fillStyle='#dfcdae';ctx.font='700 10px Rajdhani, sans-serif';ctx.textAlign='center';ctx.fillText(following?racers[following.index].name.toUpperCase():view.mode==='field'?'FULL FIELD':state==='finished'&&!replay?'OFFICIAL FINISH':battle?'BATTLE CAM':u>.90?'THE FINAL SPRINT':'DFL ARENA',width/2,top-12,width-32);
   ctx.save();ctx.beginPath();ctx.rect(0,top,trackWidth,fieldH+5);ctx.clip();
   const baseScale=(overview?fieldH-40:fieldH)/worldH,yScale=baseScale*zoom,lower=Math.max(worldH/2/zoom,Math.min(worldH-worldH/2/zoom,panY));
   const yOf=index=>top+fieldH/2+((index+.5)*laneH-lower)*yScale;

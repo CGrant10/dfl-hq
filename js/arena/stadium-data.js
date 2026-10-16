@@ -8,6 +8,10 @@ export async function commandStadiumRace(snapshot,action,{name,duration,memberId
   p_name:name??null,p_duration_seconds:duration??null,p_member_ids:memberIds??null});
  if(error)throw error;if(!data?.event)throw Error('The race could not be changed.');return data;
 }
+export async function removeStadiumRace(event){
+ const {data,error}=await db().rpc('arena_stadium_command',{p_event_id:event.id,p_action:'remove',p_revision:event.race_revision});
+ if(error)throw error;if(String(data?.removed_id)!==String(event.id))throw Error('The race could not be removed.');return data;
+}
 export function createStadiumClock(now=()=>performance.now()){
  let server=0,at=0;
  return {sync(serverMs,sentAt,receivedAt=now()){server=Number(serverMs)+Math.max(0,receivedAt-sentAt)/2;at=receivedAt;},now:()=>server+now()-at};
