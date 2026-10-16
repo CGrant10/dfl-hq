@@ -37,6 +37,7 @@ import {broadcastArtworkOffset,broadcastSettleDuration} from './broadcast-gestur
 import { mountBroadcastDepth } from './broadcast-depth.js';
 import { mountHorizontalSwipe } from './horizontal-swipe.js';
 import { animateUi, cancelUiMotion } from './ui-motion.js';
+import { scrollChromeBottom } from './scroll-chrome.js';
 
 
 /* The chip that keeps the stage honest. Every item that makes a temporal
@@ -609,9 +610,12 @@ export function startStage(root, deck, { refresh } = {}) {
   let userPaused = reduced();   // reduced motion starts still, not broken
   const soft = new Set();
   let dead = false;
-  let inViewport = typeof IntersectionObserver !== 'function';
+  let inViewport = false;
+  let visibilityFrame = 0;
+  let readingStarted = false;
   let refreshing = false;
   if (!inViewport) soft.add('offscreen');
+  if (document.hidden) soft.add('hidden');
 
   const layer = root.querySelector("[data-bx-layer]");
   const editorial = root.dataset.presentation === "editorial";
@@ -888,14 +892,38 @@ export function startStage(root, deck, { refresh } = {}) {
     if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
   };
   const onVis = () => { softPause("hidden", document.hidden); armPoll(); };
-  const intersection = typeof IntersectionObserver === 'function' ? new IntersectionObserver(entries => {
-    const entry = entries.find(entry => entry.target === root);
-    if (!entry || dead) return;
-    inViewport = entry.isIntersecting;
+  // A sliver below the fold is not a read. Start a full dwell only once
+  // most of the card (or the usable viewport on short screens) is visible.
+  // Fixed navigation and the collapsed score strip do not count as space.
+  function checkVisibility() {
+    visibilityFrame = 0;
+    if (dead) return;
+    let top = scrollChromeBottom();
+    const dock = document.querySelector('.home-score-dock:not([hidden]):not([inert])');
+    if (dock) top = Math.max(top, dock.getBoundingClientRect().bottom);
+    const nav = innerWidth < 900 ? document.querySelector('#tabbar')?.getBoundingClientRect() : null;
+    const bottom = nav?.height ? Math.min(innerHeight, nav.top) : innerHeight;
+    const box = root.getBoundingClientRect();
+    const visible = Math.max(0, Math.min(box.bottom, bottom) - Math.max(box.top, top));
+    const enoughVisible = box.height > 0 && bottom > top && visible >= .75 * Math.min(box.height, bottom - top);
+    // On Home, leave the opener alone while attention is still on GameDay
+    // above it. The first read starts as the card reaches the upper third.
+    const readable = enoughVisible && (readingStarted || box.top <= top + .35 * (bottom - top));
+    if (readable) readingStarted = true;
+    if (readable === inViewport) return;
+    inViewport = readable;
     softPause('offscreen', !inViewport);
     armPoll();
-  }) : null;
+  }
+  const scheduleVisibility = () => {
+    if (!dead && !visibilityFrame) visibilityFrame = requestAnimationFrame(checkVisibility);
+  };
+  const intersection = typeof IntersectionObserver === 'function'
+    ? new IntersectionObserver(scheduleVisibility, { threshold: [0, .25, .5, .75, 1] }) : null;
   intersection?.observe(root);
+  window.addEventListener('scroll', scheduleVisibility, { passive: true });
+  window.addEventListener('resize', scheduleVisibility);
+  scheduleVisibility();
   /* =====================================================================
      THE TWO LATCHES THAT KILLED AUTOPLAY AFTER ONE ARROW PRESS.
 
@@ -1138,6 +1166,7 @@ export function startStage(root, deck, { refresh } = {}) {
   arm();
   armPoll();
   paintButton();          // reduced motion starts paused; say so on the button
+  markStill();            // the progress bar also waits for the first real view
 
   return {
     update(next) { update(next); armPoll(); },
@@ -1148,6 +1177,9 @@ export function startStage(root, deck, { refresh } = {}) {
       cancelAnimationFrame(layoutFrame);
       resize?.disconnect();
       intersection?.disconnect();
+      cancelAnimationFrame(visibilityFrame);
+      window.removeEventListener('scroll', scheduleVisibility);
+      window.removeEventListener('resize', scheduleVisibility);
       clear();
       if (poll) { clearInterval(poll); poll = null; }
       root.removeEventListener("click", onClick);

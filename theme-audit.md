@@ -317,3 +317,20 @@ were reset or removed. The Arena winner generator and result-to-slide trigger
 are removed; existing generated Arena Aftermath cards are inactive. In broadcast,
 league champion/Chip Eater slides are retained. Native physical-device orientation
 and assistive-technology behavior remain outside desktop browser certification.
+
+
+### 1.433 — Home broadcast reading and editorial coverage
+
+Removed generated personal-matchup previews and the league scoreboard from
+Home's broadcast; GameDay keeps the scores above it. The daily league opener,
+scouting, awards and other editorial stories keep their existing compositions
+and shared Medicine Wheel tokens. The opener receives five seconds once the
+card is readable rather than starting at the first visible pixel.
+
+The real controller regression covers below-fold startup, partial visibility,
+scroll-away/return with a fresh dwell, preserving a manually chosen slide, short
+landscape viewports, reduced motion and listener cleanup in Light/Dark. Screens
+are captured with production styles and palette assignments. Existing Home
+review also covers mobile widths, all broadcast treatments, swipe reversals
+and refresh-under-finger. No colors or appearance options changed. Physical
+device browser-chrome resizing remains outside desktop browser certification.

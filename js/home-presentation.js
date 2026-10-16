@@ -23,6 +23,9 @@ export function homeSectionLinks() {
 
 /** Current stories lead; the archive gets one dated, rotating feature. */
 export function homeBroadcastDeck(deck = [], { now = new Date(), coveredTrade = "" } = {}) {
+  // Scores already own the desk above this stage. Retire old injected
+  // matchup cards on refresh too, while keeping authored league stories.
+  deck = deck.filter(item => item && !["myMatchup", "matchupPreview", "weekSlate"].includes(item.generator));
   const transaction=href=>{try{return new URLSearchParams(String(href||" ").split("?")[1]||"").get("tx")}catch{return null}};
   const covered=transaction(coveredTrade);
   if(covered){const filtered=deck.filter(item=>transaction(item?.href)!==covered);if(filtered.length!==deck.length)deck=filtered.filter(item=>!item.homeFeature);}
@@ -31,7 +34,7 @@ export function homeBroadcastDeck(deck = [], { now = new Date(), coveredTrade = 
   const opener = {
     key: 'home:clubhouse-opener', treatment: 'announcement', homeFeature: true,
     ...daily,dailyDate:daily.date,
-    body: '',
+    body: '', dwell: 5000,
     href: null, actionLabel: '', temporal: 'none',
     background: 'default',
   };
