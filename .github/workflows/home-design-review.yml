@@ -98,6 +98,8 @@ on:
       - 'assets/dfl-daily-*'
       - 'tools/*home-review*'
       - 'tools/capture-broadcast-review.py'
+      - 'tools/capture-award-review.py'
+      - 'js/broadcast-depth*'
       - '.github/workflows/home-design-review.yml'
 
 permissions:
@@ -125,6 +127,8 @@ jobs:
           printf 'DFL_REVIEW_CHROMIUM=%s\n' "$dfl_review_browser" >> "$GITHUB_ENV"
       - run: node tools/render-home-review.mjs
       - run: python tools/capture-home-review.py
+      - name: Check blended award compositions
+        run: python tools/capture-award-review.py
       - name: Check broadcast first-read timing
         run: python tools/capture-broadcast-review.py
       - name: Check mobile sheet gestures

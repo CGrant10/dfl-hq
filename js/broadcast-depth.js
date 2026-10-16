@@ -22,7 +22,7 @@ export function mountBroadcastDepth(root) {
     const box = root.getBoundingClientRect();
     const distance = (innerHeight / 2 - (box.top + box.height / 2)) / innerHeight;
     root.dataset.depthActive = 'true';
-    root.style.setProperty('--bx-depth-y', `${Math.max(-4, Math.min(4, distance * 8)).toFixed(2)}px`);
+    root.style.setProperty('--bx-depth-y', `${Math.max(-6, Math.min(6, distance * 12)).toFixed(2)}px`);
   };
   const schedule = () => { if (allowed() && !frame) frame = requestAnimationFrame(paint); };
   const changed = () => { if (allowed()) schedule(); else reset(); };

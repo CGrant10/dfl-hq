@@ -24,7 +24,7 @@ describe('broadcast decorative depth lifecycle', () => {
     const f=fixture();f.see(true);f.flush();const before=f.styles.get('--bx-depth-y');
     f.scroll(-100);f.scroll(-110);expect(f.frames.size).toBe(1);f.flush();
     expect(f.styles.get('--bx-depth-y')).not.toBe(before);expect(f.frames.size).toBe(0);
-    f.scroll(-10000);f.flush();expect(f.styles.get('--bx-depth-y')).toBe('4.00px');
+    f.scroll(-10000);f.flush();expect(f.styles.get('--bx-depth-y')).toBe('6.00px');
   });
   it('never animates or schedules work for offscreen stories', () => {
     const f=fixture();f.scroll(50);f.control.enter();expect(f.frames.size).toBe(0);expect(animateUi).not.toHaveBeenCalled();

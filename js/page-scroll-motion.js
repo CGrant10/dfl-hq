@@ -63,7 +63,7 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
       markVisible([entry.target]);
       // An async score/data render is not a scroll entrance.
       if(allowed()&&performance.now()-scrolledAt<900){
-        const animation=animate?.(entry.target,[{opacity:.8,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],{duration:320});
+        const animation=animate?.(entry.target,[{opacity:.7,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:420,easing:'cubic-bezier(.16,1,.3,1)'});
         if(animation){rising.add(entry.target);const finish=()=>rising.delete(entry.target);animation.finished.then(finish,finish);}
       }
     }
@@ -130,8 +130,8 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
   }
   function paint(){
     frame=0;if(!current()||document.hidden)return;
-    if(root.classList.contains('has-home-score-dock')){show(false);return;}
     if(dirty)scan();
+    if(root.classList.contains('has-home-score-dock')){show(false);return;}
     if(!displayed(hero)){compact=false;show(false);return;}
     // Read geometry together before any style or text writes.
     const bounds=root.getBoundingClientRect(),heroBox=hero.getBoundingClientRect();

@@ -334,3 +334,25 @@ are captured with production styles and palette assignments. Existing Home
 review also covers mobile widths, all broadcast treatments, swipe reversals
 and refresh-under-finger. No colors or appearance options changed. Physical
 device browser-chrome resizing remains outside desktop browser certification.
+
+
+### 1.434 — Composed awards and smooth scroll motion
+
+Reviewed champion/Chip Eater slides at 320px, 390px, 430px and 832px in
+Medicine Wheel Light/Dark, including authored member artwork. The complete
+contained illustration now fills the card as a masked tonal backdrop, with a
+soft left/bottom dissolve and no sticker shadow. Copy has 78% of the width
+instead of 46%; existing faint CHAMP/LAST lettering remains decorative.
+Artwork opacity stays at .38 in Dark/.26 in Light after its entrance finishes;
+the prior generic entrance was overriding its resting opacity. No image files
+were changed. Existing theme tokens control the surface, type and wash.
+
+Home's compact-score path now retains the section entrance observer. Headings
+enter once with a short eased rise, without moving surrounding content or
+replaying on scroll-back. Scoreboard collapse has zero acceleration at its
+endpoints and remains directly tied to scroll position. Decorative broadcast
+depth has a bounded 6px range and a 140ms CSS settle, disabled under the finger,
+for reduced motion and for in-app motion off. No persistent animation frame loop
+was added. Browser regressions cover reversal, exact score endpoints, live score
+changes, no layout shifts, reveal-once behavior, decorative settling and cleanup.
+Physical-device GPU/frame-rate measurement remains outside desktop certification.
