@@ -4365,6 +4365,15 @@ html[data-ui-motion="on"] #view [data-scroll-title] {
 .dfl-tab-grab,#sportsbook-wrap .sb-bankroll { touch-action:pan-y pinch-zoom; }
 .dfl-tab-grab { user-select:none; }
 
+/* Selection controls share the same brief press as the main actions. */
+html[data-ui-motion="on"] :is(.view[data-ui-polished],.dfl-player-card) :is(button[role="tab"],button[aria-pressed],summary):not(:disabled):not([aria-disabled="true"]) { scale:1; transition:scale 150ms ease,color 180ms ease,background-color 180ms ease,border-color 180ms ease; }
+html[data-ui-motion="on"] :is(.view[data-ui-polished],.dfl-player-card) :is(button[role="tab"],button[aria-pressed],summary):not(:disabled):not([aria-disabled="true"]):active { scale:.985; }
+html[data-ui-motion="off"] :is(.view[data-ui-polished],.dfl-player-card) :is(button[role="tab"],button[aria-pressed],summary) { scale:1!important; transition:none!important; }
+/* Keep travelling-underline measurements stable while a tab is pressed. */
+.view :is([data-ui-rail] > button,button[role="tab"]) { scale:1!important; }
+html[data-ui-motion="on"] .view :is([data-ui-rail] > button,button[role="tab"]):not(:disabled):active { background-color:color-mix(in srgb,var(--accent) 10%,var(--bg-2)); }
+@media(prefers-reduced-motion:reduce) { :is(.view[data-ui-polished],.dfl-player-card) :is(button[role="tab"],button[aria-pressed],summary) { scale:1!important; transition:none!important; } }
+
 
 /* Source: css/mobile-polish.css */
 /* A shared reading rhythm, with each page keeping its own primary surface.
