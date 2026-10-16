@@ -46,10 +46,13 @@ export function mountHomeScoreCollapse(root){
   const from=parts.flatMap(part=>[part.mark,part.score]),to=parts.flatMap((_part,i)=>[marks[i],scores[i]]);
   // Endpoints are measured once per data/layout change. During scrolling only
   // compositor transforms change, not four boxes and font sizes on every frame.
-  if(!geometry)geometry=from.map((node,i)=>{const start=node.getBoundingClientRect(),end=to[i].getBoundingClientRect();return {from:{left:start.left,top:start.top-box.top,width:start.width,height:start.height},to:{left:end.left,top:end.top-top,width:end.width,height:end.height},font:getComputedStyle(node).fontSize}});
-  if(flights.length!==4){restore();flights=from.map((node,i)=>{const clone=i%2?document.createElement('b'):node.cloneNode(true),g=geometry[i];clone.removeAttribute('id');clone.style.visibility='';clone.classList.add('home-score-moving');Object.assign(clone.style,{left:'0px',top:'0px',width:`${g.from.width}px`,height:`${g.from.height}px`,fontSize:g.font});layer.append(clone);return clone})}
+  if(!geometry)geometry=from.map((node,i)=>{const start=node.getBoundingClientRect(),end=to[i].getBoundingClientRect();return {from:{left:start.left,top:start.top-box.top,width:start.width,height:start.height},to:{left:end.left,top:end.top-top,width:end.width,height:end.height},font:getComputedStyle(node).fontSize,targetFont:getComputedStyle(to[i]).fontSize}});
+  if(flights.length!==4){restore();flights=from.map((node,i)=>{const clone=i%2?document.createElement('b'):node.cloneNode(true),g=geometry[i];clone.removeAttribute('id');clone.style.visibility='';clone.classList.add('home-score-moving');Object.assign(clone.style,{left:'0px',top:'0px',width:`${g.from.width}px`,height:i%2?g.font:`${g.from.height}px`,fontSize:g.font});layer.append(clone);return clone})}
   from.forEach(hide);to.forEach(hide);
-  flights.forEach((node,i)=>{const g=geometry[i];if(i%2)set(node,text(from[i]));node.style.transform=`translate3d(${mix(g.from.left,g.to.left,p)}px,${mix(g.from.top+box.top,g.to.top+top,p)}px,0) scale(${mix(1,g.to.width/Math.max(1,g.from.width),p)},${mix(1,g.to.height/Math.max(1,g.from.height),p)})`});
+  flights.forEach((node,i)=>{const g=geometry[i],number=i%2,height=number?parseFloat(g.font):g.from.height;
+   const sx=mix(1,number?parseFloat(g.targetFont)/parseFloat(g.font):g.to.width/Math.max(1,g.from.width),p),sy=number?sx:mix(1,g.to.height/Math.max(1,g.from.height),p);
+   const x=mix(g.from.left+g.from.width/2,g.to.left+g.to.width/2,p)-g.from.width*sx/2,y=mix(g.from.top+box.top+g.from.height/2,g.to.top+top+g.to.height/2,p)-height*sy/2;
+   if(number)set(node,text(from[i]));node.style.transform=`translate3d(${x}px,${y}px,0) scale(${sx},${sy})`});
  };
  const schedule=()=>{if(!stopped&&!frame)frame=requestAnimationFrame(paint)};
  const invalidate=()=>{dirty=true;schedule()};

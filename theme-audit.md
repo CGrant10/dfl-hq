@@ -185,7 +185,9 @@ entrances move 6px with a softer fade. Reading progress follows the scroll frame
 directly. GameDay's compact scoreboard has a 12px reversal buffer to avoid
 threshold flicker. Browser checks cover reversal, changed scores, resizing,
 layout invalidation, reduced motion, the in-app motion switch and cleanup.
-The dedicated controller checks pass in both Chromium and WebKit.
+The dedicated controller checks pass in both Chromium and WebKit. Number copies
+scale uniformly to the destination font size, with a regression check immediately
+before the dock handoff to catch distorted or abruptly resized glyphs.
 
 An isolated Chromium comparison of the old/new Home controllers over the same
 120-frame scroll sequence recorded 120 versus 0 layout recalculations during

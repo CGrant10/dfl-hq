@@ -47,6 +47,8 @@ with sync_playwright() as p:
    check(f'{theme} {width}: transforms retain flight nodes and dimensions on reversal '+json.dumps(result['failures'][:1]),result['stable'])
    page.evaluate('y=>scrollTo(0,y)',middle);page.wait_for_timeout(50);page.screenshot(path=str(OUT/f'{theme}-{width}-flight.png'))
    check(f'{theme} {width}: no horizontal overflow',page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
+   page.evaluate('y=>scrollTo(0,y-1)',limits['end']);page.wait_for_timeout(80)
+   check(f'{theme} {width}: score glyphs match the dock without stretching',page.locator('.home-score-moving').count()==4 and page.evaluate('''()=>[...document.querySelectorAll('.home-score-moving')].filter((_,i)=>i%2).every((e,i)=>{const m=new DOMMatrixReadOnly(getComputedStyle(e).transform),font=parseFloat(getComputedStyle(e).fontSize),target=parseFloat(getComputedStyle(document.querySelectorAll('[data-dock-score]')[i]).fontSize);return Math.abs(m.a-m.d)<.001&&Math.abs(font*m.a-target)<.1})'''))
    page.evaluate('y=>scrollTo(0,y+30)',limits['end']);page.wait_for_timeout(80)
    check(f'{theme} {width}: exact dock endpoint and source restored',page.evaluate('document.querySelector(".home-score-dock").style.opacity==="1"&&!document.querySelector(".home-score-dock").inert&&!document.querySelector(".home-score-moving")&&[...document.querySelectorAll(".gameday-faceoff-mark,.home-projected-total")].every(e=>e.style.visibility!=="hidden")'))
    check(f'{theme} {width}: content position preserved',page.evaluate('b=>Math.abs(document.querySelector(".story").getBoundingClientRect().top+scrollY-b.row)<1&&document.documentElement.scrollHeight===b.height',before))
