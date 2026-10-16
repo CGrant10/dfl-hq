@@ -377,3 +377,7 @@ wrapping and use uniform scale. Tests cover 320px/390px/430px in Light/Dark,
 reversal, score/name updates, aligned wrapped names, reduced motion, motion off,
 layout stability and cleanup. Native physical-device frame rates remain outside
 desktop browser certification.
+
+Home section jumps also reserve the compact scoreboard's measured height. Native
+swipe regression points are checked against the visible carousel surface, so
+they cannot accidentally start underneath the newly taller named scoreboard.

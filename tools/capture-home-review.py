@@ -1147,11 +1147,13 @@ with sync_playwright() as p:
     assert page.evaluate("document.querySelector('.bx-home-feature')===window.reviewOpener"), 'Deck refresh replayed the opener'
     metrics['deckRefresh'] = 'passed'
     section_hash = page.evaluate('location.hash')
-    for section, selector in [('scores','[data-home-gameday-slot]'), ('week','.home-week-desk'), ('league','.home-league-desk'), ('archive','[data-home-lore-slot]')]:
+    for section, selector in [('scores','[data-home-gameday-slot]'), ('lead','.home-broadcast'), ('week','.home-week-desk'), ('league','.home-league-desk'), ('archive','[data-home-lore-slot]')]:
         page.locator(f'[data-home-jump="{section}"]').click()
         page.wait_for_timeout(800)
         assert page.locator('[data-home-jump][aria-current]').count() == 0, 'Jump buttons must not remain selected'
         assert page.evaluate('location.hash') == section_hash, 'Section navigation changed the app route'
+        if section!='scores':
+            assert page.locator(selector).bounding_box()['y']>=page.locator('.home-score-dock').bounding_box()['y']+page.locator('.home-score-dock').bounding_box()['height']+12, 'Section jump landed under the named scoreboard'
         assert page.locator('.topbar').bounding_box()['height'] + 15 <= page.locator(selector).bounding_box()['y'] < 200, 'Section navigation is obscured by the top bar'
     page.locator('[data-page-detail="home-league"] summary').click()
     assert page.locator('[data-page-detail="home-league"]').evaluate('e=>e.open'), 'League news and activity did not open'
@@ -1166,7 +1168,7 @@ with sync_playwright() as p:
     # Native rapid broadcast gestures must reverse, wrap and survive refreshes.
     page.locator('[data-bx-go="0"]').evaluate('e=>e.click()')
     broadcast=page.locator('[data-bx-stage]')
-    broadcast.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-100,behavior:"instant"})')
+    broadcast.evaluate('e=>{const top=(parseFloat(getComputedStyle(document.querySelector("#view")).getPropertyValue("--dfl-scroll-top"))||44)+(document.querySelector(".home-score-dock")?.offsetHeight||0)+16;scrollTo({top:scrollY+e.getBoundingClientRect().top-top,behavior:"instant"})}')
     page.wait_for_timeout(300)
     page.locator('[data-bx-go="0"]').focus()
     assert page.locator('.bx-dots').evaluate('e=>getComputedStyle(e).backgroundColor')=='rgba(0, 0, 0, 0)', 'Focused broadcast dots drew a mismatched background plate'
@@ -1175,6 +1177,7 @@ with sync_playwright() as p:
     for delta in [1]*12+[-1]*12:
         before=broadcast_index();box=broadcast.bounding_box();dx=-88 if delta>0 else 88
         x=box['x']+box['width']*(.75 if delta>0 else .25);y=box['y']+20
+        assert page.evaluate("p=>!!document.elementFromPoint(p.x,p.y)?.closest('[data-bx-stage]')",{'x':x,'y':y}), 'Swipe start was covered by fixed chrome'
         touch.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
         for n in range(1,5):
             touch.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x+dx*n/4,'y':y}]});page.wait_for_timeout(20)
@@ -1182,7 +1185,7 @@ with sync_playwright() as p:
         assert broadcast_index()==(before+delta)%deck_count, 'Rapid broadcast swipe failed to reverse or wrap'
     before=broadcast_index();page.locator('[data-bx-step="1"]').evaluate('e=>e.click()')
     assert broadcast_index()==(before+1)%deck_count,'Swipe left a ghost click latch over the arrow'
-    broadcast.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-100,behavior:"instant"})')
+    broadcast.evaluate('e=>{const top=(parseFloat(getComputedStyle(document.querySelector("#view")).getPropertyValue("--dfl-scroll-top"))||44)+(document.querySelector(".home-score-dock")?.offsetHeight||0)+16;scrollTo({top:scrollY+e.getBoundingClientRect().top-top,behavior:"instant"})}')
     box=broadcast.bounding_box();x=box['x']+box['width']*.75;y=box['y']+20
     touch.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
     touch.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x-50,'y':y}]})

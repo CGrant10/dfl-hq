@@ -34,3 +34,7 @@ html[data-matchup-transition]::view-transition-old(root),html[data-matchup-trans
 html[data-matchup-transition]{view-transition-name:none}
 html[data-matchup-transition] .clubhouse-game-side{animation:none!important}
 @media(prefers-reduced-motion:reduce){html[data-matchup-transition]::view-transition-group(*){animation-duration:0s}}
+
+/* League section jumps clear the named compact scoreboard as well as the
+   header. Returning to the main matchup keeps its normal header offset. */
+#view.has-home-score-dock #home-wrap :is(.home-broadcast,.home-week-desk,.home-league-desk,[data-home-lore-slot]){scroll-margin-top:calc(var(--dfl-scroll-top,44px) + var(--dfl-scroll-height,90px) + 16px)}
