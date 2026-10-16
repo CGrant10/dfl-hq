@@ -1,6 +1,6 @@
 import {scrollChromeBottom} from './scroll-chrome.js';
 const clamp=n=>Math.max(0,Math.min(1,n));
-export const homeScoreProgress=(top,cardTop,height)=>{const p=clamp((top+104-cardTop)/Math.max(96,height-24));return p*p*(3-2*p)};
+export const homeScoreProgress=(top,cardTop,height)=>{const p=clamp((top+104-cardTop)/Math.max(96,height-24));return p*p*p*(p*(p*6-15)+10)};
 const mix=(a,b,p)=>a+(b-a)*p;
 const text=node=>node?.textContent.trim()||'';
 
