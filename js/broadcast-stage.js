@@ -625,6 +625,14 @@ export function startStage(root, deck, { refresh } = {}) {
   let deckHeight = 0;
   function contentHeight(slide) {
     const style = getComputedStyle(slide);
+    if (slide.classList.contains('bx-award-story')) {
+      // The stamp and illustration share one row. Counting both child heights
+      // would reserve that row twice and leave a large empty carousel.
+      const rows=style.gridTemplateRows.split(' ').map(value=>parseFloat(value)||0);
+      return rows.reduce((sum,height)=>sum+height,0)+Math.max(0,rows.length-1)*(parseFloat(style.rowGap)||0)
+        +(parseFloat(style.paddingTop)||0)+(parseFloat(style.paddingBottom)||0)
+        +(parseFloat(style.top)||0)+(parseFloat(style.bottom)||0)+2;
+    }
     // Narrow champion layouts flatten the copy into the slide's grid. Measure
     // the actual grid extent, including its illustration, rather than a
     // display:contents wrapper with no box.
