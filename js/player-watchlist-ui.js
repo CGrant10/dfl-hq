@@ -27,17 +27,19 @@ export function mountWatchButton(button,id){
 }
 export function mountPlayerWatchlist(host,{data,season,week}){
  const memberId=getMemberId(),member=currentMember();if(!memberId)return ()=>{};
- let snapshot=null,saved=[],items=[],busy=false,stopped=false,generation=0,indexedPlayers=null,searchIndex=[];
+ let snapshot=null,saved=[],items=[],busy=false,stopped=false,generation=0,indexedPlayers=null,searchIndex=[],settled=false;
  const current=()=>!stopped&&host.isConnected&&String(getMemberId())===String(memberId);
  const ownRoster=()=>snapshot?.rosters.find(r=>String(r.owner_id)===String(member?.sleeper_user_id));
  void ensureStylesheet('css/player-watchlist.css');
- host.innerHTML='<section class="wo-panel player-watchlist" aria-label="Your player watchlist"><header class="wo-head"><div><small>YOUR RADAR</small><h2>Player watchlist</h2></div><button type="button" class="linkbtn" data-watch-refresh>Refresh</button></header><form class="player-watch-search"><label for="player-watch-search">Find a player to watch</label><input id="player-watch-search" type="search" autocomplete="off" placeholder="Player name or NFL team"><div data-watch-search-results></div></form><p role="status" data-watch-message>Loading your watchlist…</p><ul data-watch-rows></ul></section>';
+ host.innerHTML='<details class="wo-panel player-watchlist" data-watchlist-fold><summary><strong>Player watchlist</strong><small data-watch-summary>Add players</small></summary><div class="player-watchlist-body"><button type="button" class="linkbtn" data-watch-refresh>Refresh watchlist</button><form class="player-watch-search"><label for="player-watch-search">Find a player to watch</label><input id="player-watch-search" type="search" autocomplete="off" placeholder="Player name or NFL team"><div data-watch-search-results></div></form><p role="status" data-watch-message>Loading your watchlist…</p><ul data-watch-rows></ul></div></details>';
  const message=host.querySelector('[data-watch-message]'),list=host.querySelector('[data-watch-rows]'),search=host.querySelector('input'),results=host.querySelector('[data-watch-search-results]');
  const draw=()=>{
   const mine=ownRoster();
+  if(!settled&&saved.length)host.querySelector("[data-watchlist-fold]").open=true;settled=true;
+  host.querySelector("[data-watch-summary]").textContent=saved.length?`${saved.length} watched`:"Add players";
   items=snapshot?buildWatchlistRows(saved.map(r=>r.player_id),snapshot,{rosterId:mine?.roster_id,values:data.pool}):[];
   list.innerHTML=items.map(p=>watchlistRowHtml(p,mine?.roster_id)).join('');
-  message.textContent=saved.length?`${saved.length} watched${mine?' · roster fit for '+(data.teams.find(t=>String(t.id)===String(mine.roster_id))?.team_name||'your team'):''}`:'Your radar is empty. Find a player above or tap Watch player on a player card.';
+  message.textContent=saved.length?`${saved.length} watched${mine?' · roster fit for '+(data.teams.find(t=>String(t.id)===String(mine.roster_id))?.team_name||'your team'):''}`:'No players watched.';
   find();
  };
  const find=()=>{
@@ -54,7 +56,7 @@ export function mountPlayerWatchlist(host,{data,season,week}){
    if(force)clearRosterCoachCache();
    const [savedRows,fresh]=await Promise.all([readPlayerWatchlist({memberId}),loadRosterCoachSnapshot(data.league.sleeper_league_id,season,week)]);
    if(!current()||token!==generation)return;saved=savedRows;snapshot=fresh;draw();
-  }catch(e){if(current()){message.textContent='Watchlist couldn’t refresh. '+(list.children.length?'Showing the last check.':'Tap Refresh to retry.');toast(e.message,true)}}
+  }catch(e){if(current()){host.querySelector('[data-watch-summary]').textContent='Open to retry';message.textContent='Watchlist couldn’t refresh. '+(list.children.length?'Showing the last check.':'Tap Refresh to retry.');toast(e.message,true)}}
   finally{busy=false;if(current())host.querySelector('[data-watch-refresh]').disabled=false}
  };
  const change=e=>{if(String(e.detail?.memberId)===String(memberId))void load();};

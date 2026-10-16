@@ -155,3 +155,11 @@ describe('DFL archive on Home', () => {
     expect(html).not.toContain('<details');
   });
 });
+
+it('gives a banner-covered trade one placement and restores the story after dismissal',()=>{
+ const trade={id:'trade:one',kind:'trade',headline:'Trade one',temporal:'recent',href:'#/trade?tx=one'},other={id:'trade:two',kind:'trade',headline:'Trade two',temporal:'recent',href:'#/trade?tx=two'};
+ const raw=[trade,other],covered=homeBroadcastDeck(raw,{coveredTrade:'#/trade?tx=one'});
+ expect(covered.some(item=>item.href?.includes('tx=one'))).toBe(false);expect(covered.some(item=>item.href?.includes('tx=two'))).toBe(true);
+ const first=homeBroadcastDeck(raw);expect(homeBroadcastDeck(first,{coveredTrade:'#/trade?tx=one'}).some(item=>item.href?.includes('tx=one'))).toBe(false);
+ expect(homeBroadcastDeck(raw).some(item=>item.href?.includes('tx=one'))).toBe(true);
+});

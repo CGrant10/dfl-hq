@@ -30,5 +30,7 @@
   "css/game-day-ready.css",
   "css/player-watchlist.css",
   "css/home-injury-panel.css",
-  "css/start-sit.css"
+  "css/start-sit.css",
+  "css/decision-polish.css",
+  "css/readability.css"
 ]

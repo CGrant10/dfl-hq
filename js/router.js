@@ -424,6 +424,7 @@ async function renderRoutePage({ retry = false, visit } = {}) {
     void view.offsetWidth;
     view.classList.add("page-in");
   }
+  if(changed){const title=view.dataset.routeFailed==='true'?'Page unavailable':view.querySelector('h1,.page-title')?.textContent?.trim()||name;document.title=`${title} · DFL HQ`;const announcer=document.getElementById('route-announcer');if(announcer)announcer.textContent=title;}
   for (const fn of listeners) { try { fn(name); } catch (err) { console.warn(err); } }
   window.dispatchEvent(new CustomEvent("dfl:route-performance", { detail: {
     route: name,

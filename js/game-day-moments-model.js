@@ -9,6 +9,7 @@ export function savedMoments(rows,model,players={}){
   else if(r.kind==='big'&&number(r.data?.points)>=20)text=`${name}: ${number(r.data.points).toFixed(2)} points · ${side.name}`;
   else if(r.kind==='surge'&&number(r.data?.delta)>=6)text=`${name}: +${number(r.data.delta).toFixed(2)} fantasy points since the previous sync · ${side.name}`;
   else return[];
-  return[{key:String(r.id),kind:r.kind,text,at,matchupId:String(r.matchup_id)}];
+  const meta=players[r.player_id],lineup=side.lineup.find(p=>p.id===String(r.player_id));
+  return[{key:String(r.id),kind:r.kind,text,at,matchupId:String(r.matchup_id),team:{team_name:side.name,identity:side.identity},player:r.kind==='lead'?null:{id:String(r.player_id),name,position:meta?.p||lineup?.position,nflTeam:meta?.t||lineup?.nflTeam}}];
  }).sort((a,b)=>b.at-a.at||Number(b.key)-Number(a.key));
 }

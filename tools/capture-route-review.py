@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = Path(os.environ.get('DFL_ROUTE_REVIEW_DIR', ROOT.parent / 'dfl-route-review'))
 OUT.mkdir(parents=True, exist_ok=True)
 ROUTES = ['home', 'clubhouse', 'sportsbook', 'trade', 'analyzer']
-HTML = '''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="css/tokens.css"><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/ui.css"><link rel="stylesheet" href="css/app-shared.css"><style>.topbar{height:44px}.view{padding:70px 14px 90px}.fixture-content{min-height:2000px}#tabbar a{font-size:12px}</style></head><body><header class="topbar">DFL · fixed header</header><main class="view" id="view"></main><nav id="tabbar" class="tabbar">''' + ''.join(f'<a href="#/{r}" data-route="{r}">{r}</a>' for r in ROUTES) + '''</nav><script type="module">import{startRouter}from './js/router.js';import{startUiMotion}from './js/ui-motion.js';window.holds={};window.releases={};window.fail={};window.returnError={};startUiMotion();startRouter();</script></body></html>'''
+HTML = '''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="css/tokens.css"><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/ui.css"><link rel="stylesheet" href="css/app-shared.css"><style>.topbar{height:44px}.view{padding:70px 14px 90px}.fixture-content{min-height:2000px}#tabbar a{font-size:12px}</style></head><body><header class="topbar">DFL · fixed header</header><main class="view" id="view"></main><span id="route-announcer" class="sr-only" role="status" aria-live="polite"></span><nav id="tabbar" class="tabbar">''' + ''.join(f'<a href="#/{r}" data-route="{r}">{r}</a>' for r in ROUTES) + '''</nav><script type="module">import{startRouter}from './js/router.js';import{startUiMotion}from './js/ui-motion.js';window.holds={};window.releases={};window.fail={};window.returnError={};startUiMotion();startRouter();</script></body></html>'''
 STUBS = {
  'js/member-lock.js': 'export function startMemberLock(){}',
  'js/sportsbook-nav.js': 'export function ensureSportsbookNav(){}',
@@ -51,6 +51,7 @@ with sync_playwright() as p:
  def go(route):page.locator(f'#tabbar [data-route="{route}"]').click();ready(route);clean()
  def shell():return page.evaluate('()=>[".topbar","#tabbar"].map(s=>{const r=document.querySelector(s).getBoundingClientRect();return [r.x,r.y,r.width,r.height]})')
  page.goto(f'http://127.0.0.1:{server.server_port}/#/home');ready('home');clean()
+ check('arrival is announced once with a concise page name',page.locator('#route-announcer').inner_text()=='home' and page.title()=='home · DFL HQ')
  check('initial launch has no directional entrance',page.evaluate('routeAnimations.length===0'))
  fixed=shell();page.evaluate('holds.clubhouse=true;pauseRouteStart=true;routeAnimations=[]')
  page.locator('#tabbar [data-route="clubhouse"]').click();page.wait_for_function('!!window.releases.clubhouse')

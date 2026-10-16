@@ -131,3 +131,40 @@ reduced motion and fixed shared navigation. Back restores an individual visit;
 ordinary visits keep page choices without restoring an old scroll offset.
 Theme and release checks run with the full application regression suite. This
 review covers the changed components, not every possible roster or native UI.
+
+## 1.426.0 — Mobile decisions, readable text and GameDay recap
+
+Reviewed Home, compact Trade search and offers, Analyzer and the optional
+GameDay recap in Medicine Wheel Light and Dark. New surfaces use shared ground,
+ink, accent and border tokens. NFL/player identity and injury/status colors keep
+their roles. Dark/Light remain the canonical themes; readable text is a separate
+opt-in device preference and does not create another palette.
+
+Trade captures cover 320px, 390px and 430px. Large packages keep every player,
+with supporting players behind explicitly labeled disclosures. Tests preserve
+expanded packages while more offers load, full eight-player and multi-team
+routing, saved comparisons, counteroffers and required drops. Simplicity affects
+ordering only inside comparable fit/price bands; valuations and verdicts are
+unchanged. Home suppresses the exact transaction already covered by its active
+banner, then restores that broadcast story on dismissal.
+
+Analyzer now puts the roster report before follow-up tools and keeps an empty
+watchlist compact. The report has normal screen gutters. More leads with
+football/records, with Wall below the other league-life entries. Page arrivals
+have a concise status announcement and descriptive document title rather than
+placing the entire changing page in a live region. Existing scoped live-score
+announcements remain, with a selected-score announcement added in Watch mode.
+
+Readable text was checked on Home and Trade in both modes, including a persisted
+Profile toggle, reload without a compact-text flash, 320–430px reflow and 200%
+root text resizing. This is not a claim of full native browser text-zoom or
+VoiceOver certification. Physical iOS/Android screen-reader testing remains
+unverified; browser accessibility names, focus, Escape and disclosure behavior
+were inspected/tested.
+
+Recap captures and browser tests cover 320px/390px Light and Dark, chronological
+saved observations, manual stepping, Play/Pause, stable frames during score
+refreshes, focus return and reduced motion. Recap frames use observed sync times,
+not invented NFL play timestamps or predicted winners. Live week data may have
+no saved moments yet; the replay states were verified with labeled fixtures
+using the production controller. No external messages, trades or bets were made.
