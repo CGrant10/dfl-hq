@@ -23,7 +23,7 @@ export function routeDirection(from, to, bar = document.getElementById('tabbar')
 }
 
 export function beginRouteGlide(from, to) {
-  const direction = routeDirection(from, to);
+  const direction = document.documentElement.dataset.matchupTransition?0:routeDirection(from, to);
   active?.cancel();
   let surface, started = 0, cancelled = false, generation = 0;
   const cleanSurface = () => {

@@ -34,3 +34,36 @@ body.sr-stadium-expanded #view,body.sr-stadium-expanded .sr-room{transform:none!
 .sr-room .sr-stage:is(:fullscreen,.sr-expanded) .sr-stage-score{left:calc(12px + var(--sr-safe-left));right:calc(12px + var(--sr-safe-right))}.sr-room .sr-stage:is(:fullscreen,.sr-expanded) .sr-stage-overlay{left:var(--sr-safe-left);right:var(--sr-safe-right)}
 /* Arena owns its scene motion; filled page animations also retain fixed-position containing blocks. */
 .view[data-route=arena].page-in,.view[data-route=arena].page-in>.sr-room{animation:none!important}
+
+/* Watching stays landscape; managing a race remains available in either orientation. */
+.sr-watch-surface{position:relative;min-height:0;overflow:hidden;isolation:isolate}
+.sr-stage>.sr-controls{margin:0;padding:8px;gap:8px;background:#101620;flex:none;border-top:1px solid #ffffff17}
+.sr-stage>.sr-controls:empty{display:none}
+.sr-stage>.sr-controls button{flex:1;min-width:0;padding:8px;font-size:13px;white-space:normal}
+.sr-stage-score button[data-expand]{display:flex;align-items:center;gap:6px;width:auto;min-width:44px;padding:0 10px}
+.sr-stage-score button[data-expand]>span{border:0;background:none;padding:0;font-size:23px}
+.sr-stage-score [data-expand-label]{font:700 13px Rajdhani,sans-serif}
+.sr-room .sr-stage:is(:fullscreen,.sr-expanded){display:flex;flex-direction:column}
+.sr-room .sr-stage:is(:fullscreen,.sr-expanded) .sr-watch-surface{display:flex;flex:1;flex-direction:column;min-height:0}
+.sr-room .sr-stage:is(:fullscreen,.sr-expanded) canvas{flex:1;min-height:0;height:0;width:100%}
+.sr-room .sr-stage:is(:fullscreen,.sr-expanded) .sr-moment{flex:none;height:auto;min-height:64px}
+.sr-orientation-gate{position:absolute;inset:0 0 64px;margin:0;width:100%;height:auto;max-height:none;padding:20px;z-index:3}
+.sr-orientation-card{gap:10px}.sr-orientation-phone{width:48px;height:48px}
+.sr-orientation-card h2{font-size:27px}.sr-orientation-card a{min-height:36px;padding:4px 12px}
+.sr-stage[data-landscape-blocked=true]:not(:fullscreen):not(.sr-expanded) .sr-orientation-gate{position:relative;inset:auto;min-height:250px}
+.sr-stage[data-landscape-blocked=true] :is(canvas,.sr-stage-overlay,.sr-moment){visibility:hidden}
+.sr-stage[data-landscape-blocked=true]:not(:fullscreen):not(.sr-expanded) :is(canvas,.sr-stage-overlay,.sr-moment){display:none}
+.sr-stage[data-landscape-blocked=true] .sr-stage-score>div{visibility:hidden}
+.sr-stage[data-landscape-blocked=true] .sr-stage-score{z-index:4}
+body.sr-landscape-required:not(.sr-stadium-expanded){overflow:visible!important}
+/* Commissioner forms use the selected app theme; the football field keeps its stadium lighting. */
+.stadium-arena .sr-editor{color:var(--text);background:var(--bg-2);border-color:var(--line)}
+.stadium-arena .sr-editor label,.stadium-arena .sr-editor small{color:var(--body-text)}
+.stadium-arena .sr-editor input:not([type=checkbox]){font-size:16px;color:var(--text);background:var(--bg);border-color:var(--control-line)}
+.stadium-arena .sr-editor button{color:var(--text);background:var(--bg-3);border-color:var(--line)}
+.stadium-arena .sr-editor button.sr-primary{color:var(--on-accent);background:var(--accent-fill);border-color:var(--accent-fill)}
+.stadium-arena .sr-duration-presets button[aria-pressed=true]{color:var(--accent);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--bg-2))}
+.stadium-arena .sr-editor input[type=checkbox]{accent-color:var(--accent)}
+.stadium-arena .sr-pick-head h3 span{color:var(--accent)}
+.stadium-arena .sr-form-error{color:var(--danger-ink)}
+.sr-editor-host{scroll-margin-top:72px}

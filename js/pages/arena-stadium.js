@@ -93,15 +93,15 @@ async function room(view,members,id,life){
  root.innerHTML=`<a class="sr-back" href="#/arena">← Arena</a><header class="sr-title"><div><span class="sr-kicker">DFL STADIUM DASH</span><h1 data-name></h1></div><span class="sr-state" data-state-label></span></header>
  <div class="sr-room-meta"><span data-racer-count></span><span data-duration-label></span><span data-presence hidden></span><span class="sr-connection" role="status" hidden></span></div>
  <div class="sr-camera-selector" style="--camera-slot:0" aria-label="Race camera"><button type="button" data-camera="auto" aria-pressed="true">Auto</button><button type="button" data-camera="field" aria-pressed="false">Full field</button><button type="button" data-camera="follow" aria-pressed="false">Follow racer</button></div>
- <div class="sr-stage"><canvas aria-label="Live football stadium race"></canvas><div class="sr-stage-score"><div><span data-clock>0:00</span><small data-field-spot></small></div><button type="button" data-expand aria-label="Expand race">⛶</button></div><div class="sr-stage-overlay" aria-live="polite"><strong data-overlay></strong><span data-overlay-name></span></div><div class="sr-moment" aria-live="polite"><span data-moment-title></span><strong data-moment-name></strong></div></div>
+ <div class="sr-stage"><div class="sr-watch-surface"><canvas aria-label="Live football stadium race"></canvas><div class="sr-stage-score"><div><span data-clock>0:00</span><small data-field-spot></small></div><button type="button" data-expand aria-label="Expand race"><span aria-hidden="true">⛶</span><b data-expand-label>Watch</b></button></div><div class="sr-stage-overlay" aria-live="polite"><strong data-overlay></strong><span data-overlay-name></span></div><div class="sr-moment" aria-live="polite"><span data-moment-title></span><strong data-moment-name></strong></div></div><div class="sr-controls" aria-label="Commissioner race controls"></div></div>
  <div class="sr-tools">${currentMember()?'<button type="button" data-my-racer>My racer</button>':''}<button type="button" data-motion aria-pressed="true">Motion on</button><button type="button" data-share>Copy watch link</button><button type="button" data-replay hidden>Replay</button></div>
- <div class="sr-controls"></div><div class="sr-editor-host" hidden></div><div class="sr-final" hidden aria-live="polite"></div>
+ <div class="sr-editor-host" hidden></div><div class="sr-final" hidden aria-live="polite"></div>
  <div class="sr-board-head"><h2 data-board-title>Starting grid</h2><span data-board-status></span></div><ol class="sr-board" aria-label="Race positions"></ol></section>`;
  view.replaceChildren(root);
  const q=s=>root.querySelector(s),stage=q('.sr-stage'),board=q('.sr-board'),host=q('.sr-editor-host');
  const stageWatch=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{stageVisible=entries[0].isIntersecting;if(stageVisible)draw(performance.now());},{rootMargin:'100px'}):null;
  stageWatch?.observe(stage);life.cleanup.push(()=>stageWatch?.disconnect());
- const orientation=mountStadiumOrientation(stage,{onChange:blocked=>{if(blocked){cancelAnimationFrame(raf);raf=0;cancelAnimationFrame(cameraRaf);cameraRaf=0;}else{lastDOM=0;draw(performance.now());schedule();}}});life.cleanup.push(()=>orientation.stop());
+ const orientation=mountStadiumOrientation(stage,{autoExpand:()=>!snapshot.can_control,onChange:blocked=>{if(blocked){cancelAnimationFrame(raf);raf=0;cancelAnimationFrame(cameraRaf);cameraRaf=0;}else{lastDOM=0;draw(performance.now());schedule();}}});life.cleanup.push(()=>orientation.stop());
  const visible=()=>!document.hidden&&!life.closed&&!orientation.blocked;
  const showConnection=message=>{const el=q('.sr-connection');el.textContent=message;el.hidden=!message;};
  const setMotion=()=>{root.dataset.motion=motion()?'on':'off';q('[data-motion]').textContent=`Motion ${motion()?'on':'off'}`;q('[data-motion]').setAttribute('aria-pressed',String(motion()));if(!raf)draw(performance.now());};
@@ -124,8 +124,9 @@ async function room(view,members,id,life){
   controls.innerHTML=state==='running'?'<button class="sr-primary" data-command="pause">Pause race</button>':state==='paused'?'<button class="sr-primary" data-command="resume">Resume race</button><button data-edit>Edit race</button><button data-reset>Reset draw</button>':state==='finished'?'<button class="sr-primary" data-again>Race again</button>':'<button class="sr-primary" data-command="start">Start race</button><button data-edit>Edit race</button>';
   controls.querySelectorAll('button').forEach(b=>b.disabled=busy);
   controls.querySelectorAll('[data-command]').forEach(b=>b.onclick=()=>void runCommand(b.dataset.command));
-  const edit=controls.querySelector('[data-edit]');if(edit)edit.onclick=()=>{
-   host.hidden=false;wireEditor(host,members,{event:snapshot.event,selected:racers.map(r=>r.id),onCancel:()=>host.hidden=true,onSave:async values=>{await runCommand('configure',values,true);host.hidden=true;}});host.scrollIntoView({behavior:motion()?'smooth':'auto',block:'nearest'});
+  const edit=controls.querySelector('[data-edit]');if(edit)edit.onclick=async()=>{
+   if(!await orientation.exit()){toast('Close full screen to edit the race.');return;}if(life.closed)return;
+   host.hidden=false;wireEditor(host,members,{event:snapshot.event,selected:racers.map(r=>r.id),onCancel:()=>{host.hidden=true;root.querySelector('[data-edit]')?.focus({preventScroll:true});},onSave:async values=>{await runCommand('configure',values,true);host.hidden=true;root.querySelector('[data-edit]')?.focus({preventScroll:true});}});host.scrollIntoView({behavior:motion()?'smooth':'auto',block:'start'});
   };
   const reset=controls.querySelector('[data-reset]');if(reset)reset.onclick=()=>{
    controls.innerHTML='<strong>Discard this draw?</strong><button class="sr-primary" data-confirm>Reset draw</button><button data-cancel-reset>Keep race</button>';
@@ -197,7 +198,7 @@ async function room(view,members,id,life){
  q('[data-share]').onclick=async()=>{try{const url=new URL(location.href);url.hash=`#/arena?id=${id}`;await navigator.clipboard.writeText(url.href);toast('Watch link copied.');}catch{toast('Could not copy the watch link.');}};
  q('[data-replay]').onclick=()=>{replayAt=performance.now()+3000;replayFinished=false;finishAt=null;lastKey='';lastLeader='';leadChange=null;schedule();};
  q('[data-expand]').onclick=()=>void orientation.expand();
- const onKey=e=>{if(e.key==='Escape'){stage.classList.remove('sr-expanded');orientation.sync();}};window.addEventListener('keydown',onKey);
+ const onKey=e=>{if(e.key==='Escape')void orientation.exit();};window.addEventListener('keydown',onKey);
  const visibility=()=>{if(document.hidden){cancelAnimationFrame(raf);raf=0;}else{void refresh();draw(performance.now());schedule();}};
  document.addEventListener('visibilitychange',visibility);window.addEventListener('online',visibility);
  life.cleanup.push(()=>{cancelAnimationFrame(raf);cancelAnimationFrame(cameraRaf);clearInterval(poll);renderer?.stop();channel?.unsubscribe();document.removeEventListener('visibilitychange',visibility);window.removeEventListener('online',visibility);window.removeEventListener('keydown',onKey);stage.classList.remove('sr-expanded');if(document.fullscreenElement===stage)void document.exitFullscreen();});

@@ -230,7 +230,7 @@ def check_game_day_scope(page):
         check(!detailsRoot.querySelector('.home-live-details').open,'Player leaders must start collapsed before kickoff');
         resolveWeekly({season:2026,week:5,teams:[{sleeper_user_id:'a',projection:124.8,lineupIsSet:true},{sleeper_user_id:'b',projection:118.2,lineupIsSet:true}]});
         await until(()=>!!root.querySelector('.home-projected-total'));check(root.textContent.includes('124.8'),'Forecast did not reach the matchup');
-        check(!!root.querySelector('[data-gameday-chirp] .dfl-chirp')&&!root.querySelector('[data-gameday-chirp]').closest('details'),'DFL chirp must stay beside the scores');
+        check(!root.querySelector('[data-gameday-chirp] .dfl-chirp'),'Pregame does not duplicate the daily card with generic banter');
         check(!root.querySelector('[data-gameday-refresh]')&&!!detailsRoot.querySelector('[data-gameday-refresh]'),'Details stayed in the hero');
         detailsRoot.querySelector('.home-live-details').open=true;detailsRoot.querySelector('.gameday-home-detail').open=true;
         detailsRoot.querySelector('[data-gameday-tab="opponent"]').click();
@@ -982,7 +982,7 @@ with sync_playwright() as p:
             return {width:innerWidth,fontLoaded:document.fonts.check('600 15px "Rajdhani"'),heading:type('.home-rankings-card h2'),body:type('.home-league-story p'),name:type('.home-thermal-leaders .dfl-player-copy strong'),metadata:type('.home-thermal-leaders .dfl-player-copy small'),detail:type('[data-page-detail="home-week"] summary strong'),rankLabelsFit:labelElements.every(e=>e.scrollWidth<=e.clientWidth+1)&&labels.every((r,i)=>!i||labels[i-1].right<=r.left+1),masthead:document.querySelector('.home-newspaper-masthead').offsetHeight};
         }''')
         assert typography['fontLoaded'] and all('Rajdhani' in typography[k]['family'] for k in ['heading','body','name','metadata','detail']), f'Home type did not load consistently: {typography}'
-        assert typography['heading']['size'] == 18 and typography['body']['size'] == 12 and typography['name']['size'] == 15 and typography['metadata']['size'] == 12, f'Home text scale is inconsistent: {typography}'
+        assert typography['heading']['size'] == 18 and typography['body']['size'] == 14 and typography['name']['size'] == 15 and typography['metadata']['size'] == 12, f'Home text scale is inconsistent: {typography}'
         assert typography['heading']['weight'] == 700 and typography['name']['weight'] == 600 and typography['heading']['transform'] == 'uppercase' and typography['name']['transform'] == 'none' and typography['rankLabelsFit'], f'Home headings or rank columns are crowded: {typography}'
         metrics['mobileType'].append(typography)
     page.set_viewport_size({'width':390,'height':844})
@@ -1060,8 +1060,8 @@ with sync_playwright() as p:
             page.wait_for_function("[...document.querySelector('.bx-stage').getAnimations({subtree:true})].every(a=>a.effect.getTiming().iterations===Infinity||a.effect.getComputedTiming().endTime>1500||!['running','pending'].includes(a.playState))", timeout=10000)
             layout = page.evaluate('''() => {
                 const stage=document.querySelector('.bx-stage'), slide=stage.querySelector('.bx-slide:not(.bx-leaving)'), box=slide.getBoundingClientRect();
-                const elements=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *, .bx-champ > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&!['none','contents'].includes(getComputedStyle(e).display));
-                const crest=slide.querySelector('.bx-editorial-subject img'), copy=slide.querySelector('.bx-editorial-copy'), subject=slide.querySelector('.bx-editorial-subject'), artwork=subject?.getBoundingClientRect();
+                const elements=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *, .bx-champ > *, .bx-award-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&!['none','contents'].includes(getComputedStyle(e).display));
+                const crest=slide.querySelector('.bx-editorial-subject img'), copy=slide.querySelector('.bx-editorial-copy,.bx-award-copy'), subject=slide.querySelector('.bx-editorial-subject'), artwork=subject?.getBoundingClientRect();
                 return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top+scrollY,
                     left:box.left,right:box.right,contentTop:box.top,contentBottom:box.bottom,
                     content:elements.map(e=>({class:e.className,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,scroll:e.scrollWidth,width:e.clientWidth})),
@@ -1459,7 +1459,7 @@ with sync_playwright() as p:
                     assert page.evaluate("""()=>{const stage=document.querySelector('.bx-stage'),shade=stage.querySelector('.bx-home-shade'),a=stage.getBoundingClientRect(),b=shade.getBoundingClientRect();return stage.scrollTop===0&&['left','top','width','height'].every(k=>Math.abs(a[k]-b[k])<1)}"""), f'Opener shade or focus shifted outside its card: {mode}/{width}'
                 check=page.evaluate('''() => {
                   const stage=document.querySelector('.bx-stage'),slide=stage.querySelector('.bx-slide:not(.bx-leaving)'),box=slide.getBoundingClientRect();
-                  const content=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *, .bx-champ > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&!['none','contents'].includes(getComputedStyle(e).display));
+                  const content=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *, .bx-champ > *, .bx-award-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&!['none','contents'].includes(getComputedStyle(e).display));
                   return {headline:slide.querySelector('h2')?.textContent,displaySizes:[...slide.querySelectorAll('.bx-head,.bx-name,.bx-home-title')].map(e=>parseFloat(getComputedStyle(e).fontSize)),copySizes:[...slide.querySelectorAll('.bx-sub,.bx-body,.bx-when-text')].map(e=>parseFloat(getComputedStyle(e).fontSize)),fit:content.every(e=>{const b=e.getBoundingClientRect();return b.left>=box.left-1&&b.right<=box.right+1&&b.top>=box.top-1&&b.bottom<=box.bottom+1&&e.scrollWidth<=e.clientWidth+1}),overflow:document.documentElement.scrollWidth>innerWidth,contrast:window.reviewTextContrast().failures};
                 }''')
                 assert check['fit'] and not check['overflow'] and not check['contrast'], f'Themed slide unreadable: {mode}/{width}/{index}: {check}'

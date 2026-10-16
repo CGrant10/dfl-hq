@@ -4,6 +4,13 @@ on:
   pull_request:
     paths:
       - 'css/app-shared.css'
+      - 'css/home-premium.css'
+      - 'css/stadium-arena.css'
+      - 'js/pages/arena-stadium.js'
+      - 'js/arena/stadium-orientation*'
+      - 'js/matchup-route-motion*'
+      - 'tools/capture-stadium-arena.py'
+      - 'tools/capture-matchup-review.py'
       - 'css/shared-styles.json'
       - 'js/tab-scroll-cues.js'
       - 'js/trade-alert-dock.js'
@@ -128,6 +135,10 @@ jobs:
         env:
           DFL_ROUTE_REVIEW_DIR: ${{ github.workspace }}/home-review-output/routes
         run: python tools/capture-route-review.py
+      - name: Check shared matchup transitions
+        env:
+          DFL_MATCHUP_REVIEW_DIR: home-review-output/matchup
+        run: python tools/capture-matchup-review.py
       - name: Check compact mobile trade alert
         run: python tools/capture-trade-alert-review.py
         env:
@@ -141,4 +152,27 @@ jobs:
         with:
           name: home-design-review
           path: home-review-output/
+          retention-days: 7
+
+  arena-controls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright
+      - name: Check stadium controls and orientation
+        env:
+          DFL_ARENA_REVIEW_DIR: arena-review-output
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          test -n "$DFL_REVIEW_CHROMIUM"
+          python tools/capture-stadium-arena.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stadium-controls-review
+          path: arena-review-output/
           retention-days: 7
