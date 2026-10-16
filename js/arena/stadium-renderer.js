@@ -19,7 +19,7 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
  const redraw=()=>{if(lastFrame)draw(lastFrame,lastOptions);};
  const stopArt=onRacerArtReady(redraw);
  const stadium=image(new URL('../../assets/stadium-arena/stadium.webp',import.meta.url),redraw);
- const crest=image(new URL('../../icons/app-update-aligned.svg',import.meta.url),redraw);
+ const crest=image(new URL('../../icons/dfl-logo-512.webp',import.meta.url),redraw);
  const sprite=image(new URL('../../assets/stadium-arena/runner-cycle.webp',import.meta.url),redraw);
  const photos=new Map(racers.map(r=>{const url=safePhoto(r.photo);return [String(r.id),url?image(url,redraw):null];}));
  const kits=new Map();const refreshKits=()=>{kits.clear();racers.forEach((r,index)=>kits.set(String(r.id),normalizeKit(r.kit,{number:r.number??index+1})));};refreshKits();
