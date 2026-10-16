@@ -5781,7 +5781,7 @@ html[data-ui-motion="off"] #home-wrap .bx-season-story .bx-season-years b {anima
 .pc-compare-status:empty {display:none;}
 .pc-compare-search {display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:8px;margin:16px 0 8px;}
 .pc-compare-search :is(label,input,select) {min-width:0;width:100%;}
-.pc-compare-search :is(input,select) {box-sizing:border-box;min-height:44px;font-size:14px;}
+.pc-compare-search :is(input,select) {box-sizing:border-box;min-height:44px;font-size:16px;}
 .pc-compare-result {display:grid;grid-template-columns:36px minmax(0,1fr) 20px;gap:10px;align-items:center;width:100%;min-height:58px;padding:9px 0;background:transparent;border:0;border-bottom:1px solid var(--line-soft);border-radius:0;color:var(--text);text-align:left;}
 .pc-compare-result .dfl-player-portrait {width:36px;height:42px;}
 .pc-compare-result > span:not(.dfl-player-portrait) {display:grid;gap:4px;min-width:0;}
