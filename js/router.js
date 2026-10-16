@@ -1,3 +1,4 @@
+import {mountMatchupRouteMotion,renderWithMatchupMotion} from './matchup-route-motion.js';
 import {mountArchiveRouteMotion,renderWithArchiveMotion} from './archive-route-motion.js';
 // =====================================================================
 // router.js - hash based routing (#/home, #/rules, ...)
@@ -288,7 +289,7 @@ const setRouteCanvas = color => {
 */
 export async function renderRoute(options={}){
  const visit=(routeHistory||=createRouteHistory()).visit();
- return renderWithArchiveMotion(()=>renderRoutePage({...options,visit}),document.getElementById('view'),location.hash,{back:visit.kind==='back',visitId:visit.id});
+ return renderWithMatchupMotion(()=>renderWithArchiveMotion(()=>renderRoutePage({...options,visit}),document.getElementById('view'),location.hash,{back:visit.kind==='back',visitId:visit.id}),document.getElementById('view'),location.hash);
 }
 async function renderRoutePage({ retry = false, visit } = {}) {
   const routeStarted = performance.now();
@@ -419,7 +420,7 @@ async function renderRoutePage({ retry = false, visit } = {}) {
   lastAnimated = name;
   const gliding = routeGlide.ready(view);
   placeholder.remove();
-  if (changed && !gliding) {
+  if (changed && !gliding && !document.documentElement.dataset.matchupTransition) {
     view.classList.remove("page-switching");
     void view.offsetWidth;
     view.classList.add("page-in");
@@ -437,6 +438,7 @@ async function renderRoutePage({ retry = false, visit } = {}) {
 
 let lastAnimated = null;
 export function startRouter() {
+  mountMatchupRouteMotion();
   mountArchiveRouteMotion();
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   window.addEventListener('pagehide', () => { const view=document.getElementById('view'); if(view&&mountedHash&&!view.dataset.routeFailed&&!view.classList.contains('is-route-loading'))writeViewMemory(mountedMember,`route:${mountedHash}`,captureView(view)); });

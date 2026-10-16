@@ -43,7 +43,7 @@ export function mountClubhousePolish(root,{getMotion=()=>true,active=()=>root.is
  if(tabs)tabObserver.observe(tabs,{subtree:true,attributes:true,attributeFilter:['aria-selected']});
  const resize=new ResizeObserver(scheduleTabs);if(tabs)resize.observe(tabs);
  const enter=(card,{direction=0}={})=>{
-  stopTransient();if(!canPlay())return;
+  stopTransient();if(!canPlay()||document.documentElement.dataset.matchupTransition)return;
   const faceoff=card?.querySelector('.clubhouse-game-teams');if(!faceoff)return;
   const reveal=()=>{
    stopWaiting();if(!canPlay()||card.closest('[hidden]')||!visible(faceoff))return;

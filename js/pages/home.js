@@ -229,7 +229,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
 }
 
 export function homeWeeklyFocus(outlook,briefing=null,{loading=false}={}){
- return `<section class="home-week-focus" aria-label="Matchup action"><a class="home-lineup-primary" data-home-primary href="#/analyzer"><span>Review lineup</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></section>`;
+ return `<section class="home-week-focus" aria-label="Matchup action"><a class="home-lineup-primary" data-home-primary href="#/analyzer"><span>Review lineup</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a><a class="home-clubhouse-link" data-home-clubhouse-link href="#/clubhouse?tab=matchups">Clubhouse <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></section>`;
 }
 
 function wireHomeWeekHub(root) {

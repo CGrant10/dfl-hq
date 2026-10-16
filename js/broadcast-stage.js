@@ -355,6 +355,10 @@ export function renderItem(item, { editorial = false } = {}) {
       ${item.actionLabel?`<span class="bx-home-action">${esc(item.actionLabel)}<svg class="ico" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>`:''}
     </${tag}>`;
   }
+  if(editorial&&item.treatment==='champion'){
+    const chipEater=item.variant==='chip',art=chipEater?'assets/dfl-daily-chip-eater.webp':item.image||'assets/dfl-daily-champion.webp';
+    return `<a class="bx-slide bx-award-story bx-award-${chipEater?'chip':'champion'} is-champion" href="${esc(item.href||'#/history')}"><span class="bx-kicker">${esc(item.kicker)}</span><span class="bx-award-word" aria-hidden="true">${chipEater?'LAST':'CHAMP'}</span><div class="bx-award-copy"><h2 class="bx-name">${esc(item.headline)}</h2>${item.subtitle?`<span class="bx-sub">${esc(item.subtitle)}</span>`:''}<strong class="bx-award-call">${chipEater?'Eat your fucking words.':'Talk your shit.'}</strong>${chip(item)}</div><span class="bx-editorial-illustration" aria-hidden="true"><span class="bx-editorial-subject"><img class="bx-editorial-portrait" src="${esc(art)}" alt="" decoding="async"></span></span></a>`;
+  }
   if(editorial&&item.kind==='season')return `<a class="bx-slide bx-season-story is-stat" href="${esc(item.href||'#/history')}"><span class="bx-kicker">${Number(item.figure)%10===0?'ANNIVERSARY SEASON':esc(item.kicker)}</span><div class="bx-season-lockup"><strong class="bx-season-number">${esc(item.figure)}</strong><h2 class="bx-head">${esc(item.headline)}</h2></div><div class="bx-season-years"><span>${esc(item.subtitle)}</span><i aria-hidden="true">${Array.from({length:Math.min(20,Math.max(1,Number(item.figure)||1))},()=>'<b></b>').join('')}</i></div><span class="bx-story-action">The league archive <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span></a>`;
   if(editorial&&item.treatment==='stat'&&!['fact','record','trade'].includes(item.kind)){
     const percent=/^\d+(?:\.\d+)?%$/.test(String(item.figure)),value=percent?Math.max(0,Math.min(100,parseFloat(item.figure))):0;

@@ -49,10 +49,11 @@ describe("editorial Home broadcast", () => {
     expect(html).toContain('long_handle');
     expect(html).not.toContain('dfl-daily-crest');
   });
-  it("uses champion artwork without a splatter while retaining the winner and destination", () => {
+  it("uses a champion poster without a splatter while retaining the winner and destination", () => {
     const item = { treatment: "champion", headline: "Winner & Co", kicker: "2025 Champion", href: "#/history" };
     const html = renderItem(item, { editorial: true });
     expect(html).toContain("assets/dfl-daily-champion.webp");
+    expect(html).toContain("bx-award-champion");expect(html).toContain("Talk your shit.");
     expect(html).not.toContain("bx-editorial-splatter");
     expect(html).toContain("Winner &amp; Co");
     expect(html).toContain('href="#/history"');
@@ -64,6 +65,7 @@ describe("editorial Home broadcast", () => {
   it("gives the Chip Eater its own illustration even when a member portrait is available", () => {
     const item = { treatment: "champion", variant: "chip", headline: "Last place", image: "https://example.com/member.webp", background: "image" };
     expect(renderItem(item, { editorial: true })).toContain("assets/dfl-daily-chip-eater.webp");
+    expect(renderItem(item,{editorial:true})).toContain("Eat your fucking words.");
     expect(renderItem(item, { editorial: true })).not.toContain("example.com/member.webp");
     expect(renderItem(item)).toContain("example.com/member.webp");
   });

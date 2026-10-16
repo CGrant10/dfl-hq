@@ -248,3 +248,37 @@ turned into zero; partial current games are excluded from the completed sample.
 The comparison loads on demand and adds no startup/Home module requests. App
 motion-off and reduced motion keep static, usable controls. No backend/schema
 changes, production trades, posts, notifications or bets were made.
+
+## 1.430.0 — Arena control access and composed Home
+
+Reviewed Home with guarded actual league reads in Medicine Wheel Light and Dark
+at 320px/390px: the tighter masthead, aligned matchup scores, lineup/Clubhouse
+entry row, independent daily broadcast, champion and Chip Eater posters, and the
+archive's large lead story with compact supporting receipts. Award artwork stays
+contained with breathing room and no splatter or extra league logos. Long names,
+owner text and historical chips wrap inside a separate copy column. Broadcast
+entrances use small translated/faded groups and leave the gesture transform free;
+reduced motion and the app motion switch disable the new choreography.
+
+The explicit Clubhouse link preserves the existing GameDay entry. Supported
+browsers connect visible team identities by roster ID; matching actual totals can
+travel with them. Forecasts and changed totals are not presented as unchanged
+actual scores. Unsupported browsers, offscreen targets and motion-off keep normal
+navigation. Browser and unit checks cover reversed columns, name cleanup, reduced
+motion, ordinary route memory and interrupted navigation. Startup and Home module
+request counts remain three and four respectively.
+
+Reviewed the actual Stadium controller with isolated commissioner/spectator data,
+including Light/Dark portrait editing, landscape expanded controls, a pending
+orientation-lock request, native-fullscreen mocks, unsupported-fullscreen fallback,
+paused duration edits, sealed results and cleanup. The portrait gate covers only
+the field and does not take focus from an editor. Commissioner controls live
+inside the expanded stage; Edit exits that view. Explicit exit releases the owned
+orientation lock and remains closed across resize. Commissioner forms use app
+surface/text/control tokens; the field retains its dark stadium lighting.
+
+Live league verification is guarded against race commands, kit saves, trades,
+posts and notifications; race mutations are exercised only against the local
+fixture. Physical device orientation-lock behavior, native Safari fullscreen and
+VoiceOver/TalkBack are not certified by desktop browser checks. No database,
+permissions, scoring, race draw or notification policy changes were made.

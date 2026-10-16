@@ -27,3 +27,28 @@
 html[data-ui-motion="off"] #home-wrap .bx-season-story .bx-season-years b {animation:none!important;}
 @media(max-width:360px){#home-wrap .bx-stat-story-main{grid-template-columns:108px minmax(0,1fr);gap:12px;}#home-wrap .bx-stat-metric{min-height:108px;}#home-wrap .bx-season-number{font-size:120px;}}
 @media(prefers-reduced-motion:reduce){#home-wrap .bx-season-story .bx-season-years b{animation:none!important;}}
+/* Award posters share the app's type, not an identical champion template. */
+#home-wrap .bx-award-story{display:grid;align-content:start;gap:18px;min-height:250px;isolation:isolate;overflow:hidden}
+#home-wrap .bx-award-story>.bx-kicker{z-index:2;align-self:start;margin:0}
+#home-wrap .bx-award-copy{display:grid;align-content:start;justify-items:start;gap:12px;width:calc(46% - 12px);min-width:0;z-index:2}
+#home-wrap .bx-award-story .bx-name{font:400 clamp(28px,8vw,34px)/1.08 Anton,var(--font-display);text-align:left;margin:0;max-width:100%;text-wrap:balance;overflow-wrap:anywhere}
+#home-wrap .bx-award-story .bx-sub{font:600 15px/1.35 var(--home-ui-font);color:var(--body-text);text-align:left;margin:0;overflow-wrap:anywhere}
+#home-wrap .bx-award-call{font:700 15px/1.25 var(--home-ui-font);color:var(--accent);max-width:12ch}
+#home-wrap .bx-award-word{position:absolute;right:0;top:24px;z-index:0;color:color-mix(in srgb,var(--text) 7%,transparent);font:400 clamp(76px,26vw,120px)/1 Anton,sans-serif;letter-spacing:-.025em;pointer-events:none}
+#home-wrap .bx-award-chip .bx-award-word{top:auto;bottom:0;font-size:clamp(100px,35vw,150px);color:color-mix(in srgb,var(--accent) 9%,transparent)}
+#home-wrap .bx-award-story .bx-editorial-illustration{position:absolute;inset:32px 4px 0 auto;width:calc(54% - 4px);height:auto;z-index:1;overflow:visible}
+#home-wrap .bx-award-story .bx-editorial-subject{position:absolute;inset:0;width:100%;height:100%;overflow:visible;opacity:.96}
+#home-wrap .bx-award-story .bx-editorial-portrait{display:block;width:100%;height:100%;object-fit:contain;object-position:right bottom;transform:none;filter:drop-shadow(0 10px 12px rgb(0 0 0/.12))}
+/* One composed entrance: copy leads, supporting detail and artwork settle once. */
+#home-wrap .bx-slide.bx-in :is(.bx-kicker,.bx-home-week){animation:bx-editorial-copy-in 240ms ease-out both}
+#home-wrap .bx-slide.bx-in :is(.bx-head,.bx-name,.bx-home-title,.bx-stat-story-main,.bx-season-lockup){animation:bx-editorial-copy-in 340ms cubic-bezier(.2,.75,.25,1) 45ms both}
+#home-wrap .bx-slide.bx-in :is(.bx-sub,.bx-body,.bx-when,.bx-award-call,.bx-story-action){animation:bx-editorial-copy-in 280ms ease-out 110ms both}
+#home-wrap .bx-slide.bx-in :is(.bx-editorial-subject,.bx-story-image){animation:bx-editorial-art-in 420ms cubic-bezier(.2,.75,.25,1) 80ms both}
+@keyframes bx-editorial-copy-in{from{opacity:0;translate:0 5px}to{opacity:1;translate:0 0}}
+@keyframes bx-editorial-art-in{from{opacity:.55;translate:8px 0}to{opacity:1;translate:0 0}}
+html[data-ui-motion="off"] #home-wrap .bx-slide *,html[data-ui-motion="off"] #home-wrap .bx-slide{animation:none!important}
+@media(prefers-reduced-motion:reduce){#home-wrap .bx-slide *,#home-wrap .bx-slide{animation:none!important}}
+#home-wrap .bx-slide.bx-in :is(.bx-stat-story-main,.bx-season-lockup) *{animation:none}
+#home-wrap .bx-award-copy{grid-template-columns:minmax(0,1fr)}
+#home-wrap .bx-award-copy>*{min-width:0;max-width:100%}
+#home-wrap .bx-award-copy .bx-when{box-sizing:border-box;white-space:normal;overflow-wrap:anywhere}
