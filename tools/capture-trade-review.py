@@ -250,7 +250,7 @@ with sync_playwright() as p:
         # Its native toggle event has not fired yet; a redraw must keep it open.
         page.evaluate('''()=>{const section=document.querySelector('.tb-refine');section.open=true;const input=document.querySelector('[data-tb-add-anchor="send"]');input.value='1-4';input.dispatchEvent(new Event('change',{bubbles:true}));}''')
         assert page.locator('.tb-refine').evaluate('e=>e.open')
-        select('[data-tb-add-anchor="receive"]','2-6')
+        select('[data-tb-league-target]','2-6')
         click('[data-tb-add-member]')
         assert page.locator('[data-td-remove-pick="0"][data-player-id="1-4"]').count()==1
         assert page.locator('[data-td-remove-pick="1"][data-player-id="2-6"]').count()==1
