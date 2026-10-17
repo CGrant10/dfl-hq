@@ -18,7 +18,7 @@ export function tradeSuggestionQuality(result){
  const weekly=result.windowDeltas||result.weeklyDeltas||[result.weeklyDeltaA,result.weeklyDeltaB];
  const fit=result.windowDeltas||result.rosterImpacts||[result.rosterImpactA??result.weeklyDeltaA,result.rosterImpactB??result.weeklyDeltaB];
  const gains=weekly.map(n),impacts=fit.map(n),least=Math.min(...gains),leastFit=Math.min(...impacts);
- const group=least<-.75||leastFit<-.75?0:gains.every(v=>v>.1)?4:impacts.every(v=>v>.1)&&least>=-.1?3:gains.some(v=>v>.1)&&least>=-.1?2:1;
+ const group=least<-.75||leastFit<-.75?0:gains.every(v=>v>.1)?4:impacts.every(v=>v>.1)&&least>=-.1?3:gains.some(v=>v>.1)&&least>=-.1?2:gains[0]>.1&&gains.reduce((a,b)=>a+b,0)>.2?1.5:1;
  const risk=result.projectionEvidence;
  const riskCount=['missing','stale','fallback','injuries'].reduce((sum,key)=>sum+(risk?.[key]?.length||0),0);
  return {group,score:Math.min(...impacts.map(cap))*12+gains.map(cap).reduce((a,b)=>a+b,0)*5+impacts.map(cap).reduce((a,b)=>a+b,0)*2-riskCount*2};

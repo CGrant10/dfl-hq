@@ -381,3 +381,37 @@ desktop browser certification.
 Home section jumps also reserve the compact scoreboard's measured height. Native
 swipe regression points are checked against the visible carousel surface, so
 they cannot accidentally start underneath the newly taller named scoreboard.
+
+
+## 1.436.0 — Broadcast compositions and full trade tickets
+
+Captured the current mobile broadcast and trade flow before editing. The old
+suggestion hid supporting players and used almost an entire phone viewport for
+a simple exchange. The secondary broadcast cards had inconsistent visual scale.
+
+Trade suggestions now expose every player in two compact columns, retaining
+44px player/detail targets, wrapped full names, price balance, both projected
+lineup changes, horizon, risk flags and required cuts. The detailed manual desk
+and share cards retain their full data. Removed obsolete offer CSS from the
+shared decision sheet so it cannot restore the large old layout. New entries
+shop all teams; manual drafts survive separately and explicit player-target
+links still select their owner.
+
+Award headlines span the whole poster. Owner/banter and a full contained figure
+occupy separate grid columns; the title and footer sit outside the art. The
+remaining editorial slides share a theme-token plate with stronger stat, scout,
+archive, calendar and trade compositions. The daily opener is unchanged. No
+shield or decorative league logo was added to secondary broadcast stories.
+
+Reviewed Light/Dark full-package tickets at 320/390/430/768px, including 4-for-4
+and 7-for-1 exchanges; all names remain visible without expansion or horizontal
+scrolling. Award review covers Light/Dark at 320/390/430/832px with actual image
+containment, copy/headline/art/footer separation and contrast checks. Home's
+full themed slide, gesture, scroll and motion-preference suite remains required
+before merge. Shared navigation and startup retain the existing palette.
+
+Search refinement is bounded, runs in the worker, and reuses the existing PPR
+1-QB model. It does not relax evidence freshness, QB, availability, roster-cost
+or comparable-star checks for Steal labels. Startup/Home bundle requests remain
+3/4. Browser verification does not certify physical-device frame rates or full
+screen-reader compliance.

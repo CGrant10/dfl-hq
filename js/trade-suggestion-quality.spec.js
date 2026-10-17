@@ -1,5 +1,5 @@
 import {it,expect} from 'vitest';
-import {compareTradeSuggestions} from './trade-suggestion-quality.js';
+import {compareTradeSuggestions,tradeSuggestionQuality} from './trade-suggestion-quality.js';
 const offer=(size,score=100,extra={})=>({sendA:Array.from({length:size-1},(_,i)=>String(i)),sendB:['r'],score,fairness:92,utility:{group:4,score:22},...extra});
 it('ranks a simpler comparable deal before a padded package without changing its grade',()=>{
  const small=offer(3),large=offer(8,500),before=structuredClone([small,large]);expect([large,small].sort(compareTradeSuggestions)).toEqual([small,large]);expect([small,large]).toEqual(before);
@@ -11,4 +11,10 @@ it('preserves materially better fit, quality, price and lower risk ahead of simp
 it('sorts two- and three-team packages consistently without pairwise threshold cycles',()=>{
  const rows=Array.from({length:12},(_,i)=>offer(2+i%7,100+i,{fairness:85+i,utility:{group:3+i%2,score:18+i}}));rows.push({...offer(6),sends:[['a'],['b','c'],['d']]});
  const sorted=[...rows].sort(compareTradeSuggestions);for(let i=0;i<sorted.length;i++)for(let j=i+1;j<sorted.length;j++)expect(compareTradeSuggestions(sorted[i],sorted[j])).toBeLessThanOrEqual(0);
+});
+
+it('ranks a useful positive exchange above an idle swap without hiding material partner losses',()=>{
+ const idle={weeklyDeltaA:0,weeklyDeltaB:0},useful={weeklyDeltaA:1,weeklyDeltaB:-.2},harmful={weeklyDeltaA:2,weeklyDeltaB:-2};
+ expect(tradeSuggestionQuality(useful).group).toBeGreaterThan(tradeSuggestionQuality(idle).group);
+ expect(tradeSuggestionQuality(harmful).group).toBeLessThan(tradeSuggestionQuality(idle).group);
 });

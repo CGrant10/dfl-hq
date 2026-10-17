@@ -240,3 +240,34 @@
 
 #view[data-route="trade"] .td-fit-call { margin:10px 0 0; color:var(--body-text); font:600 12px/1.5 var(--font-body); }
 #view[data-route="trade"] .td-fit-call small { display:block; font:500 11px/1.5 var(--font-body); color:var(--muted); }
+
+/* Offer tickets expose the complete exchange without expanding a roster. */
+#view[data-route="trade"] .tb-offer{padding:10px 12px 0;border:1px solid var(--line);border-radius:var(--r-card,12px);background:var(--bg-2);overflow:hidden}
+#view[data-route="trade"] .tb-tier>div{display:grid;gap:10px}
+#view[data-route="trade"] .tb-offer>header{grid-template-columns:minmax(0,1fr) auto auto;gap:8px;padding:0 0 8px;align-items:center}
+#view[data-route="trade"] .tb-offer-owner{font:600 12px/1.3 var(--font-body);color:var(--text)}
+#view[data-route="trade"] .tb-offer-owner strong{white-space:normal;overflow-wrap:anywhere}
+#view[data-route="trade"] .tb-offer-owner .tb-team-mark{width:22px;height:22px;min-width:22px}
+#view[data-route="trade"] .tb-offer>header>span{font:700 10px/1.3 var(--font-body);padding:3px 5px;background:transparent;color:var(--body-text);border-color:var(--line)}
+#view[data-route="trade"] .tb-offer>header>b{font:700 10px/1.3 var(--font-body);color:var(--accent);text-align:right}
+#view[data-route="trade"] .tb-offer-flow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:4px 0 8px;margin:0;align-items:start}
+#view[data-route="trade"] .tb-package{min-width:0;padding:0;border:0}
+#view[data-route="trade"] .tb-package+ .tb-package{padding-left:12px;border-left:1px solid var(--line)}
+#view[data-route="trade"] .tb-package>small{display:block;font:700 10px/1.3 var(--font-body);letter-spacing:.07em;color:var(--body-text);margin-bottom:3px}
+#view[data-route="trade"] .tb-player{display:block;min-width:0;padding:0}
+#view[data-route="trade"] .tb-player-link{display:flex;align-items:center;gap:6px;min-height:44px;width:100%;padding:3px 0;border:0;border-radius:4px;background:transparent;color:var(--text);text-align:left;cursor:pointer}
+#view[data-route="trade"] .tb-player-link>span:last-child{display:grid;min-width:0;gap:1px}
+#view[data-route="trade"] .tb-player-link strong{font:600 13px/1.25 var(--font-body);white-space:normal;overflow-wrap:anywhere}
+#view[data-route="trade"] .tb-player-link small{font:500 10px/1.3 var(--font-body);color:var(--body-text);white-space:normal}
+#view[data-route="trade"] .tb-player-link .dfl-player-portrait{flex:0 0 24px;width:24px;min-width:24px;height:28px}
+#view[data-route="trade"] .tb-offer-summary{padding:7px 0;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:4px 8px}
+#view[data-route="trade"] .tb-offer-summary dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;margin:0}
+#view[data-route="trade"] .tb-offer-summary dl>div{display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 5px;min-width:0}
+#view[data-route="trade"] .tb-offer-summary dt{font:500 11px/1.3 var(--font-body);color:var(--body-text)}
+#view[data-route="trade"] .tb-offer-summary dd{font:700 14px/1.3 var(--font-body);font-variant-numeric:tabular-nums;color:var(--text);margin:0}
+#view[data-route="trade"] .tb-offer-horizon{font:500 11px/1.4 var(--font-body);color:var(--body-text)}
+#view[data-route="trade"] .tb-offer-risk{font:600 11px/1.4 var(--font-body);color:var(--warn-ink);width:100%;overflow-wrap:anywhere}
+#view[data-route="trade"] .tb-offer-analyze{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;margin:0;padding:8px 0;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent;color:var(--accent);font:700 12px/1.3 var(--font-body);cursor:pointer}
+#view[data-route="trade"] .tb-offer :is(button,a):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#view[data-route="trade"] .tb-multi-flow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(min-width:700px){#view[data-route="trade"] .tb-tier>div{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}#view[data-route="trade"] .tb-multi-offer{grid-column:1/-1}#view[data-route="trade"] .tb-multi-flow{grid-template-columns:repeat(3,minmax(0,1fr))}}
