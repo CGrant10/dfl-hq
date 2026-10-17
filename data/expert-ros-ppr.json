@@ -6,8 +6,8 @@
   "scoring": "ppr",
   "season": 2026,
   "experts": 7,
-  "updatedAt": 1792201352000,
-  "fetchedAt": 1792220506706,
+  "updatedAt": 1792272441000,
+  "fetchedAt": 1792275924211,
   "players": [
     {
       "sourceId": 22968,
@@ -1165,22 +1165,11 @@
       "stdDev": 10.23
     },
     {
-      "sourceId": 19275,
-      "name": "Jalen Hurts",
-      "position": "QB",
-      "team": "PHI",
-      "rank": 106,
-      "positionRank": 16,
-      "minRank": 104,
-      "maxRank": 108,
-      "stdDev": 1.36
-    },
-    {
       "sourceId": 27050,
       "name": "Harold Fannin Jr.",
       "position": "TE",
       "team": "CLE",
-      "rank": 107,
+      "rank": 106,
       "positionRank": 9,
       "minRank": 94,
       "maxRank": 121,
@@ -1191,7 +1180,7 @@
       "name": "Dalton Kincaid",
       "position": "TE",
       "team": "BUF",
-      "rank": 108,
+      "rank": 107,
       "positionRank": 10,
       "minRank": 94,
       "maxRank": 111,
@@ -1202,11 +1191,22 @@
       "name": "Adonai Mitchell",
       "position": "WR",
       "team": "NYJ",
-      "rank": 109,
+      "rank": 108,
       "positionRank": 55,
       "minRank": 93,
       "maxRank": 122,
       "stdDev": 12.72
+    },
+    {
+      "sourceId": 19275,
+      "name": "Jalen Hurts",
+      "position": "QB",
+      "team": "PHI",
+      "rank": 109,
+      "positionRank": 16,
+      "minRank": 104,
+      "maxRank": 113,
+      "stdDev": 3.29
     },
     {
       "sourceId": 19562,
