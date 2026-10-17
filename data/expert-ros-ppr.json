@@ -6,8 +6,8 @@
   "scoring": "ppr",
   "season": 2026,
   "experts": 7,
-  "updatedAt": 1792192524000,
-  "fetchedAt": 1792197233410,
+  "updatedAt": 1792201352000,
+  "fetchedAt": 1792220506706,
   "players": [
     {
       "sourceId": 22968,
@@ -472,26 +472,26 @@
       "stdDev": 4.17
     },
     {
-      "sourceId": 25403,
-      "name": "Jeremiyah Love",
-      "position": "RB",
-      "team": "ARI",
-      "rank": 43,
-      "positionRank": 16,
-      "minRank": 23,
-      "maxRank": 56,
-      "stdDev": 11.37
-    },
-    {
       "sourceId": 25981,
       "name": "Bucky Irving",
       "position": "RB",
       "team": "TB",
-      "rank": 44,
-      "positionRank": 17,
+      "rank": 43,
+      "positionRank": 16,
       "minRank": 28,
       "maxRank": 51,
       "stdDev": 8.57
+    },
+    {
+      "sourceId": 25403,
+      "name": "Jeremiyah Love",
+      "position": "RB",
+      "team": "ARI",
+      "rank": 44,
+      "positionRank": 17,
+      "minRank": 23,
+      "maxRank": 57,
+      "stdDev": 11.59
     },
     {
       "sourceId": 18218,
@@ -538,22 +538,11 @@
       "stdDev": 3.14
     },
     {
-      "sourceId": 17240,
-      "name": "Saquon Barkley",
-      "position": "RB",
-      "team": "PHI",
-      "rank": 49,
-      "positionRank": 19,
-      "minRank": 51,
-      "maxRank": 52,
-      "stdDev": 0.49
-    },
-    {
       "sourceId": 26403,
       "name": "Jalen Coker",
       "position": "WR",
       "team": "CAR",
-      "rank": 50,
+      "rank": 49,
       "positionRank": 24,
       "minRank": 44,
       "maxRank": 64,
@@ -564,11 +553,22 @@
       "name": "Jaylen Waddle",
       "position": "WR",
       "team": "DEN",
-      "rank": 51,
+      "rank": 50,
       "positionRank": 25,
       "minRank": 46,
       "maxRank": 58,
       "stdDev": 5.06
+    },
+    {
+      "sourceId": 17240,
+      "name": "Saquon Barkley",
+      "position": "RB",
+      "team": "PHI",
+      "rank": 51,
+      "positionRank": 19,
+      "minRank": 51,
+      "maxRank": 55,
+      "stdDev": 1.55
     },
     {
       "sourceId": 17265,
@@ -593,26 +593,26 @@
       "stdDev": 4.45
     },
     {
-      "sourceId": 27166,
-      "name": "Cam Skattebo",
-      "position": "RB",
-      "team": "NYG",
-      "rank": 54,
-      "positionRank": 20,
-      "minRank": 52,
-      "maxRank": 57,
-      "stdDev": 1.83
-    },
-    {
       "sourceId": 27016,
       "name": "Luther Burden III",
       "position": "WR",
       "team": "CHI",
-      "rank": 55,
+      "rank": 54,
       "positionRank": 28,
       "minRank": 49,
       "maxRank": 60,
       "stdDev": 4.88
+    },
+    {
+      "sourceId": 27166,
+      "name": "Cam Skattebo",
+      "position": "RB",
+      "team": "NYG",
+      "rank": 55,
+      "positionRank": 20,
+      "minRank": 52,
+      "maxRank": 62,
+      "stdDev": 3.29
     },
     {
       "sourceId": 22726,
@@ -621,9 +621,9 @@
       "team": "NE",
       "rank": 56,
       "positionRank": 21,
-      "minRank": 51,
+      "minRank": 47,
       "maxRank": 69,
-      "stdDev": 6.21
+      "stdDev": 7.2
     },
     {
       "sourceId": 18466,
@@ -876,25 +876,14 @@
       "positionRank": 24,
       "minRank": 69,
       "maxRank": 96,
-      "stdDev": 8.63
-    },
-    {
-      "sourceId": 25395,
-      "name": "Omarion Hampton",
-      "position": "RB",
-      "team": "LAC",
-      "rank": 80,
-      "positionRank": 25,
-      "minRank": 62,
-      "maxRank": 120,
-      "stdDev": 20.51
+      "stdDev": 9.72
     },
     {
       "sourceId": 23781,
       "name": "Isaiah Likely",
       "position": "TE",
       "team": "NYG",
-      "rank": 81,
+      "rank": 80,
       "positionRank": 6,
       "minRank": 86,
       "maxRank": 88,
@@ -905,7 +894,7 @@
       "name": "Xavier Worthy",
       "position": "WR",
       "team": "KC",
-      "rank": 82,
+      "rank": 81,
       "positionRank": 41,
       "minRank": 78,
       "maxRank": 110,
@@ -916,7 +905,7 @@
       "name": "Matthew Stafford",
       "position": "QB",
       "team": "LAR",
-      "rank": 83,
+      "rank": 82,
       "positionRank": 11,
       "minRank": 79,
       "maxRank": 98,
@@ -927,7 +916,7 @@
       "name": "Jordan Addison",
       "position": "WR",
       "team": "MIN",
-      "rank": 84,
+      "rank": 83,
       "positionRank": 42,
       "minRank": 77,
       "maxRank": 103,
@@ -938,7 +927,7 @@
       "name": "Dontayvion Wicks",
       "position": "WR",
       "team": "PHI",
-      "rank": 85,
+      "rank": 84,
       "positionRank": 43,
       "minRank": 83,
       "maxRank": 99,
@@ -949,7 +938,7 @@
       "name": "Romeo Doubs",
       "position": "WR",
       "team": "NE",
-      "rank": 86,
+      "rank": 85,
       "positionRank": 44,
       "minRank": 82,
       "maxRank": 110,
@@ -960,7 +949,7 @@
       "name": "Deebo Samuel Sr.",
       "position": "WR",
       "team": "SF",
-      "rank": 87,
+      "rank": 86,
       "positionRank": 45,
       "minRank": 82,
       "maxRank": 110,
@@ -971,7 +960,7 @@
       "name": "Khalil Shakir",
       "position": "WR",
       "team": "BUF",
-      "rank": 88,
+      "rank": 87,
       "positionRank": 46,
       "minRank": 87,
       "maxRank": 99,
@@ -982,7 +971,7 @@
       "name": "Makai Lemon",
       "position": "WR",
       "team": "PHI",
-      "rank": 89,
+      "rank": 88,
       "positionRank": 47,
       "minRank": 82,
       "maxRank": 103,
@@ -993,11 +982,22 @@
       "name": "Wan'Dale Robinson",
       "position": "WR",
       "team": "TEN",
-      "rank": 90,
+      "rank": 89,
       "positionRank": 48,
       "minRank": 87,
       "maxRank": 102,
       "stdDev": 5.56
+    },
+    {
+      "sourceId": 18269,
+      "name": "Josh Jacobs",
+      "position": "RB",
+      "team": "GB",
+      "rank": 90,
+      "positionRank": 25,
+      "minRank": 55,
+      "maxRank": 174,
+      "stdDev": 41.6
     },
     {
       "sourceId": 26409,
@@ -1011,22 +1011,33 @@
       "stdDev": 18.43
     },
     {
+      "sourceId": 25395,
+      "name": "Omarion Hampton",
+      "position": "RB",
+      "team": "LAC",
+      "rank": 92,
+      "positionRank": 26,
+      "minRank": 69,
+      "maxRank": 127,
+      "stdDev": 24.48
+    },
+    {
       "sourceId": 27131,
       "name": "Kyle Monangai",
       "position": "RB",
       "team": "CHI",
-      "rank": 92,
-      "positionRank": 26,
+      "rank": 93,
+      "positionRank": 27,
       "minRank": 80,
-      "maxRank": 130,
-      "stdDev": 18.28
+      "maxRank": 136,
+      "stdDev": 20.53
     },
     {
       "sourceId": 25298,
       "name": "Tucker Kraft",
       "position": "TE",
       "team": "GB",
-      "rank": 93,
+      "rank": 94,
       "positionRank": 7,
       "minRank": 94,
       "maxRank": 100,
@@ -1037,7 +1048,7 @@
       "name": "Jordan Love",
       "position": "QB",
       "team": "GB",
-      "rank": 94,
+      "rank": 95,
       "positionRank": 12,
       "minRank": 98,
       "maxRank": 104,
@@ -1048,7 +1059,7 @@
       "name": "Courtland Sutton",
       "position": "WR",
       "team": "DEN",
-      "rank": 95,
+      "rank": 96,
       "positionRank": 50,
       "minRank": 90,
       "maxRank": 112,
@@ -1059,7 +1070,7 @@
       "name": "Bryce Young",
       "position": "QB",
       "team": "CAR",
-      "rank": 96,
+      "rank": 97,
       "positionRank": 13,
       "minRank": 92,
       "maxRank": 104,
@@ -1070,7 +1081,7 @@
       "name": "Travis Kelce",
       "position": "TE",
       "team": "KC",
-      "rank": 97,
+      "rank": 98,
       "positionRank": 8,
       "minRank": 88,
       "maxRank": 118,
@@ -1081,7 +1092,7 @@
       "name": "Jayden Daniels",
       "position": "QB",
       "team": "WAS",
-      "rank": 98,
+      "rank": 99,
       "positionRank": 14,
       "minRank": 101,
       "maxRank": 105,
@@ -1092,7 +1103,7 @@
       "name": "Jordyn Tyson",
       "position": "WR",
       "team": "NO",
-      "rank": 99,
+      "rank": 100,
       "positionRank": 51,
       "minRank": 75,
       "maxRank": 133,
@@ -1103,7 +1114,7 @@
       "name": "Tyler Shough",
       "position": "QB",
       "team": "NO",
-      "rank": 100,
+      "rank": 101,
       "positionRank": 15,
       "minRank": 92,
       "maxRank": 108,
@@ -1114,8 +1125,8 @@
       "name": "Woody Marks",
       "position": "RB",
       "team": "HOU",
-      "rank": 101,
-      "positionRank": 27,
+      "rank": 102,
+      "positionRank": 28,
       "minRank": 95,
       "maxRank": 127,
       "stdDev": 12.32
@@ -1125,7 +1136,7 @@
       "name": "Malik Washington",
       "position": "WR",
       "team": "MIA",
-      "rank": 102,
+      "rank": 103,
       "positionRank": 52,
       "minRank": 84,
       "maxRank": 126,
@@ -1136,7 +1147,7 @@
       "name": "Chris Godwin Jr.",
       "position": "WR",
       "team": "TB",
-      "rank": 103,
+      "rank": 104,
       "positionRank": 53,
       "minRank": 77,
       "maxRank": 132,
@@ -1147,7 +1158,7 @@
       "name": "Germie Bernard",
       "position": "WR",
       "team": "PIT",
-      "rank": 104,
+      "rank": 105,
       "positionRank": 54,
       "minRank": 91,
       "maxRank": 117,
@@ -1158,7 +1169,7 @@
       "name": "Jalen Hurts",
       "position": "QB",
       "team": "PHI",
-      "rank": 105,
+      "rank": 106,
       "positionRank": 16,
       "minRank": 104,
       "maxRank": 108,
@@ -1169,7 +1180,7 @@
       "name": "Harold Fannin Jr.",
       "position": "TE",
       "team": "CLE",
-      "rank": 106,
+      "rank": 107,
       "positionRank": 9,
       "minRank": 94,
       "maxRank": 121,
@@ -1180,7 +1191,7 @@
       "name": "Dalton Kincaid",
       "position": "TE",
       "team": "BUF",
-      "rank": 107,
+      "rank": 108,
       "positionRank": 10,
       "minRank": 94,
       "maxRank": 111,
@@ -1191,22 +1202,11 @@
       "name": "Adonai Mitchell",
       "position": "WR",
       "team": "NYJ",
-      "rank": 108,
+      "rank": 109,
       "positionRank": 55,
       "minRank": 93,
       "maxRank": 122,
       "stdDev": 12.72
-    },
-    {
-      "sourceId": 18705,
-      "name": "Tony Pollard",
-      "position": "RB",
-      "team": "TEN",
-      "rank": 109,
-      "positionRank": 28,
-      "minRank": 80,
-      "maxRank": 146,
-      "stdDev": 27.33
     },
     {
       "sourceId": 19562,
@@ -1220,11 +1220,22 @@
       "stdDev": 1.5
     },
     {
+      "sourceId": 18705,
+      "name": "Tony Pollard",
+      "position": "RB",
+      "team": "TEN",
+      "rank": 111,
+      "positionRank": 29,
+      "minRank": 85,
+      "maxRank": 146,
+      "stdDev": 26.36
+    },
+    {
       "sourceId": 23071,
       "name": "C.J. Stroud",
       "position": "QB",
       "team": "HOU",
-      "rank": 111,
+      "rank": 112,
       "positionRank": 17,
       "minRank": 108,
       "maxRank": 113,
@@ -1235,8 +1246,8 @@
       "name": "Jacory Croskey-Merritt",
       "position": "RB",
       "team": "WAS",
-      "rank": 112,
-      "positionRank": 29,
+      "rank": 113,
+      "positionRank": 30,
       "minRank": 80,
       "maxRank": 150,
       "stdDev": 23.65
@@ -1246,7 +1257,7 @@
       "name": "Colston Loveland",
       "position": "TE",
       "team": "CHI",
-      "rank": 113,
+      "rank": 114,
       "positionRank": 12,
       "minRank": 109,
       "maxRank": 121,
@@ -1257,55 +1268,44 @@
       "name": "Marvin Harrison Jr.",
       "position": "WR",
       "team": "HOU",
-      "rank": 114,
+      "rank": 115,
       "positionRank": 56,
       "minRank": 84,
       "maxRank": 142,
       "stdDev": 19.78
     },
     {
-      "sourceId": 23065,
-      "name": "TreVeyon Henderson",
+      "sourceId": 23013,
+      "name": "Blake Corum",
       "position": "RB",
-      "team": "NE",
-      "rank": 115,
-      "positionRank": 30,
+      "team": "LAR",
+      "rank": 116,
+      "positionRank": 31,
       "minRank": 96,
-      "maxRank": 136,
-      "stdDev": 14.8
+      "maxRank": 144,
+      "stdDev": 15.38
     },
     {
       "sourceId": 17270,
       "name": "Dallas Goedert",
       "position": "TE",
       "team": "PHI",
-      "rank": 116,
+      "rank": 117,
       "positionRank": 13,
       "minRank": 111,
       "maxRank": 124,
       "stdDev": 5.25
     },
     {
-      "sourceId": 23013,
-      "name": "Blake Corum",
+      "sourceId": 23065,
+      "name": "TreVeyon Henderson",
       "position": "RB",
-      "team": "LAR",
-      "rank": 117,
-      "positionRank": 31,
-      "minRank": 96,
-      "maxRank": 149,
-      "stdDev": 17.16
-    },
-    {
-      "sourceId": 27142,
-      "name": "RJ Harvey",
-      "position": "RB",
-      "team": "DEN",
+      "team": "NE",
       "rank": 118,
       "positionRank": 32,
       "minRank": 106,
-      "maxRank": 130,
-      "stdDev": 8.28
+      "maxRank": 136,
+      "stdDev": 12.35
     },
     {
       "sourceId": 22910,
@@ -1347,16 +1347,27 @@
       "team": "NO",
       "rank": 122,
       "positionRank": 33,
-      "minRank": 95,
+      "minRank": 89,
       "maxRank": 149,
-      "stdDev": 17.61
+      "stdDev": 19.68
+    },
+    {
+      "sourceId": 27142,
+      "name": "RJ Harvey",
+      "position": "RB",
+      "team": "DEN",
+      "rank": 123,
+      "positionRank": 34,
+      "minRank": 106,
+      "maxRank": 136,
+      "stdDev": 10.28
     },
     {
       "sourceId": 17236,
       "name": "Sam Darnold",
       "position": "QB",
       "team": "SEA",
-      "rank": 123,
+      "rank": 124,
       "positionRank": 20,
       "minRank": 119,
       "maxRank": 139,
@@ -1367,7 +1378,7 @@
       "name": "Keenan Allen",
       "position": "WR",
       "team": "IND",
-      "rank": 124,
+      "rank": 125,
       "positionRank": 57,
       "minRank": 102,
       "maxRank": 162,
@@ -1378,7 +1389,7 @@
       "name": "Brian Thomas Jr.",
       "position": "WR",
       "team": "JAC",
-      "rank": 125,
+      "rank": 126,
       "positionRank": 58,
       "minRank": 112,
       "maxRank": 155,
@@ -1389,7 +1400,7 @@
       "name": "Tre Tucker",
       "position": "WR",
       "team": "LV",
-      "rank": 126,
+      "rank": 127,
       "positionRank": 59,
       "minRank": 103,
       "maxRank": 178,
@@ -1400,22 +1411,11 @@
       "name": "Tre' Harris",
       "position": "WR",
       "team": "LAC",
-      "rank": 127,
+      "rank": 128,
       "positionRank": 60,
       "minRank": 110,
       "maxRank": 142,
       "stdDev": 11.1
-    },
-    {
-      "sourceId": 18239,
-      "name": "David Montgomery",
-      "position": "RB",
-      "team": "HOU",
-      "rank": 128,
-      "positionRank": 34,
-      "minRank": 89,
-      "maxRank": 156,
-      "stdDev": 22.81
     },
     {
       "sourceId": 26055,
@@ -1429,26 +1429,26 @@
       "stdDev": 6.5
     },
     {
+      "sourceId": 18239,
+      "name": "David Montgomery",
+      "position": "RB",
+      "team": "HOU",
+      "rank": 130,
+      "positionRank": 35,
+      "minRank": 96,
+      "maxRank": 156,
+      "stdDev": 20.61
+    },
+    {
       "sourceId": 23791,
       "name": "Alec Pierce",
       "position": "WR",
       "team": "IND",
-      "rank": 130,
+      "rank": 131,
       "positionRank": 61,
       "minRank": 97,
       "maxRank": 178,
       "stdDev": 26.21
-    },
-    {
-      "sourceId": 18269,
-      "name": "Josh Jacobs",
-      "position": "RB",
-      "team": "GB",
-      "rank": 131,
-      "positionRank": 35,
-      "minRank": 69,
-      "maxRank": 184,
-      "stdDev": 48.72
     },
     {
       "sourceId": 20164,
@@ -1484,22 +1484,11 @@
       "stdDev": 12.83
     },
     {
-      "sourceId": 22969,
-      "name": "Jordan Mason",
-      "position": "RB",
-      "team": "MIN",
-      "rank": 135,
-      "positionRank": 36,
-      "minRank": 115,
-      "maxRank": 170,
-      "stdDev": 18.58
-    },
-    {
       "sourceId": 22718,
       "name": "Jake Ferguson",
       "position": "TE",
       "team": "DAL",
-      "rank": 136,
+      "rank": 135,
       "positionRank": 18,
       "minRank": 128,
       "maxRank": 154,
@@ -1510,11 +1499,22 @@
       "name": "Aaron Rodgers",
       "position": "QB",
       "team": "PIT",
-      "rank": 137,
+      "rank": 136,
       "positionRank": 21,
       "minRank": 125,
       "maxRank": 159,
       "stdDev": 13.21
+    },
+    {
+      "sourceId": 22969,
+      "name": "Jordan Mason",
+      "position": "RB",
+      "team": "MIN",
+      "rank": 137,
+      "positionRank": 36,
+      "minRank": 115,
+      "maxRank": 170,
+      "stdDev": 19.24
     },
     {
       "sourceId": 17349,
@@ -1550,15 +1550,15 @@
       "stdDev": 9.5
     },
     {
-      "sourceId": 16421,
-      "name": "Alvin Kamara",
+      "sourceId": 19245,
+      "name": "J.K. Dobbins",
       "position": "RB",
-      "team": "NO",
+      "team": "DEN",
       "rank": 141,
       "positionRank": 37,
-      "minRank": 127,
-      "maxRank": 174,
-      "stdDev": 19.83
+      "minRank": 120,
+      "maxRank": 173,
+      "stdDev": 17.49
     },
     {
       "sourceId": 18290,
@@ -1572,23 +1572,12 @@
       "stdDev": 11.22
     },
     {
-      "sourceId": 19245,
-      "name": "J.K. Dobbins",
-      "position": "RB",
-      "team": "DEN",
-      "rank": 143,
-      "positionRank": 38,
-      "minRank": 127,
-      "maxRank": 170,
-      "stdDev": 14.57
-    },
-    {
       "sourceId": 24346,
       "name": "Braelon Allen",
       "position": "RB",
       "team": "NYJ",
-      "rank": 144,
-      "positionRank": 39,
+      "rank": 143,
+      "positionRank": 38,
       "minRank": 136,
       "maxRank": 156,
       "stdDev": 6.44
@@ -1598,8 +1587,8 @@
       "name": "Emanuel Wilson",
       "position": "RB",
       "team": "SEA",
-      "rank": 145,
-      "positionRank": 40,
+      "rank": 144,
+      "positionRank": 39,
       "minRank": 144,
       "maxRank": 162,
       "stdDev": 6.5
@@ -1609,11 +1598,22 @@
       "name": "Pat Freiermuth",
       "position": "TE",
       "team": "PIT",
-      "rank": 146,
+      "rank": 145,
       "positionRank": 22,
       "minRank": 135,
       "maxRank": 189,
       "stdDev": 19.96
+    },
+    {
+      "sourceId": 16421,
+      "name": "Alvin Kamara",
+      "position": "RB",
+      "team": "NO",
+      "rank": 146,
+      "positionRank": 40,
+      "minRank": 127,
+      "maxRank": 174,
+      "stdDev": 20.35
     },
     {
       "sourceId": 15561,
@@ -1748,22 +1748,11 @@
       "stdDev": 45.74
     },
     {
-      "sourceId": 19647,
-      "name": "Rico Dowdle",
-      "position": "RB",
-      "team": "PIT",
-      "rank": 161,
-      "positionRank": 41,
-      "minRank": 150,
-      "maxRank": 184,
-      "stdDev": 15.13
-    },
-    {
       "sourceId": 23982,
       "name": "Chig Okonkwo",
       "position": "TE",
       "team": "WAS",
-      "rank": 162,
+      "rank": 161,
       "positionRank": 27,
       "minRank": 154,
       "maxRank": 176,
@@ -1774,29 +1763,29 @@
       "name": "Rashid Shaheed",
       "position": "WR",
       "team": "SEA",
-      "rank": 163,
+      "rank": 162,
       "positionRank": 68,
       "minRank": 138,
       "maxRank": 197,
       "stdDev": 20.73
     },
     {
-      "sourceId": 28107,
-      "name": "Emmett Johnson",
+      "sourceId": 19647,
+      "name": "Rico Dowdle",
       "position": "RB",
-      "team": "KC",
-      "rank": 164,
-      "positionRank": 42,
-      "minRank": 156,
-      "maxRank": 174,
-      "stdDev": 6.02
+      "team": "PIT",
+      "rank": 163,
+      "positionRank": 41,
+      "minRank": 150,
+      "maxRank": 184,
+      "stdDev": 14.16
     },
     {
       "sourceId": 26398,
       "name": "Ryan Flournoy",
       "position": "WR",
       "team": "DAL",
-      "rank": 165,
+      "rank": 164,
       "positionRank": 69,
       "minRank": 133,
       "maxRank": 219,
@@ -1807,11 +1796,22 @@
       "name": "AJ Barner",
       "position": "TE",
       "team": "SEA",
-      "rank": 166,
+      "rank": 165,
       "positionRank": 28,
       "minRank": 157,
       "maxRank": 177,
       "stdDev": 7.63
+    },
+    {
+      "sourceId": 28107,
+      "name": "Emmett Johnson",
+      "position": "RB",
+      "team": "KC",
+      "rank": 166,
+      "positionRank": 42,
+      "minRank": 165,
+      "maxRank": 174,
+      "stdDev": 3.06
     },
     {
       "sourceId": 23118,
@@ -1899,7 +1899,7 @@
       "positionRank": 44,
       "minRank": 164,
       "maxRank": 203,
-      "stdDev": 13.98
+      "stdDev": 14.08
     },
     {
       "sourceId": 11177,
@@ -1913,26 +1913,26 @@
       "stdDev": 53.36
     },
     {
-      "sourceId": 24172,
-      "name": "Tyler Allgeier",
-      "position": "RB",
-      "team": "ARI",
-      "rank": 178,
-      "positionRank": 45,
-      "minRank": 165,
-      "maxRank": 201,
-      "stdDev": 12.13
-    },
-    {
       "sourceId": 19278,
       "name": "Michael Pittman Jr.",
       "position": "WR",
       "team": "PIT",
-      "rank": 179,
+      "rank": 178,
       "positionRank": 74,
       "minRank": 140,
       "maxRank": 218,
       "stdDev": 26.45
+    },
+    {
+      "sourceId": 24172,
+      "name": "Tyler Allgeier",
+      "position": "RB",
+      "team": "ARI",
+      "rank": 179,
+      "positionRank": 45,
+      "minRank": 170,
+      "maxRank": 201,
+      "stdDev": 11.1
     },
     {
       "sourceId": 23153,
@@ -1965,7 +1965,7 @@
       "positionRank": 46,
       "minRank": 149,
       "maxRank": 230,
-      "stdDev": 28.68
+      "stdDev": 28.37
     },
     {
       "sourceId": 28896,
@@ -2034,22 +2034,11 @@
       "stdDev": 30.43
     },
     {
-      "sourceId": 28401,
-      "name": "Kaelon Black",
-      "position": "RB",
-      "team": "SF",
-      "rank": 196,
-      "positionRank": 50,
-      "minRank": 175,
-      "maxRank": 201,
-      "stdDev": 10.23
-    },
-    {
       "sourceId": 23181,
       "name": "Cade Otton",
       "position": "TE",
       "team": "TB",
-      "rank": 198,
+      "rank": 197,
       "positionRank": 32,
       "minRank": 163,
       "maxRank": 232,
@@ -2060,11 +2049,22 @@
       "name": "Kenny Gainwell",
       "position": "RB",
       "team": "TB",
-      "rank": 201,
-      "positionRank": 51,
+      "rank": 200,
+      "positionRank": 50,
       "minRank": 175,
       "maxRank": 222,
       "stdDev": 15.05
+    },
+    {
+      "sourceId": 28401,
+      "name": "Kaelon Black",
+      "position": "RB",
+      "team": "SF",
+      "rank": 201,
+      "positionRank": 51,
+      "minRank": 175,
+      "maxRank": 223,
+      "stdDev": 15.21
     },
     {
       "sourceId": 27320,
@@ -2075,7 +2075,7 @@
       "positionRank": 52,
       "minRank": 164,
       "maxRank": 224,
-      "stdDev": 27.02
+      "stdDev": 26.97
     },
     {
       "sourceId": 22989,
@@ -2096,8 +2096,8 @@
       "rank": 205,
       "positionRank": 53,
       "minRank": 175,
-      "maxRank": 236,
-      "stdDev": 22.86
+      "maxRank": 230,
+      "stdDev": 21.25
     },
     {
       "sourceId": 28130,
@@ -2174,51 +2174,51 @@
       "positionRank": 54,
       "minRank": 199,
       "maxRank": 236,
-      "stdDev": 14.39
-    },
-    {
-      "sourceId": 26355,
-      "name": "Kimani Vidal",
-      "position": "RB",
-      "team": "LAC",
-      "rank": 218,
-      "positionRank": 55,
-      "minRank": 191,
-      "maxRank": 245,
-      "stdDev": 20.44
+      "stdDev": 14.46
     },
     {
       "sourceId": 17237,
       "name": "Baker Mayfield",
       "position": "QB",
       "team": "TB",
-      "rank": 219,
+      "rank": 218,
       "positionRank": 30,
       "minRank": 159,
       "maxRank": 276,
       "stdDev": 38.49
     },
     {
-      "sourceId": 27446,
-      "name": "Isaac TeSlaa",
-      "position": "WR",
-      "team": "DET",
-      "rank": 220,
-      "positionRank": 82,
-      "minRank": 209,
-      "maxRank": 231,
-      "stdDev": 8.3
-    },
-    {
       "sourceId": 25323,
       "name": "Tyjae Spears",
       "position": "RB",
       "team": "TEN",
-      "rank": 221,
-      "positionRank": 56,
-      "minRank": 222,
+      "rank": 219,
+      "positionRank": 55,
+      "minRank": 203,
       "maxRank": 230,
-      "stdDev": 3.92
+      "stdDev": 9.87
+    },
+    {
+      "sourceId": 26355,
+      "name": "Kimani Vidal",
+      "position": "RB",
+      "team": "LAC",
+      "rank": 220,
+      "positionRank": 56,
+      "minRank": 191,
+      "maxRank": 245,
+      "stdDev": 18.61
+    },
+    {
+      "sourceId": 27446,
+      "name": "Isaac TeSlaa",
+      "position": "WR",
+      "team": "DET",
+      "rank": 221,
+      "positionRank": 82,
+      "minRank": 209,
+      "maxRank": 231,
+      "stdDev": 8.3
     },
     {
       "sourceId": 22986,
@@ -2228,8 +2228,8 @@
       "rank": 222,
       "positionRank": 57,
       "minRank": 190,
-      "maxRank": 237,
-      "stdDev": 18.12
+      "maxRank": 238,
+      "stdDev": 18.71
     },
     {
       "sourceId": 27109,
@@ -2265,26 +2265,26 @@
       "stdDev": 32.53
     },
     {
-      "sourceId": 24360,
-      "name": "Kendre Miller",
-      "position": "RB",
-      "team": "NO",
-      "rank": 228,
-      "positionRank": 58,
-      "minRank": 193,
-      "maxRank": 259,
-      "stdDev": 21.59
-    },
-    {
       "sourceId": 16433,
       "name": "Cooper Kupp",
       "position": "WR",
       "team": "SEA",
-      "rank": 229,
+      "rank": 228,
       "positionRank": 85,
       "minRank": 221,
       "maxRank": 241,
       "stdDev": 6.99
+    },
+    {
+      "sourceId": 24360,
+      "name": "Kendre Miller",
+      "position": "RB",
+      "team": "NO",
+      "rank": 229,
+      "positionRank": 58,
+      "minRank": 193,
+      "maxRank": 259,
+      "stdDev": 22.35
     },
     {
       "sourceId": 28154,
@@ -2328,7 +2328,7 @@
       "positionRank": 59,
       "minRank": 228,
       "maxRank": 266,
-      "stdDev": 13.71
+      "stdDev": 13.83
     },
     {
       "sourceId": 17268,
@@ -2338,8 +2338,8 @@
       "rank": 237,
       "positionRank": 87,
       "minRank": 141,
-      "maxRank": 331,
-      "stdDev": 62.53
+      "maxRank": 332,
+      "stdDev": 62.82
     },
     {
       "sourceId": 16399,
@@ -2404,15 +2404,26 @@
       "rank": 245,
       "positionRank": 60,
       "minRank": 224,
-      "maxRank": 259,
-      "stdDev": 12.64
+      "maxRank": 260,
+      "stdDev": 12.84
+    },
+    {
+      "sourceId": 19302,
+      "name": "Najee Harris",
+      "position": "RB",
+      "team": "NYG",
+      "rank": 248,
+      "positionRank": 61,
+      "minRank": 237,
+      "maxRank": 269,
+      "stdDev": 12.67
     },
     {
       "sourceId": 23179,
       "name": "Jalen McMillan",
       "position": "WR",
       "team": "TB",
-      "rank": 248,
+      "rank": 249,
       "positionRank": 91,
       "minRank": 202,
       "maxRank": 283,
@@ -2423,22 +2434,11 @@
       "name": "Bryce Lance",
       "position": "WR",
       "team": "NO",
-      "rank": 249,
+      "rank": 250,
       "positionRank": 92,
       "minRank": 238,
       "maxRank": 262,
       "stdDev": 10.67
-    },
-    {
-      "sourceId": 19302,
-      "name": "Najee Harris",
-      "position": "RB",
-      "team": "NYG",
-      "rank": 250,
-      "positionRank": 61,
-      "minRank": 237,
-      "maxRank": 269,
-      "stdDev": 11.34
     },
     {
       "sourceId": 16398,
@@ -2496,44 +2496,33 @@
       "stdDev": 26.31
     },
     {
-      "sourceId": 26191,
-      "name": "Ray Davis",
-      "position": "RB",
-      "team": "BUF",
-      "rank": 258,
-      "positionRank": 62,
-      "minRank": 222,
-      "maxRank": 288,
-      "stdDev": 21.29
-    },
-    {
       "sourceId": 19810,
       "name": "Darnell Mooney",
       "position": "WR",
       "team": "NYG",
-      "rank": 259,
+      "rank": 258,
       "positionRank": 96,
       "minRank": 247,
       "maxRank": 290,
       "stdDev": 15.76
     },
     {
-      "sourceId": 27102,
-      "name": "Dylan Sampson",
+      "sourceId": 26191,
+      "name": "Ray Davis",
       "position": "RB",
-      "team": "CLE",
-      "rank": 260,
-      "positionRank": 63,
-      "minRank": 228,
-      "maxRank": 293,
-      "stdDev": 21.82
+      "team": "BUF",
+      "rank": 259,
+      "positionRank": 62,
+      "minRank": 222,
+      "maxRank": 288,
+      "stdDev": 21.64
     },
     {
       "sourceId": 28067,
       "name": "Kevin Coleman Jr.",
       "position": "WR",
       "team": "MIA",
-      "rank": 261,
+      "rank": 260,
       "positionRank": 97,
       "minRank": 221,
       "maxRank": 298,
@@ -2544,11 +2533,22 @@
       "name": "Dohnte Meyers",
       "position": "WR",
       "team": "CIN",
-      "rank": 262,
+      "rank": 261,
       "positionRank": 98,
       "minRank": 219,
-      "maxRank": 333,
-      "stdDev": 40.43
+      "maxRank": 334,
+      "stdDev": 40.77
+    },
+    {
+      "sourceId": 27102,
+      "name": "Dylan Sampson",
+      "position": "RB",
+      "team": "CLE",
+      "rank": 262,
+      "positionRank": 63,
+      "minRank": 228,
+      "maxRank": 293,
+      "stdDev": 24.29
     },
     {
       "sourceId": 23092,
@@ -2573,22 +2573,11 @@
       "stdDev": 20.66
     },
     {
-      "sourceId": 22947,
-      "name": "Dameon Pierce",
-      "position": "RB",
-      "team": "PHI",
-      "rank": 266,
-      "positionRank": 64,
-      "minRank": 197,
-      "maxRank": 326,
-      "stdDev": 45.7
-    },
-    {
       "sourceId": 24755,
       "name": "Cam Ward",
       "position": "QB",
       "team": "TEN",
-      "rank": 267,
+      "rank": 266,
       "positionRank": 32,
       "minRank": 195,
       "maxRank": 285,
@@ -2599,33 +2588,44 @@
       "name": "Travis Hunter",
       "position": "WR",
       "team": "JAC",
-      "rank": 268,
+      "rank": 267,
       "positionRank": 101,
       "minRank": 231,
       "maxRank": 290,
       "stdDev": 23.74
     },
     {
-      "sourceId": 27487,
-      "name": "Kyle Williams",
-      "position": "WR",
-      "team": "NE",
-      "rank": 270,
-      "positionRank": 102,
-      "minRank": 251,
-      "maxRank": 302,
-      "stdDev": 18.83
+      "sourceId": 22947,
+      "name": "Dameon Pierce",
+      "position": "RB",
+      "team": "PHI",
+      "rank": 268,
+      "positionRank": 64,
+      "minRank": 197,
+      "maxRank": 330,
+      "stdDev": 46.76
     },
     {
       "sourceId": 27165,
       "name": "Kaleb Johnson",
       "position": "RB",
       "team": "GB",
-      "rank": 271,
+      "rank": 270,
       "positionRank": 65,
-      "minRank": 259,
+      "minRank": 258,
       "maxRank": 277,
-      "stdDev": 6.01
+      "stdDev": 7.44
+    },
+    {
+      "sourceId": 27487,
+      "name": "Kyle Williams",
+      "position": "WR",
+      "team": "NE",
+      "rank": 271,
+      "positionRank": 102,
+      "minRank": 251,
+      "maxRank": 302,
+      "stdDev": 18.83
     },
     {
       "sourceId": 23679,
@@ -2636,29 +2636,29 @@
       "positionRank": 66,
       "minRank": 263,
       "maxRank": 278,
-      "stdDev": 5.62
-    },
-    {
-      "sourceId": 18256,
-      "name": "Justice Hill",
-      "position": "RB",
-      "team": "BAL",
-      "rank": 275,
-      "positionRank": 67,
-      "minRank": 258,
-      "maxRank": 293,
-      "stdDev": 14.32
+      "stdDev": 4.8
     },
     {
       "sourceId": 23104,
       "name": "Theo Johnson",
       "position": "TE",
       "team": "NYG",
-      "rank": 276,
+      "rank": 275,
       "positionRank": 40,
       "minRank": 264,
       "maxRank": 286,
       "stdDev": 9.72
+    },
+    {
+      "sourceId": 22915,
+      "name": "George Holani",
+      "position": "RB",
+      "team": "SEA",
+      "rank": 277,
+      "positionRank": 67,
+      "minRank": 259,
+      "maxRank": 298,
+      "stdDev": 14.77
     },
     {
       "sourceId": 25419,
@@ -2679,41 +2679,41 @@
       "rank": 279,
       "positionRank": 104,
       "minRank": 195,
-      "maxRank": 335,
-      "stdDev": 51.06
-    },
-    {
-      "sourceId": 23079,
-      "name": "Seth McGowan",
-      "position": "RB",
-      "team": "IND",
-      "rank": 280,
-      "positionRank": 68,
-      "minRank": 248,
-      "maxRank": 292,
-      "stdDev": 16.17
+      "maxRank": 336,
+      "stdDev": 51.46
     },
     {
       "sourceId": 16483,
       "name": "Austin Ekeler",
       "position": "RB",
       "team": "WAS",
-      "rank": 281,
-      "positionRank": 69,
-      "minRank": 245,
+      "rank": 280,
+      "positionRank": 68,
+      "minRank": 237,
       "maxRank": 304,
-      "stdDev": 19.93
+      "stdDev": 23.07
     },
     {
-      "sourceId": 22915,
-      "name": "George Holani",
+      "sourceId": 18256,
+      "name": "Justice Hill",
       "position": "RB",
-      "team": "SEA",
+      "team": "BAL",
+      "rank": 281,
+      "positionRank": 69,
+      "minRank": 260,
+      "maxRank": 293,
+      "stdDev": 11.94
+    },
+    {
+      "sourceId": 23079,
+      "name": "Seth McGowan",
+      "position": "RB",
+      "team": "IND",
       "rank": 282,
       "positionRank": 70,
-      "minRank": 266,
-      "maxRank": 298,
-      "stdDev": 12.86
+      "minRank": 258,
+      "maxRank": 292,
+      "stdDev": 12.61
     },
     {
       "sourceId": 23101,
@@ -2757,7 +2757,7 @@
       "positionRank": 71,
       "minRank": 260,
       "maxRank": 323,
-      "stdDev": 23.32
+      "stdDev": 22.32
     },
     {
       "sourceId": 25332,
@@ -2778,8 +2778,8 @@
       "rank": 289,
       "positionRank": 72,
       "minRank": 198,
-      "maxRank": 327,
-      "stdDev": 45.64
+      "maxRank": 326,
+      "stdDev": 44.71
     },
     {
       "sourceId": 27059,
@@ -2793,11 +2793,22 @@
       "stdDev": 25.71
     },
     {
+      "sourceId": 22980,
+      "name": "Tyrone Tracy Jr.",
+      "position": "RB",
+      "team": "NYG",
+      "rank": 292,
+      "positionRank": 73,
+      "minRank": 266,
+      "maxRank": 322,
+      "stdDev": 20.44
+    },
+    {
       "sourceId": 27315,
       "name": "Chimere Dike",
       "position": "WR",
       "team": "TEN",
-      "rank": 292,
+      "rank": 293,
       "positionRank": 109,
       "minRank": 255,
       "maxRank": 312,
@@ -2808,22 +2819,11 @@
       "name": "Jack Bech",
       "position": "WR",
       "team": "LV",
-      "rank": 293,
+      "rank": 294,
       "positionRank": 110,
       "minRank": 254,
       "maxRank": 329,
       "stdDev": 26.69
-    },
-    {
-      "sourceId": 22980,
-      "name": "Tyrone Tracy Jr.",
-      "position": "RB",
-      "team": "NYG",
-      "rank": 294,
-      "positionRank": 73,
-      "minRank": 270,
-      "maxRank": 322,
-      "stdDev": 19.57
     },
     {
       "sourceId": 24362,
@@ -2834,7 +2834,7 @@
       "positionRank": 74,
       "minRank": 264,
       "maxRank": 306,
-      "stdDev": 15.28
+      "stdDev": 15.46
     },
     {
       "sourceId": 25335,
@@ -2870,11 +2870,22 @@
       "stdDev": 6.16
     },
     {
+      "sourceId": 22930,
+      "name": "Will Shipley",
+      "position": "RB",
+      "team": "PHI",
+      "rank": 299,
+      "positionRank": 75,
+      "minRank": 248,
+      "maxRank": 303,
+      "stdDev": 25.45
+    },
+    {
       "sourceId": 23080,
       "name": "Marvin Mims Jr.",
       "position": "WR",
       "team": "DEN",
-      "rank": 299,
+      "rank": 300,
       "positionRank": 112,
       "minRank": 261,
       "maxRank": 314,
@@ -2885,66 +2896,55 @@
       "name": "Nicholas Singleton",
       "position": "RB",
       "team": "TEN",
-      "rank": 300,
-      "positionRank": 75,
-      "minRank": 265,
-      "maxRank": 322,
-      "stdDev": 19.61
-    },
-    {
-      "sourceId": 22930,
-      "name": "Will Shipley",
-      "position": "RB",
-      "team": "PHI",
       "rank": 301,
       "positionRank": 76,
-      "minRank": 248,
-      "maxRank": 303,
-      "stdDev": 23.24
-    },
-    {
-      "sourceId": 24351,
-      "name": "Raheim Sanders",
-      "position": "RB",
-      "team": "CLE",
-      "rank": 302,
-      "positionRank": 77,
-      "minRank": 259,
+      "minRank": 265,
       "maxRank": 318,
-      "stdDev": 19.83
+      "stdDev": 20.06
     },
     {
       "sourceId": 28126,
       "name": "Skyler Bell",
       "position": "WR",
       "team": "BUF",
-      "rank": 303,
+      "rank": 302,
       "positionRank": 113,
       "minRank": 256,
       "maxRank": 343,
       "stdDev": 28.54
     },
     {
-      "sourceId": 27866,
-      "name": "Darius Cooper",
-      "position": "WR",
-      "team": "PHI",
-      "rank": 306,
-      "positionRank": 114,
-      "minRank": 243,
-      "maxRank": 334,
-      "stdDev": 35.35
+      "sourceId": 24351,
+      "name": "Raheim Sanders",
+      "position": "RB",
+      "team": "CLE",
+      "rank": 305,
+      "positionRank": 77,
+      "minRank": 259,
+      "maxRank": 331,
+      "stdDev": 23.15
     },
     {
       "sourceId": 18406,
       "name": "Ty Johnson",
       "position": "RB",
       "team": "BUF",
-      "rank": 307,
+      "rank": 306,
       "positionRank": 78,
       "minRank": 259,
       "maxRank": 364,
-      "stdDev": 34.48
+      "stdDev": 35.43
+    },
+    {
+      "sourceId": 27866,
+      "name": "Darius Cooper",
+      "position": "WR",
+      "team": "PHI",
+      "rank": 307,
+      "positionRank": 114,
+      "minRank": 243,
+      "maxRank": 335,
+      "stdDev": 35.72
     },
     {
       "sourceId": 26136,
@@ -2980,37 +2980,37 @@
       "stdDev": 25.36
     },
     {
-      "sourceId": 25977,
-      "name": "Isaiah Davis",
-      "position": "RB",
-      "team": "NYJ",
-      "rank": 313,
-      "positionRank": 79,
-      "minRank": 278,
-      "maxRank": 360,
-      "stdDev": 30.01
-    },
-    {
       "sourceId": 28084,
       "name": "Demond Claiborne",
       "position": "RB",
       "team": "MIN",
-      "rank": 314,
-      "positionRank": 80,
+      "rank": 313,
+      "positionRank": 79,
       "minRank": 292,
-      "maxRank": 315,
-      "stdDev": 7.88
+      "maxRank": 310,
+      "stdDev": 6.86
     },
     {
       "sourceId": 19297,
       "name": "Tyler Huntley",
       "position": "QB",
       "team": "BAL",
-      "rank": 315,
+      "rank": 314,
       "positionRank": 34,
       "minRank": 275,
       "maxRank": 335,
       "stdDev": 20.59
+    },
+    {
+      "sourceId": 25977,
+      "name": "Isaiah Davis",
+      "position": "RB",
+      "team": "NYJ",
+      "rank": 315,
+      "positionRank": 80,
+      "minRank": 278,
+      "maxRank": 360,
+      "stdDev": 30.11
     },
     {
       "sourceId": 25823,
@@ -3021,7 +3021,7 @@
       "positionRank": 81,
       "minRank": 296,
       "maxRank": 318,
-      "stdDev": 8.82
+      "stdDev": 9.22
     },
     {
       "sourceId": 23018,
@@ -3035,11 +3035,22 @@
       "stdDev": 13.97
     },
     {
+      "sourceId": 27310,
+      "name": "Jordan James",
+      "position": "RB",
+      "team": "SF",
+      "rank": 318,
+      "positionRank": 82,
+      "minRank": 269,
+      "maxRank": 360,
+      "stdDev": 32.95
+    },
+    {
       "sourceId": 25361,
       "name": "Tank Dell",
       "position": "WR",
       "team": "HOU",
-      "rank": 318,
+      "rank": 319,
       "positionRank": 116,
       "minRank": 138,
       "maxRank": 307,
@@ -3050,7 +3061,7 @@
       "name": "Erick All Jr.",
       "position": "TE",
       "team": "CIN",
-      "rank": 319,
+      "rank": 320,
       "positionRank": 45,
       "minRank": 264,
       "maxRank": 299,
@@ -3061,18 +3072,18 @@
       "name": "Devin Singletary",
       "position": "RB",
       "team": "NYG",
-      "rank": 320,
-      "positionRank": 82,
+      "rank": 321,
+      "positionRank": 83,
       "minRank": 295,
-      "maxRank": 313,
-      "stdDev": 6.82
+      "maxRank": 315,
+      "stdDev": 7.82
     },
     {
       "sourceId": 28168,
       "name": "Matt Hibner",
       "position": "TE",
       "team": "BAL",
-      "rank": 321,
+      "rank": 322,
       "positionRank": 46,
       "minRank": 268,
       "maxRank": 297,
@@ -3083,7 +3094,7 @@
       "name": "Elijah Arroyo",
       "position": "TE",
       "team": "SEA",
-      "rank": 322,
+      "rank": 323,
       "positionRank": 47,
       "minRank": 273,
       "maxRank": 298,
@@ -3094,7 +3105,7 @@
       "name": "Dawson Knox",
       "position": "TE",
       "team": "BUF",
-      "rank": 323,
+      "rank": 324,
       "positionRank": 48,
       "minRank": 264,
       "maxRank": 325,
@@ -3105,7 +3116,7 @@
       "name": "Tanner McKee",
       "position": "QB",
       "team": "PHI",
-      "rank": 324,
+      "rank": 325,
       "positionRank": 36,
       "minRank": 134,
       "maxRank": 134,
@@ -3116,7 +3127,7 @@
       "name": "Shedeur Sanders",
       "position": "QB",
       "team": "CLE",
-      "rank": 325,
+      "rank": 326,
       "positionRank": 37,
       "minRank": 300,
       "maxRank": 348,
@@ -3127,22 +3138,11 @@
       "name": "Marcus Mariota",
       "position": "QB",
       "team": "WAS",
-      "rank": 326,
+      "rank": 327,
       "positionRank": 38,
       "minRank": 288,
       "maxRank": 370,
-      "stdDev": 27.77
-    },
-    {
-      "sourceId": 26022,
-      "name": "Tory Horton",
-      "position": "WR",
-      "team": "SEA",
-      "rank": 329,
-      "positionRank": 117,
-      "minRank": 256,
-      "maxRank": 343,
-      "stdDev": 35.52
+      "stdDev": 27.82
     },
     {
       "sourceId": 26309,
@@ -3150,54 +3150,54 @@
       "position": "RB",
       "team": "DET",
       "rank": 330,
-      "positionRank": 83,
-      "minRank": 270,
-      "maxRank": 330,
-      "stdDev": 24.49
-    },
-    {
-      "sourceId": 27097,
-      "name": "DJ Giddens",
-      "position": "RB",
-      "team": "IND",
-      "rank": 332,
       "positionRank": 84,
-      "minRank": 289,
-      "maxRank": 363,
-      "stdDev": 27.11
+      "minRank": 270,
+      "maxRank": 327,
+      "stdDev": 23.28
     },
     {
-      "sourceId": 25876,
-      "name": "Jaleel McLaughlin",
-      "position": "RB",
-      "team": "CLE",
-      "rank": 333,
-      "positionRank": 85,
-      "minRank": 238,
-      "maxRank": 297,
-      "stdDev": 29.5
-    },
-    {
-      "sourceId": 24344,
-      "name": "Jaydon Blue",
-      "position": "RB",
-      "team": "PHI",
-      "rank": 334,
-      "positionRank": 86,
-      "minRank": 291,
-      "maxRank": 346,
-      "stdDev": 19.84
+      "sourceId": 26022,
+      "name": "Tory Horton",
+      "position": "WR",
+      "team": "SEA",
+      "rank": 331,
+      "positionRank": 117,
+      "minRank": 256,
+      "maxRank": 343,
+      "stdDev": 35.52
     },
     {
       "sourceId": 16447,
       "name": "James Conner",
       "position": "RB",
       "team": "ARI",
+      "rank": 332,
+      "positionRank": 85,
+      "minRank": 289,
+      "maxRank": 355,
+      "stdDev": 24.52
+    },
+    {
+      "sourceId": 25876,
+      "name": "Jaleel McLaughlin",
+      "position": "RB",
+      "team": "CLE",
+      "rank": 334,
+      "positionRank": 86,
+      "minRank": 238,
+      "maxRank": 366,
+      "stdDev": 52.31
+    },
+    {
+      "sourceId": 24344,
+      "name": "Jaydon Blue",
+      "position": "RB",
+      "team": "PHI",
       "rank": 335,
       "positionRank": 87,
-      "minRank": 287,
-      "maxRank": 355,
-      "stdDev": 26.57
+      "minRank": 291,
+      "maxRank": 346,
+      "stdDev": 19.84
     },
     {
       "sourceId": 24371,
@@ -3211,26 +3211,26 @@
       "stdDev": 14.85
     },
     {
+      "sourceId": 27097,
+      "name": "DJ Giddens",
+      "position": "RB",
+      "team": "IND",
+      "rank": 337,
+      "positionRank": 88,
+      "minRank": 293,
+      "maxRank": 363,
+      "stdDev": 25.94
+    },
+    {
       "sourceId": 25654,
       "name": "Emari Demercado",
       "position": "RB",
       "team": "DAL",
-      "rank": 337,
-      "positionRank": 88,
-      "minRank": 284,
-      "maxRank": 318,
-      "stdDev": 15.37
-    },
-    {
-      "sourceId": 27310,
-      "name": "Jordan James",
-      "position": "RB",
-      "team": "SF",
       "rank": 338,
       "positionRank": 89,
-      "minRank": 287,
-      "maxRank": 360,
-      "stdDev": 27.91
+      "minRank": 284,
+      "maxRank": 317,
+      "stdDev": 15.11
     },
     {
       "sourceId": 26060,
@@ -3272,27 +3272,16 @@
       "team": "JAC",
       "rank": 342,
       "positionRank": 90,
-      "minRank": 302,
+      "minRank": 311,
       "maxRank": 345,
-      "stdDev": 18.53
-    },
-    {
-      "sourceId": 24335,
-      "name": "Jarquez Hunter",
-      "position": "RB",
-      "team": "NO",
-      "rank": 343,
-      "positionRank": 91,
-      "minRank": 300,
-      "maxRank": 367,
-      "stdDev": 24.26
+      "stdDev": 14.13
     },
     {
       "sourceId": 26310,
       "name": "Ben Sinnott",
       "position": "TE",
       "team": "WAS",
-      "rank": 344,
+      "rank": 343,
       "positionRank": 50,
       "minRank": 286,
       "maxRank": 334,
@@ -3304,21 +3293,32 @@
       "position": "RB",
       "team": "NO",
       "rank": 345,
-      "positionRank": 92,
+      "positionRank": 91,
       "minRank": 294,
-      "maxRank": 355,
-      "stdDev": 27.65
+      "maxRank": 357,
+      "stdDev": 28.59
     },
     {
       "sourceId": 18706,
       "name": "Darius Slayton",
       "position": "WR",
       "team": "FA",
-      "rank": 348,
+      "rank": 347,
       "positionRank": 119,
       "minRank": 257,
       "maxRank": 326,
       "stdDev": 34.5
+    },
+    {
+      "sourceId": 26329,
+      "name": "Jawhar Jordan",
+      "position": "RB",
+      "team": "HOU",
+      "rank": 350,
+      "positionRank": 92,
+      "minRank": 301,
+      "maxRank": 337,
+      "stdDev": 14.97
     },
     {
       "sourceId": 18226,
@@ -3354,66 +3354,55 @@
       "stdDev": 19.0
     },
     {
-      "sourceId": 26329,
-      "name": "Jawhar Jordan",
-      "position": "RB",
-      "team": "HOU",
-      "rank": 354,
-      "positionRank": 93,
-      "minRank": 311,
-      "maxRank": 338,
-      "stdDev": 11.03
-    },
-    {
       "sourceId": 23770,
       "name": "Jalen Tolbert",
       "position": "WR",
       "team": "MIA",
-      "rank": 355,
+      "rank": 354,
       "positionRank": 122,
       "minRank": 290,
       "maxRank": 354,
       "stdDev": 26.47
     },
     {
-      "sourceId": 25393,
-      "name": "Trevor Etienne",
-      "position": "RB",
-      "team": "CAR",
-      "rank": 356,
-      "positionRank": 94,
-      "minRank": 293,
-      "maxRank": 362,
-      "stdDev": 28.29
-    },
-    {
       "sourceId": 24367,
       "name": "Adam Randall",
       "position": "RB",
       "team": "BAL",
-      "rank": 357,
-      "positionRank": 95,
-      "minRank": 315,
+      "rank": 355,
+      "positionRank": 93,
+      "minRank": 313,
       "maxRank": 361,
-      "stdDev": 21.56
+      "stdDev": 22.79
     },
     {
       "sourceId": 16460,
       "name": "Jonnu Smith",
       "position": "TE",
       "team": "GB",
-      "rank": 358,
+      "rank": 356,
       "positionRank": 52,
       "minRank": 281,
       "maxRank": 328,
       "stdDev": 23.5
     },
     {
+      "sourceId": 24335,
+      "name": "Jarquez Hunter",
+      "position": "RB",
+      "team": "NO",
+      "rank": 357,
+      "positionRank": 94,
+      "minRank": 302,
+      "maxRank": 367,
+      "stdDev": 26.88
+    },
+    {
       "sourceId": 11689,
       "name": "Zach Ertz",
       "position": "TE",
       "team": "PHI",
-      "rank": 359,
+      "rank": 358,
       "positionRank": 53,
       "minRank": 305,
       "maxRank": 305,
@@ -3424,11 +3413,22 @@
       "name": "Marlin Klein",
       "position": "TE",
       "team": "HOU",
-      "rank": 360,
+      "rank": 359,
       "positionRank": 54,
       "minRank": 277,
       "maxRank": 336,
       "stdDev": 29.5
+    },
+    {
+      "sourceId": 25393,
+      "name": "Trevor Etienne",
+      "position": "RB",
+      "team": "CAR",
+      "rank": 360,
+      "positionRank": 95,
+      "minRank": 293,
+      "maxRank": 322,
+      "stdDev": 14.5
     },
     {
       "sourceId": 22953,
@@ -3439,7 +3439,7 @@
       "positionRank": 41,
       "minRank": 303,
       "maxRank": 369,
-      "stdDev": 23.85
+      "stdDev": 23.86
     },
     {
       "sourceId": 22913,
@@ -3486,26 +3486,26 @@
       "stdDev": 16.99
     },
     {
-      "sourceId": 15520,
-      "name": "Carson Wentz",
-      "position": "QB",
-      "team": "MIN",
-      "rank": 366,
-      "positionRank": 43,
-      "minRank": 304,
-      "maxRank": 369,
-      "stdDev": 26.56
-    },
-    {
       "sourceId": 27138,
       "name": "Mitchell Evans",
       "position": "TE",
       "team": "CAR",
-      "rank": 367,
+      "rank": 366,
       "positionRank": 55,
       "minRank": 297,
       "maxRank": 340,
       "stdDev": 21.5
+    },
+    {
+      "sourceId": 15520,
+      "name": "Carson Wentz",
+      "position": "QB",
+      "team": "MIN",
+      "rank": 367,
+      "positionRank": 43,
+      "minRank": 304,
+      "maxRank": 369,
+      "stdDev": 26.51
     },
     {
       "sourceId": 28132,
@@ -3519,26 +3519,26 @@
       "stdDev": 22.0
     },
     {
-      "sourceId": 25430,
-      "name": "Oscar Delp",
-      "position": "TE",
-      "team": "NO",
-      "rank": 371,
-      "positionRank": 56,
-      "minRank": 319,
-      "maxRank": 334,
-      "stdDev": 7.5
-    },
-    {
       "sourceId": 22997,
       "name": "Corey Kiner",
       "position": "RB",
       "team": "NE",
-      "rank": 372,
+      "rank": 371,
       "positionRank": 96,
       "minRank": 289,
-      "maxRank": 365,
-      "stdDev": 38.0
+      "maxRank": 364,
+      "stdDev": 37.5
+    },
+    {
+      "sourceId": 25430,
+      "name": "Oscar Delp",
+      "position": "TE",
+      "team": "NO",
+      "rank": 372,
+      "positionRank": 56,
+      "minRank": 319,
+      "maxRank": 334,
+      "stdDev": 7.5
     },
     {
       "sourceId": 18864,
@@ -3563,12 +3563,23 @@
       "stdDev": 0.5
     },
     {
+      "sourceId": 22976,
+      "name": "Tyler Goodson",
+      "position": "RB",
+      "team": "DAL",
+      "rank": 375,
+      "positionRank": 97,
+      "minRank": 301,
+      "maxRank": 355,
+      "stdDev": 27.0
+    },
+    {
       "sourceId": 16425,
       "name": "Kareem Hunt",
       "position": "RB",
       "team": "FA",
-      "rank": 375,
-      "positionRank": 97,
+      "rank": 376,
+      "positionRank": 98,
       "minRank": 321,
       "maxRank": 338,
       "stdDev": 8.5
@@ -3578,44 +3589,33 @@
       "name": "Cedric Tillman",
       "position": "WR",
       "team": "NO",
-      "rank": 376,
+      "rank": 377,
       "positionRank": 128,
       "minRank": 310,
       "maxRank": 352,
       "stdDev": 21.0
     },
     {
-      "sourceId": 22976,
-      "name": "Tyler Goodson",
+      "sourceId": 24901,
+      "name": "Bam Knight",
       "position": "RB",
-      "team": "DAL",
-      "rank": 377,
-      "positionRank": 98,
-      "minRank": 301,
-      "maxRank": 364,
-      "stdDev": 31.5
+      "team": "ARI",
+      "rank": 378,
+      "positionRank": 99,
+      "minRank": 318,
+      "maxRank": 345,
+      "stdDev": 13.5
     },
     {
       "sourceId": 24334,
       "name": "Ja'Tavion Sanders",
       "position": "TE",
       "team": "CAR",
-      "rank": 378,
+      "rank": 379,
       "positionRank": 58,
       "minRank": 327,
       "maxRank": 342,
       "stdDev": 7.5
-    },
-    {
-      "sourceId": 28161,
-      "name": "Sam Roush",
-      "position": "TE",
-      "team": "CHI",
-      "rank": 379,
-      "positionRank": 59,
-      "minRank": 330,
-      "maxRank": 342,
-      "stdDev": 6.0
     },
     {
       "sourceId": 24333,
@@ -3623,29 +3623,51 @@
       "position": "RB",
       "team": "DET",
       "rank": 380,
-      "positionRank": 99,
+      "positionRank": 100,
       "minRank": 310,
-      "maxRank": 363,
-      "stdDev": 26.5
+      "maxRank": 362,
+      "stdDev": 26.0
+    },
+    {
+      "sourceId": 28161,
+      "name": "Sam Roush",
+      "position": "TE",
+      "team": "CHI",
+      "rank": 381,
+      "positionRank": 59,
+      "minRank": 330,
+      "maxRank": 342,
+      "stdDev": 6.0
     },
     {
       "sourceId": 27147,
       "name": "Tez Johnson",
       "position": "WR",
       "team": "TB",
-      "rank": 381,
+      "rank": 382,
       "positionRank": 129,
       "minRank": 323,
       "maxRank": 350,
       "stdDev": 13.5
     },
     {
+      "sourceId": 23054,
+      "name": "Audric Estime",
+      "position": "RB",
+      "team": "CLE",
+      "rank": 383,
+      "positionRank": 101,
+      "minRank": 324,
+      "maxRank": 365,
+      "stdDev": 17.91
+    },
+    {
       "sourceId": 28297,
       "name": "Eli Heidenreich",
       "position": "RB",
       "team": "PIT",
-      "rank": 382,
-      "positionRank": 100,
+      "rank": 384,
+      "positionRank": 102,
       "minRank": 314,
       "maxRank": 362,
       "stdDev": 24.0
@@ -3655,8 +3677,8 @@
       "name": "Brashard Smith",
       "position": "RB",
       "team": "KC",
-      "rank": 383,
-      "positionRank": 101,
+      "rank": 385,
+      "positionRank": 103,
       "minRank": 319,
       "maxRank": 357,
       "stdDev": 19.0
@@ -3666,29 +3688,18 @@
       "name": "Justin Joly",
       "position": "TE",
       "team": "MIA",
-      "rank": 384,
+      "rank": 386,
       "positionRank": 60,
       "minRank": 340,
       "maxRank": 341,
       "stdDev": 0.5
     },
     {
-      "sourceId": 23054,
-      "name": "Audric Estime",
-      "position": "RB",
-      "team": "CLE",
-      "rank": 385,
-      "positionRank": 102,
-      "minRank": 324,
-      "maxRank": 358,
-      "stdDev": 17.0
-    },
-    {
       "sourceId": 26012,
       "name": "Malik Benson",
       "position": "WR",
       "team": "LV",
-      "rank": 386,
+      "rank": 387,
       "positionRank": 130,
       "minRank": 314,
       "maxRank": 314,
@@ -3699,21 +3710,10 @@
       "name": "Jared Wiley",
       "position": "TE",
       "team": "KC",
-      "rank": 387,
+      "rank": 388,
       "positionRank": 61,
       "minRank": 344,
       "maxRank": 344,
-      "stdDev": 0.0
-    },
-    {
-      "sourceId": 24901,
-      "name": "Bam Knight",
-      "position": "RB",
-      "team": "ARI",
-      "rank": 388,
-      "positionRank": 103,
-      "minRank": 318,
-      "maxRank": 318,
       "stdDev": 0.0
     },
     {
@@ -3728,33 +3728,22 @@
       "stdDev": 0.0
     },
     {
-      "sourceId": 23682,
-      "name": "Devin Neal",
-      "position": "RB",
-      "team": "WAS",
-      "rank": 390,
-      "positionRank": 104,
-      "minRank": 328,
-      "maxRank": 367,
-      "stdDev": 19.5
-    },
-    {
       "sourceId": 25693,
       "name": "Jacob Saylors",
       "position": "RB",
       "team": "DET",
-      "rank": 391,
-      "positionRank": 105,
+      "rank": 390,
+      "positionRank": 104,
       "minRank": 329,
-      "maxRank": 366,
-      "stdDev": 18.5
+      "maxRank": 367,
+      "stdDev": 19.0
     },
     {
       "sourceId": 20126,
       "name": "Tutu Atwell",
       "position": "WR",
       "team": "LAR",
-      "rank": 392,
+      "rank": 391,
       "positionRank": 132,
       "minRank": 326,
       "maxRank": 326,
@@ -3765,21 +3754,21 @@
       "name": "Trey Benson",
       "position": "RB",
       "team": "ARI",
-      "rank": 393,
-      "positionRank": 106,
+      "rank": 392,
+      "positionRank": 105,
       "minRank": 326,
       "maxRank": 326,
       "stdDev": 0.0
     },
     {
-      "sourceId": 27076,
-      "name": "Jalen Royals",
-      "position": "WR",
-      "team": "KC",
-      "rank": 395,
-      "positionRank": 133,
-      "minRank": 336,
-      "maxRank": 336,
+      "sourceId": 23682,
+      "name": "Devin Neal",
+      "position": "RB",
+      "team": "WAS",
+      "rank": 393,
+      "positionRank": 106,
+      "minRank": 328,
+      "maxRank": 328,
       "stdDev": 0.0
     },
     {
@@ -3787,10 +3776,21 @@
       "name": "Nate Boerkircher",
       "position": "TE",
       "team": "JAC",
-      "rank": 396,
+      "rank": 395,
       "positionRank": 62,
       "minRank": 336,
       "maxRank": 336,
+      "stdDev": 0.0
+    },
+    {
+      "sourceId": 27076,
+      "name": "Jalen Royals",
+      "position": "WR",
+      "team": "KC",
+      "rank": 396,
+      "positionRank": 133,
+      "minRank": 337,
+      "maxRank": 337,
       "stdDev": 0.0
     },
     {
@@ -3800,9 +3800,9 @@
       "team": "SF",
       "rank": 397,
       "positionRank": 44,
-      "minRank": 338,
+      "minRank": 339,
       "maxRank": 371,
-      "stdDev": 16.5
+      "stdDev": 16.0
     },
     {
       "sourceId": 11425,
@@ -3822,8 +3822,8 @@
       "team": "CIN",
       "rank": 399,
       "positionRank": 46,
-      "minRank": 340,
-      "maxRank": 340,
+      "minRank": 341,
+      "maxRank": 341,
       "stdDev": 0.0
     },
     {
@@ -3871,22 +3871,11 @@
       "stdDev": 0.0
     },
     {
-      "sourceId": 22928,
-      "name": "Phil Mafah",
-      "position": "RB",
-      "team": "NYG",
-      "rank": 404,
-      "positionRank": 108,
-      "minRank": 358,
-      "maxRank": 366,
-      "stdDev": 4.0
-    },
-    {
       "sourceId": 19252,
       "name": "Brandon Aiyuk",
       "position": "WR",
       "team": "SF",
-      "rank": 405,
+      "rank": 404,
       "positionRank": 137,
       "minRank": 353,
       "maxRank": 353,
@@ -3897,10 +3886,10 @@
       "name": "Dylan Laube",
       "position": "RB",
       "team": "LV",
-      "rank": 407,
-      "positionRank": 109,
-      "minRank": 361,
-      "maxRank": 361,
+      "rank": 406,
+      "positionRank": 108,
+      "minRank": 363,
+      "maxRank": 363,
       "stdDev": 0.0
     },
     {
@@ -3908,10 +3897,21 @@
       "name": "Tahj Brooks",
       "position": "RB",
       "team": "CIN",
-      "rank": 408,
-      "positionRank": 110,
+      "rank": 407,
+      "positionRank": 109,
       "minRank": 365,
       "maxRank": 365,
+      "stdDev": 0.0
+    },
+    {
+      "sourceId": 22928,
+      "name": "Phil Mafah",
+      "position": "RB",
+      "team": "NYG",
+      "rank": 408,
+      "positionRank": 110,
+      "minRank": 366,
+      "maxRank": 366,
       "stdDev": 0.0
     },
     {
