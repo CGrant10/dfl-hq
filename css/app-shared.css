@@ -3883,6 +3883,37 @@ html[data-archive-transition] {view-transition-name:none;}
 #view[data-route="trade"] .td-fit-call { margin:10px 0 0; color:var(--body-text); font:600 12px/1.5 var(--font-body); }
 #view[data-route="trade"] .td-fit-call small { display:block; font:500 11px/1.5 var(--font-body); color:var(--muted); }
 
+/* Offer tickets expose the complete exchange without expanding a roster. */
+#view[data-route="trade"] .tb-offer{padding:10px 12px 0;border:1px solid var(--line);border-radius:var(--r-card,12px);background:var(--bg-2);overflow:hidden}
+#view[data-route="trade"] .tb-tier>div{display:grid;gap:10px}
+#view[data-route="trade"] .tb-offer>header{grid-template-columns:minmax(0,1fr) auto auto;gap:8px;padding:0 0 8px;align-items:center}
+#view[data-route="trade"] .tb-offer-owner{font:600 12px/1.3 var(--font-body);color:var(--text)}
+#view[data-route="trade"] .tb-offer-owner strong{white-space:normal;overflow-wrap:anywhere}
+#view[data-route="trade"] .tb-offer-owner .tb-team-mark{width:22px;height:22px;min-width:22px}
+#view[data-route="trade"] .tb-offer>header>span{font:700 10px/1.3 var(--font-body);padding:3px 5px;background:transparent;color:var(--body-text);border-color:var(--line)}
+#view[data-route="trade"] .tb-offer>header>b{font:700 10px/1.3 var(--font-body);color:var(--accent);text-align:right}
+#view[data-route="trade"] .tb-offer-flow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:4px 0 8px;margin:0;align-items:start}
+#view[data-route="trade"] .tb-package{min-width:0;padding:0;border:0}
+#view[data-route="trade"] .tb-package+ .tb-package{padding-left:12px;border-left:1px solid var(--line)}
+#view[data-route="trade"] .tb-package>small{display:block;font:700 10px/1.3 var(--font-body);letter-spacing:.07em;color:var(--body-text);margin-bottom:3px}
+#view[data-route="trade"] .tb-player{display:block;min-width:0;padding:0}
+#view[data-route="trade"] .tb-player-link{display:flex;align-items:center;gap:6px;min-height:44px;width:100%;padding:3px 0;border:0;border-radius:4px;background:transparent;color:var(--text);text-align:left;cursor:pointer}
+#view[data-route="trade"] .tb-player-link>span:last-child{display:grid;min-width:0;gap:1px}
+#view[data-route="trade"] .tb-player-link strong{font:600 13px/1.25 var(--font-body);white-space:normal;overflow-wrap:anywhere}
+#view[data-route="trade"] .tb-player-link small{font:500 10px/1.3 var(--font-body);color:var(--body-text);white-space:normal}
+#view[data-route="trade"] .tb-player-link .dfl-player-portrait{flex:0 0 24px;width:24px;min-width:24px;height:28px}
+#view[data-route="trade"] .tb-offer-summary{padding:7px 0;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:4px 8px}
+#view[data-route="trade"] .tb-offer-summary dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;margin:0}
+#view[data-route="trade"] .tb-offer-summary dl>div{display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 5px;min-width:0}
+#view[data-route="trade"] .tb-offer-summary dt{font:500 11px/1.3 var(--font-body);color:var(--body-text)}
+#view[data-route="trade"] .tb-offer-summary dd{font:700 14px/1.3 var(--font-body);font-variant-numeric:tabular-nums;color:var(--text);margin:0}
+#view[data-route="trade"] .tb-offer-horizon{font:500 11px/1.4 var(--font-body);color:var(--body-text)}
+#view[data-route="trade"] .tb-offer-risk{font:600 11px/1.4 var(--font-body);color:var(--warn-ink);width:100%;overflow-wrap:anywhere}
+#view[data-route="trade"] .tb-offer-analyze{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;margin:0;padding:8px 0;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent;color:var(--accent);font:700 12px/1.3 var(--font-body);cursor:pointer}
+#view[data-route="trade"] .tb-offer :is(button,a):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#view[data-route="trade"] .tb-multi-flow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(min-width:700px){#view[data-route="trade"] .tb-tier>div{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}#view[data-route="trade"] .tb-multi-offer{grid-column:1/-1}#view[data-route="trade"] .tb-multi-flow{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
 
 /* Source: css/app-reading.css */
 /* Shared reading rhythm for the audited screens. Keep the DFL palette and
@@ -5636,7 +5667,7 @@ dialog.dfl-player-card { height:min(720px,calc(100dvh - 24px),var(--dialog-viewp
 
 
 /* Source: css/decision-polish.css */
-/* Compact decisions, with full packages a deliberate expansion away. */
+/* Shared decision setup, watchlist and GameDay recaps. */
 #view.view[data-page-system][data-route][data-route="trade"] .tb-setup{display:block;padding:0;background:var(--bg-2)}
 #view.view[data-page-system][data-route][data-route="trade"] .tb-setup-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:76px;padding:14px 16px;list-style:none;cursor:pointer}
 .tb-setup-summary::-webkit-details-marker{display:none}
@@ -5653,24 +5684,6 @@ dialog.dfl-player-card { height:min(720px,calc(100dvh - 24px),var(--dialog-viewp
 #view .tb-browse-offers{width:100%;margin-top:14px;min-height:44px}
 #view .tb-intent{scroll-margin-top:110px}
 #view.view[data-page-system][data-route][data-route="trade"] .tb-offers-card{padding:0;border:0;background:transparent;box-shadow:none}
-#view.view[data-page-system][data-route][data-route="trade"] .tb-offer{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg-2);box-shadow:none}
-#view.view[data-page-system][data-route][data-route="trade"] .tb-offer-flow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin:12px 0;padding:0;border:0}
-#view[data-route="trade"] .tb-package{display:flex;flex-direction:column;gap:9px;min-width:0}
-#view[data-route="trade"] .tb-package+ .tb-package{border-left:1px solid var(--line);padding-left:12px}
-#view[data-route="trade"] .tb-package>small{font-size:10px;font-weight:700;letter-spacing:.07em;color:var(--muted)}
-#view[data-route="trade"] .tb-package .tb-player{display:block;min-width:0}
-#view[data-route="trade"] .tb-package .dfl-player{display:flex;flex-wrap:wrap;gap:5px;min-width:0;align-items:center}
-#view[data-route="trade"] .tb-package .dfl-player-portrait{width:34px;height:38px;flex:0 0 34px}
-#view[data-route="trade"] .tb-package .dfl-player-copy{flex:1;min-width:0}
-#view[data-route="trade"] .tb-package .player-card-trigger{padding:4px 0;min-height:44px;max-width:100%;white-space:normal;font-size:13px;line-height:1.3;overflow-wrap:anywhere}
-#view[data-route="trade"] .tb-package .dfl-player-copy>small{font-size:10px;line-height:1.5;white-space:normal}
-#view[data-route="trade"] .tb-package .dfl-player>em{margin:0;font-size:9px;max-width:100%;white-space:normal;line-height:1.5}
-#view .tb-supporting{padding:0;border:0;background:transparent}
-#view .tb-supporting>summary{display:flex;align-items:center;min-height:44px;font-size:12px;color:var(--accent);cursor:pointer}
-#view .tb-supporting>div{display:grid;gap:8px;padding:4px 0}
-#view.view[data-page-system][data-route][data-route="trade"] .tb-offer-analyze{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:44px;margin-top:10px;border:0;border-top:1px solid var(--line);border-radius:0;padding:10px 0 0;background:transparent;font:700 14px var(--font-body);color:var(--accent);cursor:pointer}
-#view .tb-multi-flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr));gap:14px}
-#view .tb-multi-flow>section{min-width:0}
 #view .player-watchlist>summary{display:flex;justify-content:space-between;gap:12px;align-items:center;min-height:48px;cursor:pointer;font-size:14px}
 #view .player-watchlist>summary small{font-size:11px;color:var(--muted)}
 #view .player-watchlist-body{padding-top:12px}
@@ -5692,8 +5705,6 @@ dialog.dfl-player-card { height:min(720px,calc(100dvh - 24px),var(--dialog-viewp
 @media(max-height:600px){.moment-recap-frame{min-height:220px;padding:12px}.moment-recap-art{height:64px}.gd-moment-recap .dfl-player-portrait,.gd-moment-recap .dfl-team-mark{width:60px;height:64px}}
 #view.view[data-page-system][data-route][data-route="trade"] .tb-setup>.tb-setup-summary::after{display:none}
 #view.view[data-page-system][data-route][data-route="analyzer"] [data-ta-body]{margin-inline:0;min-width:0;max-width:100%}
-#view[data-route="trade"] .tb-package .dfl-player{display:grid;grid-template-columns:34px minmax(0,1fr);gap:6px;align-items:center}
-#view[data-route="trade"] .tb-package .dfl-player>em{grid-column:1/-1;justify-self:start}
 #view .tb-setup-summary strong i{display:inline-flex;vertical-align:middle}
 
 
@@ -5743,24 +5754,20 @@ html[data-readability="comfortable"] #view :is(h1,h2,h3){overflow-wrap:anywhere;
 html[data-ui-motion="off"] #home-wrap .bx-season-story .bx-season-years b {animation:none!important;}
 @media(max-width:360px){#home-wrap .bx-stat-story-main{grid-template-columns:108px minmax(0,1fr);gap:12px;}#home-wrap .bx-stat-metric{min-height:108px;}#home-wrap .bx-season-number{font-size:120px;}}
 @media(prefers-reduced-motion:reduce){#home-wrap .bx-season-story .bx-season-years b{animation:none!important;}}
-/* Award posters share the app's type, not an identical champion template. */
-#home-wrap .bx-award-story{display:grid;grid-template-columns:64px minmax(0,1fr);grid-template-rows:auto auto auto;align-content:start;gap:14px 16px;min-height:250px;isolation:isolate;overflow:hidden}
-#home-wrap .bx-award-story>.bx-kicker{grid-column:1 / -1;z-index:2;align-self:start;margin:0}
-#home-wrap .bx-award-copy{grid-column:1 / -1;display:grid;align-content:start;justify-items:start;gap:8px;width:100%;min-width:0;z-index:2}
-#home-wrap .bx-award-story .bx-name{font:400 clamp(30px,8vw,36px)/1.08 Anton,var(--font-display);text-align:left;margin:0;max-width:100%;text-wrap:balance;overflow-wrap:anywhere}
-#home-wrap .bx-award-story .bx-sub{font:600 15px/1.4 var(--home-ui-font);color:var(--body-text);text-align:left;margin:0;max-width:100%;overflow-wrap:anywhere}
-#home-wrap .bx-award-call{font:700 15px/1.3 var(--home-ui-font);color:var(--accent);max-width:100%}
-/* Copy owns the upper rows. The faint award stamp and full, contained
-   illustration each have their own space below; none sits under a word. */
-#home-wrap .bx-award-word{position:relative;inset:auto;grid-column:1;grid-row:3;align-self:center;justify-self:center;z-index:0;width:64px;height:196px;color:color-mix(in srgb,var(--text) 10%,transparent);font:400 36px/1 Anton,sans-serif;letter-spacing:.02em;pointer-events:none}
-#home-wrap .bx-award-word svg{display:block;width:100%;height:100%;fill:currentColor}
-#home-wrap .bx-award-chip .bx-award-word{color:color-mix(in srgb,var(--accent) 12%,transparent)}
-#home-wrap .bx-award-story .bx-editorial-illustration{position:relative;inset:auto;grid-column:2;grid-row:3;align-self:stretch;justify-self:end;width:100%;max-width:320px;height:196px;z-index:1;overflow:hidden;pointer-events:none;transform:none!important;mask-image:linear-gradient(0deg,transparent,#000 18%,#000 92%,transparent)}
-#home-wrap .bx-award-story .bx-editorial-illustration::after{display:none}
-#home-wrap .bx-award-story .bx-editorial-subject{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;opacity:var(--bx-award-opacity,.65)}
-#home-wrap .bx-award-story .bx-editorial-portrait{display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom;transform:none;filter:grayscale(.3) saturate(.85)}
-:root[data-mode="light"] #home-wrap .bx-award-story{--bx-award-opacity:.55}
-@media(max-width:360px){#home-wrap .bx-award-story .bx-editorial-illustration,#home-wrap .bx-award-word{height:180px}}
+/* The title is a headline; the full figure and owner copy occupy real columns. */
+#home-wrap .bx-award-story{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);grid-template-rows:auto auto auto auto;align-content:start;gap:14px 16px;min-height:0;isolation:isolate;overflow:hidden}
+#home-wrap .bx-award-story>.bx-kicker{grid-column:1/-1;z-index:2;margin:0;display:flex;gap:7px;align-items:center}
+#home-wrap .bx-award-heading{grid-column:1/-1;font:400 clamp(30px,8vw,38px)/1.08 Anton,var(--font-display);text-align:left;margin:0;max-width:100%;text-wrap:balance;overflow-wrap:anywhere;z-index:2}
+#home-wrap .bx-award-copy{grid-column:1;grid-row:3;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:14px;width:100%;min-width:0;z-index:2}
+#home-wrap .bx-award-story .bx-sub{font:500 15px/1.45 var(--home-ui-font);color:var(--body-text);text-align:left;margin:0;max-width:100%;overflow-wrap:anywhere}
+#home-wrap .bx-award-call{font:400 clamp(23px,6vw,28px)/1.12 Anton,var(--font-display);color:var(--accent);max-width:100%;text-transform:uppercase;text-wrap:balance}
+#home-wrap .bx-award-story .bx-editorial-illustration{position:relative;inset:auto;grid-column:2;grid-row:3;align-self:stretch;justify-self:end;width:100%;height:224px;z-index:1;overflow:hidden;pointer-events:none;transform:none!important;mask-image:linear-gradient(0deg,transparent,#000 12%,#000 94%,transparent)}
+#home-wrap .bx-award-story .bx-editorial-illustration::after{content:"";position:absolute;inset:12% 5%;z-index:-1;border:1px solid color-mix(in srgb,var(--accent) 18%,transparent);border-radius:50%;background:radial-gradient(ellipse,color-mix(in srgb,var(--accent) 9%,transparent),transparent 70%)}
+#home-wrap .bx-award-story .bx-editorial-subject{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;opacity:var(--bx-award-opacity,.85)}
+#home-wrap .bx-award-story .bx-editorial-portrait{display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom;transform:none;filter:saturate(.85)}
+:root[data-mode="light"] #home-wrap .bx-award-story{--bx-award-opacity:.8}
+#home-wrap .bx-award-story>.bx-story-action{grid-column:1/-1;width:100%;justify-content:space-between;padding-top:12px;border-top:1px solid var(--line)}
+@media(max-width:360px){#home-wrap .bx-award-story{gap:12px}#home-wrap .bx-award-story .bx-editorial-illustration{height:206px}#home-wrap .bx-award-call{font-size:23px}}
 /* One composed entrance: copy leads, supporting detail and artwork settle once. */
 #home-wrap .bx-slide.bx-in :is(.bx-kicker,.bx-home-week){animation:bx-editorial-copy-in 240ms ease-out both}
 #home-wrap .bx-slide.bx-in :is(.bx-head,.bx-name,.bx-home-title,.bx-stat-story-main,.bx-season-lockup){animation:bx-editorial-copy-in 340ms cubic-bezier(.2,.75,.25,1) 45ms both}
@@ -5782,7 +5789,30 @@ html[data-ui-motion="off"] #home-wrap .bx-stage :is(.bx-home-art,.bx-editorial-i
 @media(prefers-reduced-motion:reduce){#home-wrap .bx-stage :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image){transition:none!important}}
 
 #home-wrap .bx-award-story.bx-in .bx-editorial-subject{animation-name:bx-award-art-in}
-@keyframes bx-award-art-in{from{opacity:0;translate:6px 0}to{opacity:var(--bx-award-opacity,.65);translate:0 0}}
+@keyframes bx-award-art-in{from{opacity:0;translate:6px 0}to{opacity:var(--bx-award-opacity,.85);translate:0 0}}
+
+/* A common editorial plate ties the secondary stories to the DFL opener. */
+#home-wrap .bx-story-edition{align-content:start;row-gap:16px;border-top:2px solid var(--accent);padding-top:16px;background:radial-gradient(ellipse at 100% 35%,color-mix(in srgb,var(--accent) 4%,transparent),transparent 65%)}
+#home-wrap .bx-story-edition .bx-kicker{font:700 11px/1.3 var(--home-ui-font);letter-spacing:.09em;color:var(--accent)}
+#home-wrap .bx-story-edition .bx-kicker::after{display:none}
+#home-wrap .bx-story-edition .bx-when{font:600 10px/1.35 var(--home-ui-font);letter-spacing:.08em;padding:4px 7px;border-radius:4px;background:transparent;color:var(--body-text);border-color:var(--line)}
+#home-wrap :is(.bx-archive-story,.bx-news-story,.bx-calendar-story){display:grid;align-content:start;gap:16px}
+#home-wrap :is(.bx-archive-story,.bx-news-story,.bx-calendar-story) .bx-story-image{height:168px;border-radius:6px;border-bottom:2px solid var(--line);object-fit:cover;object-position:center}
+#home-wrap .bx-news-story .bx-story-image{object-fit:contain;background:color-mix(in srgb,var(--accent) 4%,var(--bg))}
+#home-wrap .bx-story-edition .bx-head{font-size:clamp(28px,7.5vw,34px);line-height:1.1;text-wrap:balance}
+#home-wrap .bx-number-story .bx-stat-story-main{grid-template-columns:128px minmax(0,1fr);gap:18px;padding:18px 0;border-block:1px solid var(--line);background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 5%,transparent),transparent)}
+#home-wrap .bx-number-story .bx-stat-metric{min-height:128px}
+#home-wrap .bx-number-story .bx-stat-metric.is-dial .bx-figure{font-size:42px}
+#home-wrap .bx-season-story{align-content:start;gap:24px}
+#home-wrap .bx-season-number{font-size:164px;color:var(--text)}
+#home-wrap .bx-season-lockup{padding:18px 0;border-bottom:1px solid var(--line);background:radial-gradient(ellipse at 30% 50%,color-mix(in srgb,var(--accent) 9%,transparent),transparent 70%)}
+#home-wrap .bx-scout-story{align-content:start;gap:18px}
+#home-wrap .bx-scout-target{grid-template-columns:116px minmax(0,1fr);padding:14px 0;border-block:1px solid var(--line)}
+#home-wrap .bx-scout-target .dfl-player-portrait{width:116px;height:140px;border-radius:6px}
+#home-wrap .bx-trade-heading{padding-bottom:12px;border-bottom:1px solid var(--line)}
+#home-wrap .bx-trade-side .dfl-player-portrait{height:144px;border-radius:6px}
+#home-wrap .bx-trade-story>.bx-story-action{padding-top:12px;border-top:1px solid var(--line);width:100%;justify-content:space-between}
+@media(max-width:360px){#home-wrap .bx-number-story .bx-stat-story-main{grid-template-columns:108px minmax(0,1fr);gap:12px}#home-wrap .bx-number-story .bx-stat-metric{min-height:108px}#home-wrap .bx-number-story .bx-stat-metric.is-dial .bx-figure{font-size:36px}#home-wrap .bx-season-number{font-size:140px}#home-wrap .bx-scout-target{grid-template-columns:90px minmax(0,1fr)}#home-wrap .bx-scout-target .dfl-player-portrait{width:90px;height:120px}}
 
 
 /* Source: css/player-compare.css */

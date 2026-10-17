@@ -56,11 +56,11 @@ with sync_playwright() as p:
         assert page.locator('[data-tb-tier="fair"]').evaluate('e=>e.open')
         # Compact setup keeps the first useful offer near the top on phones.
         assert page.locator('[data-trade-picker="send"]').is_visible()
-        assert page.locator('[data-trade-picker="receive"]').is_visible()
+        assert page.locator('[data-trade-picker="league"]').is_visible()
         # Primary player selectors stay visible with advanced preferences closed.
         assert not page.locator('.tb-refine').evaluate('e=>e.open')
         assert page.locator('[data-trade-picker="send"]').is_visible()
-        assert page.locator('[data-trade-picker="receive"]').is_visible()
+        assert page.locator('[data-trade-picker="league"]').is_visible()
         # Each count comes from its own intent's completed search, including
         # empty tiers. Switching cached tabs keeps those counts intact.
         def settled_counts():
@@ -72,17 +72,19 @@ with sync_playwright() as p:
         assert page.locator('[data-tb-intent="fair"]').evaluate('e=>e===document.activeElement')
         page.screenshot(path=str(output/f'trade-{width}-compact-search.png'))
         click('.tb-setup > summary')
-        supporting=page.locator('.tb-supporting').first
-        if supporting.count():
-            key=supporting.get_attribute('data-page-detail');supporting.locator('summary').click();page.wait_for_timeout(50)
-            if not page.locator('[data-tb-generate]').is_disabled():
-                click('[data-tb-generate]');page.wait_for_function('key=>[...document.querySelectorAll(".tb-supporting")].some(d=>d.dataset.pageDetail===key&&d.open)',arg=key)
-            page.evaluate('key=>{const d=[...document.querySelectorAll(".tb-supporting")].find(d=>d.dataset.pageDetail===key);if(d)d.open=false}',key)
+        assert page.locator('[data-ta-shop-partner]').input_value()=='all'
+        assert page.locator('.tb-supporting').count()==0
+        for card in page.locator('.tb-offer:not(.tb-multi-offer)').all():
+            button=card.locator('[data-td-load-offer]')
+            expected=(button.get_attribute('data-send-a')+','+button.get_attribute('data-send-b')).split(',')
+            assert card.locator('[data-player-card]').evaluate_all('es=>es.map(e=>e.dataset.playerCard)')==expected or sorted(card.locator('[data-player-card]').evaluate_all('es=>es.map(e=>e.dataset.playerCard)'))==sorted(expected)
+            assert card.locator('.tb-player-link').evaluate_all('es=>es.every(e=>e.offsetHeight>=44)')
+        assert page.locator('.tb-offer').first.evaluate('e=>e.getBoundingClientRect().height<280')
         page.evaluate("scrollTo({top:0,behavior:'instant'})")
         page.screenshot(path=str(output/f'trade-{width}-workbench.png'))
         # Price, actual roster fit and data risk remain separate on each offer.
-        assert 'Price balance' in page.locator('.tb-offer .td-decision').first.inner_text()
-        assert page.locator('.tb-offer .td-fit-call').first.is_visible()
+        assert 'Price balance' in page.locator('.tb-offer .tb-offer-summary').first.inner_text()
+        assert page.locator('.tb-offer .tb-offer-horizon').first.is_visible()
         # Upcoming schedules fail honestly and retry without silently keeping
         # a Next 4 weeks label on rest-of-season numbers.
         select('[data-tb-horizon]','next4')
@@ -92,10 +94,10 @@ with sync_playwright() as p:
         click('[data-tb-retry-schedules]')
         page.wait_for_function("document.querySelector('[data-tb-horizon]')?.value==='next4'&&!document.querySelector('.tb-search-placeholder')")
         settled_counts()
-        assert 'Weeks 6–9' in page.locator('.tb-offer .td-fit-call').first.inner_text()
+        assert 'Weeks 6–9' in page.locator('.tb-offer .tb-offer-horizon').first.inner_text()
         page.screenshot(path=str(output/f'trade-{width}-next-four-weeks.png'))
         select('[data-tb-horizon]','season');settled_counts()
-        assert 'Rest of season' in page.locator('.tb-offer .td-fit-call').first.inner_text()
+        assert 'Rest of season' in page.locator('.tb-offer .tb-offer-horizon').first.inner_text()
         if page.locator('[data-tb-shop-need]').count():
             need=page.locator('[data-tb-shop-need]').get_attribute('data-tb-shop-need')
             click('[data-tb-shop-need]');settled_counts()
@@ -154,6 +156,11 @@ with sync_playwright() as p:
         page.screenshot(path=str(output/f'trade-{width}-player-pickers.png'))
         click('[data-td-load-offer]')
         assert page.locator('.td-ticket').count(),f'{width}: Analyze offer did not open a ticket'
+        page.evaluate('window.renderReview()');settled_counts()
+        assert page.locator('[data-ta-shop-partner]').input_value()=='all'
+        assert page.locator('[data-trade-picker="league"]').count()==1
+        click('[data-td-mode="manual"]')
+        assert page.locator('[data-td-remove-pick]').count()>=2
         page.evaluate('sessionStorage.clear();localStorage.clear()');page.reload();page.wait_for_function('window.reviewReady===true')
 
         settled_counts()
@@ -203,6 +210,8 @@ with sync_playwright() as p:
         assert page.locator('.td-lineup-slot').count()==21
         assert not page.evaluate('document.documentElement.scrollWidth>innerWidth'),f'{width}: overflow'
         page.reload();page.wait_for_function('window.reviewReady===true')
+        assert page.locator('[data-ta-shop-partner]').input_value()=='all'
+        click('[data-td-mode="manual"]')
         assert page.locator('[data-td-destination="1-4"]').input_value()=='3'
         assert page.locator('.td-proposal-grid article').count()==3
         click('[data-td-compare]')
@@ -277,14 +286,15 @@ with sync_playwright() as p:
         page.locator('[data-tb-tier="fair"] .tb-offer').first.wait_for()
         assert page.locator('[data-tb-tier="fair"] .tb-offer').count()>0
         assert page.locator('[data-tb-tier="fair"] .tb-offer > header > b').evaluate_all("es=>es.every(e=>e.textContent.includes('BALANCED'))")
-        assert page.locator('[data-tb-tier="fair"] .tb-offer .td-risk-flags').evaluate_all("es=>es.every(e=>e.textContent.includes('Rank disagreement'))")
+        assert page.locator('[data-tb-tier="fair"] .tb-offer .tb-offer-risk').evaluate_all("es=>es.every(e=>e.textContent.includes('Rank disagreement'))")
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
         page.locator('[data-tb-tier="fair"]').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")
         page.screenshot(path=str(output/f'trade-{width}-fair-review.png'))
         click('[data-tb-intent="aggressive"]')
         page.wait_for_function("document.querySelector('[data-tb-tier]')?.dataset.tbTier==='aggressive'")
         page.reload();page.wait_for_function('window.reviewReady===true')
-        assert page.locator('[data-tb-tier="aggressive"]').evaluate('e=>e.open')
+        assert page.locator('[data-tb-tier="fair"]').evaluate('e=>e.open')
+        assert page.locator('[data-ta-shop-partner]').input_value()=='all'
         # Reflow at enlarged type and themes; closing keeps package state.
         page.evaluate("document.documentElement.style.fontSize='200%'")
         for mode in ['dark','light','team:KC']:

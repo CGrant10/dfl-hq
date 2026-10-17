@@ -6,6 +6,7 @@ import {matchExpertRankings,expertValueIndex} from './expert-rankings-model.js';
 import {tradeAssessment} from './trade-assessment.js';
 import {targetedTradePackages,tradeGoalScore} from './trade-target-search.js';
 import {tradeSuggestionQuality,compareTradeSuggestions,tradePartnerFit} from './trade-suggestion-quality.js';
+import {refineTradeOffers} from './trade-refine-offers.js';
 import {balanceTradeSuggestions} from './trade-auto-balance.js';
 import {tradeWeekPlayerPool} from './trade-week-forecast.js';
 
@@ -782,7 +783,6 @@ function partnerBalancedCandidates(possibilities, pool, intent, cap = 1800) {
     groups.get(partner).push(candidate);
   }
   const select = (group, budget) => {
-    if (intent !== 'fair' && intent !== 'steal') return shapeBalancedCandidates(group, pool, budget).slice(0, budget);
     const preferred = [], other = [];
     for (const candidate of group) {
       const incomingEvidence = evidenceFor(candidate.sendB), outgoingEvidence = evidenceFor(candidate.sendA);
@@ -794,7 +794,7 @@ function partnerBalancedCandidates(possibilities, pool, intent, cap = 1800) {
         incomingEvidence, outgoingEvidence, incomingPositionsA: packagePositions(candidate.sendB, pool),
         comparableStarPremium: comparableStarPremium(candidate.sendA, candidate.sendB, pool),
         projectionEvidence: projectionEvidence([...candidate.sendA, ...candidate.sendB], pool) }) : null;
-      (tier === intent ? preferred : other).push(candidate);
+      ((intent==='aggressive'?fairness<90&&incomingEvidence.value>outgoingEvidence.value:tier===intent) ? preferred : other).push(candidate);
     }
     const selected = shapeBalancedCandidates(preferred, pool, budget).slice(0, budget);
     const remaining = Math.max(0, budget - selected.length);
@@ -821,10 +821,10 @@ function pairPackages(sendPackages, receivePackages, pool, intent) {
     }
     const indices = new Set([0, right.length - 1]);
     for (let offset = -2; offset <= 2; offset++) indices.add(Math.max(0, Math.min(right.length - 1, low + offset)));
-    if (intent === 'steal') {
-      // A Steal search needs supported favorable gaps, not only equal prices
-      // and the two extremes. Keep the nearest-value pairs for other tiers.
-      for (const ratio of [1.3, 1.55, 1.85]) {
+    if (intent === 'steal' || intent === 'aggressive') {
+      // Search favorable neighborhoods as well as equal prices and extremes.
+      // The full model still decides the category and roster usefulness.
+      for (const ratio of intent==='steal'?[1.15,1.25,1.4,1.65,1.85]:[1.08,1.18,1.32]) {
         let left = 0, end = right.length;
         while (left < end) { const mid = (left + end) >> 1; if (right[mid].value < target * ratio) left = mid + 1; else end = mid; }
         for (let offset = -1; offset <= 1; offset++) indices.add(Math.max(0, Math.min(right.length - 1, left + offset)));
@@ -981,7 +981,8 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
   };
   const evaluated = partnerBalancedCandidates(possibilities, pool, intent).map(evaluateCandidate).filter(Boolean);
   const repaired=intent==='fair'?balanceTradeSuggestions(evaluated,{mine,pool,shapes:new Set(allowedShapes.map(s=>s.join('-'))),maxPlayers:offerPlayerLimit(maxPlayers,sendRequired,receiveRequired),sendRequired,receiveRequired,evaluate:evaluateCandidate}):[];
-  const usable = [...evaluated,...repaired].filter(result=>isPlausibleTradeSuggestion(result)&&(goal!=='starter'||horizon==='next4'||result.weeklyDeltaA>.1)
+  const refined=refineTradeOffers(evaluated,{mine,pool,intent,shapes:new Set(allowedShapes.map(s=>s.join('-'))),maxPlayers:offerPlayerLimit(maxPlayers,sendRequired,receiveRequired),sendRequired,receiveRequired,evaluate:evaluateCandidate});
+  const usable = [...evaluated,...repaired,...refined].filter(result=>isPlausibleTradeSuggestion(result)&&(goal!=='starter'||horizon==='next4'||result.weeklyDeltaA>.1)
     &&(!ANALYZER_POSITIONS.includes(goal)||result.usefulIncomingA.some(id=>pool.get(id)?.position===goal))
     &&(goal!=='consolidate'||result.startingIncomingA.length&&(horizon==='next4'||result.weeklyDeltaA>.1)&&Math.max(...result.sendB.map(id=>pool.get(id)?.tradeValue||0))>=Math.max(...result.sendA.map(id=>pool.get(id)?.tradeValue||0))*.95))
     .filter((result, index, all) => index === all.findIndex(other => String(other.other.id) === String(result.other.id)

@@ -343,7 +343,7 @@ function fitHeadlines(slide) {
 }
 
 /** One item as markup. An unknown treatment degrades to an announcement. */
-export function renderItem(item, { editorial = false } = {}) {
+function renderStoryItem(item, { editorial = false } = {}) {
   if (!item) return "";
   if (editorial && item.homeFeature) {
     const tag=item.href?'a':'section';
@@ -358,7 +358,7 @@ export function renderItem(item, { editorial = false } = {}) {
   }
   if(editorial&&item.treatment==='champion'){
     const chipEater=item.variant==='chip',art=chipEater?'assets/dfl-daily-chip-eater.webp':item.image||'assets/dfl-daily-champion.webp';
-    return `<a class="bx-slide bx-award-story bx-award-${chipEater?'chip':'champion'} is-champion" href="${esc(item.href||'#/history')}"><span class="bx-kicker">${esc(item.kicker)}</span><span class="bx-award-word" aria-hidden="true"><svg viewBox="0 0 64 196" focusable="false"><text transform="translate(14 98) rotate(90)" text-anchor="middle">${chipEater?'LAST':'CHAMP'}</text></svg></span><div class="bx-award-copy"><h2 class="bx-name">${esc(item.headline)}</h2>${item.subtitle?`<span class="bx-sub">${esc(item.subtitle)}</span>`:''}<strong class="bx-award-call">${chipEater?'Eat your fucking words.':'Talk your shit.'}</strong>${chip(item)}</div><span class="bx-editorial-illustration" aria-hidden="true"><span class="bx-editorial-subject"><img class="bx-editorial-portrait" src="${esc(art)}" alt="" decoding="async"></span></span></a>`;
+    return `<a class="bx-slide bx-award-story bx-award-${chipEater?'chip':'champion'} is-champion" href="${esc(item.href||'#/history')}"><span class="bx-kicker"><svg class="ico-sm" aria-hidden="true"><use href="#${chipEater?'i-fire':'i-trophy'}"></use></svg>${esc(item.kicker)}</span><h2 class="bx-name bx-award-heading">${esc(item.headline)}</h2><div class="bx-award-copy">${item.subtitle?`<span class="bx-sub">${esc(item.subtitle)}</span>`:''}<strong class="bx-award-call">${chipEater?'Eat your fucking words.':'Talk your shit.'}</strong>${chip(item)}</div><span class="bx-editorial-illustration" aria-hidden="true"><span class="bx-editorial-subject"><img class="bx-editorial-portrait" src="${esc(art)}" alt="" decoding="async"></span></span><span class="bx-story-action">${chipEater?'The wall of shame':'The title ledger'} <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span></a>`;
   }
   if(editorial&&item.kind==='season')return `<a class="bx-slide bx-season-story is-stat" href="${esc(item.href||'#/history')}"><span class="bx-kicker">${Number(item.figure)%10===0?'ANNIVERSARY SEASON':esc(item.kicker)}</span><div class="bx-season-lockup"><strong class="bx-season-number">${esc(item.figure)}</strong><h2 class="bx-head">${esc(item.headline)}</h2></div><div class="bx-season-years"><span>${esc(item.subtitle)}</span><i aria-hidden="true">${Array.from({length:Math.min(20,Math.max(1,Number(item.figure)||1))},()=>'<b></b>').join('')}</i></div><span class="bx-story-action">The league archive <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span></a>`;
   if(editorial&&item.treatment==='stat'&&!['fact','record','trade'].includes(item.kind)){
@@ -404,6 +404,9 @@ export function renderItem(item, { editorial = false } = {}) {
       <img class="bx-story-image" src="${esc(item.image || `assets/dfl-daily-${rivalry ? 'rivalry' : 'archive'}.webp`)}" alt="" decoding="async"${item.image ? ` style="${artworkStyle(item)}"` : ''}>
     </a>`;
   }
+  if(editorial&&item.treatment==='event'){
+    return `<a class="bx-slide bx-calendar-story is-event" href="${esc(item.href||'#/calendar')}"><div class="bx-story-copy">${event(item)}</div><img class="bx-story-image" src="assets/dfl-daily-archive.webp" alt="" decoding="async"><span class="bx-story-action">League calendar <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span></a>`;
+  }
   if (editorial && item.treatment === 'announcement' && !item.image) {
     const content = `<div class="bx-story-copy">${announcement(item)}</div><img class="bx-story-image" src="assets/dfl-daily-headline.webp" alt="" decoding="async">`;
     return item.href ? `<a class="bx-slide bx-news-story is-announcement" href="${esc(item.href)}">${content}</a>` : `<div class="bx-slide bx-news-story is-announcement">${content}</div>`;
@@ -430,6 +433,11 @@ export function renderItem(item, { editorial = false } = {}) {
   return item.href
     ? `<a class="${cls}" href="${esc(editorial && item.treatment === "slate" ? "#/clubhouse?tab=matchups" : item.href)}">${inner}</a>`
     : `<div class="${cls}">${inner}</div>`;
+}
+
+export function renderItem(item, options = {}) {
+ const html=renderStoryItem(item,options);
+ return options.editorial&&!item?.homeFeature?html.replace('class="bx-slide','class="bx-slide bx-story-edition'):html;
 }
 
 /**

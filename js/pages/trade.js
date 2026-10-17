@@ -3,7 +3,6 @@ import {tradeDecisionMarkup} from '../trade-decision-ui.js';
 import {loadTradeWeekSchedules} from '../trade-weekly-outlook.js';
 import {lineupPreviewsFor} from '../trade-workspace.js';
 import {mountAnalyzerLiveRefresh} from "../analyzer-live-refresh.js";
-import {analyzerPlayerSignal} from "../analyzer-player-form.js";
 import {recheckTradeOffer} from '../trade-offer-recheck.js';
 import {offerPlayerLimit} from '../trade-package-limits.js';
 // =====================================================================
@@ -30,7 +29,7 @@ import { shareDeal } from "../trade-card.js";
 import {createTradeOfferSearch} from '../trade-offer-search.js';
 import {createTradeOfferCatalog} from '../trade-offer-catalog.js';
 import { loadTradeAlerts,loadTradeAlertByTransaction } from "../trade-alerts.js";
-import { playerIdentity, playerPortrait } from "../player-presentation.js";
+import { playerPortrait } from "../player-presentation.js";
 import { teamIdentity, teamPortrait } from "../team-presentation.js";
 import { recommendationOutcomes, tradeModelHealth, tradeModelHealthMarkup } from "../trade-model-health.js";
 import { loadSharedTradeRecommendations, saveTradeRecommendation } from "../trade-accountability.js";
@@ -59,28 +58,29 @@ export function leave() { renderEpoch++;stopRefresh?.();stopRefresh=null;saveDra
 
 function offerPlayerRows(ids, pool) {
   return ids.map(id => {
-    const player = pool.get(String(id));
-    const signal = analyzerPlayerSignal(player);
-    return `<span class="tb-player">${playerIdentity(player || { id, name: String(id) }, { detail: [player?.position, player?.nflTeam].filter(Boolean).join(" · "), signal, interactive: true })}</span>`;
+    const player = pool.get(String(id)) || {id,name:String(id)};
+    return `<span class="tb-player"><button type="button" class="tb-player-link" data-player-card="${esc(id)}" aria-label="View ${esc(player.name)} player card">${playerPortrait(player)}<span><strong>${esc(player.name)}</strong><small>${esc([player.position,player.nflTeam].filter(Boolean).join(' · '))}</small></span></button></span>`;
   }).join("");
 }
 
-function offerPackage(ids,pool,label,context=""){
+function offerPackage(ids,pool,label){
  const sorted=[...ids].sort((a,b)=>(pool.get(String(b))?.tradeValue||0)-(pool.get(String(a))?.tradeValue||0));
- const visible=sorted.length>2?sorted.slice(0,1):sorted,rest=sorted.slice(visible.length);
- return `<section class="tb-package"><small>${label}</small>${offerPlayerRows(visible,pool)}${rest.length?`<details class="tb-supporting" data-page-detail="offer-package:${esc(context+":"+label+":"+[...ids].map(String).sort().join(","))}"><summary>+${rest.length} players<span class="sr-only"> · ${label.toLowerCase()} · expand full package</span></summary><div>${offerPlayerRows(rest,pool)}</div></details>`:''}</section>`;
+ return `<section class="tb-package"><small>${label}</small>${offerPlayerRows(sorted,pool)}</section>`;
+}
+
+function offerSummary(offer,pool){
+ const p=tradePerspective(offer),a=tradeAssessment(p),deltas=offer.windowDeltas||offer.weeklyDeltas||[a.weeklyA,a.weeklyB];
+ const window=offer.windowWeeks?.length?`Weeks ${offer.windowWeeks[0]}–${offer.windowWeeks.at(-1)}`:'Rest of season';
+ return `<div class="tb-offer-summary" aria-label="Trade balance, lineup impact and risk"><dl><div><dt>Price balance</dt><dd>${Math.round(a.fairness)}%</dd></div><div><dt>You · pts/wk</dt><dd class="${deltas[0]<0?'is-down':'is-up'}">${signed(deltas[0])}</dd></div><div><dt>${offer.parties?'Group balance':'Them · pts/wk'}</dt><dd>${offer.parties?offer.fairness+'%':signed(deltas[1])}</dd></div></dl><span class="tb-offer-horizon">${esc(window)} · projected</span>${a.flags.length?`<span class="tb-offer-risk">${esc(a.flags.join(' · '))}</span>`:''}${p.requiredDropsA?.length?`<span class="tb-offer-risk">Drop: ${esc(p.requiredDropsA.map(id=>pool.get(String(id))?.name||id).join(', '))}</span>`:''}${p.openSlotsA?`<span class="tb-offer-risk">${p.openSlotsA} open roster spot${p.openSlotsA===1?'':'s'}</span>`:''}</div>`;
 }
 
 function offerMarkup(offer, pool) {
-  if (offer.parties) return `<article class="tb-offer tb-multi-offer"><header><span>${offer.parties.length}-TEAM TRADE</span><b>${offer.fairness}% BALANCE</b></header>${tradeDecisionMarkup(offer,pool,{compact:true})}<div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { meta: `SENDS TO ${teamName(offer.parties[(index + 1) % offer.parties.length])}`, compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer.parties.map(p=>p.id).join(",")+":"+offer.sends.flat().join(","))}<small>LINEUP ${signed(offer.weeklyDeltas[index])} · DEPTH ${signed(offer.depthDeltas[index])}</small></section>`).join("")}</div><button type="button" class="btn ghost small" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze trade</button></article>`;
+  if (offer.parties) return `<article class="tb-offer tb-multi-offer"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { meta: `TO ${teamName(offer.parties[(index + 1) % offer.parties.length])}`, compact: true })}${offerPackage(offer.sends[index], pool,"SENDS")}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerSummary(offer,pool)}<button type="button" class="tb-offer-analyze" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze trade <span aria-hidden="true">→</span></button></article>`;
   const call = tradeAssessment(offer).price.headline.toUpperCase();
-  const starters=(offer.startingIncomingA||[]).map(id=>pool.get(String(id))?.name).filter(Boolean);
   return `<article class="tb-offer">
-    <header><span>${shapeLabel(offer)}</span><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<span><strong>${esc(teamName(offer.other))}</strong><i>${esc(offer.other.ownerName || "Roster owner")}</i></span></small><b>${call}</b></header>
-    <div class="tb-offer-flow">${offerPackage(offer.sendA,pool,'YOU SEND',offer.other.id+':'+offer.sendB.join(','))}${offerPackage(offer.sendB,pool,'YOU GET',offer.other.id+':'+offer.sendA.join(','))}</div>
-    ${tradeDecisionMarkup(offer,pool,{compact:true})}
-    ${offer.partnerFit?`<p class="tb-incoming-fit">${esc(offer.partnerFit)}</p>`:!offer.windowDeltas&&Array.isArray(offer.startingIncomingA)?`<p class="tb-incoming-fit"><b>${starters.length?'Incoming starters':'No incoming starter'}</b>${starters.length?` · ${esc(starters.join(', '))}`:''}</p>`:''}
-    ${offer.sendA.length===1&&offer.sendB.length===1?`<button type="button" class="linkbtn" data-player-compare="${esc(offer.sendA[0])}" data-compare-with="${esc(offer.sendB[0])}">Compare players</button>`:''}
+    <header><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<strong>${esc(teamName(offer.other))}</strong></small><span>${shapeLabel(offer)}</span><b>${call}</b></header>
+    <div class="tb-offer-flow">${offerPackage(offer.sendA,pool,'YOU SEND')}${offerPackage(offer.sendB,pool,'YOU GET')}</div>
+    ${offerSummary(offer,pool)}
     <button type="button" class="tb-offer-analyze" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(','))}" data-send-b="${esc(offer.sendB.join(','))}" data-weekly-delta="${Number(offer.weeklyDeltaA)||0}">Analyze trade <span aria-hidden="true">→</span></button>
   </article>`;
 }
@@ -253,12 +253,15 @@ function page(data, tradeAlerts = []) {
     || data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id
     || data.teams[0].id;
   const trade = { memberIds: [], sends: [new Set(), new Set()], editing: true, destinations:{} };
-  const shop = { partnerId: "", memberIds: [], anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
+  const shop = { partnerId: "all", memberIds: [], anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
     setupOpen:true,goal:"best",horizon:'season',maxPlayers: 8, sendCount: "any", receiveCount: "any", intent: "fair", visibleCount: OFFER_BATCH_SIZE,
     openTiers: new Set(["fair"]), mode:"offers", customOpen: false, sharedAudit: [] };
   const draftKey = `trade:${data.projectionSeason}`;
   const saved = restoreTradeDraft(readViewMemory(me?.id, draftKey), data.teams, routeTeam);
   if (saved) { selectedId = saved.selectedId; Object.assign(trade, saved.trade); Object.assign(shop, saved.shop); }
+  // A new visit shops the whole league. Keep the manual draft separately;
+  // an explicit incoming target link can still narrow the search below.
+  Object.assign(shop,{partnerId:"all",memberIds:[],anchorPartnerId:"all",receiveAnchors:[],mode:"offers",customOpen:false,intent:"fair",openTiers:new Set(["fair"])});
   const target = params.get('target'), partner = data.teams.find(t => String(t.id) === params.get('partner'));
   if (target && partner && String(partner.id) !== String(selectedId) && partner.playerIds.map(String).includes(target)) {
     shop.partnerId = partner.id; shop.memberIds = []; shop.anchorPartnerId = partner.id;
@@ -385,7 +388,7 @@ function page(data, tradeAlerts = []) {
         refreshOffers();
       };
       const resetBlueprint = () => {
-        shop.partnerId = ""; shop.memberIds = []; shop.anchorPartnerId = ""; shop.sendAnchors = []; shop.receiveAnchors = [];
+        shop.partnerId = "all"; shop.memberIds = []; shop.anchorPartnerId = ""; shop.sendAnchors = []; shop.receiveAnchors = [];
         shop.maxPlayers = 8; shop.sendCount = "any"; shop.receiveCount = "any";
         shop.intent = "fair"; shop.visibleCount = OFFER_BATCH_SIZE; shop.openTiers=new Set(["fair"]); shop.customOpen = false;shop.mode="offers";
       };

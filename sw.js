@@ -1,5 +1,5 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.435.0";
+const CACHE_NAME = "dfl-hq-v1.436.0";
 const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
@@ -11,7 +11,7 @@ const APP_SHELL = [
   "./js/trade-alert-dock.js","./js/scroll-chrome.js",
   "./js/arena/stadium-orientation.js","./js/arena/stadium-motion.js","./js/arena/racer-kit-model.js","./js/arena/racer-kit-art.js","./js/arena/racer-kit-editor.js",
   "./js/pages/arena-stadium.js","./js/pages/arena-viewer.js","./js/arena/stadium-data.js","./js/arena/stadium-model.js","./js/arena/stadium-renderer.js","./css/stadium-arena.css",
-  "./css/app-shared.css?v=1.435.0","./js/trade-offer-search.js","./js/trade-offer-catalog.js","./js/workers/trade-offers.js","./js/tab-scroll-cues.js",
+  "./css/app-shared.css?v=1.436.0","./js/trade-offer-search.js","./js/trade-offer-catalog.js","./js/workers/trade-offers.js","./js/tab-scroll-cues.js",
   "./js/player-watchlist-data.js","./js/player-watchlist-model.js","./js/watchlist-alerts.js","./js/player-watchlist-ui.js",
   "./js/loading-presentation.js","./js/home-score-collapse.js","./js/home-primary-action.js","./js/connected-artwork.js","./js/archive-route-motion.js","./js/broadcast-gesture-motion.js",
   "./js/player-form.js",
@@ -105,7 +105,7 @@ const APP_SHELL = [
   "./js/team-theme.js",
   "./js/theme.js",
   "./js/ticker-lines.js",
-  "./js/trade-alerts.js","./js/trade-receipt-model.js","./js/trade-alert-capture.js","./js/trade-verdict.js","./js/trade-assessment.js","./js/trade-suggestion-quality.js","./js/trade-auto-balance.js","./js/trade-package-edits.js","./js/trade-week-forecast.js","./js/trade-target-search.js","./js/trade-decision-ui.js","./js/trade-weekly-outlook.js",
+  "./js/trade-alerts.js","./js/trade-receipt-model.js","./js/trade-alert-capture.js","./js/trade-verdict.js","./js/trade-assessment.js","./js/trade-suggestion-quality.js","./js/trade-auto-balance.js","./js/trade-refine-offers.js","./js/trade-package-edits.js","./js/trade-week-forecast.js","./js/trade-target-search.js","./js/trade-decision-ui.js","./js/trade-weekly-outlook.js",
   "./js/update.js",
   "./js/whatsnew.js",
   "https://cdn.jsdelivr.net/npm/@supabase/auth-js@2.112.3/+esm",
@@ -129,7 +129,7 @@ const APP_SHELL = [
   "./js/service-worker.js","./js/pickem-state.js","./js/golf-event-status.js","./js/pages/calendar.js",
   "./","./index.html","./manifest.json","./css/stakes.css",
   "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/sportsbook.css","./js/sportsbook-slip.js","./js/sportsbook-pickem.js","./js/sleeper-prop-import.js","./js/sleeper-prop-import-ui.js","./css/golf.css","./css/home.css","./css/breaking-trade.css","./css/update-gate.css",
-  "./js/wall-continuity.js","./js/wall-live.js","./js/sportsbook-live.js","./js/sportsbook-settlement.js","./js/sportsbook-account-motion.js","./js/live-score-refresh.js","./js/score-freshness.js","./js/game-day-readiness.js","./js/lineup-alert-model.js","./js/waiver-coach.js","./js/advice-receipts.js","./js/advice-receipts-data.js","./js/advice-receipts-ui.js","./css/advice-receipts.css?v=1.435.0","./js/waiver-history-data.js","./js/waiver-intelligence.js","./js/waiver-intelligence-ui.js","./js/roster-coach-data.js","./js/roster-coach-ui.js","./js/matchup-targets.js","./js/weekly-roasts.js",
+  "./js/wall-continuity.js","./js/wall-live.js","./js/sportsbook-live.js","./js/sportsbook-settlement.js","./js/sportsbook-account-motion.js","./js/live-score-refresh.js","./js/score-freshness.js","./js/game-day-readiness.js","./js/lineup-alert-model.js","./js/waiver-coach.js","./js/advice-receipts.js","./js/advice-receipts-data.js","./js/advice-receipts-ui.js","./css/advice-receipts.css?v=1.436.0","./js/waiver-history-data.js","./js/waiver-intelligence.js","./js/waiver-intelligence-ui.js","./js/roster-coach-data.js","./js/roster-coach-ui.js","./js/matchup-targets.js","./js/weekly-roasts.js",
   "./js/config.js","./js/app.js","./js/season-nav.js","./js/router.js","./js/connection-recovery.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
   "./js/app-diagnostics.js","./js/performance.js","./js/performance-findings.js","./js/pages/admin_performance.js","./js/pages/admin_operations.js","./js/breaking-trade.js","./js/custom-alerts.js","./js/league-state.js","./js/league-stakes.js","./js/weekly-briefing.js","./js/pages/stakes.js","./js/sleeper-sync-schedule.js",
   "./js/notifications.js","./js/notification-core.js","./js/notify-nudge.js","./js/profile-notifications.js","./js/weekly-outlook.js","./js/trade-desk.js","./js/pages/trade.js","./js/player-history.js","./js/season-outlook.js","./js/league-trajectory.js","./js/trend-panel.js","./js/weekly-outlook-panel.js","./css/weekly-outlook.css","./js/pages/notifications.js","./js/pages/admin_notifications.js","./css/notifications.css","./icons/badge-96.png",
@@ -147,7 +147,7 @@ const APP_SHELL = [
 // The worker imports the manifest into its own installed script resources.
 // A missing or mismatched bundle cannot activate under the new release label.
 if(typeof importScripts==='function'){
-  importScripts('./js/bundle/1.435.0/precache.js');
+  importScripts('./js/bundle/1.436.0/precache.js');
   if(self.DFL_BUNDLE_RELEASE!==CACHE_NAME.slice(APP_CACHE_PREFIX.length)||!Array.isArray(self.DFL_BUNDLE_SHELL)||!self.DFL_BUNDLE_SHELL.length)throw Error('Application bundle release mismatch');
 }
 const PRECACHE = self.DFL_BUNDLE_SHELL
