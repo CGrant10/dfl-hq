@@ -9,7 +9,7 @@ const seedFor = value => [...value].reduce((seed, char) => ((seed * 31 + char.ch
 export function benchReceipt(team={}){
  const lineup=team.lineup||team.starters||[],bench=team.bench||[];
  const pairs=lineup.filter(p=>!p.empty&&p.state==='final'&&finite(p.points)&&Number(p.points)<=10).flatMap(starter=>
-  bench.filter(p=>p.state==='final'&&finite(p.points)&&Number(p.points)>=20&&Number(p.points)-Number(starter.points)>=10&&slotEligible(p,starter.slotType||starter.position))
+  bench.filter(p=>p.activeRoster===true&&p.id!==starter.id&&p.state==='final'&&finite(p.points)&&Number(p.points)>=20&&Number(p.points)-Number(starter.points)>=10&&slotEligible(p,starter.slotType||starter.position))
    .map(backup=>({team,starter,backup,gap:Number(backup.points)-Number(starter.points)})));
  return pairs.sort((a,b)=>b.gap-a.gap||String(a.backup.id).localeCompare(String(b.backup.id)))[0]||null;
 }

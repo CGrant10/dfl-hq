@@ -37,14 +37,14 @@ describe('DFL chirps follow the receipt',()=>{
 });
 
 describe('bench receipts use actual finished eligible players',()=>{
- const side={name:'Alpha',lineup:[{id:'s',name:'Starter',position:'WR',slotType:'FLEX',state:'final',points:6}],bench:[{id:'b',name:'Backup',position:'RB',state:'final',points:28}]};
+ const side={name:'Alpha',lineup:[{id:'s',name:'Starter',position:'WR',slotType:'FLEX',state:'final',points:6}],bench:[{id:'b',name:'Backup',position:'RB',state:'final',activeRoster:true,points:28}]};
  it('cites a real completed eligible bench mistake without claiming the matchup is finished',()=>{
   expect(benchReceipt(side)).toMatchObject({gap:22,backup:{id:'b'}});
   const chirp=matchupChirp({...input,right:{...input.right,...side},live:true});
   expect(chirp.kind).toBe('live');expect(chirp.receipt).toContain("Backup's 28.00");expect(chirp.roast).toContain('fucking');expect(chirp.receipt).not.toContain('beat');
  });
  it('excludes unfinished or missing scores and the wrong position',()=>{
-  for(const extra of [{state:'live'},{points:null},{position:'QB'}])expect(benchReceipt({...side,bench:[{...side.bench[0],...extra}]})).toBeNull();
+  for(const extra of [{state:'live'},{points:null},{position:'QB'},{activeRoster:false},{activeRoster:undefined}])expect(benchReceipt({...side,bench:[{...side.bench[0],...extra}]})).toBeNull();
   expect(benchReceipt({...side,lineup:[{...side.lineup[0],state:'live'}]})).toBeNull();
   expect(benchReceipt({...side,lineup:[{...side.lineup[0],slotType:'WR'}]})).toBeNull();
  });
