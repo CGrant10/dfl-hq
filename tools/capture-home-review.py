@@ -194,7 +194,7 @@ def check_game_day_scope(page):
     source = source[source.index('const score='):].replace('export function', 'function')
     return page.evaluate('''async source => {
       const helpers = Object.assign({}, ...await Promise.all([
-        import('./js/home-presentation.js'), import('./js/home-primary-action.js'), import('./js/game-day-dom.js'),
+        import('./js/home-presentation.js'), import('./js/home-week-flow.js'), import('./js/home-primary-action.js'), import('./js/game-day-dom.js'),
         import('./js/game-day-model.js'), import('./js/game-day-player-rows.js'),
         import('./js/game-day-score-motion.js'), import('./js/matchup-chirp-ui.js'), import('./js/matchup-banter.js'),
         import('./js/page-disclosure.js'), import('./js/game-day-disclosure.js'), import('./js/identity-rules.js'), import('./js/ui.js'),
@@ -883,6 +883,8 @@ with sync_playwright() as p:
     # Playwright scrolls to Pause. The stage fixtures use a distinct URL.
     assert not {'dfl-daily-champion.webp?review=broadcast-only','dfl-daily-chip-eater.webp'} & early_art, f'Hidden measurement slides downloaded unused artwork: {early_art}'
     page.evaluate("window.reviewStage.suspend('initial-review',false)")
+    game_day_scope=check_game_day_scope(page)
+    print('GameDay mount, live controls and recovery passed', flush=True)
     edition_checks=check_home_editions(page)
     (OUT / "edition-checks.json").write_text(json.dumps(edition_checks,indent=2))
     moment_effects=check_game_day_moments(page)
@@ -1490,7 +1492,7 @@ with sync_playwright() as p:
     metrics['watchScoreStrip'] = check_watch_score_strip(page)
     metrics['readableText'] = check_readable_text(page)
     metrics['lineupReadiness'] = check_lineup_readiness(page)
-    metrics['gameDayScope'] = check_game_day_scope(page)
+    metrics['gameDayScope'] = game_day_scope
     metrics['matchupInteractions'] = check_matchup_interactions(page)
     metrics['injuryWire'] = check_injury_wire(page)
     metrics['consoleErrors'] = errors
