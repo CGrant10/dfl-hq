@@ -753,7 +753,7 @@ def check_lineup_readiness(page):
       ],bench:[]});
       const game={id:'readiness',sides:[side('1','The Very Long Bayou Championship Fantasy Football Bombers'),side('2','Klutch Sports Group')]};
       let completed=false;
-      const markup=()=>`<div id="home-wrap"><section class="gameday-card"><p>Lineup check preview · Demo lineups</p>${lineupCheckHtml([game.sides[0]],{completed})}<p class="live-score-freshness" data-score-freshness="ready">Checked just now</p></section></div><div class="clubhouse-page clubhouse-command-center"><article class="clubhouse-matchup-card">${matchupLineupHtml(game,{completed})}</article></div>`;
+      const markup=()=>`<div id="home-wrap"><section class="gameday-card"><p>Lineup check preview · Demo lineups</p>${lineupCheckHtml([game.sides[0]],{completed,now:Date.parse('2026-10-11T16:00:00Z')})}<p class="live-score-freshness" data-score-freshness="ready">Checked just now</p></section></div><div class="clubhouse-page clubhouse-command-center"><article class="clubhouse-matchup-card">${matchupLineupHtml(game,{completed})}</article></div>`;
       root.innerHTML=markup();document.querySelector('#view').append(root);
       if([...root.querySelectorAll('[data-lineup-check]')].some(e=>e.open))throw Error('Lineup warnings must start collapsed');
       root.querySelectorAll('[data-lineup-check]').forEach(e=>e.open=true);

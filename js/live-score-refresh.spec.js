@@ -28,6 +28,12 @@ describe('live score catch-up',()=>{
     await vi.advanceTimersByTimeAsync(80);expect(refresh.mock.calls).toEqual([[false],[true]]);
     await vi.advanceTimersByTimeAsync(60000);expect(refresh.mock.calls[2]).toEqual([false]);
   });
+  it('coalesces focus with visible/online events and removes focus work on stop',async()=>{
+    const {doc,win,refresh}=setup();loop.start();await vi.advanceTimersByTimeAsync(0);
+    win.dispatchEvent(new Event('focus'));win.dispatchEvent(new Event('online'));doc.dispatchEvent(new Event('visibilitychange'));
+    await vi.advanceTimersByTimeAsync(80);expect(refresh.mock.calls).toEqual([[false],[true]]);
+    loop.stop();win.dispatchEvent(new Event('focus'));await vi.advanceTimersByTimeAsync(60000);expect(refresh).toHaveBeenCalledTimes(2);
+  });
   it('retains offline state and fetches when connectivity returns',async()=>{
     const {win,refresh,onOffline}=setup();win.navigator.onLine=false;loop.start();
     await vi.advanceTimersByTimeAsync(60000);expect(refresh).not.toHaveBeenCalled();expect(onOffline).toHaveBeenCalledOnce();

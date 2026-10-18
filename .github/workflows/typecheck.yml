@@ -7,12 +7,15 @@ on:
 
 permissions:
   contents: write
+  statuses: write
 
 jobs:
   typecheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: pnpm/action-setup@v4
         with:
           version: 11.19.0
@@ -30,6 +33,21 @@ jobs:
         env:
           DENO_TLS_CA_STORE: system
         run: npx --yes deno@2.5.4 test --no-config --node-modules-dir=none --no-lock --allow-import supabase/functions/tests/matchup-moments-filter_test.ts
+      - name: Check public release verifier syntax
+        run: python -c "import ast,pathlib;ast.parse(pathlib.Path('tools/verify-release-assets.py').read_text())"
+      - name: Verify public release assets
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f state=pending -f context=release/public-assets -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="Checking published release assets"
+          if python tools/verify-release-assets.py; then
+            DFL_VERIFY_STATE=success
+          else
+            DFL_VERIFY_STATE=failure
+          fi
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f state="$DFL_VERIFY_STATE" -f context=release/public-assets -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="Public release asset verification"
+          test "$DFL_VERIFY_STATE" = success
       - name: Sync built Arena runtime
         if: github.event_name == 'push'
         run: |

@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {matchupBanter,matchupChirp} from './matchup-banter.js';
+import {matchupBanter,matchupChirp,benchReceipt} from './matchup-banter.js';
 const model={season:2026,week:4,games:[{id:'1',isMine:true,sides:[{uid:'a',name:'Alpha'},{uid:'b',name:'Beta'}]}]};
 describe('weekly matchup banter',()=>{
  it('uses past streaks and excludes current and future results',()=>{const history=[{season:2025,week:2,user1:'a',user2:'b',score1:120,score2:100},{season:2026,week:1,user1:'b',user2:'a',score1:99,score2:110},{season:2026,week:4,user1:'a',user2:'b',score1:0,score2:200},{season:2026,week:5,user1:'a',user2:'b',score1:0,score2:200}];expect(matchupBanter(model,history)[0].text).toContain('Alpha has taken the last 2')});
@@ -33,5 +33,19 @@ describe('DFL chirps follow the receipt',()=>{
  it('prioritizes the selected member without discarding other matchups',()=>{
   const games=[{...model.games[0],isMine:false},{id:'2',isMine:true,sides:[input.left,input.right]}];
   expect(matchupBanter({...model,games}).map(item=>item.id)).toEqual(['2','1']);
+ });
+});
+
+describe('bench receipts use actual finished eligible players',()=>{
+ const side={name:'Alpha',lineup:[{id:'s',name:'Starter',position:'WR',slotType:'FLEX',state:'final',points:6}],bench:[{id:'b',name:'Backup',position:'RB',state:'final',activeRoster:true,points:28}]};
+ it('cites a real completed eligible bench mistake without claiming the matchup is finished',()=>{
+  expect(benchReceipt(side)).toMatchObject({gap:22,backup:{id:'b'}});
+  const chirp=matchupChirp({...input,right:{...input.right,...side},live:true});
+  expect(chirp.kind).toBe('live');expect(chirp.receipt).toContain("Backup's 28.00");expect(chirp.roast).toContain('fucking');expect(chirp.receipt).not.toContain('beat');
+ });
+ it('excludes unfinished or missing scores and the wrong position',()=>{
+  for(const extra of [{state:'live'},{points:null},{position:'QB'},{activeRoster:false},{activeRoster:undefined}])expect(benchReceipt({...side,bench:[{...side.bench[0],...extra}]})).toBeNull();
+  expect(benchReceipt({...side,lineup:[{...side.lineup[0],state:'live'}]})).toBeNull();
+  expect(benchReceipt({...side,lineup:[{...side.lineup[0],slotType:'WR'}]})).toBeNull();
  });
 });

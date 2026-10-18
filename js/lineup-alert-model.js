@@ -26,7 +26,7 @@ export function lineupRescuePlan(team, {completed=false,now=Date.now(),windowMs=
     const backups=(team.bench||[]).filter(p=>!claimed.has(String(p.id))&&p.activeRoster!==false&&!starters.has(String(p.id))&&slotEligible(p,slot)
       &&availableBeforeKickoff(p,now)&&!out.test(p.availabilityStatus||'')&&!out.test(p.injuryStatus||'')&&!risk.test(p.injuryStatus||''));
     const kickoff=Date.parse(player.kickoff);
-    backups.sort((a,b)=>Number(Date.parse(b.kickoff)>=kickoff)-Number(Date.parse(a.kickoff)>=kickoff)
+    backups.sort((a,b)=>(risk.test(status)?Number(Date.parse(b.kickoff)>=kickoff)-Number(Date.parse(a.kickoff)>=kickoff):0)
       ||(finite(b.projection)?Number(b.projection):0)-(finite(a.projection)?Number(a.projection):0)||a.name.localeCompare(b.name));
     const backup=backups[0]||null;
     if(backup)claimed.add(String(backup.id));

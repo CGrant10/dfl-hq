@@ -1,8 +1,18 @@
+import {slotEligible} from './lineup-alert-model.js';
 import { headToHead } from './home-slides.js';
 
 const finite = value => value !== null && value !== undefined && Number.isFinite(Number(value));
 const pick = (lines, seed) => lines[seed % lines.length];
 const seedFor = value => [...value].reduce((seed, char) => ((seed * 31 + char.charCodeAt(0)) >>> 0), 7);
+
+// Cite actual finished, eligible players, never projected bench points.
+export function benchReceipt(team={}){
+ const lineup=team.lineup||team.starters||[],bench=team.bench||[];
+ const pairs=lineup.filter(p=>!p.empty&&p.state==='final'&&finite(p.points)&&Number(p.points)<=10).flatMap(starter=>
+  bench.filter(p=>p.activeRoster===true&&p.id!==starter.id&&p.state==='final'&&finite(p.points)&&Number(p.points)>=20&&Number(p.points)-Number(starter.points)>=10&&slotEligible(p,starter.slotType||starter.position))
+   .map(backup=>({team,starter,backup,gap:Number(backup.points)-Number(starter.points)})));
+ return pairs.sort((a,b)=>b.gap-a.gap||String(a.backup.id).localeCompare(String(b.backup.id)))[0]||null;
+}
 
 // DFL's voice, never a quote or a post attributed to a member. Results only
 // earn a final roast once the selected week is complete; live leads can change.
@@ -32,6 +42,11 @@ export function matchupChirp({ left, right, season, week, id = '', completed = f
           ? pick([`${trailer.name}, ${margin.toFixed(2)} points. Enjoy replaying that shit until Thursday.`, `${leader.name}, put the fucking parade away. ${margin.toFixed(2)} points bought you another week of running your mouth.`], seed)
           : pick([`${trailer.name}, the scoreboard says sit your ass down.`, `${leader.name} brought points. ${trailer.name} can bring the excuses.`, `${trailer.name}, talk all the shit you want. This receipt isn't going anywhere.`], seed);
     }
+  } else if (live && benchReceipt(trailer)) {
+    const {starter,backup,gap}=benchReceipt(trailer);
+    kind='live';
+    receipt=`${trailer.name} benched ${backup.name}'s ${Number(backup.points).toFixed(2)} · ${starter.name} finished with ${Number(starter.points).toFixed(2)}.`;
+    roast=pick([`${gap.toFixed(2)} points left on the bench. Manage the fucking lineup before the group chat.`,`${trailer.name}, your bench brought the points. Your management brought the fucking problem.`],seed);
   } else if (live && leader && margin >= 15) {
     kind = 'live';
     receipt = `${leader.name} leads by ${margin.toFixed(2)} · still playing.`;
