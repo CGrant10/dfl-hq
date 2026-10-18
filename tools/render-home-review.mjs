@@ -190,7 +190,6 @@ html = html.replace('</body>', `<script type="module">
   };
   document.querySelector('[data-home-live-slot]').append(document.querySelector('.home-live-details'));
   window.reviewSetTheme('light');
-  window.reviewWeekModel={};
   window.reviewWeekFlow=mountHomeWeekFlow(document.querySelector('.home-week-desk'));
   window.reviewWeekFlow.update({model:${JSON.stringify(model)}});
   window.reviewApplyWeek=edition=>{const slot=document.querySelector('[data-home-recap-slot]');slot.innerHTML=homeWeekReceipt(edition);slot.hidden=!slot.innerHTML;document.querySelector('[data-home-league-race]')?.remove();const race=homeLeagueRace(edition.model);if(race)document.querySelector('[data-gameday-extra-content]').insertAdjacentHTML('afterbegin','<div data-home-league-race>'+race+'</div>');window.reviewWeekFlow.update(edition)};

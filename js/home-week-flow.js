@@ -65,12 +65,12 @@ export function mountHomeWeekFlow(root,{win=window,doc=document}={}){
  plan?.addEventListener('toggle',toggle);
  const apply=()=>{
   frame=null;if(stopped||!pending||!host.isConnected)return;
+  const phase=pending,identity=phase.season+'.'+phase.week+'.'+phase.key;
+  if(identity===applied)return;
   const focused=doc.activeElement;
   if(host.contains(focused)&&focused!==doc.body)return;
   const rect=host.getBoundingClientRect();
   if(win.scrollY>24&&rect.top<win.innerHeight+24)return;
-  const phase=pending,identity=phase.season+'.'+phase.week+'.'+phase.key;
-  if(identity===applied)return;
   const children=phase.order.map(name=>host.querySelector('[data-home-week-part="'+name+'"]')).filter(Boolean);
   // Avoid disconnecting live nodes/listeners when the order is already correct.
   children.forEach((node,index)=>{if(host.children[index]!==node)host.insertBefore(node,host.children[index]||null)});

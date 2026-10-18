@@ -456,3 +456,9 @@ Verification uses GitHub runners because the managed workspace is unavailable.
 Mobile Light/Dark phase screenshots and browser checks cover section ordering,
 focus, scroll stability, links, missing data, confirmed final results and ties.
 Physical-device frame rates and live authenticated data remain unverified.
+
+Reviewed actual 390px screenshots: Light final receipts and Dark live league
+matchups. Scores remain aligned, long team names wrap, and the new surfaces
+use the app's existing Medicine Wheel hierarchy. Twelve phase/theme/phone-size
+captures passed with no overflow or browser errors; focus, reading position,
+per-phase preferences and controller cleanup passed in Chromium.
