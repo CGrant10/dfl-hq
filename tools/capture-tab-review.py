@@ -23,7 +23,9 @@ with sync_playwright() as p:
  context.route('**/js/player-card-data.js',lambda route:route.fulfill(content_type='text/javascript',body='export async function loadPlayerCard(){throw Error("No data in tab fixture")}'))
  context.add_init_script("window.tabAnimations=[];const original=Element.prototype.animate;Element.prototype.animate=function(frames,options){const a=original.call(this,frames,options);tabAnimations.push({className:this.className,frames,options});if(window.pauseTabArrival&&this.classList.contains('home-week-brief')&&!this.classList.contains('dfl-tab-preview')){window.pauseTabArrival=false;a.pause();a.currentTime=100}return a}")
  page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
- page.goto(f'http://127.0.0.1:{server.server_port}/',wait_until='domcontentloaded');page.wait_for_function('!!window.tabReviewReady')
+ page.goto(f'http://127.0.0.1:{server.server_port}/',wait_until='domcontentloaded')
+ try: page.wait_for_function('!!window.tabReviewReady')
+ except Exception as error: raise RuntimeError('Tab fixture did not initialize: '+json.dumps(errors)) from error
  page.evaluate('document.fonts.ready')
  touch=context.new_cdp_session(page)
  def align(selector):

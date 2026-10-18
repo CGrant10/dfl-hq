@@ -3347,7 +3347,7 @@ body:has(#view) { padding-top: var(--topbar-h); }
 #home-wrap .home-team-total :is(.gd-thermal-number,.home-projected-total) { color: var(--text); font: 400 clamp(30px,9vw,38px)/1.2 'Anton',sans-serif; font-variant-numeric: tabular-nums; margin: 0; letter-spacing: 0; }
 #home-wrap .home-team-total .gd-thermal-value { color: inherit; }
 #home-wrap .gameday-matchup .home-team-total :is(.gd-thermal-number,.gd-thermal-value) { color: var(--text); }
-#home-wrap .home-week-desk > .home-live-desk { margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+#home-wrap .home-week-desk .home-live-desk { margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
 #home-wrap .home-live-details { margin: 0; border: 0; }
 #home-wrap .home-live-details > summary { min-height: 36px; padding: 8px 0; color: var(--paper-muted); font: 600 12px/1.4 var(--home-ui-font); cursor: pointer; }
 #home-wrap .home-live-details[open] { padding-bottom: 12px; }
@@ -3396,7 +3396,7 @@ body:has(#view) { padding-top: var(--topbar-h); }
 #home-wrap .bx-next { right: 0; }
 #home-wrap :is(.home-week-desk,.home-league-desk,.home-league-file,.home-banter) { border: 0; border-radius: 0; background: transparent; box-shadow: none; padding: 0; margin-top: 24px; }
 #home-wrap .home-week-desk { margin-top: 0; }
-#home-wrap .home-week-desk > .page-disclosure { margin-top: 0; }
+#home-wrap [data-home-week-flow] > .page-disclosure { margin-top: 0; }
 #home-wrap .page-disclosure > summary { min-height: 72px; padding-block: 16px; }
 #home-wrap .page-disclosure > summary strong { font: 700 18px/1.3 var(--home-ui-font); }
 #home-wrap .page-disclosure > summary small { font: 500 12px/1.5 var(--home-ui-font); color: var(--paper-muted); }
@@ -3473,6 +3473,30 @@ html[data-archive-transition] {view-transition-name:none;}
 #home-wrap .home-team-progress:empty {display:none;}
 
 .home-score-moving-name {display:block;font-weight:600;line-height:1.25;white-space:normal;overflow-wrap:anywhere;text-align:left;color:var(--text);}
+
+
+/* One weekly desk: its existing sections change priority with the NFL slate. */
+#home-wrap [data-home-week-flow] { display:flex; flex-direction:column; gap:0; }
+#home-wrap [data-home-week-part][hidden] { display:none; }
+#home-wrap :is(.home-league-race,.home-week-receipt) { min-width:0; padding-block:16px; border-bottom:1px solid var(--line); }
+#home-wrap :is(.home-league-race,.home-week-receipt) > header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+#home-wrap .home-week-receipt > header > span { color:var(--paper-muted); font:600 12px/1.4 var(--home-ui-font); }
+#home-wrap .home-league-race ol { list-style:none; margin:0; padding:0; display:grid; gap:0; }
+#home-wrap .home-league-race li + li { border-top:1px solid var(--line); }
+#home-wrap .home-league-race a { display:grid; gap:4px; padding-block:12px; color:var(--text); text-decoration:none; min-height:44px; }
+#home-wrap .home-league-race a > span { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:baseline; }
+#home-wrap .home-league-race strong { font:600 15px/1.35 var(--home-ui-font); overflow-wrap:anywhere; }
+#home-wrap .home-league-race b { font:700 18px/1.3 var(--home-ui-font); font-variant-numeric:tabular-nums; }
+#home-wrap .home-league-race small { color:var(--paper-muted); font:500 12px/1.4 var(--home-ui-font); }
+#home-wrap .home-receipt-leader { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:center; }
+#home-wrap .home-receipt-leader small,.home-receipt-close small { display:block; color:var(--paper-muted); font:500 12px/1.4 var(--home-ui-font); }
+#home-wrap .home-receipt-leader h3 { margin:4px 0 0; color:var(--text); font:700 20px/1.2 var(--home-ui-font); overflow-wrap:anywhere; }
+#home-wrap .home-receipt-leader > b { color:var(--text); font:700 28px/1.1 var(--home-ui-font); font-variant-numeric:tabular-nums; }
+#home-wrap .home-receipt-roast { color:var(--paper-body); margin:8px 0 12px; font:500 14px/1.45 var(--home-ui-font); }
+#home-wrap .home-receipt-close { display:grid; gap:4px; min-height:44px; padding-block:12px; border-top:1px solid var(--line); color:var(--text); text-decoration:none; }
+#home-wrap .home-receipt-close strong { font:600 15px/1.35 var(--home-ui-font); overflow-wrap:anywhere; }
+#home-wrap :is(.home-receipt-close,.home-league-race a):hover { color:var(--accent); }
+#home-wrap :is(.home-receipt-close,.home-league-race a):focus-visible { outline:2px solid var(--accent); outline-offset:3px; border-radius:var(--r-md); }
 
 
 /* Source: css/matchup-interactions.css */

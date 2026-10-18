@@ -41,6 +41,8 @@ on:
       - 'tools/*sheet-review*'
       - 'tools/build-shared-css.mjs'
       - 'js/home-presentation*'
+      - 'js/home-week-flow*'
+      - 'tools/capture-home-week-review.py'
       - 'js/season-nav*'
       - 'js/home-clubhouse*'
       - 'js/pages/home.js'
@@ -126,7 +128,8 @@ jobs:
           test -n "$dfl_review_browser"
           printf 'DFL_REVIEW_CHROMIUM=%s\n' "$dfl_review_browser" >> "$GITHUB_ENV"
       - run: node tools/render-home-review.mjs
-      - run: python tools/capture-home-review.py
+      - name: Check phase-aware Home weekly desk
+        run: python tools/capture-home-week-review.py
       - name: Check award artwork spacing
         run: python tools/capture-award-review.py
       - name: Check broadcast first-read timing
@@ -163,6 +166,8 @@ jobs:
         run: python tools/capture-scroll-review.py
         env:
           DFL_SCROLL_REVIEW_DIR: home-review-output/scroll
+      - name: Check full themed Home screens
+        run: python tools/capture-home-review.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
