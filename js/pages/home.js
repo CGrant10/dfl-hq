@@ -1,3 +1,4 @@
+import {homeWeekReceipt,mountHomeWeekFlow} from '../home-week-flow.js';
 import {startSitContent} from '../start-sit-ui.js';
 import {syncHomePrimaryAction} from '../home-primary-action.js';
 import {loadRosterCoach} from '../roster-coach-data.js';
@@ -483,8 +484,11 @@ export async function render(view) {
     </div>
     ${homeSectionLinks()}
     <section class="home-week-desk" aria-label="Your week">
-    ${disclosure("home-week","Plan your week","Projections, player outlook and Start / Sit",`<div data-home-report-slot data-content-state="loading" aria-busy="true">${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`)}
-    <div data-home-live-slot></div>
+    <div data-home-week-flow>
+    ${disclosure("home-week","Plan your week","",`<div data-home-report-slot data-content-state="loading" aria-busy="true">${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`).replace('data-page-detail="home-week"','data-page-detail="home-week" data-home-week-part="plan"')}
+    <div data-home-live-slot data-home-week-part="live"></div>
+    <div data-home-recap-slot data-home-week-part="recap" hidden></div>
+    </div>
     <div data-home-pickem-slot></div>
     ${homeLeagueTools()}
     </section>
@@ -542,8 +546,16 @@ export async function render(view) {
       return {sleeper_user_id:uid,team_name:member?.team_name||member?.display_name,actual:Number(row.points),complete:row.points!=null&&Number.isFinite(Number(row.points))&&!!row.players_points,starterScores:scores.filter(([id])=>starters.has(id)).map(performance),benchScores:scores.filter(([id])=>!starters.has(id)).map(performance)};
     })};
   }).catch(err => { console.warn("Completed week report unavailable", err); return null; });
-  let homeEdition = {}, refreshEdition = null;
-  deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,detailsRoot:view.querySelector("[data-home-live-slot]"),onModel:edition=>{homeEdition=edition;refreshEdition?.()},active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
+  let homeEdition = {}, refreshEdition = null, homeCompletedReport = null;
+  const weekFlow=mountHomeWeekFlow(view.querySelector(".home-week-desk"));
+  deferredStops.push(()=>weekFlow.stop());
+  const updateWeekFlow=()=>{
+    const slot=view.querySelector("[data-home-recap-slot]");
+    const markup=homeWeekReceipt({model:homeEdition.model,report:homeCompletedReport});
+    if(slot&&slot.innerHTML!==markup){slot.innerHTML=markup;slot.hidden=!markup;}
+    weekFlow.update(homeEdition);
+  };
+  deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,detailsRoot:view.querySelector("[data-home-live-slot]"),onModel:edition=>{homeEdition=edition;updateWeekFlow();refreshEdition?.()},active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
   // Archive stories load independently of the live weekly model.
   lorePromise.then(got => {
     if (mine !== generation || !view.isConnected || got?.error) return;
@@ -729,6 +741,7 @@ export async function render(view) {
     const briefing = buildWeeklyBriefing({ outlook, stakes: pulse?.stakes, move,
       meSleeperId: myMember?.sleeper_user_id || null });
     const completedReport = buildAftermath({ lore: got?.error ? null : got, members: memberRows, weekly: aftermathWeekly });
+    homeCompletedReport=completedReport;updateWeekFlow();
     const signalChanges = weeklySignalChanges(weekly);
     const tradeViews = tradeAlerts.map(tradeAlertViewModel).filter(Boolean);
     const seasonTradeViews = tradeViews.filter(alert => !analysis?.projectionSeason
@@ -751,7 +764,7 @@ export async function render(view) {
       finishLoadingContent(homeRankingsSlot);
     }
     if (homeReportSlot) {
-      homeReportSlot.innerHTML = homeWeeklyDigest(outlook, briefing, completedReport, signalChanges);
+      homeReportSlot.innerHTML = homeWeeklyDigest(outlook, briefing, null, signalChanges);
       wireHomeWeekHub(homeReportSlot);
       finishLoadingContent(homeReportSlot);
       const briefTeam=analysis?.teams?.find(team=>String(team.sleeper_user_id)===String(myMember?.sleeper_user_id));

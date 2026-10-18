@@ -16,6 +16,7 @@ import {startSitContent} from '../js/start-sit-ui.js';
 import { playerIdentity } from '../js/player-presentation.js';
 import { playerLiveState } from '../js/live-score.js';
 import { teamPortrait } from '../js/team-presentation.js';
+import {homeWeekReceipt} from '../js/home-week-flow.js';
 import { HOME_OUTLOOK_POSITIONS } from '../js/home-week-outlook.js';
 import { pickemState } from '../js/pickem-state.js';
 import { esc, money, fmtShort } from '../js/ui.js';
@@ -82,7 +83,7 @@ const briefing = {title:'Weekly briefing',headline:'Every point counts this week
 const rankingTeams = ['Grant','Jack-HAMMER','Mike','Klutch Sports Group'].map((team_name,i)=>({id:String(i+1),roster_id:i+1,sleeper_user_id:`fixture${i+1}`,team_name,identity:{display_name:team_name},rank:i+1,lineup:{weeklyPoints:100}}));
 const rankingGames = [[1,3,150,100,2,4,80,70],[1,2,120,130,3,4,100,90],[1,4,180,90,2,3,80,70],[1,3,145.38,101.08,2,4,139.2,121.12]].flatMap((r,i)=>[0,4].map(n=>({season:2026,week:i+1,roster1:r[n],score1:r[n+2],roster2:r[n+1],score2:r[n+3]})));
 const rankings = {weeks:14,focus:{id:'1'},allTeams:rankingTeams,powerRankings:buildLeaguePowerRankings({teams:rankingTeams,matchups:rankingGames,currentWeek:5})};
-const weeklyHome = `<div data-home-report-slot>${renderHomeReview.homeWeeklyDigest(outlook,briefing,{title:'A finish for the archive',season:2026,week:4,highlights:[{title:'Closest game',detail:'A fraction of a point separated the league.'}]},[{impact:'up',name:'Ja’Marr Chase',detail:'Ready for kickoff'}])}</div>`;
+const weeklyHome = `<div data-home-report-slot>${renderHomeReview.homeWeeklyDigest(outlook,briefing,null,[{impact:'up',name:'Ja’Marr Chase',detail:'Ready for kickoff'}])}</div>`;
 const pickemHome = `<div data-home-pickem-slot>${homePickem({available:true,week:5,locksAt:'2099-10-10T16:00:00Z',games:[{provider_event_id:'1'}]},esc)}</div>`;
 const expandedHome = `  ${renderHomeReview.snapshot({leagues:[],members:[{display_name:'Grant'},{display_name:'Mike'}],standings:[],dues:[{season:2026,amount_due:100,amount_paid:80}],polls:[]})}
   <div data-home-trade-slot>${renderHomeReview.homeTradeWire([{week:5,href:'#/trade?id=7',teams:[{teamName:'Dream Enders'},{teamName:'Klutch Sports Group'}],packages:[{teamName:'Dream Enders',players:[{name:'Justin Jefferson'}]},{teamName:'Klutch Sports Group',players:[{name:'Travis Kelce'}]}],outcome:{grade:'Close call',tone:'close',closeness:64,detail:'Both teams fill a need heading into the next kickoff.'}}])}</div>
@@ -140,8 +141,11 @@ html = html.replace(/<main id="view"[^>]*>[\s\S]*?<\/main>/, `<main id="view" cl
   </div>
   ${homeSectionLinks()}
   <section class="home-week-desk" aria-label="Your week">
-    ${disclosure('home-week','Plan your week','Projections, player outlook and Start / Sit',weeklyHome)}
-    <div data-home-live-slot class="gameday-card home-live-desk"></div>
+    <div data-home-week-flow>
+    ${disclosure('home-week','Plan your week','',weeklyHome).replace('data-page-detail="home-week"','data-page-detail="home-week" data-home-week-part="plan"')}
+    <div data-home-live-slot data-home-week-part="live" class="gameday-card home-live-desk"></div>
+    <div data-home-recap-slot data-home-week-part="recap"${homeWeekReceipt({model})?'':' hidden'}>${homeWeekReceipt({model})}</div>
+    </div>
     ${pickemHome}
     ${homeLeagueTools()}
   </section>
@@ -165,6 +169,7 @@ html = html.replace('</head>', `<style>${previewCss}</style><link rel="styleshee
 const sportsbookHeader = readFileSync(new URL('../js/pages/sportsbook.js',import.meta.url),'utf8').match(/<header class="sb-masthead page-identity">[\s\S]*?<\/header>/)[0].replace('${esc(sportsbookWeekCaption(leagueWeek))}','Week 5').replace('${num(wallet?.balance)}','100');
 const tradeHeader = readFileSync(new URL('../js/pages/trade.js',import.meta.url),'utf8').match(/<div class="tb-head-row page-identity">[\s\S]*?<\/div>/)[0];
 html = html.replace('</body>', `<script type="module">
+  import {homeWeekReceipt,homeLeagueRace,mountHomeWeekFlow} from './js/home-week-flow.js';
   import { wireHomeNewspaperSections, homeBroadcastDeck } from './js/home-presentation.js';
   import { startStage } from './js/broadcast-stage.js';
   import { mountPageMotion, startUiMotion } from './js/ui-motion.js';
@@ -185,6 +190,10 @@ html = html.replace('</body>', `<script type="module">
   };
   document.querySelector('[data-home-live-slot]').append(document.querySelector('.home-live-details'));
   window.reviewSetTheme('light');
+  window.reviewWeekModel={};
+  window.reviewWeekFlow=mountHomeWeekFlow(document.querySelector('.home-week-desk'));
+  window.reviewWeekFlow.update({model:${JSON.stringify(model)}});
+  window.reviewApplyWeek=edition=>{const slot=document.querySelector('[data-home-recap-slot]');slot.innerHTML=homeWeekReceipt(edition);slot.hidden=!slot.innerHTML;document.querySelector('[data-home-league-race]')?.remove();const race=homeLeagueRace(edition.model);if(race)document.querySelector('[data-gameday-extra-content]').insertAdjacentHTML('afterbegin','<div data-home-league-race>'+race+'</div>');window.reviewWeekFlow.update(edition)};
   // Model already loaded reactions without calling the live database.
   document.querySelectorAll('[data-wall-reaction]').forEach(button => button.disabled = false);
   document.querySelectorAll('[data-reaction-status]').forEach(status => status.textContent = '');
