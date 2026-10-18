@@ -75,7 +75,7 @@ export function mountGameDay(root,{members,member,active,standings=[],weekly=nul
    const openingWeek=gameDayOpeningWeek(week,state);
    if(leagueId!==week.leagueId){leagueId=week.leagueId;leaguePromise=sleeper.league(leagueId)}
    lorePromise ||= loadLore();
-   const results=await Promise.allSettled([loadWeeklyRosters(week.leagueId,week.week,{maxAgeMs:force?0:60000}),loadPlayers({maxAgeMs:300000}),loadNflGameDay(week.season,week.week,{force}),leaguePromise,lorePromise,advanced?loadLatestLeagueResults(week.leagueId,week.season,state.currentWeek,{force}).catch(()=>null):null,openingWeek!==Number(week.week)?loadNflGameDay(week.season,openingWeek,{force}):null,week.completed?Promise.resolve([]):sleeper.rosters(week.leagueId)]);if(!current())return;
+   const results=await Promise.allSettled([loadWeeklyRosters(week.leagueId,week.week,{maxAgeMs:force?0:60000}),loadPlayers({maxAgeMs:force?0:300000}),loadNflGameDay(week.season,week.week,{force}),leaguePromise,lorePromise,advanced?loadLatestLeagueResults(week.leagueId,week.season,state.currentWeek,{force}).catch(()=>null):null,openingWeek!==Number(week.week)?loadNflGameDay(week.season,openingWeek,{force}):null,week.completed?Promise.resolve([]):sleeper.rosters(week.leagueId)]);if(!current())return;
    const openingResult=results[openingWeek===Number(week.week)?2:6];
    liveDisclosure.update({leagueId:week.leagueId,season:week.season,week:openingWeek,nfl:openingResult.status==='fulfilled'?openingResult.value:null,completed:openingWeek===Number(week.week)&&week.completed});
    if(results[0].status!=='fulfilled'||!results[0].value.length)throw Error('Scores unavailable');
