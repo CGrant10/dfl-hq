@@ -22,7 +22,7 @@ export function mountLiveScoreRefresh({refresh,active=()=>true,enabled=()=>true,
   const pageshow=event=>{suspended=false;if(event.persisted)wake()};
   const pagehide=()=>{suspended=true;clear();queued=false};
   doc.addEventListener('visibilitychange',visibility);
-  win.addEventListener('online',wake);win.addEventListener('offline',offline);win.addEventListener('pageshow',pageshow);
+  win.addEventListener('focus',wake);win.addEventListener('online',wake);win.addEventListener('offline',offline);win.addEventListener('pageshow',pageshow);
   win.addEventListener('pagehide',pagehide);
-  return {request,wake,start(){void request()},stop(){stopped=true;queued=false;clear();doc.removeEventListener('visibilitychange',visibility);win.removeEventListener('online',wake);win.removeEventListener('offline',offline);win.removeEventListener('pageshow',pageshow);win.removeEventListener('pagehide',pagehide)}};
+  return {request,wake,start(){void request()},stop(){stopped=true;queued=false;clear();doc.removeEventListener('visibilitychange',visibility);win.removeEventListener('focus',wake);win.removeEventListener('online',wake);win.removeEventListener('offline',offline);win.removeEventListener('pageshow',pageshow);win.removeEventListener('pagehide',pagehide)}};
 }

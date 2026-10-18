@@ -6,8 +6,15 @@ export function scoreChange(before, after) {
  const delta=Math.round((to-from)*100)/100;
  return delta===0?null:{from,to,delta,label:`${delta>0?'+':'−'}${Math.abs(delta).toFixed(2)}`};
 }
+// Legacy snapshots without timestamps retain their existing behavior.
+// Current live screens stamp both sides to suppress stale catch-up effects.
+export function recentScoreRefresh(previous,next,maxAgeMs=120000){
+ const before=numeric(previous?.checkedAt),after=numeric(next?.checkedAt);
+ return before==null||after==null||after>=before&&after-before<=maxAgeMs;
+}
 // Animate only successful refreshes, never initial loads or tab changes.
 export function animateScoreChanges(root,{previous,model,motion,gameId=null,feedback=false}){
+ if(!recentScoreRefresh(previous,model.snapshot))return()=>{};
  const animations=[],badges=[],hosts=[],timers=[];
  const animated=motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
  if(!animated&&!feedback)return()=>{};

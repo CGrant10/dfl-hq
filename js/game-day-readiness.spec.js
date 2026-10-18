@@ -5,6 +5,17 @@ import {playerScorePhase} from './game-day-player-rows.js';
 import {scoreFreshness} from './score-freshness.js';
 
 describe('game-day lineup checks',()=>{
+ it('shares unavailable designations and honors kickoff locks even when the feed still says upcoming',()=>{
+  const now=Date.parse('2026-10-18T16:00:00Z'),kickoff='2026-10-18T17:00:00Z';
+  for(const status of ['Sus','NA','DNR','IR'])expect(starterWarnings([{id:status,state:'upcoming',availabilityStatus:status,kickoff}],{now})).toHaveLength(1);
+  expect(starterWarnings([{id:'x',state:'upcoming',injuryStatus:'Out',kickoff}],{now:Date.parse(kickoff)})).toEqual([]);
+ });
+ it('expands only confirmed actionable issues close to kickoff',()=>{
+  const now=Date.parse('2026-10-18T16:00:00Z'),side={name:'Team',lineup:[{id:'x',state:'upcoming',injuryStatus:'Out',kickoff:'2026-10-18T17:00:00Z',slot:'WR'}]};
+  expect(lineupCheckHtml([side],{now})).toContain('data-lineup-check open');
+  expect(lineupCheckHtml([side],{now:now-2*3600000})).not.toContain('data-lineup-check open');
+  expect(lineupCheckHtml([{...side,lineup:[{...side.lineup[0],injuryStatus:'Questionable'}]}],{now})).not.toContain('data-lineup-check open');
+ });
   const p=(id,injuryStatus='',state='upcoming')=>({id,name:`Player ${id}`,slot:'WR',state,injuryStatus});
   it('flags submitted empty slots and upcoming availability concerns, excluding bench and completed players',()=>{
     const lineup=[{empty:true,slot:'Flex'},p('q','Questionable'),p('out','Out'),p('live','Questionable','live'),p('done','Out','final'),p('healthy')];

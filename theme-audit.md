@@ -415,3 +415,24 @@ Search refinement is bounded, runs in the worker, and reuses the existing PPR
 or comparable-star checks for Steal labels. Startup/Home bundle requests remain
 3/4. Browser verification does not certify physical-device frame rates or full
 screen-reader compliance.
+
+
+## 1.437.0 — GameDay readiness
+
+Reuses existing Medicine Wheel Light/Dark surfaces and lineup warning markup.
+Confirmed-out starters favor the strongest healthy unlocked backup; questionable
+starters retain late-game cover. Warning statuses and kickoff locks share the
+rescue-plan rules. Confirmed issues expand within the 90-minute decision window.
+No new colors or permanent explanatory subtext. Home mobile/themed review is a
+release gate.
+
+Focus/return refreshes coalesce with online and visibility signals. Home and
+Clubhouse share in-flight weekly score reads; cache age starts on success.
+Catch-up snapshots update scores without celebrating historical jumps. Moment
+priority and motion preferences are preserved. New banter cites completed,
+slot-eligible bench mistakes, excluding projections and unfinished players.
+Alert recipient, expiry, grouped keys and escalation rules are retained.
+
+The managed workspace was unavailable during preparation. Build, unit and
+browser verification use GitHub's runner. Physical-device frame rates and
+end-to-end push delivery remain unverified; no test notifications are sent.

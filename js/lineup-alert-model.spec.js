@@ -4,6 +4,10 @@ const now=Date.parse('2026-10-11T16:00:00Z');
 const p=(id,position='WR',extra={})=>({id,name:id,position,state:'upcoming',kickoff:'2026-10-11T17:00:00Z',...extra});
 const team={memberId:1,uid:'a',roster:2,lineup:[p('starter','WR',{slotType:'WR',injuryStatus:'Out'})],bench:[p('backup')]};
 describe('actionable lineup rescue',()=>{
+ it('chooses the best projection for a confirmed Out instead of preserving needless late cover',()=>{
+  const result=lineupRescuePlan({...team,bench:[p('early','WR',{kickoff:'2026-10-11T16:30:00Z',projection:20}),p('late','WR',{kickoff:'2026-10-11T20:00:00Z',projection:8})]},{now});
+  expect(result[0].backup.id).toBe('early');
+ });
  it('uses the submitted slot, excluding owned starters, wrong positions and locked games',()=>{
   const result=lineupRescuePlan({...team,bench:[p('starter'),p('qb','QB'),p('locked','WR',{state:'live'}),p('expired','WR',{kickoff:'2026-10-11T15:00:00Z'}),p('unknown','WR',{state:'unknown'}),p('backup')]},{now});
   expect(result[0].backup.id).toBe('backup');

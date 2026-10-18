@@ -51,7 +51,7 @@ export function mountMatchupLive(root,model,threads,active,{onUpdate=(_data)=>{}
     root.querySelector(`[data-matchup-summary="${game.matchup_id}"]`).textContent=matchupSummary({...game.left,...sides[0]},{...game.right,...sides[1]},{completed:model.completed});
    }
    onUpdate({rows,players,nfl,rosters:results[3].status==='fulfilled'?results[3].value:[],force});
-   stopScoreMotion=animateScoreChanges(root,{previous,model:{snapshot:{totals,points:{}},games:[]},motion:readPageChoice('gameday-motion',['on','off'],'on')==='on',feedback:true});previous={totals};
+   stopScoreMotion=animateScoreChanges(root,{previous,model:{snapshot:{totals,points:{},checkedAt:Date.now()},games:[]},motion:readPageChoice('gameday-motion',['on','off'],'on')==='on',feedback:true});previous={totals,checkedAt:Date.now()};
    freshness.update({state:navigator.onLine===false?'offline':'ready',checkedAt:Date.now(),nflAvailable:!!nfl,playersAvailable:results[1].status==='fulfilled',completed:model.completed});
 
    return true;

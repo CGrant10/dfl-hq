@@ -4,8 +4,9 @@ import {loadMemberDirectory} from './members.js';
 import {buildWeeklyClubhouse} from './weekly-clubhouse-model.js';
 const cache=new Map();
 export async function loadWeeklyRosters(leagueId,week,{maxAgeMs=600000}={}){
- if(!leagueId)return[];const key=`${leagueId}:${week}`,hit=cache.get(key);if(hit&&Date.now()-hit.at<maxAgeMs)return hit.value;
- const promise=sleeper.matchups(leagueId,week).then(rows=>{if(!Array.isArray(rows)||!rows.length)throw Error('Weekly roster data unavailable');return rows}).catch(error=>{cache.delete(key);throw error});cache.set(key,{at:Date.now(),value:promise});return promise;
+ if(!leagueId)return[];const key=`${leagueId}:${week}`,hit=cache.get(key);if(hit&&(hit.pending||Date.now()-hit.at<maxAgeMs))return hit.value;
+ const entry={at:0,pending:true,value:null};
+ entry.value=Promise.resolve().then(()=>sleeper.matchups(leagueId,week)).then(rows=>{if(!Array.isArray(rows)||!rows.length)throw Error('Weekly roster data unavailable');entry.at=Date.now();return rows}).catch(error=>{if(cache.get(key)===entry)cache.delete(key);throw error}).finally(()=>{entry.pending=false});cache.set(key,entry);return entry.value;
 }
 const briefCache=new Map();let briefEpoch=0;
 function loadBrief(key,read,{force=false}={}){

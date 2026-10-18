@@ -1,7 +1,13 @@
 import {describe,it,expect} from 'vitest';
-import {scoreChange} from './game-day-score-motion.js';
+import {scoreChange,recentScoreRefresh} from './game-day-score-motion.js';
 import {matchupReceiptData} from './game-day-matchup-share.js';
 describe('GameDay changes',()=>{
+ it('updates stale catch-up scores without treating them as fresh scoring moments',()=>{
+  expect(recentScoreRefresh({checkedAt:1000},{checkedAt:61000})).toBe(true);
+  expect(recentScoreRefresh({checkedAt:1000},{checkedAt:121001})).toBe(false);
+  expect(recentScoreRefresh({checkedAt:1000},{checkedAt:999})).toBe(false);
+  expect(recentScoreRefresh({},{checkedAt:1000})).toBe(true);
+ });
  it('shows signed point gains and corrections at fantasy scoring precision',()=>{
   expect(scoreChange(10.2,16.2)).toEqual({from:10.2,to:16.2,delta:6,label:'+6.00'});
   expect(scoreChange(16.2,15.8)?.label).toBe('−0.40');
