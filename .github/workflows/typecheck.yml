@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: pnpm/action-setup@v4
         with:
           version: 11.19.0
@@ -30,6 +32,11 @@ jobs:
         env:
           DENO_TLS_CA_STORE: system
         run: npx --yes deno@2.5.4 test --no-config --node-modules-dir=none --no-lock --allow-import supabase/functions/tests/matchup-moments-filter_test.ts
+      - name: Check public release verifier syntax
+        run: python -c "import ast,pathlib;ast.parse(pathlib.Path('tools/verify-release-assets.py').read_text())"
+      - name: Verify public release assets
+        if: github.event_name == 'push'
+        run: python tools/verify-release-assets.py
       - name: Sync built Arena runtime
         if: github.event_name == 'push'
         run: |
