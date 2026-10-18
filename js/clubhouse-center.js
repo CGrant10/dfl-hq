@@ -1,3 +1,5 @@
+import {mountMatchupFinish} from './matchup-finish.js';
+import {matchupReceiptData,shareMatchupReceipt} from './game-day-matchup-share.js';
 import {buildGameDay} from './game-day-model.js';
 import {matchupLineupHtml} from './game-day-lineup-comparison.js';
 import {clubhousePlayerStatLine,clubhouseGameMetrics} from './clubhouse-center-model.js';
@@ -13,7 +15,7 @@ import {accentOf} from './identity-rules.js';
 import {mountClubhousePolish} from './clubhouse-polish.js';
 
 let stopCurrent=null;
-export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,loadStats=loadWeeklyStats,loadLeague=id=>sleeper.league(id)}={}) {
+export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,loadStats=loadWeeklyStats,loadLeague=id=>sleeper.league(id),autoFinish=true}={}) {
  stopCurrent?.();
  let stopped=false,last=null,model=null,stats={loading:true},statsBusy=false,statsChecked=0,statsRequest=0,statsTimer=null,slots=null,vfx=null,fxCard=null,stopScores=()=>{};
  const reduced=matchMedia('(prefers-reduced-motion: reduce)'),current=()=>!stopped&&root.isConnected&&active();
@@ -24,14 +26,15 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  const requested=new URLSearchParams(location.hash.split('?')[1]||'').get('matchup');
  let selected=model.games.find(g=>g.id===requested)?.id||readPageChoice(scope,model.games.map(g=>g.id),(model.games.find(g=>g.isMine)||model.games[0])?.id);
  const selectedGame=()=>model.games.find(g=>g.id===selected),cardOf=id=>root.querySelector(`[data-clubhouse-matchup="${CSS.escape(id)}"] .clubhouse-matchup-card`);
+ const finish=mountMatchupFinish(root,{getModel:()=>last?model:null,getGame:selectedGame,getSurface:()=>cardOf(selected),getMotion:()=>motion,getOwner:()=>currentMember()?.id,allowAuto:()=>autoFinish,onShare:()=>shareMatchupReceipt(matchupReceiptData(model,{gameId:selected}))});
  const polish=mountClubhousePolish(root,{getMotion:()=>motion,active:current});
- const stopAnimations=()=>{stopScores();stopScores=()=>{};polish.stopTransient()};
+ const stopAnimations=()=>{finish.cancel();stopScores();stopScores=()=>{};polish.stopTransient()};
  const spotlight=mountPlayerSpotlight(root,{getModel:()=>model,getMotion:()=>motion});
  const setMotion=()=>{
   root.querySelector('.clubhouse-page').dataset.motion=motion?'on':'off';
   for(const card of root.querySelectorAll('.clubhouse-matchup-card'))card.dataset.motion=motion?'on':'off';
   const button=root.querySelector('[data-clubhouse-motion]');if(button){button.textContent=`Motion ${motion?'on':'off'}`;button.setAttribute('aria-pressed',String(motion))}
-  if(!motion||reduced.matches)stopAnimations();polish.motionChanged();spotlight.setMotion(motion);
+  if(!motion||reduced.matches)stopAnimations();polish.motionChanged();finish.motionChanged();spotlight.setMotion(motion);
  };
  const enter=(card,options={})=>polish.enter(card,options);
  const paintActive=()=>{
@@ -41,6 +44,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   const {lead}=clubhouseGameMetrics(game,model.completed);
   const scoreStrip=card.querySelector('[data-clubhouse-score-strip]');if(scoreStrip)patchGameDay(scoreStrip,clubhouseScoreStripHtml(game,model.completed));
   for(const [i,side] of ['left','right'].entries()){
+   const total=card.querySelector(`[data-score-${side}] [data-matchup-score-value]`),value=game.sides[i].score==null?'—':Number(game.sides[i].score).toFixed(2);if(total&&total.textContent!==value)total.textContent=value;
    const surface=card.querySelector(`[data-score-${side}]`)?.closest('.clubhouse-game-side');if(surface){surface.dataset.lead=String(lead?.side===side);const badge=surface.querySelector('.clubhouse-score-lead');if(badge){badge.textContent=lead?.side===side?lead.label:'';badge.setAttribute('aria-hidden',String(lead?.side!==side))}surface.dataset.gamedayTeam=game.sides[i].roster;surface.querySelector('.clubhouse-remaining')?.classList.add('home-team-progress')}
   }
   const lines=new Map(game.sides.flatMap(t=>[...t.lineup,...t.bench]).map(p=>[`${p.roster}:${p.id}`,clubhousePlayerStatLine(p,stats,model)]));
@@ -48,7 +52,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   const teamStats=card.querySelector('[data-clubhouse-team-stats]');if(teamStats)patchGameDay(teamStats,last?clubhouseTeamStatsHtml(game,model.completed):'');
   const position=card.querySelector('[data-clubhouse-position-stats]');if(position)patchGameDay(position,last?clubhousePositionStatsHtml(game,model.completed):'');
   if(fxCard!==card){vfx?.stop();fxCard=card;vfx=mountScoreVfx(card)}
-  vfx?.refresh();setMotion();spotlight.update();
+  vfx?.refresh();setMotion();spotlight.update();finish.update();
  };
  const paintBoard=()=>{
   const board=root.querySelector('[data-clubhouse-scoreboard]');if(board)patchGameDay(board,clubhouseScoreboardHtml(model,selected));
@@ -67,7 +71,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   const direction=Math.sign(model.games.findIndex(g=>g.id===id)-model.games.findIndex(g=>g.id===selected));
   stopAnimations();selected=id;savePageChoice(scope,id);
   const params=new URLSearchParams(location.hash.split('?')[1]||'');params.set('matchup',id);try{history.replaceState(history.state,'',location.hash.split('?')[0]+'?'+params)}catch{/* Matchup browsing also works in previews that restrict history. */}
-  paintBoard();paintActive();const card=cardOf(id);enter(card,{direction});
+  paintBoard();paintActive();const card=cardOf(id);if(!model.completed)enter(card,{direction});
   const heading=card?.querySelector('header');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});if(scroll)heading.scrollIntoView({behavior:motion&&!reduced.matches?'smooth':'instant',block:'start'})}
  };
  const click=event=>{
@@ -77,14 +81,14 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  const onRoute=()=>{if(!active())stop()};
  const onReduce=()=>{if(reduced.matches)stopAnimations()};
  const onVisibility=()=>{if(document.visibilityState!=='visible')stopAnimations()};
- const stop=()=>{if(stopped)return;stopped=true;statsRequest++;clearTimeout(statsTimer);stopAnimations();polish.stop();vfx?.stop();spotlight.stop();root.removeEventListener('click',click);window.removeEventListener('hashchange',onRoute);reduced.removeEventListener('change',onReduce);document.removeEventListener('visibilitychange',onVisibility)};
+ const stop=()=>{if(stopped)return;stopped=true;statsRequest++;clearTimeout(statsTimer);stopAnimations();finish.stop();polish.stop();vfx?.stop();spotlight.stop();root.removeEventListener('click',click);window.removeEventListener('hashchange',onRoute);reduced.removeEventListener('change',onReduce);document.removeEventListener('visibilitychange',onVisibility)};
  root.addEventListener('click',click);window.addEventListener('hashchange',onRoute);reduced.addEventListener('change',onReduce);document.addEventListener('visibilitychange',onVisibility);
  paintBoard();paintActive();stopCurrent=stop;
  // Box scores and league slot metadata load independently of the score feed.
  void readStats();void loadLeague(week.leagueId).then(league=>{if(current()&&Array.isArray(league?.roster_positions)){slots=league.roster_positions;if(last){model=make(last);model.snapshot.checkedAt=last.checkedAt;paintActive()}}}).catch(()=>{});
  let entered=false;
  return {
-  update(data){if(!current())return;stopAnimations();const previous=last?model.snapshot:null;last={rows:data.rows,rosters:data.rosters||[],players:data.players,nfl:data.nfl?{teams:data.nfl}:null,checkedAt:Date.now()};model=make(last);model.snapshot.checkedAt=last.checkedAt;paintBoard();paintActive();const card=cardOf(selected);if(!entered){entered=true;enter(card)}if(previous&&card)stopScores=animateScoreChanges(card,{previous,model,motion,gameId:selected,feedback:true});void readStats(data.force)},
+  update(data){if(!current())return;stopAnimations();const previous=last?model.snapshot:null;last={rows:data.rows,rosters:data.rosters||[],players:data.players,nfl:data.nfl?{teams:data.nfl}:null,checkedAt:Date.now()};model=make(last);model.snapshot.checkedAt=last.checkedAt;paintBoard();paintActive();const card=cardOf(selected);if(!entered){entered=true;if(!model.completed)enter(card)}if(previous&&card&&!model.completed)stopScores=animateScoreChanges(card,{previous,model,motion,gameId:selected,feedback:true});void readStats(data.force)},
   fail(){if(!current())return;stopAnimations();if(!last)for(const host of root.querySelectorAll('[data-clubhouse-lineup]'))host.innerHTML='<p class="clubhouse-stat-status">Lineups unavailable. Refresh scores to retry.</p>'},
   stop,
  };
