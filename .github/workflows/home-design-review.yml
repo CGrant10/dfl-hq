@@ -130,7 +130,6 @@ jobs:
       - run: node tools/render-home-review.mjs
       - name: Check phase-aware Home weekly desk
         run: python tools/capture-home-week-review.py
-      - run: python tools/capture-home-review.py
       - name: Check award artwork spacing
         run: python tools/capture-award-review.py
       - name: Check broadcast first-read timing
@@ -167,6 +166,8 @@ jobs:
         run: python tools/capture-scroll-review.py
         env:
           DFL_SCROLL_REVIEW_DIR: home-review-output/scroll
+      - name: Check full themed Home screens
+        run: python tools/capture-home-review.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
