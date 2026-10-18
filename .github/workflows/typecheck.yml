@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  statuses: write
 
 jobs:
   typecheck:
@@ -36,7 +37,17 @@ jobs:
         run: python -c "import ast,pathlib;ast.parse(pathlib.Path('tools/verify-release-assets.py').read_text())"
       - name: Verify public release assets
         if: github.event_name == 'push'
-        run: python tools/verify-release-assets.py
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f state=pending -f context=release/public-assets -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="Checking published release assets"
+          if python tools/verify-release-assets.py; then
+            DFL_VERIFY_STATE=success
+          else
+            DFL_VERIFY_STATE=failure
+          fi
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f state="$DFL_VERIFY_STATE" -f context=release/public-assets -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="Public release asset verification"
+          test "$DFL_VERIFY_STATE" = success
       - name: Sync built Arena runtime
         if: github.event_name == 'push'
         run: |
