@@ -21,7 +21,7 @@ with sync_playwright() as p:
  page.evaluate('''async sources=>{
   const names=['ui','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','clubhouse-matchup-model','watch-score-collapse','moment-recap','matchup-finish','matchup-finish-model','game-day-matchup-share','game-day-model','clubhouse-center-model','clubhouse-center-ui','clubhouse-polish','clubhouse-matchup-cards'];
   const helpers=Object.assign({},...await Promise.all(names.map(name=>import('./js/'+name+'.js'))));
-  const noop=()=>{},member={id:'finish-reader'},providers={shareMatchupReceipt:data=>{window.finishFixture.shared=data},currentMember:()=>member,loadWeeklyStats:async()=>({data:[]}),sleeper:{league:async()=>({roster_positions:['QB']})},mountPlayerSpotlight:()=>({stop:noop,update:noop,setMotion:noop}),mountScoreVfx:()=>({stop:noop,refresh:noop}),loadRivalryCalls:async()=>[],rivalryStoryHtml:()=>'',db:()=>({from:()=>({select:()=>({match:()=>({order:()=>({order:()=>({limit:async()=>({data:[]})})})})})})})};
+  const noop=()=>{},member={id:'finish-reader'},providers={shareMatchupReceipt:data=>{const f=window.finishFixture;f.shared=data;if(f.holdShare)return new Promise((resolve,reject)=>f.rejectShare=reject)},currentMember:()=>member,loadWeeklyStats:async()=>({data:[]}),sleeper:{league:async()=>({roster_positions:['QB']})},mountPlayerSpotlight:()=>({stop:noop,update:noop,setMotion:noop}),mountScoreVfx:()=>({stop:noop,refresh:noop}),loadRivalryCalls:async()=>[],rivalryStoryHtml:()=>'',db:()=>({from:()=>({select:()=>({match:()=>({order:()=>({order:()=>({limit:async()=>({data:[]})})})})})})})};
   const deps={...helpers,...providers};
   const center=Function(...Object.keys(deps),sources.center+';return mountClubhouseCenter')(...Object.values(deps));
   const watch=Function(...Object.keys(deps),'return function mountGameDayWatch'+sources.watch)(...Object.values(deps));
@@ -89,7 +89,12 @@ with sync_playwright() as p:
  assert page.locator('[data-finish-playing]').count()==0
  checks.append('reduced motion shows complete static receipt')
  page.emulate_media(reduced_motion='no-preference');page.locator('.clubhouse-matchup-card [data-finish-replay]').click();page.wait_for_function('!!document.querySelector("[data-finish-playing]")')
- page.evaluate('finishFixture.stops.forEach(stop=>stop())');page.wait_for_timeout(50)
+ page.evaluate('finishFixture.holdShare=true')
+ page.locator('.clubhouse-matchup-card [data-finish-share]').click();page.wait_for_timeout(50)
+ before=page.locator('.clubhouse-matchup-card [data-finish-share]').evaluate('e=>e.outerHTML')
+ page.evaluate('finishFixture.stops.forEach(stop=>stop());finishFixture.rejectShare(Error("Late native share failure"))');page.wait_for_timeout(50)
+ assert page.locator('.clubhouse-matchup-card [data-finish-share]').evaluate('e=>e.outerHTML')==before
+ checks.append('late sharing completion leaves stopped surfaces untouched')
  assert page.locator('[data-finish-playing]').count()==0
  assert page.locator('.clubhouse-matchup-card').evaluate('e=>e.getAnimations({subtree:true}).filter(a=>a.constructor===Animation&&a.playState==="running").length')==0
  assert not errors,errors

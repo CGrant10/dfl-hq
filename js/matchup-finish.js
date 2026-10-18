@@ -75,8 +75,8 @@ export function mountMatchupFinish(root,{getModel,getGame,getSurface=()=>root,ge
    return;
   }
   if(sharing)return;sharing=true;button.disabled=true;button.setAttribute('aria-busy','true');
-  try{await onShare()}catch{toast('Could not share this final. Try again.',true)}
-  finally{sharing=false;if(button.isConnected){button.disabled=false;button.removeAttribute('aria-busy')}}
+  try{await onShare()}catch{if(!stopped)toast('Could not share this final. Try again.',true)}
+  finally{sharing=false;if(!stopped&&button.isConnected){button.disabled=false;button.removeAttribute('aria-busy')}}
  };
  const motionChanged=()=>{if(!canMove())cancel()};
  const visibility=()=>{if(document.visibilityState!=='visible')cancel();else schedule()};
