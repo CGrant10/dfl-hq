@@ -5,5 +5,5 @@ export function tradeReviewFixture(){
  const positions=['QB','RB','RB','WR','WR','TE','WR','RB','RB','WR','TE'];
  const rosters=names.map((team_name,t)=>({id:String(t+1),roster_id:t+1,team_name,players:positions.map((position,i)=>{const id=`${t+1}-${i}`,points=[310,290,210,280,225,170,195,160,125,130,115][i]+t*8;pool.set(id,{id,name:`${playerNames[i]}${t?' '+['','II','III','IV'][t]:''}`,position,nflTeam:['KC','ATL','SEA','MIN','DET','KC','GB','TEN','WSH','IND','MIN'][i],tradeValue:[65,78,45,80,57,38,43,32,22,24,21][i]+t,expectedPoints:points,expectedPerGame:points/17,injuryStatus:i===9?'Questionable':'',projectionConfidence:'medium'});return id;})}));
  const teams=analyzeLeague({rosters,pool});teams.sort((a,b)=>Number(a.id)-Number(b.id));
- return {teams,pool,projectionSeason:2026,projectionUpdatedAt:'2026-10-07T12:00:00Z',productionUpdatedAt:'2026-10-07T12:00:00Z',liveSignalsUpdatedAt:'2026-10-07T12:00:00Z'};
+ return {league:{sleeper_league_id:'1286077564572037120'},teams,pool,projectionSeason:2026,projectionUpdatedAt:'2026-10-07T12:00:00Z',productionUpdatedAt:'2026-10-07T12:00:00Z',liveSignalsUpdatedAt:'2026-10-07T12:00:00Z'};
 }

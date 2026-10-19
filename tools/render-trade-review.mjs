@@ -12,6 +12,7 @@ const production=source.slice(source.indexOf('const teamName'),source.indexOf('e
 const imports=`
 import {completedTradeMarkup} from '/js/trade-receipt-ui.js';
 import {tradeAssessment} from '/js/trade-assessment.js';
+import {sleeperAction} from '/js/sleeper-links.js';
 import {createTradeNegotiation as createRealTradeNegotiation} from '/js/trade-negotiation-ui.js';
 const createTradeNegotiation=options=>createRealTradeNegotiation({...options,...window.reviewRoomApi?{createApi:async()=>window.reviewRoomApi}:{}});
 import {tradeLineupFitLabel} from '/js/trade-suggestion-quality.js';

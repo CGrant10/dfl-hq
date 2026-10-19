@@ -13,7 +13,7 @@ export function waiverReviewFixture({faab=false,partial=false}={}){
   return {sleeper_transaction_id:'tx'+i,season:2026,week:6,type:faab?'waiver':'free_agent',status:'complete',created_ms:now-3600000-i*1000,
    details:{adds:{['old-'+i]:2},drops:i===0?{rb:3}:i===8?{wr:2}:{},settings:faab?{faab_bid:12+i%8}:{}}};
  });
- const league={league_id:'review',season:2026,total_rosters:12,roster_positions:[...DFL_SLOTS,'BN'],settings:{waiver_type:faab?2:0,waiver_budget:100}};
+ const league={league_id:'1286077564572037120',season:2026,total_rosters:12,roster_positions:[...DFL_SLOTS,'BN'],settings:{waiver_type:faab?2:0,waiver_budget:100}};
  const weekly=[{week:6,pool}],schedule=new Map([['CHI',{key:'upcoming',kickoff:'2026-10-11T17:00:00Z'}]]);
  const plan=buildWaiverPlan({rosters,rosterId:1,weekly,schedule,values:new Map([['drop',{tradeValue:8,positionRank:90}]]),league,now});
  const enriched=buildWaiverIntelligence({plan,history:{state:partial?'partial':'ready',transactions},rosters,weekly,schedule,players,league,season:2026,week:6,now,

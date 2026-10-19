@@ -1,4 +1,5 @@
 import {esc} from './ui.js';
+import {sleeperAction} from './sleeper-links.js';
 import {playerIdentity} from './player-presentation.js';
 const points=n=>Number.isFinite(n)?n.toFixed(1):'—';
 const who=p=>playerIdentity({...p,injuryStatus:null,nflTeam:p.nflTeam||p.team},{interactive:true,detail:[p.position,p.opponent?`vs ${p.opponent}`:p.nflTeam||p.team].filter(Boolean).join(' · ')});
@@ -25,7 +26,7 @@ export function startSitSummary(advice){
  return !advice.lineupIsSet?'Set your lineup':missing?'Projections pending':empty?'Finish your lineup':advice.swaps?.length?`${advice.swaps.length} lineup move${advice.swaps.length===1?'':'s'}`:advice.alarms?.length?'Lineup needs attention':'Hold your lineup';
 }
 
-export function startSitContent(advice){
+export function startSitContent(advice,{leagueId=null}={}){
  const moves=advice.swaps||[],covered=new Set(moves.map(s=>(s.out||s.sit).id));
  const alarms=(advice.alarms||[]).filter(a=>!covered.has(a.player.id));
  return `<div class="ss-advice" data-startsit-advice>
@@ -34,5 +35,6 @@ export function startSitContent(advice){
   ${advice.emptySlots?.length&&advice.lineupIsSet?`<p class="ss-data-warning">Open slots: ${advice.emptySlots.map(esc).join(' · ')}</p>`:''}
   ${moves.length?`<div class="ss-moves">${moves.map(startSitMove).join('')}</div>`:!alarms.length?`<p class="ss-hold"><strong>${esc(startSitSummary(advice))}</strong>${advice.lineupIsSet&&!advice.unknownStarters?.length&&!advice.emptySlots?.length?'<span>No clear upgrade on your bench.</span>':''}</p>`:''}
   ${advice.lockedCount?`<p class="ss-locks">${advice.lockedCount} starter${advice.lockedCount===1?'':'s'} locked</p>`:''}
+  ${sleeperAction(leagueId,'roster',{label:'Set lineup in Sleeper'})}
  </div>`;
 }

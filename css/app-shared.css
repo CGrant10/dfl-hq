@@ -4629,6 +4629,13 @@ html[data-ui-motion="off"] #view :is(.btn,.home-lineup-primary,.tb-generate,.tb-
 #view .ta-method { display:none!important; }
 #view:not([data-route="arena"]) .page-sub:not(#keeper-count) { display:none!important; }
 .choice-sub { display:none!important; }
+/* Sleeper handoffs stay ordinary theme-aware controls with a full touch target. */
+a.sleeper-action {display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;max-width:100%;vertical-align:middle;}
+a.sleeper-action svg {flex:0 0 14px;}
+.td-external-tools {display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+#view[data-route="trade"] .td-external-tools {justify-content:flex-end;}
+#view[data-route="trade"] .td-entry-actions {flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
+#view[data-route="trade"] .td-entry-actions>button {flex:0 0 auto;white-space:nowrap;}
 
 
 /* Source: css/detail-polish.css */

@@ -1,4 +1,5 @@
 import {tradeAssessment} from '../trade-assessment.js';
+import {sleeperAction} from '../sleeper-links.js';
 import {createTradeNegotiation} from '../trade-negotiation-ui.js';
 import {tradeLineupFitLabel} from '../trade-suggestion-quality.js';
 import {createTradeConnection} from '../trade-connected-motion.js';
@@ -119,13 +120,13 @@ function anchorOptions(players, selected, label) {
   pages. They are the same question asked in either direction, so they are now
   the same page: propose above, judge below.
 */
-function tradeBoardHeader(mode='offers'){
- return `<div class="tb-head-row page-identity"><header class="tb-head"><small>DFLYZER</small><h1>${mode==='room'?'Deal Room':mode==='manual'?'Check a trade':'Trade Board'}</h1></header><a class="btn ghost small" href="#/trade?receipts=1">Receipts</a></div><div class="td-entry-actions" aria-label="Trade tools"><button type="button" data-td-mode="offers" aria-pressed="${mode==='offers'}">Find offers</button><button type="button" data-td-mode="manual" aria-pressed="${mode==='manual'}">Check a trade</button><button type="button" data-td-mode="room" aria-pressed="${mode==='room'}">Deal room</button><button type="button" data-td-compare aria-label="Compare saved deals">Saved deals</button></div>`;
+function tradeBoardHeader(mode='offers',leagueId=null){
+ return `<div class="tb-head-row page-identity"><header class="tb-head"><small>DFLYZER</small><h1>${mode==='room'?'Deal Room':mode==='manual'?'Check a trade':'Trade Board'}</h1></header><div class="td-external-tools">${sleeperAction(leagueId,'trades',{label:'Sleeper'})}<a class="btn ghost small" href="#/trade?receipts=1">Receipts</a></div></div><div class="td-entry-actions" aria-label="Trade tools"><button type="button" data-td-mode="offers" aria-pressed="${mode==='offers'}">Find offers</button><button type="button" data-td-mode="manual" aria-pressed="${mode==='manual'}">Check a trade</button><button type="button" data-td-mode="room" aria-pressed="${mode==='room'}">Deal room</button><button type="button" data-td-compare aria-label="Compare saved deals">Saved deals</button></div>`;
 }
 
 function tradeLab(team, teams, pool, shop) {
-  if(shop.mode==='room')return `<section class="tb-board">${tradeBoardHeader('room')}</section>`;
-  if(shop.mode==='manual')return `<section class="tb-board">${tradeBoardHeader('manual')}</section>`;
+  if(shop.mode==='room')return `<section class="tb-board">${tradeBoardHeader('room',shop.leagueId)}</section>`;
+  if(shop.mode==='manual')return `<section class="tb-board">${tradeBoardHeader('manual',shop.leagueId)}</section>`;
   const otherTeams = teams.filter(item => String(item.id) !== String(team.id));
   const allPartners = shop.partnerId === "all";
   const partner = allPartners ? null
@@ -190,7 +191,7 @@ function tradeLab(team, teams, pool, shop) {
     .filter(count => count >= minimum && count < maxPlayers - shop.memberIds.length)
     .map(count => `<option value="${count}" ${String(selected) === String(count) ? "selected" : ""}>${count}</option>`).join("")}`;
   return `<section class="tb-board">
-    ${tradeBoardHeader(shop.mode)}
+    ${tradeBoardHeader(shop.mode,shop.leagueId)}
     <details class="tb-workbench-card tb-setup" aria-label="Trade workbench"${shop.setupOpen?' open':''}>
       <summary class="tb-setup-summary"><span><small>TRADE SEARCH</small><strong>${esc(teamName(team))} <i aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5h12m-3-3 3 3-3 3M14 11H2m3-3-3 3 3 3"/></svg></i><span class="sr-only"> with </span> ${esc(allPartners?'All teams':multi?`${parties.length-1} teams`:teamName(partner))}</strong><em>${shop.sendAnchors.length||'Any'} to send · ${shop.receiveAnchors.length||'Any'} to get · Up to ${maxPlayers} players</em></span><b>Edit search</b></summary><div class="tb-setup-body">
         <div class="tb-team-choices">
@@ -259,7 +260,7 @@ function page(data, tradeAlerts = []) {
     || data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id
     || data.teams[0].id;
   const trade = { memberIds: [], sends: [new Set(), new Set()], editing: true, destinations:{} };
-  const shop = { partnerId: "all", memberIds: [], anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
+  const shop = { leagueId:data.league?.sleeper_league_id,partnerId: "all", memberIds: [], anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
     setupOpen:true,goal:"best",horizon:'season',maxPlayers: 8, sendCount: "any", receiveCount: "any", intent: "fair", visibleCount: OFFER_BATCH_SIZE,
     openTiers: new Set(["fair"]), mode:"offers", customOpen: false, sharedAudit: [] };
   const draftKey = `trade:${data.projectionSeason}`;
