@@ -578,3 +578,16 @@ Browser checks cover selected controls, reduced motion, live reordering, follow
 identity, fullscreen fallback/exit/rotation and the two edge lanes. Physical
 mobile fullscreen, GPU performance, haptics and assistive-technology speech
 remain unverified. No theme picker entries or aliases change.
+
+
+## 1.446.0 — Arena always shows the full field
+
+Reviewed the fixed full-field race in Medicine Wheel Light and Dark at 320,
+390 and 768px, with expanded landscape and desktop checks. The camera selector
+and split-screen labels are removed. The compact Full field label uses the
+existing venue’s warm ink on its dark toolbar. Standings, highlight selection,
+readiness and outer race status retain the theme-token corrections from 1.445.
+The full field uses the entire Canvas width, with no lead-battle sidebar.
+Actual atlas draw bounds verify all racers remain on the field while selecting
+rows, progressing through the race and replaying. Physical mobile fullscreen
+and hardware performance remain unverified.
