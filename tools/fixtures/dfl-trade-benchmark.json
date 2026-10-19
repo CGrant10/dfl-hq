@@ -1,0 +1,234 @@
+{
+  "description": "Recorded DFL packages with their frozen quoted prices. Team identifiers are anonymized. These check arithmetic and routing, not hindsight accuracy or present-day prices.",
+  "league": {
+    "teams": 12,
+    "scoring": "ppr",
+    "slots": [
+      "QB",
+      "RB",
+      "RB",
+      "WR",
+      "WR",
+      "TE",
+      "FLEX",
+      "K",
+      "DEF"
+    ]
+  },
+  "cases": [
+    {
+      "receipt": 9,
+      "season": 2026,
+      "week": 5,
+      "packages": [
+        {
+          "teamId": "a",
+          "players": [
+            {
+              "id": "7571",
+              "name": "Rashod Bateman",
+              "position": "WR",
+              "nflTeam": "BAL",
+              "tradeValue": 2,
+              "expectedPoints": 139.59
+            },
+            {
+              "id": "12474",
+              "name": "Woody Marks",
+              "position": "RB",
+              "nflTeam": "HOU",
+              "tradeValue": 2,
+              "expectedPoints": 132.84
+            }
+          ]
+        },
+        {
+          "teamId": "b",
+          "players": [
+            {
+              "id": "9753",
+              "name": "Zach Charbonnet",
+              "position": "RB",
+              "nflTeam": "SEA",
+              "tradeValue": 3,
+              "expectedPoints": 81.59
+            },
+            {
+              "id": "13298",
+              "name": "KC Concepcion",
+              "position": "WR",
+              "nflTeam": "CLE",
+              "tradeValue": 2,
+              "expectedPoints": 118.12
+            }
+          ]
+        }
+      ],
+      "destinations": {
+        "7571": "b",
+        "9753": "a",
+        "12474": "b",
+        "13298": "a"
+      },
+      "expected": {
+        "balance": 80,
+        "incoming": [
+          5,
+          4
+        ],
+        "outgoing": [
+          4,
+          5
+        ]
+      }
+    },
+    {
+      "receipt": 18,
+      "season": 2026,
+      "week": 6,
+      "packages": [
+        {
+          "teamId": "a",
+          "players": [
+            {
+              "id": "1466",
+              "name": "Travis Kelce",
+              "position": "TE",
+              "nflTeam": "KC",
+              "tradeValue": 16,
+              "expectedPoints": 207.68
+            },
+            {
+              "id": "7547",
+              "name": "Amon-Ra St. Brown",
+              "position": "WR",
+              "nflTeam": "DET",
+              "tradeValue": 59,
+              "expectedPoints": 316.34
+            }
+          ]
+        },
+        {
+          "teamId": "b",
+          "players": [
+            {
+              "id": "2449",
+              "name": "Stefon Diggs",
+              "position": "WR",
+              "nflTeam": "WAS",
+              "tradeValue": 17,
+              "expectedPoints": 199.36
+            },
+            {
+              "id": "3198",
+              "name": "Derrick Henry",
+              "position": "RB",
+              "nflTeam": "BAL",
+              "tradeValue": 57,
+              "expectedPoints": 342.58
+            },
+            {
+              "id": "8137",
+              "name": "George Pickens",
+              "position": "WR",
+              "nflTeam": "DAL",
+              "tradeValue": 37,
+              "expectedPoints": 256.65
+            }
+          ]
+        },
+        {
+          "teamId": "c",
+          "players": [
+            {
+              "id": "2216",
+              "name": "Mike Evans",
+              "position": "WR",
+              "nflTeam": "SF",
+              "tradeValue": 33,
+              "expectedPoints": 260.41
+            },
+            {
+              "id": "12527",
+              "name": "Ashton Jeanty",
+              "position": "RB",
+              "nflTeam": "LV",
+              "tradeValue": 37,
+              "expectedPoints": 267.48
+            }
+          ]
+        }
+      ],
+      "destinations": {
+        "1466": "c",
+        "2216": "a",
+        "2449": "c",
+        "3198": "c",
+        "7547": "b",
+        "8137": "a",
+        "12527": "b"
+      },
+      "expected": {
+        "balance": 78,
+        "incoming": [
+          70,
+          96,
+          90
+        ],
+        "outgoing": [
+          75,
+          111,
+          70
+        ]
+      }
+    },
+    {
+      "receipt": 17,
+      "season": 2026,
+      "week": 6,
+      "packages": [
+        {
+          "teamId": "a",
+          "players": [
+            {
+              "id": "12490",
+              "name": "Bhayshul Tuten",
+              "position": "RB",
+              "nflTeam": "JAX",
+              "tradeValue": 23,
+              "expectedPoints": 202.86
+            }
+          ]
+        },
+        {
+          "teamId": "b",
+          "players": [
+            {
+              "id": "1466",
+              "name": "Travis Kelce",
+              "position": "TE",
+              "nflTeam": "KC",
+              "tradeValue": 15,
+              "expectedPoints": 207.68
+            }
+          ]
+        }
+      ],
+      "destinations": {
+        "1466": "a",
+        "12490": "b"
+      },
+      "expected": {
+        "balance": 65,
+        "incoming": [
+          15,
+          23
+        ],
+        "outgoing": [
+          23,
+          15
+        ]
+      }
+    }
+  ]
+}

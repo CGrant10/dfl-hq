@@ -490,3 +490,25 @@ GameDay opens at the top; replay expands a scrolled compact scoreboard before
 revealing the teams. The browser review verifies that scroll and compact-state reset.
 Physical-device frame rates, authenticated live data and native share delivery
 remain unverified.
+
+## 1.440.0 — Arena direction, story layouts and trade connections
+
+Reviewed Light/Dark award, injury, two-/three-team trade and rivalry broadcasts
+at 320/390/768px. Awards retain the full contained silhouette and theme-specific
+opacity; Chip Eater reverses the composition. Text, dividers, focus indicators,
+trade fit labels and pre-race readiness use shared palette tokens. Stadium turf,
+uniforms and its deliberately dark viewing surface retain their identity colors.
+
+The production Arena fixture covers portrait commissioner editing and landscape
+viewing, full-screen camera controls, readiness, remote anonymous reactions,
+finite local goal-line replay, motion preferences and cleanup. New spectator and
+replay actions have 44px targets. The opt-in Sound control defaults off. Trade
+offer/detail connections were reviewed at 320/390px with focus return, reduced
+motion, resize cancellation and teardown. No new palette, logo, explanatory
+subtext or share-card design was added.
+
+Screens and machine-readable checks: `/tmp/dfl-1440-home/art-*.png`,
+`/tmp/dfl-1440-arena-final/` and `/tmp/dfl-1440-trade/`. See
+`docs/arena-broadcast-trade-upgrade-validation.md` for data and runtime limits.
+Physical-phone haptics, native screen-reader output and hardware frame rates
+remain unverified.

@@ -46,6 +46,52 @@ html[data-ui-motion="off"] #home-wrap .bx-season-story .bx-season-years b {anima
 #home-wrap .bx-slide.bx-in :is(.bx-head,.bx-name,.bx-home-title,.bx-stat-story-main,.bx-season-lockup){animation:bx-editorial-copy-in 340ms cubic-bezier(.2,.75,.25,1) 45ms both}
 #home-wrap .bx-slide.bx-in :is(.bx-sub,.bx-body,.bx-when,.bx-award-call,.bx-story-action){animation:bx-editorial-copy-in 280ms ease-out 110ms both}
 #home-wrap .bx-slide.bx-in :is(.bx-editorial-subject,.bx-story-image){animation:bx-editorial-art-in 420ms cubic-bezier(.2,.75,.25,1) 80ms both}
+
+/* Award covers: a full silhouette anchored to the page, with opposing layouts. */
+#home-wrap .bx-award-story{gap:12px 18px;padding-top:9px;border-top:3px solid var(--accent);grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr)}
+#home-wrap .bx-award-story .bx-award-heading{font-size:clamp(29px,7.8vw,36px);padding-bottom:12px;border-bottom:1px solid var(--line)}
+#home-wrap .bx-award-story .bx-editorial-illustration{height:236px;mask-image:linear-gradient(0deg,transparent,#000 6%);overflow:visible}
+#home-wrap .bx-award-story .bx-editorial-illustration::after{inset:22% 0 4%;border:0;border-radius:0;background:linear-gradient(0deg,color-mix(in srgb,var(--accent) 12%,transparent),transparent);border-bottom:2px solid color-mix(in srgb,var(--accent) 36%,transparent);transform:skewY(-7deg)}
+#home-wrap .bx-award-story .bx-editorial-subject{opacity:var(--bx-award-opacity,.85);overflow:visible}
+#home-wrap .bx-award-story .bx-editorial-portrait{filter:saturate(.8) contrast(1.06)}
+#home-wrap .bx-award-chip{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);border-top-style:double;border-top-width:4px}
+#home-wrap .bx-award-chip .bx-editorial-illustration{grid-column:1;justify-self:start}
+#home-wrap .bx-award-chip .bx-award-copy{grid-column:2;border-left:1px solid var(--line);padding-left:14px}
+#home-wrap .bx-award-chip .bx-editorial-illustration::after{transform:skewY(7deg)}
+#home-wrap .bx-award-story .bx-award-call{font-size:clamp(22px,5.8vw,27px)}
+
+/* A transaction ledger gives every participant room, including split three-way deals. */
+#home-wrap .bx-trade-story .bx-trade-heading{padding-bottom:12px;border-bottom:2px solid var(--accent)}
+#home-wrap .bx-trade-story .bx-trade-sides{grid-template-columns:minmax(0,1fr);gap:0}
+#home-wrap .bx-trade-story .bx-trade-side{display:grid;grid-template-columns:58px minmax(0,1fr);gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+#home-wrap .bx-trade-story .bx-trade-side .dfl-player-portrait{width:58px;height:66px;border-radius:4px;background:color-mix(in srgb,var(--accent) 7%,var(--bg-2))}
+#home-wrap .bx-trade-story .bx-trade-side .dfl-player-portrait img{object-fit:contain;object-position:center bottom}
+#home-wrap .bx-trade-package-copy{display:grid;gap:5px;min-width:0}
+#home-wrap .bx-trade-package-copy>small{font:600 12px/1.3 var(--home-ui-font);color:var(--body-text);overflow-wrap:anywhere}
+#home-wrap .bx-trade-package-copy>strong{font:700 16px/1.25 var(--home-ui-font);color:var(--text);overflow-wrap:anywhere}
+#home-wrap .bx-trade-story .bx-story-action{width:100%;justify-content:space-between;min-height:44px}
+
+/* An injury feature leads with the most relevant player, then the next status. */
+#home-wrap .bx-slide.bx-health-story{align-content:start}
+#home-wrap .bx-health-story>.bx-injuries{width:100%;min-width:0}
+#home-wrap .bx-health-story .bx-injuries>h2{font:700 27px/1.1 var(--home-ui-font);text-transform:uppercase;margin:9px 0 14px;padding-bottom:12px;border-bottom:2px solid var(--accent)}
+#home-wrap .bx-health-story .injury-player:first-child{grid-template-columns:64px minmax(0,1fr);gap:8px 14px;align-items:start;padding:0 0 16px}
+#home-wrap .bx-health-story .injury-player:first-child>.dfl-player-portrait{grid-column:1;grid-row:1/3;width:64px;height:84px;border-radius:4px;align-self:start}
+#home-wrap .bx-health-story .injury-player:first-child .injury-player-copy{grid-column:2;grid-row:1;min-width:0}
+#home-wrap .bx-health-story .injury-player:first-child .player-card-trigger{font:700 22px/1.1 var(--home-ui-font);min-height:44px;white-space:normal;overflow-wrap:anywhere;text-align:left}
+#home-wrap .bx-health-story .injury-player:first-child .injury-player-state{grid-column:2;grid-row:2;justify-self:start;text-align:left;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;max-width:100%}
+#home-wrap .bx-health-story .injury-player:first-child .injury-player-state b{font-size:14px}
+#home-wrap .bx-health-story .injury-player:first-child .injury-player-state small{font-size:12px;max-width:100%}
+#home-wrap .bx-rivalry-pair{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center;padding:14px 0;border-block:1px solid var(--line)}
+#home-wrap .bx-rivalry-pair strong{font:700 18px/1.2 var(--home-ui-font);overflow-wrap:anywhere;color:var(--text)}
+#home-wrap .bx-rivalry-pair strong:last-child{text-align:right}
+#home-wrap .bx-rivalry-pair>span{font:600 12px/1 var(--home-ui-font);color:var(--body-text)}
+#home-wrap .bx-slide.bx-in.bx-trade-story .bx-trade-side{animation:bx-package-in 320ms cubic-bezier(.2,.75,.25,1) 60ms both}
+#home-wrap .bx-slide.bx-in.bx-trade-story .bx-trade-side:nth-child(2){animation-delay:110ms}
+#home-wrap .bx-slide.bx-in.bx-trade-story .bx-trade-side:nth-child(3){animation-delay:160ms}
+#home-wrap .bx-slide.bx-in.bx-health-story .injury-player:first-child{animation:bx-package-in 320ms ease-out 60ms both}
+@keyframes bx-package-in{from{opacity:0;translate:-8px 0}to{opacity:1;translate:0 0}}
+@media(max-width:360px){#home-wrap .bx-award-story{gap:12px}#home-wrap .bx-award-story .bx-editorial-illustration{height:218px}#home-wrap .bx-trade-package-copy>strong{font-size:15px}}
 @keyframes bx-editorial-copy-in{from{opacity:0;translate:0 5px}to{opacity:1;translate:0 0}}
 @keyframes bx-editorial-art-in{from{opacity:.55;translate:8px 0}to{opacity:1;translate:0 0}}
 html[data-ui-motion="off"] #home-wrap .bx-slide *,html[data-ui-motion="off"] #home-wrap .bx-slide{animation:none!important}

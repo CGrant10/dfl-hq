@@ -12,6 +12,8 @@ const production=source.slice(source.indexOf('const teamName'),source.indexOf('e
 const imports=`
 import {completedTradeMarkup} from '/js/trade-receipt-ui.js';
 import {tradeAssessment} from '/js/trade-assessment.js';
+import {tradeLineupFitLabel} from '/js/trade-suggestion-quality.js';
+import {createTradeConnection} from '/js/trade-connected-motion.js';
 import {tradeDecisionMarkup} from '/js/trade-decision-ui.js';
 const loadTradeWeekSchedules=async()=>window.reviewSchedules||[];
 import {lineupPreviewsFor} from '/js/trade-workspace.js';
@@ -40,6 +42,7 @@ const loadAnalyzerData=async()=>{if(window.reviewRefreshError)throw Error('Curre
 const shareDeal=async deal=>{window.reviewSharedDeal=deal;return 'review'};
 `;
 writeFileSync(`${output}/fixture.js`,imports+production+`
+window.reviewLeave=leave;
 window.reviewData=tradeReviewFixture();
 window.reviewOfferMarkup=offerMarkup;
 window.reviewReceiptFixtures=${JSON.stringify(receiptFixtures)};

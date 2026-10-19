@@ -1,4 +1,6 @@
 import {tradeAssessment} from '../trade-assessment.js';
+import {tradeLineupFitLabel} from '../trade-suggestion-quality.js';
+import {createTradeConnection} from '../trade-connected-motion.js';
 import {tradeDecisionMarkup} from '../trade-decision-ui.js';
 import {loadTradeWeekSchedules} from '../trade-weekly-outlook.js';
 import {lineupPreviewsFor} from '../trade-workspace.js';
@@ -46,6 +48,7 @@ export {completedTradeMarkup} from '../trade-receipt-ui.js';
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
 const shapeLabel = offer => `${offer.sendA.length} FOR ${offer.sendB.length}`;
+const offerKey=offer=>JSON.stringify([offer.parties?.map(p=>String(p.id))||[String(offer.other?.id??'')],offer.sends||[offer.sendA,offer.sendB],offer.destinations||null]);
 const tierCopy = {
   fair: { title: "Fair", call: "FAIR SHOT" },
   aggressive: { title: "Aggressive", call: "WORTH A TEXT" },
@@ -56,28 +59,29 @@ let saveDraft = null;
 let stopOffers = null, stopRefresh = null, renderEpoch = 0;
 export function leave() { renderEpoch++;stopRefresh?.();stopRefresh=null;saveDraft?.(); saveDraft = null; stopOffers?.(); stopOffers=null; }
 
-function offerPlayerRows(ids, pool) {
+function offerPlayerRows(ids, pool, routing=null) {
   return ids.map(id => {
     const player = pool.get(String(id)) || {id,name:String(id)};
-    return `<span class="tb-player"><button type="button" class="tb-player-link" data-player-card="${esc(id)}" aria-label="View ${esc(player.name)} player card">${playerPortrait(player)}<span><strong>${esc(player.name)}</strong><small>${esc([player.position,player.nflTeam].filter(Boolean).join(' · '))}</small></span></button></span>`;
+    const recipient=routing?.parties.find(t=>String(t.id)===String(routing.destinations?.[id]));
+    return `<span class="tb-player"><button type="button" class="tb-player-link" data-player-card="${esc(id)}" aria-label="View ${esc(player.name)} player card">${playerPortrait(player)}<span><strong>${esc(player.name)}</strong><small>${esc([player.position,player.nflTeam].filter(Boolean).join(' · '))}</small>${routing?`<small class="tb-player-destination">→ ${esc(recipient?teamName(recipient):'Choose recipient')}</small>`:''}</span></button></span>`;
   }).join("");
 }
 
-function offerPackage(ids,pool,label){
+function offerPackage(ids,pool,label,routing=null){
  const sorted=[...ids].sort((a,b)=>(pool.get(String(b))?.tradeValue||0)-(pool.get(String(a))?.tradeValue||0));
- return `<section class="tb-package"><small>${label}</small>${offerPlayerRows(sorted,pool)}</section>`;
+ return `<section class="tb-package"><small>${label}</small>${offerPlayerRows(sorted,pool,routing)}</section>`;
 }
 
 function offerSummary(offer,pool){
  const p=tradePerspective(offer),a=tradeAssessment(p),deltas=offer.windowDeltas||offer.weeklyDeltas||[a.weeklyA,a.weeklyB];
  const window=offer.windowWeeks?.length?`Weeks ${offer.windowWeeks[0]}–${offer.windowWeeks.at(-1)}`:'Rest of season';
- return `<div class="tb-offer-summary" aria-label="Trade balance, lineup impact and risk"><dl><div><dt>Price balance</dt><dd>${Math.round(a.fairness)}%</dd></div><div><dt>You · pts/wk</dt><dd class="${deltas[0]<0?'is-down':'is-up'}">${signed(deltas[0])}</dd></div><div><dt>${offer.parties?'Group balance':'Them · pts/wk'}</dt><dd>${offer.parties?offer.fairness+'%':signed(deltas[1])}</dd></div></dl><span class="tb-offer-horizon">${esc(window)} · projected</span>${a.flags.length?`<span class="tb-offer-risk">${esc(a.flags.join(' · '))}</span>`:''}${p.requiredDropsA?.length?`<span class="tb-offer-risk">Drop: ${esc(p.requiredDropsA.map(id=>pool.get(String(id))?.name||id).join(', '))}</span>`:''}${p.openSlotsA?`<span class="tb-offer-risk">${p.openSlotsA} open roster spot${p.openSlotsA===1?'':'s'}</span>`:''}</div>`;
+ return `<div class="tb-offer-summary" aria-label="Trade balance, lineup impact and risk"><strong class="tb-offer-fit">${esc(tradeLineupFitLabel(deltas))}</strong><dl><div><dt>Price balance</dt><dd>${Math.round(a.fairness)}%</dd></div><div><dt>You · pts/wk</dt><dd class="${deltas[0]<0?'is-down':'is-up'}">${signed(deltas[0])}</dd></div><div><dt>${offer.parties?'Group balance':'Them · pts/wk'}</dt><dd>${offer.parties?offer.fairness+'%':signed(deltas[1])}</dd></div></dl><span class="tb-offer-horizon">${esc(window)} · projected</span>${a.flags.length?`<span class="tb-offer-risk">${esc(a.flags.join(' · '))}</span>`:''}${p.requiredDropsA?.length?`<span class="tb-offer-risk">Drop: ${esc(p.requiredDropsA.map(id=>pool.get(String(id))?.name||id).join(', '))}</span>`:''}${p.openSlotsA?`<span class="tb-offer-risk">${p.openSlotsA} open roster spot${p.openSlotsA===1?'':'s'}</span>`:''}</div>`;
 }
 
 function offerMarkup(offer, pool) {
-  if (offer.parties) return `<article class="tb-offer tb-multi-offer"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { meta: `TO ${teamName(offer.parties[(index + 1) % offer.parties.length])}`, compact: true })}${offerPackage(offer.sends[index], pool,"SENDS")}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerSummary(offer,pool)}<button type="button" class="tb-offer-analyze" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze trade <span aria-hidden="true">→</span></button></article>`;
+  if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerSummary(offer,pool)}<button type="button" class="tb-offer-analyze" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze trade <span aria-hidden="true">→</span></button></article>`;
   const call = tradeAssessment(offer).price.headline.toUpperCase();
-  return `<article class="tb-offer">
+  return `<article class="tb-offer" data-offer-key="${esc(offerKey(offer))}">
     <header><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<strong>${esc(teamName(offer.other))}</strong></small><span>${shapeLabel(offer)}</span><b>${call}</b></header>
     <div class="tb-offer-flow">${offerPackage(offer.sendA,pool,'YOU SEND')}${offerPackage(offer.sendB,pool,'YOU GET')}</div>
     ${offerSummary(offer,pool)}
@@ -168,7 +172,7 @@ function tradeLab(team, teams, pool, shop) {
   const allOffers=result.offers||[],searching=result.state==='loading',failed=result.state==='error';
   const tierOffers = allOffers.filter(offer => offer.tier === intent);
   const closestOffers=closestTradeOffers(allOffers,intent),closestTier=closestOffers[0]?.tier;
-  const representedTeams = new Set(tierOffers.map(offer => String(offer.other.id))).size;
+  const representedTeams = new Set(tierOffers.map(offer => String(offer.other?.id??''))).size;
   /* Keep earlier results on screen. The old four-card carousel reported the
      full generated count but silently replaced one batch with the next, so a
      user could never inspect all of the offers the model said it found. */
@@ -275,10 +279,11 @@ function page(data, tradeAlerts = []) {
     wire(view) {
       stopOffers?.();
       const body = view.querySelector("[data-td-body]");
-      let catalog;
+      let catalog,activeOfferKey=null;
+      const connection=createTradeConnection();
       let stopped=false;
       const current=()=>!stopped&&view.isConnected;
-      stopOffers=()=>{stopped=true;shop.intentStamp=(shop.intentStamp||0)+1;catalog.stop();};
+      stopOffers=()=>{stopped=true;shop.intentStamp=(shop.intentStamp||0)+1;connection.stop();catalog.stop();};
       const wireOfferTiers=scope=>{scope.querySelectorAll(".tb-supporting").forEach(d=>{d.open=!!shop.openPackages?.has(d.dataset.pageDetail)});scope.querySelectorAll('[data-tb-tier]').forEach(section=>section.addEventListener('toggle',()=>{
         if(!current()||!body.contains(section))return;
         const tier=section.dataset.tbTier;
@@ -318,7 +323,7 @@ function page(data, tradeAlerts = []) {
 
       let sharing = false;
       const draw = () => {
-        if (!current()) return;
+        if (!current()) return;connection.cancel();
         if(shop.mode==='manual'){shop.offerState=null;catalog.cancel();}
         // Native toggle events can arrive after an immediate control redraw.
         // Read the current DOM first so an open disclosure never snaps closed.
@@ -345,6 +350,7 @@ function page(data, tradeAlerts = []) {
           team, teams: data.teams, pool: data.pool, state: trade, lockedIds:[...shop.sendAnchors,...shop.receiveAnchors], onPartnerChange: (focus={}) => {draw();if(focus.memberIndex!=null)body.querySelector(`[data-td-member="${focus.memberIndex}"]`)?.focus();else body.querySelector("[data-td-verdict]")?.scrollIntoView({behavior:"instant",block:"start"});},
           onDeal: current => {
             deal = current;
+            if(activeOfferKey&&current){const header=body.querySelector('[data-td-verdict] .td-ticket-head');if(header&&!header.querySelector('[data-offer-return]'))header.insertAdjacentHTML('afterbegin','<button type="button" class="linkbtn td-offer-return" data-td-mode="offers" data-offer-return>← Back to offers</button>');}
             saveDraft?.();
             /* Nothing to share until both sides have somebody on them, and a
                disabled button says that better than an error would. */
@@ -476,7 +482,7 @@ function page(data, tradeAlerts = []) {
           return;
         }
         const modeButton=event.target.closest('[data-td-mode]');
-        if(modeButton){if(modeButton.dataset.tdMode==='manual'&&!trade.sends.some(ids=>ids.size)&&shop.partnerId&&shop.partnerId!=='all'){trade.memberIds=[shop.partnerId,...shop.memberIds];trade.sends=[new Set(shop.sendAnchors),...trade.memberIds.map((_,i)=>new Set(i===trade.memberIds.length-1?shop.receiveAnchors:[]))];trade.destinations={};}shop.mode=modeButton.dataset.tdMode;shop.customOpen=shop.mode==='manual';draw();body.querySelector(shop.customOpen?'.td-working-as select':'[data-td-mode="offers"]')?.focus({preventScroll:true});return;}
+        if(modeButton){if(modeButton.dataset.tdMode==='manual'&&!trade.sends.some(ids=>ids.size)&&shop.partnerId&&shop.partnerId!=='all'){trade.memberIds=[shop.partnerId,...shop.memberIds];trade.sends=[new Set(shop.sendAnchors),...trade.memberIds.map((_,i)=>new Set(i===trade.memberIds.length-1?shop.receiveAnchors:[]))];trade.destinations={};}const origins=connection.capture(body.querySelector('[data-td-verdict]'));shop.mode=modeButton.dataset.tdMode;shop.customOpen=shop.mode==='manual';draw();const returning=!shop.customOpen&&activeOfferKey?body.querySelector(`[data-offer-key="${CSS.escape(activeOfferKey)}"]`):null;if(returning){returning.scrollIntoView({block:'center',behavior:'instant'});connection.play(origins,returning);returning.querySelector('[data-td-load-offer]')?.focus({preventScroll:true})}else body.querySelector(shop.customOpen?'.td-working-as select':'[data-td-mode="offers"]')?.focus({preventScroll:true});return;}
         if(event.target.closest('[data-td-compare]')){proposalsOpen=true;const slot=body.querySelector('[data-td-proposals-slot]');slot.innerHTML=proposalsMarkup(proposals,data.teams,data.pool,true);slot.scrollIntoView({block:'start',behavior:'instant'});return;}
         if(event.target.closest('[data-td-save-proposal]')){
           if(!deal)return;const row=savedTradeProposal(deal),fingerprint=r=>JSON.stringify([r.teamIds,r.sends,r.destinations]),existing=proposals.findIndex(r=>fingerprint(r)===fingerprint(row));
@@ -584,6 +590,7 @@ function page(data, tradeAlerts = []) {
         if (event.target.closest("[data-tb-generate]")) { shop.visibleCount += OFFER_BATCH_SIZE; draw(); return; }
         const button = event.target.closest("[data-td-load-offer]");
         if (!button) return;
+        const sourceCard=button.closest(".tb-offer"),origins=connection.capture(sourceCard);activeOfferKey=sourceCard?.dataset.offerKey||null;
         const auditInput = { season: data.projectionSeason, week: data.liveWeek, teamId: selectedId, partnerId: button.dataset.partner,
           sendA: (button.dataset.sendA || "").split(",").filter(Boolean), sendB: (button.dataset.sendB || "").split(",").filter(Boolean),
           weeklyDelta: button.dataset.weeklyDelta };
@@ -603,7 +610,7 @@ function page(data, tradeAlerts = []) {
         trade.editing = false;
         shop.mode='manual';shop.customOpen = true;
         draw();
-        body.querySelector("[data-td-verdict]")?.scrollIntoView({ behavior: "instant", block: "start" });
+        const target=body.querySelector("[data-td-verdict]");target?.scrollIntoView({behavior:"instant",block:"start"});connection.play(origins,target);const heading=target?.querySelector("h2");if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}
       });
       if(shop.horizon==='next4'&&!shop.weekSchedules?.length)void loadSchedules();else draw();
       stopRefresh?.();

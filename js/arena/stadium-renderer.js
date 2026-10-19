@@ -1,6 +1,7 @@
 import {drawKitRunner,onRacerArtReady} from './racer-kit-art.js';
 import {normalizeKit,footballYardNumber,kitInk,footballSpot} from './racer-kit-model.js';
 import {runnerCadence} from './stadium-motion.js';
+import {createStadiumDirector,stadiumShotWindow,stadiumCelebration} from './stadium-director.js';
 const palette=['#cf263b','#c8a147','#ece5d9','#36465c','#a73549','#d3b16e','#ae3b23','#4e6484','#d06238','#c16a91','#8a7c5d','#677781'];
 export const stadiumColor=(racer,index)=>/^#[0-9a-f]{6}$/i.test(racer?.color||'')?racer.color:palette[index%palette.length];
 const image=(src,onload)=>{const img=new Image();img.decoding='async';img.onload=onload;img.src=src;return img;};
@@ -15,7 +16,8 @@ export function stadiumTrackWindow(rows,u,worldWidth=2300){
 
 export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>({mode:'auto',racerId:null}),onLayout=(_layout)=>{}}={}){
  const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw Error('The race display could not open.');
- let width=0,height=0,ratio=1,closed=false,lastFrame=null,lastOptions={},lastTime=0,panX=0,panY=0,zoom=1,lastRun='',sizeDirty=true,lastLayout='';
+ let width=0,height=0,ratio=1,closed=false,lastFrame=null,lastOptions={},lastTime=0,panX=0,panY=0,zoom=1,span=2760,lastRun='',sizeDirty=true,lastLayout='',shot=null;
+ const director=createStadiumDirector();
  const redraw=()=>{if(lastFrame)draw(lastFrame,lastOptions);};
  const stopArt=onRacerArtReady(redraw);
  const stadium=image(new URL('../../assets/stadium-arena/stadium.webp',import.meta.url),redraw);
@@ -28,13 +30,14 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
   if(!sizeDirty)return;const box=canvas.getBoundingClientRect();width=Math.max(1,box.width);height=Math.max(1,box.height);ratio=Math.min(2,window.devicePixelRatio||1);
   canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);sizeDirty=false;
  };
- function runner(r,x,y,scale,elapsed,moving,color,index,speed=1,identity=true){
+ function runner(r,x,y,scale,elapsed,moving,color,index,speed=1,identity=true,finishAge=-1,celebrate=false){
   ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
   const cadence=runnerCadence(elapsed,speed,index,moving),stride=cadence.stride;
   ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(-2,0,18,3.5,0,0,Math.PI*2);ctx.fill();
   const kit=kits.get(String(r.id));
   if(moving&&scale>.35){for(let i=0;i<4;i++){const age=((cadence.phase/2+i*.25)%1);ctx.globalAlpha=(1-age)*.16;ctx.fillStyle=i%2?'#d7c7a0':'#80a18a';ctx.beginPath();ctx.ellipse(-12-age*(cadence.burst?25:16),-age*5,1+age*2,.6+age,0,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;}
-  ctx.save();ctx.translate(0,cadence.bob-30);ctx.rotate(cadence.lean);ctx.translate(0,30);
+  const pose=stadiumCelebration(finishAge,index,celebrate);
+  ctx.save();ctx.translate(0,cadence.bob-pose.lift-30);ctx.rotate(cadence.lean+pose.lean);ctx.scale(pose.turn,1);ctx.translate(0,30);
   if(cadence.burst&&scale>.55){ctx.globalAlpha=.12;drawKitRunner(ctx,kit,{x:-29,y:-60,width:48,height:66,stride:(stride+5)%6});ctx.globalAlpha=1;}
   if(drawKitRunner(ctx,kit,{x:-22,y:-60,width:48,height:66,stride})){
    // The recolored shared atlas keeps the original runner detail.
@@ -71,8 +74,8 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
   });
   ctx.strokeStyle='#d4bd7f24';ctx.beginPath();ctx.moveTo(cell,y+30);ctx.lineTo(cell,y+h-8);ctx.stroke();ctx.restore();
  }
- function draw(frame,{state='running',runId='',now=performance.now(),replay=false,celebration=0}={}){
-  if(closed)return;getSize();lastFrame=frame;lastOptions={state,runId,now,replay,celebration};const enabled=motion(),dt=Math.min(.08,Math.max(.001,(now-lastTime)/1000));lastTime=now;
+ function draw(frame,{state='running',runId='',now=performance.now(),replay=false,celebration=0,photo=false}={}){
+  if(closed)return;getSize();if(lastFrame&&frame.elapsed<lastFrame.elapsed)lastRun='';lastFrame=frame;lastOptions={state,runId,now,replay,celebration,photo};const enabled=motion(),dt=Math.min(.08,Math.max(.001,(now-lastTime)/1000));lastTime=now;
   const overview=camera().mode==='field';
   const sideBattle=overview&&width>height*1.55,trackWidth=sideBattle?Math.round(width*.68):width;
   const n=racers.length,top=Math.max(30,Math.min(44,height*.11)),available=height-top-22,fieldH=overview&&!sideBattle?Math.max(90,Math.min(width/2.35,available-116)):available,laneH=Math.max(26,fieldH/n),worldH=laneH*n;
@@ -80,19 +83,22 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
   const live=state==='running'||replay,elapsed=Math.max(0,frame?.elapsed||0),u=frame?.u||0,rows=frame?.rows||racers.map((r,index)=>({id:String(r.id),index,progress:0,speed:0,finished:false}));
   const leaders=frame?.ranked||rows,leader=leaders[0];
   const view=camera(),following=view.mode==='follow'?rows.find(r=>r.id===String(view.racerId)):null;
-  const battle=view.mode!=='field'&&(Boolean(following)||enabled&&live&&u>.13&&u<.90&&Math.floor(elapsed/6500)%3!==0);
-  const targetZoom=battle&&n>6?Math.min(6.4,n/5):1,focusY=battle?(following?.index??leader?.index??0)*laneH+laneH/2:worldH/2;
+  shot=director.update(frame,{runId,state:replay?'running':state,camera:view.mode,racerId:view.racerId,motion:enabled,photo});
+  const wide=['field','launch'].includes(shot.kind),focusRows=rows.filter(row=>shot.ids.includes(row.id));
+  const indices=focusRows.map(row=>row.index),low=indices.length?Math.min(...indices):0,high=indices.length?Math.max(...indices):n-1;
+  const battle=!wide, targetZoom=wide?1:Math.max(1,Math.min(6.4,n/(high-low+2.5))),focusY=wide?worldH/2:(low+high+1)*laneH/2;
   const worldWidth=2300,padding=view.mode==='field'?24:62;
-  const {span,start:targetX}=view.mode==='field'?{span:worldWidth*1.2,start:-worldWidth*.1}:stadiumTrackWindow(rows,u,worldWidth);
-  const pxScale=(trackWidth-padding*2)/Math.max(200,span);
-  if(!enabled||lastRun!==runId||state==='idle'||state==='finished'){panX=targetX;panY=focusY;zoom=targetZoom;lastRun=runId;}
+  const target=wide?(shot.kind==='launch'?stadiumTrackWindow(rows,u,worldWidth):{span:worldWidth*1.2,start:-worldWidth*.1}):stadiumShotWindow(focusRows,{finish:photo||u>=.90,worldWidth});
+  const targetX=target.start;
+  if(!enabled||lastRun!==runId||state==='idle'||state==='finished'&&!replay){panX=targetX;panY=focusY;zoom=targetZoom;span=target.span;lastRun=runId;}
   else if(state==='paused'&&view.mode==='auto'){/* Keep the exact camera frozen with the race. */}
-  else {const ease=1-Math.exp(-dt*3.3);panX=lerp(panX,targetX,ease);panY=lerp(panY,focusY,ease);zoom=lerp(zoom,targetZoom,ease);}
+  else {const ease=1-Math.exp(-dt*3.3);panX=lerp(panX,targetX,ease);panY=lerp(panY,focusY,ease);zoom=lerp(zoom,targetZoom,ease);span=lerp(span,target.span,ease);}
+  const pxScale=(trackWidth-padding*2)/Math.max(200,span);
   ctx.setTransform(ratio,0,0,ratio,0,0);ctx.fillStyle='#080d15';ctx.fillRect(0,0,width,height);
   if(stadium.complete&&stadium.naturalWidth)ctx.drawImage(stadium,0,0,stadium.naturalWidth,stadium.naturalHeight*.65,0,0,width,top);
   else {const gradient=ctx.createLinearGradient(0,0,0,top);gradient.addColorStop(0,'#07111f');gradient.addColorStop(1,'#351625');ctx.fillStyle=gradient;ctx.fillRect(0,0,width,top);}
   const shade=ctx.createLinearGradient(0,top-28,0,top+10);shade.addColorStop(0,'#09101b00');shade.addColorStop(1,'#0b1821');ctx.fillStyle=shade;ctx.fillRect(0,top-28,width,38);
-  ctx.fillStyle='#dfcdae';ctx.font='700 10px Rajdhani, sans-serif';ctx.textAlign='center';ctx.fillText(following?racers[following.index].name.toUpperCase():view.mode==='field'?'FULL FIELD':state==='finished'&&!replay?'OFFICIAL FINISH':battle?'BATTLE CAM':u>.90?'THE FINAL SPRINT':'DFL ARENA',width/2,top-12,width-32);
+  ctx.fillStyle='#dfcdae';ctx.font='700 10px Rajdhani, sans-serif';ctx.textAlign='center';ctx.fillText(following?racers[following.index].name.toUpperCase():photo?'GOAL-LINE REPLAY · 0.25×':view.mode==='field'?'FULL FIELD':state==='finished'&&!replay?'OFFICIAL FINISH':shot.kind==='pass'?'OVERTAKE':shot.kind==='finish'?'THE FINAL SPRINT':battle?'BATTLE CAM':'DFL ARENA',width/2,top-12,width-32);
   ctx.save();ctx.beginPath();ctx.rect(0,top,trackWidth,fieldH+5);ctx.clip();
   const baseScale=(overview?fieldH-40:fieldH)/worldH,yScale=baseScale*zoom,lower=Math.max(worldH/2/zoom,Math.min(worldH-worldH/2/zoom,panY));
   const yOf=index=>top+fieldH/2+((index+.5)*laneH-lower)*yScale;
@@ -122,7 +128,7 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
    const r=racers[row.index],y=yOf(row.index)+laneH*yScale*.35;if(y<top-30||y>top+fieldH+65)continue;
    const x=padding+(row.progress*worldWidth-panX)*pxScale,color=stadiumColor(r,row.index),scale=Math.max(overview ? .06 : .42,Math.min(.9,laneH*yScale/78));
    const crossed=Math.max(0,elapsed-(row.finishMs||Infinity)),bounce=enabled&&row.finished&&crossed<800?Math.sin(crossed/800*Math.PI)*5:0;
-   runner(r,x,y-bounce,scale,elapsed,moving&&!row.finished,color,row.index,row.speed,!overview);
+   runner(r,x,y-bounce,scale,elapsed,moving&&!row.finished,color,row.index,row.speed,!overview,row.finished?Math.max(0,elapsed-row.finishMs):-1,enabled);
    if(overview&&n<=16){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x-20,y-8,14,8,2);ctx.fill();ctx.fillStyle=kitInk(color);ctx.font='700 7px Rajdhani,sans-serif';ctx.textAlign='center';ctx.fillText(String(kits.get(String(r.id)).number),x-13,y-1.5);}
    if(following?.id===row.id){ctx.strokeStyle='#f0d17baa';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y+2,24*scale,5*scale,0,0,Math.PI*2);ctx.stroke();}
    if(row.id===leader?.id&&!frame?.countdown&&u>.03){ctx.fillStyle='#e3c374';ctx.beginPath();ctx.moveTo(x,y-84*scale);ctx.lineTo(x-4,y-91*scale);ctx.lineTo(x+4,y-91*scale);ctx.fill();}
@@ -138,5 +144,5 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
    }ctx.globalAlpha=1;
   }
  }
- return {draw,updateRacers(next){racers=next;refreshKits();redraw();},stop(){closed=true;stopArt();resize.disconnect();for(const img of [stadium,crest,sprite,...photos.values()])if(img)img.onload=null;}};
+ return {draw,getShot:()=>shot,updateRacers(next){racers=next;refreshKits();director.reset();redraw();},stop(){closed=true;director.reset();stopArt();resize.disconnect();for(const img of [stadium,crest,sprite,...photos.values()])if(img)img.onload=null;}};
 }

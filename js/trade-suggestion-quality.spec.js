@@ -1,5 +1,5 @@
 import {it,expect} from 'vitest';
-import {compareTradeSuggestions,tradeSuggestionQuality} from './trade-suggestion-quality.js';
+import {compareTradeSuggestions,tradeSuggestionQuality,prioritizeTradeSuggestions} from './trade-suggestion-quality.js';
 const offer=(size,score=100,extra={})=>({sendA:Array.from({length:size-1},(_,i)=>String(i)),sendB:['r'],score,fairness:92,utility:{group:4,score:22},...extra});
 it('ranks a simpler comparable deal before a padded package without changing its grade',()=>{
  const small=offer(3),large=offer(8,500),before=structuredClone([small,large]);expect([large,small].sort(compareTradeSuggestions)).toEqual([small,large]);expect([small,large]).toEqual(before);
@@ -17,4 +17,12 @@ it('ranks a useful positive exchange above an idle swap without hiding material 
  const idle={weeklyDeltaA:0,weeklyDeltaB:0},useful={weeklyDeltaA:1,weeklyDeltaB:-.2},harmful={weeklyDeltaA:2,weeklyDeltaB:-2};
  expect(tradeSuggestionQuality(useful).group).toBeGreaterThan(tradeSuggestionQuality(idle).group);
  expect(tradeSuggestionQuality(harmful).group).toBeLessThan(tradeSuggestionQuality(idle).group);
+});
+it('limits package and manager variety to comparable quality so it cannot promote a weak offer',()=>{
+ const best=offer(4,100,{id:'best',utility:{group:4,score:58}}),next=offer(4,100,{id:'next',utility:{group:4,score:54}}),weak=offer(2,100,{id:'weak',utility:{group:4,score:22}});
+ // A deliberately different-shape-first chooser exposes the old behavior.
+ const choose=(rows,n)=>[...rows].sort((a,b)=>a.sendA.length-b.sendA.length).slice(0,n);
+ expect(prioritizeTradeSuggestions([weak,best,next],2,choose).map(o=>o.id)).toEqual(['best','next']);
+ const risky=offer(2,100,{id:'risk',projectionEvidence:{injuries:['r']}}),clean=offer(4,100,{id:'clean'});
+ expect(prioritizeTradeSuggestions([risky,clean],1,choose)[0].id).toBe('clean');
 });

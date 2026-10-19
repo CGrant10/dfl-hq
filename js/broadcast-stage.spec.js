@@ -187,3 +187,11 @@ describe("fitting a team name onto one line", () => {
     expect(fitSize(40, 600, 0)).toBe(null);
   });
 });
+
+it('keeps every participant and the receipt link in a three-way broadcast trade',()=>{
+ const packages=['First & Co','Second','Third'].map((teamName,index)=>({teamName,players:[{id:String(index),name:'Player '+index,position:'WR'}]}));
+ const html=renderItem({kind:'trade',treatment:'stat',kicker:'2026 · WEEK 6',figure:78,href:'#/trade?tx=exact',tradeStory:{packages,balanceLabel:'group balance'}},{editorial:true});
+ expect(html.match(/class="bx-trade-side"/g)).toHaveLength(3);
+ for(let i=0;i<3;i++)expect(html).toContain('Player '+i);
+ expect(html).toContain('First &amp; Co');expect(html).toContain('group balance');expect(html).toContain('href="#/trade?tx=exact"');
+});

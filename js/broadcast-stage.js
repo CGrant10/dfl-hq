@@ -356,6 +356,7 @@ function renderStoryItem(item, { editorial = false } = {}) {
       ${item.actionLabel?`<span class="bx-home-action">${esc(item.actionLabel)}<svg class="ico" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>`:''}
     </${tag}>`;
   }
+  if(editorial&&item.treatment==='injuries')return `<section class="bx-slide bx-health-story is-injuries">${injurySlideMarkup(item)}</section>`;
   if(editorial&&item.treatment==='champion'){
     const chipEater=item.variant==='chip',art=chipEater?'assets/dfl-daily-chip-eater.webp':item.image||'assets/dfl-daily-champion.webp';
     return `<a class="bx-slide bx-award-story bx-award-${chipEater?'chip':'champion'} is-champion" href="${esc(item.href||'#/history')}"><span class="bx-kicker"><svg class="ico-sm" aria-hidden="true"><use href="#${chipEater?'i-fire':'i-trophy'}"></use></svg>${esc(item.kicker)}</span><h2 class="bx-name bx-award-heading">${esc(item.headline)}</h2><div class="bx-award-copy">${item.subtitle?`<span class="bx-sub">${esc(item.subtitle)}</span>`:''}<strong class="bx-award-call">${chipEater?'Eat your fucking words.':'Talk your shit.'}</strong>${chip(item)}</div><span class="bx-editorial-illustration" aria-hidden="true"><span class="bx-editorial-subject"><img class="bx-editorial-portrait" src="${esc(art)}" alt="" decoding="async"></span></span><span class="bx-story-action">${chipEater?'The wall of shame':'The title ledger'} <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span></a>`;
@@ -383,9 +384,9 @@ function renderStoryItem(item, { editorial = false } = {}) {
     return `<a class="bx-slide bx-trade-story is-stat" href="${esc(item.href || '#/trade')}">
       <span class="bx-kicker">${esc(item.kicker)}</span>
       <div class="bx-trade-heading"><h2 class="bx-head">${esc(headline)}</h2>${item.figure != null ? `<span class="bx-trade-balance">${esc(item.figure)}<small>${esc(story.balanceLabel||'value balance')}</small></span>` : ''}</div>
-      <div class="bx-trade-sides">${story.packages.slice(0, 2).map(pkg => `<div class="bx-trade-side">
+      <div class="bx-trade-sides" data-party-count="${story.packages.length}">${story.packages.map(pkg => `<div class="bx-trade-side">
         ${pkg.players?.[0] ? playerPortrait(pkg.players[0]) : ''}
-        <small>${esc(pkg.teamName)} sends</small><strong>${esc(pkg.players?.map(p => p.name).filter(Boolean).join(' + ') || 'Package details in receipt')}</strong>
+        <div class="bx-trade-package-copy"><small>${esc(pkg.teamName)} sends</small><strong>${esc(pkg.players?.map(p => p.name).filter(Boolean).join(' + ') || 'Package details in receipt')}</strong></div>
       </div>`).join('')}</div>
       <span class="bx-story-action">Open trade receipt <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>
     </a>`;
@@ -398,7 +399,7 @@ function renderStoryItem(item, { editorial = false } = {}) {
     return `<a class="bx-slide bx-archive-story${rivalry ? ' bx-rivalry-story' : ''} is-${esc(item.treatment)}" href="${esc(item.href || '#/history')}">
       <div class="bx-story-copy"><span class="bx-kicker">${esc(item.kicker)}</span>
         <div class="bx-record-heading">${value ? `<strong class="bx-figure">${esc(value)}</strong>` : ''}<h2 class="bx-head">${esc(headline)}${rivalry && value ? '<small>meetings</small>' : ''}</h2></div>
-        <p class="bx-body">${esc(rivalry && item.storyNames?.length ? item.storyNames.join(' vs ') : item.treatment === 'stat' ? item.subtitle : item.headline)}</p>
+        ${rivalry&&item.storyNames?.length===2?`<div class="bx-rivalry-pair"><strong>${esc(item.storyNames[0])}</strong><span>vs</span><strong>${esc(item.storyNames[1])}</strong></div>`:`<p class="bx-body">${esc(item.treatment === 'stat' ? item.subtitle : item.headline)}</p>`}
         ${rivalry && item.storySeries ? `<p class="bx-body">Series: ${esc(item.storySeries)}</p>` : ''}
         ${chip(item)}</div>
       <img class="bx-story-image" src="${esc(item.image || `assets/dfl-daily-${rivalry ? 'rivalry' : 'archive'}.webp`)}" alt="" decoding="async"${item.image ? ` style="${artworkStyle(item)}"` : ''}>

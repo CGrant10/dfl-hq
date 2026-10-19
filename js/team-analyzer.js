@@ -5,7 +5,7 @@ import {productionProfile, packageEvidence, comparableStarPremium} from './trade
 import {matchExpertRankings,expertValueIndex} from './expert-rankings-model.js';
 import {tradeAssessment} from './trade-assessment.js';
 import {targetedTradePackages,tradeGoalScore} from './trade-target-search.js';
-import {tradeSuggestionQuality,compareTradeSuggestions,tradePartnerFit} from './trade-suggestion-quality.js';
+import {tradeSuggestionQuality,compareTradeSuggestions,tradePartnerFit,prioritizeTradeSuggestions} from './trade-suggestion-quality.js';
 import {refineTradeOffers} from './trade-refine-offers.js';
 import {balanceTradeSuggestions} from './trade-auto-balance.js';
 import {tradeWeekPlayerPool} from './trade-week-forecast.js';
@@ -876,9 +876,9 @@ function offersWithinShapes(offers, limit, pool) {
 }
 
 function byUtilityGroup(offers,limit,choose){
- const groups=[...new Set(offers.map(o=>o.utility?.group??tradeSuggestionQuality(o).group))].sort((a,b)=>b-a),selected=[];
- for(const group of groups){selected.push(...choose(offers.filter(o=>(o.utility?.group??tradeSuggestionQuality(o).group)===group),Math.max(0,limit-selected.length)));if(selected.length>=limit)break;}
- return selected;
+ // Shape/partner variety only breaks comparable quality bands. It must not
+ // promote a worse package over materially better lineup fit or price.
+ return prioritizeTradeSuggestions(offers,limit,choose);
 }
 function diverseOffers(offers,limit,pool){return byUtilityGroup(offers,limit,(rows,count)=>offersWithinShapes(rows,count,pool));}
 

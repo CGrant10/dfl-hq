@@ -340,6 +340,9 @@ with sync_playwright() as p:
           const deal=evaluateTradeDeal(parties,sends,window.reviewData.pool,destinations);
           document.querySelector('[data-td-body]').insertAdjacentHTML('beforeend',window.reviewOfferMarkup({...deal.result,parties,sends,other:parties[1]},window.reviewData.pool));
         }''')
+        assert page.locator('.tb-multi-offer [data-player-card="1-4"] .tb-player-destination').inner_text()=='→ The Bayou Bombers'
+        assert page.locator('.tb-multi-offer [data-player-card="1-3"] .tb-player-destination').inner_text()=='→ Klutch Sports Group'
+        assert page.locator('.tb-multi-offer .tb-player-destination').count()==4
         click('.tb-multi-offer [data-td-load-offer]')
         assert page.locator('[data-td-destination="1-4"]').input_value()=='3'
         assert page.locator('[data-td-destination="1-3"]').input_value()=='2'
