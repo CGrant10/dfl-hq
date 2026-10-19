@@ -52,7 +52,13 @@ with sync_playwright() as p:
  assert page.locator('.gameday-watch .gd-watch-entrance').count()==0
  assert page.locator('[data-finish-playing]').count()==0
  checks.append('Watch shares the seen state and skips pregame intro for final')
- page.locator('.gameday-watch [data-watch-replay]').click();page.wait_for_function('!!document.querySelector(".gameday-watch [data-finish-playing]")')
+ page.evaluate('''()=>{const d=document.querySelector('.gameday-watch'),spacer=document.createElement('div');spacer.id='finish-review-spacer';spacer.style.height='900px';d.querySelector('[data-watch-content]').append(spacer);d.scrollTop=260}''')
+ page.wait_for_function('document.querySelector(".gameday-watch").classList.contains("is-score-compact")')
+ page.locator('.gameday-watch [data-finish-replay]').click()
+ assert page.locator('.gameday-watch').evaluate('e=>e.scrollTop===0&&!e.classList.contains("is-score-compact")')
+ page.evaluate('document.querySelector("#finish-review-spacer").remove()')
+ checks.append('replay expands the scrolled scoreboard before revealing teams')
+ page.wait_for_function('!!document.querySelector(".gameday-watch [data-finish-playing]")')
  assert page.locator('.gameday-watch .gd-watch-scoreboard .gd-thermal-value').all_text_contents()==['110.04','110.00']
  page.locator('.gameday-watch [data-watch-motion]').click();page.wait_for_timeout(60)
  assert page.locator('[data-finish-playing]').count()==0

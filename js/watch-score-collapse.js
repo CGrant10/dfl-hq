@@ -25,5 +25,5 @@ export function mountWatchScoreCollapse(dialog) {
   const next=entries[0]?.contentRect.width;if(next!==width){width=next;refresh()}
  }):null;
  observer?.observe(dialog);document.fonts?.ready.then(refresh);dialog.addEventListener('scroll',schedule,{passive:true});
- return {refresh,stop(){stopped=true;cancelAnimationFrame(frame);observer?.disconnect();dialog.removeEventListener('scroll',schedule)}};
+ return {refresh,expand(){if(stopped)return;dialog.scrollTop=0;dialog.classList.remove('is-score-compact');refresh()},stop(){stopped=true;cancelAnimationFrame(frame);observer?.disconnect();dialog.removeEventListener('scroll',schedule)}};
 }

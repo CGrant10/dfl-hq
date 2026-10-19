@@ -486,5 +486,7 @@ border, accent-sweep and focus tokens preserve the Medicine Wheel defaults; no
 new logo, asset, palette entry or permanent explanatory subtext was introduced.
 Fixture-backed Chromium checks cover automatic playback, cross-surface dedupe,
 corrections, replay, selected share payloads, archives, motion switches and cleanup.
+GameDay opens at the top; replay expands a scrolled compact scoreboard before
+revealing the teams. The browser review verifies that scroll and compact-state reset.
 Physical-device frame rates, authenticated live data and native share delivery
 remain unverified.
