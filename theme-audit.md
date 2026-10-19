@@ -530,3 +530,20 @@ segments, and active/keyboard states remain visible. New scene motion respects
 app/OS reduced-motion settings. Theme checks run with the release checks.
 Physical-device fullscreen, performance and screen-reader output remain
 unverified; functional layout and focus behavior are exercised in Chromium.
+
+## 1.442.0 — Arena showdown and layered stadium
+
+Reviewed actual Chromium screenshots for 320/390/768px Auto showdowns in Light
+and Dark, plus Field/Follow, portrait expanded viewing, landscape fullscreen,
+paused races, countdown and official finishes. Phone close-ups use columns;
+wider feeds use rows. Names, live ranks, jersey identifiers and gap labels fit
+inside each scene without shrinking the surrounding controls. Evidence is in
+`/tmp/dfl-1442-arena-final/`.
+
+The stadium remains an intentionally dark sports scene; new labels use warm
+light/gold text over a dark header wash. Identity stripes retain actual racer
+colors. Surrounding page/forms retain shared theme tokens, and no theme options
+are added. Reduced motion suppresses close-ups/parallax and uses the full field.
+The two scenery tiers reuse existing artwork. Actual source offsets and a
+pixel-stable paused view are checked in the browser fixture. Device fullscreen,
+physical frame rates and assistive-technology output remain unverified.

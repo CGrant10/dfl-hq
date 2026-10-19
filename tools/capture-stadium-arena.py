@@ -93,6 +93,7 @@ with sync_playwright() as p:
  def context(role='spectator',width=844,reduced='no-preference',height=390):
   c=browser.new_context(viewport={'width':width,'height':height},service_workers='block',reduced_motion=reduced,has_touch=True)
   c.add_init_script("localStorage.setItem('qaRole',"+json.dumps(role)+");localStorage.setItem('qaMember',"+json.dumps('1' if role=='commissioner' else '2')+")")
+  c.add_init_script("""(()=>{const original=CanvasRenderingContext2D.prototype.drawImage;CanvasRenderingContext2D.prototype.drawImage=function(source,...args){if(source?.src?.includes('/assets/stadium-arena/stadium.webp')&&args.length===8){window.qaDepthOffsets??={};qaDepthOffsets[args[5]===0?'far':'near']=args[4];}return original.call(this,source,...args)}})()""")
   c.route('**/*',lambda r:r.continue_() if r.request.url.startswith(f'http://127.0.0.1:{server.server_port}') else r.abort());page=c.new_page();page.on('pageerror',lambda e:report['errors'].append(str(e)));page.goto(url)
   try:page.wait_for_function('window.qaReady===true',timeout=60000)
   except Exception:
@@ -176,6 +177,32 @@ with sync_playwright() as p:
  admin.locator('[data-command=pause]').click();admin.wait_for_selector('[data-command=resume]');watch.wait_for_function('document.querySelector("[data-overlay]").textContent==="HOLD THE LINE"');positions=watch.locator('.sr-position').evaluate_all('es=>es.map(e=>e.style.transform)');watch.wait_for_timeout(900);check('paused positions do not advance',positions==watch.locator('.sr-position').evaluate_all('es=>es.map(e=>e.style.transform)'))
  admin.locator('[data-command=resume]').click();admin.wait_for_selector('[data-command=pause]');set_elapsed(36000);admin.wait_for_timeout(2400)
  admin.locator('[data-camera=field]').click();admin.wait_for_timeout(700);admin.evaluate('scrollTo({top:0,behavior:"instant"})');admin.screenshot(path=str(out/'arena-full-field-racing.png'));check('full-field overlay stays within map',admin.locator('.sr-stage').get_attribute('data-field-overview')=='true');admin.locator('[data-camera=auto]').click();admin.wait_for_timeout(700);admin.evaluate('scrollTo({top:0,behavior:"instant"})');admin.screenshot(path=str(out/'arena-390-racing.png'));watch.screenshot(path=str(out/'arena-390-spectator.png'))
+ # Real shared race frames drive the separated-lane showdown; no renderer hook.
+ before_showdown_commands=len(commands)
+ for width in [320,390,768]:
+  for theme in ['dark','light']:
+   set_elapsed(16300)
+   duel_c,duel=context(width=width,height=1024 if width==768 else 844)
+   duel.evaluate('m=>qaTheme(m)',theme);duel.locator('.sr-showdown:not([hidden])').wait_for();duel.wait_for_timeout(450)
+   duel.evaluate('scrollTo({top:0,behavior:"instant"})');duel.screenshot(path=str(out/f'showdown-{width}-{theme}.png'))
+   check(f'{width}px {theme} showdown names and gap fit the field',duel.locator('.sr-showdown').evaluate('e=>{const b=e.getBoundingClientRect();return [...e.querySelectorAll("strong,[data-duel-gap]")].every(n=>{const r=n.getBoundingClientRect();return r.width>0&&r.left>=b.left&&r.right<=b.right+1&&r.top>=b.top&&r.bottom<=b.bottom})}'))
+   check(f'{width}px {theme} showdown uses the right feed layout',duel.locator('.sr-showdown').get_attribute('data-columns')==('true' if width<650 else 'false'))
+   check(f'{width}px {theme} showdown shows two actual member identities',duel.locator('[data-duel-slot]').evaluate_all('es=>es.length===2&&es.every(e=>e.dataset.racerId&&e.querySelector("strong").textContent&&/^#\d+$/.test(e.querySelector("b").textContent))') and len(set(duel.locator('[data-duel-slot]').evaluate_all('es=>es.map(e=>e.dataset.racerId)')))==2)
+   if width==390 and theme=='dark':
+    depth_before=duel.evaluate('({...qaDepthOffsets})');duel.wait_for_timeout(900);depth_after=duel.evaluate('({...qaDepthOffsets})')
+    check('near crowd moves farther than distant stands while tracking the race',abs(depth_after['near']-depth_before['near'])>abs(depth_after['far']-depth_before['far'])>.001)
+    duel.locator('[data-camera=field]').click();check('manual field camera overrides showdown',duel.locator('.sr-showdown').is_hidden());duel.locator('[data-camera=follow]').click();check('manual follow camera overrides showdown',duel.locator('.sr-showdown').is_hidden())
+    duel.locator('[data-expand]').click();duel.wait_for_function('document.fullscreenElement||document.querySelector(".sr-stage").classList.contains("sr-expanded")');duel.set_viewport_size({'width':844,'height':390});duel.locator('[data-camera=auto]').click();duel.locator('.sr-showdown:not([hidden])').wait_for();duel.wait_for_timeout(450);duel.screenshot(path=str(out/'showdown-landscape-expanded.png'));check('expanded landscape keeps showdown and camera controls usable',duel.locator('[data-expand]').is_visible() and duel.locator('[data-camera=auto]').is_visible());duel.locator('[data-expand]').click()
+    set_elapsed(17500,True);duel.evaluate('qaRefresh()');duel.wait_for_function('document.querySelector("[data-overlay]").textContent==="HOLD THE LINE"');duel.wait_for_timeout(450)
+    frozen=duel.locator('canvas').evaluate('e=>e.toDataURL()');frozen_depth=duel.evaluate('({...qaDepthOffsets})');duel.wait_for_timeout(900)
+    check('pause freezes the showdown, stands and sideline together',duel.locator('canvas').evaluate('e=>e.toDataURL()')==frozen and duel.evaluate('({...qaDepthOffsets})')==frozen_depth)
+    duel.locator('[data-camera=follow]').click();duel.wait_for_timeout(700);duel.locator('[data-camera=auto]').click();duel.wait_for_timeout(800);paused_camera=duel.locator('canvas').evaluate('e=>e.toDataURL()');duel.wait_for_timeout(700)
+    check('paused camera changes settle and then hold without restarting race motion',duel.locator('canvas').evaluate('e=>e.toDataURL()')==paused_camera and duel.locator('.sr-stage').get_attribute('data-showdown')=='true')
+   duel.evaluate('window.qaLeave()');duel.wait_for_timeout(100);duel_c.close()
+ set_elapsed(16300);still_c,still=context(width=390,height=844,reduced='reduce');still.wait_for_timeout(400)
+ check('reduced motion keeps full field and static stadium layers',still.locator('.sr-showdown').is_hidden() and still.evaluate('qaDepthOffsets.far===-80&&qaDepthOffsets.near===-80'))
+ still.evaluate('window.qaLeave()');still.wait_for_timeout(100);still_c.close();check('showdown camera never sends commissioner commands',len(commands)==before_showdown_commands)
+ set_elapsed(36000);admin.evaluate('qaRefresh()');watch.evaluate('qaRefresh()');admin.wait_for_timeout(300)
  # Review live portrait camera modes in both app themes, not just the lobby.
  for width in [320,390,768]:
   admin.set_viewport_size({'width':width,'height':1024 if width==768 else 844})
