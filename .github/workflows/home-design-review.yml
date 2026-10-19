@@ -95,6 +95,8 @@ on:
       - 'js/weekly-clubhouse-ui.js'
       - 'js/game-day-score-motion*'
       - 'js/game-day-model*'
+      - 'js/sleeper-links*'
+      - 'tools/capture-sleeper-actions.py'
       - 'js/matchup-finish*'
       - 'css/matchup-finish.css'
       - 'tools/capture-finish-review.py'
@@ -178,6 +180,10 @@ jobs:
         run: python tools/capture-scroll-review.py
         env:
           DFL_SCROLL_REVIEW_DIR: home-review-output/scroll
+      - name: Check contextual Sleeper actions on mobile
+        env:
+          DFL_SLEEPER_REVIEW_DIR: home-review-output/sleeper
+        run: python tools/capture-sleeper-actions.py
       - name: Check full themed Home screens
         run: python tools/capture-home-review.py
       - uses: actions/upload-artifact@v4

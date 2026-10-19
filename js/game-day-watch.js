@@ -1,4 +1,5 @@
 import {matchupFinish} from './matchup-finish-model.js';
+import {sleeperAction} from './sleeper-links.js';
 import {mountMatchupFinish,matchupFinishHtml} from './matchup-finish.js';
 import {matchupReceiptData,shareMatchupReceipt} from './game-day-matchup-share.js';
 import {mountMomentRecap} from './moment-recap.js';
@@ -25,7 +26,7 @@ import {WATCH_TABS,closeGameHtml,momentsPanel,leaguePanel} from './game-day-pane
 
 export function mountGameDayWatch(root,{getModel,getHistory,getMotion,members,onRefresh,onMotion,getTimeline=()=>null,onMoreMoments=async()=>{},onRetryMoments=async()=>{},onMoments=async()=>{}}){
  const dialog=document.createElement('dialog');dialog.className='gameday-watch';dialog.setAttribute('aria-labelledby','gameday-watch-title');
- dialog.innerHTML='<header class="gd-watch-header"><h2 id="gameday-watch-title" tabindex="-1" autofocus>GameDay</h2><span class="sr-only" role="status" data-watch-score-announcement></span><button type="button" class="linkbtn" data-watch-close aria-label="Close GameDay watch mode">Close</button></header><div data-watch-content></div>';
+ dialog.innerHTML='<header class="gd-watch-header"><h2 id="gameday-watch-title" tabindex="-1" autofocus>GameDay</h2><span class="sr-only" role="status" data-watch-score-announcement></span><span data-watch-sleeper hidden></span><button type="button" class="linkbtn" data-watch-close aria-label="Close GameDay watch mode">Close</button></header><div data-watch-content></div>';
  root.append(dialog);
  const content=dialog.querySelector('[data-watch-content]'),heading=dialog.querySelector('h2');
  const recap=mountMomentRecap({getMotion,returnFocus:()=>heading});
@@ -92,6 +93,8 @@ export function mountGameDayWatch(root,{getModel,getHistory,getMotion,members,on
   const phase=matchupPhase(game.sides[0],game.sides[1],model.completed);
   setMotion();dialog.dataset.phase=phase.key;
   heading.textContent=`GameDay · Week ${model.week}`;
+  const handoff=dialog.querySelector('[data-watch-sleeper]'),sleeperLink=sleeperAction(model.leagueId,'matchups',{label:'Sleeper',className:'linkbtn'});
+  handoff.hidden=!sleeperLink;patchGameDay(handoff,sleeperLink);
   const [a,b]=game.sides;
   dialog.style.setProperty('--watch-left',accentOf(a.identity));dialog.style.setProperty('--watch-right',accentOf(b.identity));
   if(intro){const entrance=matchupEntrance(model,game,getHistory());patchGameDay(content,`<section class="gd-watch-entrance" data-rivalry="${rivalry?1:0}" aria-label="Matchup introduction"><small>${model.season} · Week ${model.week}</small><div class="gd-entrance-teams"><span class="gd-entrance-crossfire" aria-hidden="true"><span class="gd-entrance-beam is-left"></span><span class="gd-entrance-beam is-right"></span><span class="gd-entrance-seam"></span></span>${game.sides.map((t,i)=>`${i?'<span class="gd-entrance-vs" aria-hidden="true">vs</span>':''}<div class="gd-entrance-team"><button type="button" class="gd-entrance-crest" data-watch-hype aria-label="Replay matchup hype for ${esc(t.name)}">${teamPortrait({team_name:t.name,identity:t.identity})}</button><h3>${esc(t.name)}</h3></div>`).join('')}</div><p class="gd-entrance-record">${esc(entrance.record)}</p><p data-entrance-banter>${esc(rivalry?"Talk your shit. The scoreboard will answer.":entrance.banter)}</p><button type="button" class="btn ghost small" data-watch-start>Enter matchup</button></section>`);finish.update();animateEntrance();return}

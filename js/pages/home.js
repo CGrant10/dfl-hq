@@ -221,7 +221,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
         <div>${HOME_OUTLOOK_POSITIONS.map((position, index) => `<section data-position-panel="${position}" ${index === 0 ? "" : "hidden"}><ol>${(outlook.leaders[position] || []).map(outlookPlayerRow).join("") || `<li class="is-empty">No projection</li>`}</ol></section>`).join("")}</div>
       </section>
       <section id="home-week-panel-startsit" class="home-outlook-block home-outlook-startsit" role="tabpanel" aria-labelledby="home-week-tab-startsit" data-week-panel="startsit" hidden><div class="home-outlook-title"><h3>${esc(outlook.startSit?.teamName || "Your team")}</h3></div>
-        ${startSitContent(outlook.startSit||{})}
+        ${startSitContent(outlook.startSit||{},{leagueId:outlook.leagueId})}
         <footer><a class="home-text-action" href="#/analyzer"><span>Review lineup in Analyzer</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></footer>
       </section>
     </div>

@@ -77,7 +77,7 @@ export function buildHomeWeekOutlook({ analysis, weekly, fixtures = [], stakes =
       })),
     };
   }
-  return { season: weekly.season, week: weekly.week, predictions, leaders, startSit, stakes };
+  return { season: weekly.season, week: weekly.week, predictions, leaders, startSit, stakes,leagueId:analysis.league?.sleeper_league_id??null };
 }
 
 export { POSITIONS as HOME_OUTLOOK_POSITIONS };

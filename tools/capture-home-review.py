@@ -637,10 +637,10 @@ def check_watch_score_strip(page):
     """Real Watch controller, with isolated reads and labeled sample teams."""
     source=(ROOT/'js/game-day-watch.js').read_text().split('export function mountGameDayWatch')[1]
     page.evaluate("""async source=>{
-      const helpers=Object.assign({},...await Promise.all(['ui','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','clubhouse-matchup-model','watch-score-collapse','moment-recap','matchup-finish','matchup-finish-model','game-day-matchup-share'].map(name=>import(`./js/${name}.js`))));
+      const helpers=Object.assign({},...await Promise.all(['ui','sleeper-links','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','clubhouse-matchup-model','watch-score-collapse','moment-recap','matchup-finish','matchup-finish-model','game-day-matchup-share'].map(name=>import(`./js/${name}.js`))));
       const {buildGameDay}=await import('./js/game-day-model.js');
       const members=[1,2,3,4].map(id=>({id,sleeper_user_id:`strip-${id}`,team_name:id===1?'The Very Long Championship Bayou Bombers':id===2?'Klutch Sports Group':`Demo Team ${id}`}));
-      const week={season:2099,week:6,leagueId:'strip-demo',completed:false,games:[1,2].map(id=>({matchup_id:id,user1:`strip-${id*2-1}`,user2:`strip-${id*2}`,roster1:id*2-1,roster2:id*2}))};
+      const week={season:2099,week:6,leagueId:'1286077564572037120',completed:false,games:[1,2].map(id=>({matchup_id:id,user1:`strip-${id*2-1}`,user2:`strip-${id*2}`,roster1:id*2-1,roster2:id*2}))};
       const players={},slots=['QB','RB','RB','WR','WR','TE','WR','K','DEF'];
       const rows=members.map(m=>{const ids=slots.map((p,i)=>{const id=`strip-${m.id}-${i}`;players[id]={n:i===3?'Amon-Ra St. Brown':`Demo Player ${i+1}`,p,t:m.id<3?'SF':'DAL'};return id});const bench=`strip-bench-${m.id}`;players[bench]={n:'Demo Bench Player',p:'RB',t:'SF'};return {roster_id:m.id,points:m.id*20,starters:ids,players:[...ids,bench],players_points:Object.fromEntries([...ids,bench].map(id=>[id,4]))}});
       let model=buildGameDay({week,rows,players,members,nfl:{teams:new Map([['SF',{key:'live'}],['DAL',{key:'upcoming'}]])}});model.live=true;model.checkedAt=Date.now();
@@ -655,6 +655,7 @@ def check_watch_score_strip(page):
       window.watchStripFixture={root,watch,dialog,get model(){return model},setMotion(value){motion=value;watch.setMotion()},setPhase(state){model.games[0].sides.forEach(t=>{t.live=state==='live'?9:0;t.known=state!=='unknown';t.starters.forEach(p=>p.state=state);t.lineup.forEach(p=>p.state=state)});watch.update()},final(){model.completed=true;watch.update()},stop(){watch.stop();root.remove()}};
     }""",source)
     page.wait_for_timeout(250)
+    assert page.locator('.gameday-watch a[data-sleeper-section="matchups"]').get_attribute('href')=='https://sleeper.com/leagues/1286077564572037120/matchup'
     result={'layouts':[]}
     try:
         for width in [320,390,768,1000]:

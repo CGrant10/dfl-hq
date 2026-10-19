@@ -1,4 +1,5 @@
 import {restoreTradeProposal,evaluateTradeDeal} from './trade-workspace.js';
+import {sleeperUrl} from './sleeper-links.js';
 
 export function negotiationProposal(deal){
  if(!deal?.parties||!deal?.sends)return null;
@@ -31,4 +32,4 @@ export function negotiationChanges(previous,next){
  for(const [id,route] of b){const old=a.get(id);if(!old)changes.push({id,kind:'added',...route});else if(old.to!==route.to||old.from!==route.from)changes.push({id,kind:'rerouted',...route});}
  return changes;
 }
-export function negotiationSleeperUrl(room){return /^\d+$/.test(String(room?.league_id||''))?`https://sleeper.com/leagues/${room.league_id}`:null;}
+export function negotiationSleeperUrl(room){return sleeperUrl(room?.league_id);}

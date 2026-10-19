@@ -1,4 +1,5 @@
 import {startSitContent} from './start-sit-ui.js';
+import {currentMember} from './members.js';
 import {disclosure,wirePageDisclosures} from "./page-disclosure.js";
 // =====================================================================
 // weekly-outlook-panel.js - the week view on top of the Team Analyzer
@@ -77,13 +78,13 @@ function lineupRow(slot, max, trending, defense) {
   </li>`;
 }
 
-function markup({ week, team, advice, trending, defense, stale, showScore }) {
+function markup({ week, team, advice, trending, defense, stale, showScore,leagueId }) {
   const max = Math.max(...advice.lineup.slots.map(slot => slot.score || 0), 1);
   const total=advice.completeEstimate?`${pts(advice.bestTotal)} projected`:'Partial projections';
   return `<section class="wo-panel wo-startsit">
     <header class="wo-head"><div><small>WEEK ${esc(week)} · ${esc(team)}</small><h2>Start / Sit</h2></div>
     ${showScore&&advice.completeEstimate?`<div class="wo-projection"><strong>${pts(advice.bestTotal)}</strong><small>Lineup · proj.</small></div>`:''}</header>
-    ${startSitContent(advice)}
+    ${startSitContent(advice,{leagueId})}
     ${disclosure("analyzer-week-lineup","View projected lineup",total,`<div class="wo-block"><ul class="wo-lineup">${advice.lineup.slots.map(slot=>lineupRow(slot,max,trending,defense)).join('')}</ul></div>`)}
     <p class="ss-source">Sleeper weekly projections · League scoring${stale?' · Cached data':''}</p>
   </section>`;
@@ -124,6 +125,7 @@ async function draw(host) {
     team: team.team_name || team.ownerName || "Your team",
     advice, trending, defense, stale: projections.stale,
     showScore: !!host.closest('[data-route="analyzer"]'),
+    leagueId:currentMember()?.sleeper_user_id&&String(team.sleeper_user_id)===String(currentMember().sleeper_user_id)?data.league?.sleeper_league_id:null,
   });
   const extras=document.createElement('div');extras.className='analyzer-followups';host.toolsHost=extras;host.parentElement.querySelector('[data-ta-body]').insertAdjacentElement('afterend',extras);
   const stops=[];host.stopExtras=()=>stops.forEach(stop=>stop?.());

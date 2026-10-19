@@ -1,4 +1,5 @@
 import {esc,toast} from './ui.js';
+import {sleeperAction} from './sleeper-links.js';
 import {getMemberId,currentMember} from './members.js';
 import {readPlayerWatchlist} from './player-watchlist-data.js';
 import {loadRosterCoachSnapshot,clearRosterCoachCache} from './roster-coach-data.js';
@@ -10,7 +11,7 @@ import {createPlayerSearchIndex,searchPlayerIndex} from './player-search-index.j
 const date=value=>value?new Date(value).toLocaleString(undefined,{weekday:'short',hour:'numeric',minute:'2-digit'}):'';
 export function watchlistRowHtml(p,rosterId){
  const gain=p.offer?.gains.find(g=>g.week===p.offer.targetWeek)?.gain;
- const link=p.ownerId!=null&&!p.own&&rosterId!=null?`<a class="linkbtn" href="#/trade?team=${encodeURIComponent(rosterId)}&target=${encodeURIComponent(p.id)}&partner=${encodeURIComponent(p.ownerId)}">Explore trade</a>`:p.ownerId==null?`<a class="linkbtn" href="https://sleeper.com/${p.leagueId?'leagues/'+encodeURIComponent(p.leagueId)+'/team':''}" target="_blank" rel="noopener">Open Sleeper</a>`:'';
+ const link=p.ownerId!=null&&!p.own&&rosterId!=null?`<a class="linkbtn" href="#/trade?team=${encodeURIComponent(rosterId)}&target=${encodeURIComponent(p.id)}&partner=${encodeURIComponent(p.ownerId)}">Explore trade</a>`:p.ownerId==null?sleeperAction(p.leagueId,'waivers',{label:'Waivers in Sleeper',className:'linkbtn'}):'';
  return `<li class="player-watch-row">${playerIdentity(p,{interactive:true})}<div class="player-watch-detail"><span>${esc(p.owner)}</span><small>${p.points!=null?esc(p.points.toFixed(1))+' projected · ':''}${p.state==='upcoming'?'Kickoff '+esc(date(p.kickoff)):p.state==='live'?'Game live':p.state==='final'?'Game finished':'Kickoff unconfirmed'}</small>${p.fit?`<b>${esc(p.fit)}${gain!=null?' · +'+esc(gain.toFixed(1))+' lineup pts':''}</b>`:''}${p.offer?`<small>${p.offer.drop?'Drop '+esc(p.offer.drop.name):'Open roster spot · no drop needed'}</small>`:''}</div><div class="player-watch-actions">${link}<button type="button" class="linkbtn" data-watch-remove="${esc(p.id)}" aria-label="Stop watching ${esc(p.name)}">Remove</button></div></li>`;
 }
 export function mountWatchButton(button,id){
