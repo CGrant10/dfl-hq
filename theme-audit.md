@@ -512,3 +512,21 @@ Screens and machine-readable checks: `/tmp/dfl-1440-home/art-*.png`,
 `docs/arena-broadcast-trade-upgrade-validation.md` for data and runtime limits.
 Physical-phone haptics, native screen-reader output and hardware frame rates
 remain unverified.
+
+## 1.441.0 — Arena portrait theater
+
+Reviewed actual Chromium screenshots at 320, 390 and 768px in both Light and
+Dark: live Auto/Field/Follow scenes, selected camera states, normal-size labels,
+Crowd beside commentary, commissioner actions, portrait forms and finished-race
+controls. Also reviewed landscape fullscreen and portrait expanded theater.
+Evidence: `/tmp/dfl-1441-arena-final/`.
+
+The stadium viewing frame retains its intentional dark sports presentation and
+meaningful kit/field colors in both app themes. Surrounding headings, metadata,
+readiness and editor continue using shared theme tokens. No additional theme
+choice is introduced. Retired rotation-gate styles and positioning rules that
+pushed the Crowd button over the field are removed. Camera labels fill their
+segments, and active/keyboard states remain visible. New scene motion respects
+app/OS reduced-motion settings. Theme checks run with the release checks.
+Physical-device fullscreen, performance and screen-reader output remain
+unverified; functional layout and focus behavior are exercised in Chromium.

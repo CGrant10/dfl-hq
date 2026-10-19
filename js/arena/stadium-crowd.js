@@ -43,7 +43,7 @@ export function mountStadiumCrowd(root,{channel,key,getSnapshot,getRacers,getMem
   sync();
  };
  const receive=({payload})=>{
-  if(stopped||document.hidden||root.querySelector('.sr-stage')?.dataset.landscapeBlocked==='true')return;
+  if(stopped||document.hidden)return;
   const value=stadiumCrowdReaction(payload,{run:stadiumCrowdRun(getSnapshot()),racers:getRacers()});if(!value||seen.has(value.id))return;
   const now=performance.now();received=received.filter(at=>now-at<5000);if(received.length>=5)return;received.push(now);seen.add(value.id);if(seen.size>80)seen.delete(seen.values().next().value);
   while(pops.size>=2){const [node,timer]=pops.entries().next().value;clearTimeout(timer);cancelUiMotion(node);node.remove();pops.delete(node)}
