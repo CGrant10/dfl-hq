@@ -4,7 +4,8 @@ Portrait now opens the live race inline in a 16:9 field window. Camera buttons,
 racer selection, commentary, crowd menu, replay and commissioner actions retain
 normal text sizes and 44px targets outside the scaled field. The Crowd button
 sits beside commentary; its menu only overlays the scene when deliberately
-opened. The field retains football yard numbers and the existing shared race,
+opened. On phones, Field uses the full window instead of squeezing in a side panel;
+yard/goal labels and number badges adapt to the available space. The field retains football yard numbers and the existing shared race,
 director, timing, kit artwork and official order.
 
 Expand works in either orientation. Native fullscreen failure or absence falls
