@@ -12,6 +12,8 @@ const production=source.slice(source.indexOf('const teamName'),source.indexOf('e
 const imports=`
 import {completedTradeMarkup} from '/js/trade-receipt-ui.js';
 import {tradeAssessment} from '/js/trade-assessment.js';
+import {createTradeNegotiation as createRealTradeNegotiation} from '/js/trade-negotiation-ui.js';
+const createTradeNegotiation=options=>createRealTradeNegotiation({...options,...window.reviewRoomApi?{createApi:async()=>window.reviewRoomApi}:{}});
 import {tradeLineupFitLabel} from '/js/trade-suggestion-quality.js';
 import {createTradeConnection} from '/js/trade-connected-motion.js';
 import {tradeDecisionMarkup} from '/js/trade-decision-ui.js';
@@ -37,7 +39,7 @@ import {evaluateTradeDeal,readTradeProposals,writeTradeProposals,savedTradePropo
 import {proposalsMarkup,tradeDataContext,tradeOfferEmptyCopy,closestTradeOffers} from '/js/trade-workspace-ui.js';
 import {mountTradePlayerPickers,focusTradePicker} from '/js/trade-player-picker.js';
 import {tradeReviewFixture} from '/tools/trade-review-fixture.mjs';
-const currentMember=()=>({id:'trade-review'}),loadSharedTradeRecommendations=async()=>[],saveTradeRecommendation=async()=>{},tradeAlertViewModel=()=>null;
+const currentMember=()=>window.reviewMember||({id:'trade-review'}),loadSharedTradeRecommendations=async()=>[],saveTradeRecommendation=async()=>{},tradeAlertViewModel=()=>null;
 const loadAnalyzerData=async()=>{if(window.reviewRefreshError)throw Error('Current injuries unavailable');return {...(window.reviewFreshData||window.reviewData),state:'ready'}};
 const shareDeal=async deal=>{window.reviewSharedDeal=deal;return 'review'};
 `;
