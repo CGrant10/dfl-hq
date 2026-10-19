@@ -555,3 +555,23 @@ Reviewed actual mobile screenshots at 320/390px and wider 768px in Medicine Whee
 ## 1.444.0 — Sleeper context actions
 
 Reviewed settled screenshots of Start/Sit, lineup warnings, Clubhouse context links and Trade header at 320/390/768px in Medicine Wheel Light and Dark. Actions reuse the current button/link tokens, an inherited-color SVG arrow, and 44px touch targets. Current and historical league IDs come from the relevant page model; missing destinations hide cleanly. Dedicated browser scenarios checked screen-edge padding, external popups and page overflow. Existing Trade, waiver, Home-week and finish/Watch/Clubhouse browser suites passed. `pnpm themes` and all theme tests passed. Narrow Trade tabs use their existing native horizontal scroll affordance. Physical iOS/Android switching and screen-reader speech remain unverified. See `docs/sleeper-context-actions-validation.md`.
+
+
+## 1.445.0 — Arena viewing and control polish
+
+Reviewed the current production Arena controller/renderer through the isolated
+shared-clock fixture at 320/390/768px in Medicine Wheel Light and Dark, plus
+expanded landscape and 1440px desktop edge-lane captures. Starting grid, live
+standings, secondary actions, ranks, team-name text and readiness now follow
+shared app ground/ink/accent/border tokens. The venue, uniform editor, kit colors
+and member identity accents retain their explicit dark-stadium/identity roles.
+The editor’s sticky surfaces are opaque, and the in-grid focus ring uses the
+selected accent without clipping at the board edge. On-camera names use native
+text above the field rather than small compressed Canvas labels.
+
+Screenshots and the four-step review are in `docs/arena-polish-review.md`.
+The palette check, theme regressions and full release checks run before merge.
+Browser checks cover selected controls, reduced motion, live reordering, follow
+identity, fullscreen fallback/exit/rotation and the two edge lanes. Physical
+mobile fullscreen, GPU performance, haptics and assistive-technology speech
+remain unverified. No theme picker entries or aliases change.
