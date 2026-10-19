@@ -1,4 +1,5 @@
 import {tradeAssessment} from '../trade-assessment.js';
+import {createTradeNegotiation} from '../trade-negotiation-ui.js';
 import {tradeLineupFitLabel} from '../trade-suggestion-quality.js';
 import {createTradeConnection} from '../trade-connected-motion.js';
 import {tradeDecisionMarkup} from '../trade-decision-ui.js';
@@ -119,10 +120,11 @@ function anchorOptions(players, selected, label) {
   the same page: propose above, judge below.
 */
 function tradeBoardHeader(mode='offers'){
- return `<div class="tb-head-row page-identity"><header class="tb-head"><small>DFLYZER</small><h1>${mode==='manual'?'Check a trade':'Trade Board'}</h1></header><a class="btn ghost small" href="#/trade?receipts=1">Receipts</a></div><div class="td-entry-actions" aria-label="Trade tools"><button type="button" data-td-mode="offers" aria-pressed="${mode==='offers'}">Find offers</button><button type="button" data-td-mode="manual" aria-pressed="${mode==='manual'}">Check a trade</button><button type="button" data-td-compare aria-label="Compare saved deals">Saved deals</button></div>`;
+ return `<div class="tb-head-row page-identity"><header class="tb-head"><small>DFLYZER</small><h1>${mode==='room'?'Deal Room':mode==='manual'?'Check a trade':'Trade Board'}</h1></header><a class="btn ghost small" href="#/trade?receipts=1">Receipts</a></div><div class="td-entry-actions" aria-label="Trade tools"><button type="button" data-td-mode="offers" aria-pressed="${mode==='offers'}">Find offers</button><button type="button" data-td-mode="manual" aria-pressed="${mode==='manual'}">Check a trade</button><button type="button" data-td-mode="room" aria-pressed="${mode==='room'}">Deal room</button><button type="button" data-td-compare aria-label="Compare saved deals">Saved deals</button></div>`;
 }
 
 function tradeLab(team, teams, pool, shop) {
+  if(shop.mode==='room')return `<section class="tb-board">${tradeBoardHeader('room')}</section>`;
   if(shop.mode==='manual')return `<section class="tb-board">${tradeBoardHeader('manual')}</section>`;
   const otherTeams = teams.filter(item => String(item.id) !== String(team.id));
   const allPartners = shop.partnerId === "all";
@@ -266,6 +268,7 @@ function page(data, tradeAlerts = []) {
   // A new visit shops the whole league. Keep the manual draft separately;
   // an explicit incoming target link can still narrow the search below.
   Object.assign(shop,{partnerId:"all",memberIds:[],anchorPartnerId:"all",receiveAnchors:[],mode:"offers",customOpen:false,intent:"fair",openTiers:new Set(["fair"])});
+  if(params.get('room')==='1')shop.mode='room';
   const target = params.get('target'), partner = data.teams.find(t => String(t.id) === params.get('partner'));
   if (target && partner && String(partner.id) !== String(selectedId) && partner.playerIds.map(String).includes(target)) {
     shop.partnerId = partner.id; shop.memberIds = []; shop.anchorPartnerId = partner.id;
@@ -283,7 +286,10 @@ function page(data, tradeAlerts = []) {
       const connection=createTradeConnection();
       let stopped=false;
       const current=()=>!stopped&&view.isConnected;
-      stopOffers=()=>{stopped=true;shop.intentStamp=(shop.intentStamp||0)+1;connection.stop();catalog.stop();};
+      stopOffers=()=>{stopped=true;shop.intentStamp=(shop.intentStamp||0)+1;connection.stop();catalog.stop();negotiation.stop();};
+      const negotiation=createTradeNegotiation({member:me,getData:()=>data,getDeal:()=>deal,
+        onEdit:next=>{if(next){selectedId=next.parties[0].id;applyTradeDeal(trade,next);}shop.mode='manual';shop.customOpen=true;draw();body.querySelector('.td-custom')?.scrollIntoView({block:'start',behavior:'instant'});body.querySelector('.td-working-as select')?.focus({preventScroll:true});},
+        onRoom:()=>{shop.mode='room';shop.customOpen=false;draw();body.querySelector('[data-tr-host]')?.scrollIntoView({block:'start',behavior:'instant'});}});
       const wireOfferTiers=scope=>{scope.querySelectorAll(".tb-supporting").forEach(d=>{d.open=!!shop.openPackages?.has(d.dataset.pageDetail)});scope.querySelectorAll('[data-tb-tier]').forEach(section=>section.addEventListener('toggle',()=>{
         if(!current()||!body.contains(section))return;
         const tier=section.dataset.tbTier;
@@ -291,7 +297,7 @@ function page(data, tradeAlerts = []) {
         saveDraft?.();
       }));};
       const paintOffers=({countsOnly=false}={})=>{
-        if(!current()||shop.mode==='manual')return;
+        if(!current()||shop.mode!=='offers')return;
         const old=body.querySelector('[data-tb-offers]');if(!old)return;
         const focused=old.contains(document.activeElement);
         const template=document.createElement('template');
@@ -324,7 +330,7 @@ function page(data, tradeAlerts = []) {
       let sharing = false;
       const draw = () => {
         if (!current()) return;connection.cancel();
-        if(shop.mode==='manual'){shop.offerState=null;catalog.cancel();}
+        if(shop.mode!=='offers'){shop.offerState=null;catalog.cancel();}
         // Native toggle events can arrive after an immediate control redraw.
         // Read the current DOM first so an open disclosure never snaps closed.
 
@@ -336,15 +342,18 @@ function page(data, tradeAlerts = []) {
         const openPackages=new Set([...body.querySelectorAll(".tb-supporting[open]")].map(d=>d.dataset.pageDetail));if(body.querySelector(".tb-supporting"))shop.openPackages=openPackages;
         body.dataset.mode=shop.mode||"offers";
         body.innerHTML = `${tradeLab(team, data.teams, data.pool, shop)}
+          ${shop.mode==='room'?'<div data-tr-host></div>':''}
           <details class="ta-report-section td-custom"${shop.customOpen ? " open" : ""}>
             <summary class="ta-report-title"><div><small>MANUAL MODE</small><h2>Build your own package</h2></div><span class="ta-fold-hint">Up to 8 players</span><span class="ta-fold-chevron" aria-hidden="true"></span></summary>
             ${shop.customOpen ? `<div class="ta-section-body"><label class="tb-team-select td-working-as"><span>Trading as</span><select data-td-team>${data.teams.map(t=>`<option value="${esc(t.id)}" ${String(t.id)===String(selectedId)?'selected':''}>${esc(teamName(t))}</option>`).join('')}</select></label><div data-trade-desk>${tradeDeskMarkup(team, data.teams, data.pool, trade)}</div>
-            <div class="td-share"><button type="button" class="btn" data-td-share disabled>Share this ticket</button></div></div>` : ""}
+            <div class="td-share"><button type="button" class="btn" data-td-negotiate disabled>${negotiation.editing()?.status==='pending'?'Review counter':'Save / send offer'}</button><button type="button" class="btn ghost" data-td-share disabled>Share this ticket</button>${negotiation.editing()?'<button type="button" class="btn ghost small" data-td-unlink-room>Start a separate offer</button>':''}</div></div>` : ""}
           </details>
           <div data-td-proposals-slot>${proposalsMarkup(proposals,data.teams,data.pool,proposalsOpen)}</div>${tradeDataContext(data,data.pool)}
           <div data-td-health>${tradeModelHealthMarkup({ ...tradeModelHealth(data.pool), accountability: recommendationOutcomes(data.pool, localStorage,
             shop.sharedAudit.filter(row => !row.season || Number(row.season) === Number(data.projectionSeason))) }, esc, true)}</div>`;
         const share = body.querySelector("[data-td-share]");
+        const send = body.querySelector('[data-td-negotiate]');
+        negotiation.mount(body.querySelector('[data-tr-host]'));
         mountTradePlayerPickers(body, data.pool, data.teams);
         mountTradeDesk(body.querySelector("[data-trade-desk]"), {
           team, teams: data.teams, pool: data.pool, state: trade, lockedIds:[...shop.sendAnchors,...shop.receiveAnchors], onPartnerChange: (focus={}) => {draw();if(focus.memberIndex!=null)body.querySelector(`[data-td-member="${focus.memberIndex}"]`)?.focus();else body.querySelector("[data-td-verdict]")?.scrollIntoView({behavior:"instant",block:"start"});},
@@ -355,6 +364,7 @@ function page(data, tradeAlerts = []) {
             /* Nothing to share until both sides have somebody on them, and a
                disabled button says that better than an error would. */
             if (share) share.disabled = !current || sharing;
+            if (send) send.disabled = !current || sharing;
           },
         });
         body.querySelector(".td-custom")?.addEventListener("toggle", event => {
@@ -471,6 +481,23 @@ function page(data, tradeAlerts = []) {
         if (summary) summary.textContent = value;
       });
       body.addEventListener("click", async event => {
+        if(event.target.closest('[data-td-negotiate]')){
+          if(!deal||sharing)return;const original=deal;sharing=true;event.target.closest('button').disabled=true;
+          try{
+            const fresh=await loadAnalyzerData({force:true,freshTrade:true});if(!current())return;
+            if(deal!==original)throw Error('The package changed. Review it again.');
+            if(fresh.state!=='ready'||fresh.projectionSeason!==data.projectionSeason)throw Error('Current rosters are unavailable. Refresh the trade page.');
+            const review=recheckTradeOffer(original,data.pool,fresh.teams,fresh.pool);
+            data=fresh;catalog.stop();catalog=newCatalog();shop.offerState=null;
+            if(review.status==='invalid'){draw();throw Error('A player changed teams. Rebuild this offer.');}
+            applyTradeDeal(trade,review.deal);draw();
+            if(review.status==='changed')throw Error('Player status or value changed. Review the updated offer.');
+            await negotiation.compose();
+          }catch(e){toast(e.message||'Could not review offer.',true);}
+          finally{sharing=false;const button=body.querySelector('[data-td-negotiate]');if(button)button.disabled=!deal;}
+          return;
+        }
+        if(event.target.closest('[data-td-unlink-room]')){negotiation.clearEdit();draw();return;}
         if(event.target.closest('[data-tb-shop-need]')){const button=event.target.closest('[data-tb-shop-need]');shop.partnerId='all';shop.memberIds=[];shop.anchorPartnerId='';shop.goal=button.dataset.tbShopNeed;shop.intent='fair';shop.openTiers=new Set(['fair']);refreshOffers();return;}
         if(event.target.closest('[data-tb-retry-schedules]')){void loadSchedules();return;}
         if(event.target.closest('[data-tb-retry]')){catalog.retry(shop.offerState?.key,shop.intent);shop.offerState=null;refreshOffers();return;}
@@ -482,8 +509,8 @@ function page(data, tradeAlerts = []) {
           return;
         }
         const modeButton=event.target.closest('[data-td-mode]');
-        if(modeButton){if(modeButton.dataset.tdMode==='manual'&&!trade.sends.some(ids=>ids.size)&&shop.partnerId&&shop.partnerId!=='all'){trade.memberIds=[shop.partnerId,...shop.memberIds];trade.sends=[new Set(shop.sendAnchors),...trade.memberIds.map((_,i)=>new Set(i===trade.memberIds.length-1?shop.receiveAnchors:[]))];trade.destinations={};}const origins=connection.capture(body.querySelector('[data-td-verdict]'));shop.mode=modeButton.dataset.tdMode;shop.customOpen=shop.mode==='manual';draw();const returning=!shop.customOpen&&activeOfferKey?body.querySelector(`[data-offer-key="${CSS.escape(activeOfferKey)}"]`):null;if(returning){returning.scrollIntoView({block:'center',behavior:'instant'});connection.play(origins,returning);returning.querySelector('[data-td-load-offer]')?.focus({preventScroll:true})}else body.querySelector(shop.customOpen?'.td-working-as select':'[data-td-mode="offers"]')?.focus({preventScroll:true});return;}
-        if(event.target.closest('[data-td-compare]')){proposalsOpen=true;const slot=body.querySelector('[data-td-proposals-slot]');slot.innerHTML=proposalsMarkup(proposals,data.teams,data.pool,true);slot.scrollIntoView({block:'start',behavior:'instant'});return;}
+        if(modeButton){if(modeButton.dataset.tdMode==='offers')negotiation.clearEdit();if(modeButton.dataset.tdMode==='manual'&&!trade.sends.some(ids=>ids.size)&&shop.partnerId&&shop.partnerId!=='all'){trade.memberIds=[shop.partnerId,...shop.memberIds];trade.sends=[new Set(shop.sendAnchors),...trade.memberIds.map((_,i)=>new Set(i===trade.memberIds.length-1?shop.receiveAnchors:[]))];trade.destinations={};}const origins=connection.capture(body.querySelector('[data-td-verdict]'));shop.mode=modeButton.dataset.tdMode;shop.customOpen=shop.mode==='manual';draw();const returning=!shop.customOpen&&activeOfferKey?body.querySelector(`[data-offer-key="${CSS.escape(activeOfferKey)}"]`):null;if(returning){returning.scrollIntoView({block:'center',behavior:'instant'});connection.play(origins,returning);returning.querySelector('[data-td-load-offer]')?.focus({preventScroll:true})}else body.querySelector(shop.customOpen?'.td-working-as select':`[data-td-mode="${shop.mode}"]`)?.focus({preventScroll:true});return;}
+        if(event.target.closest('[data-td-compare]')){if(shop.mode==='room'){shop.mode='offers';draw();}proposalsOpen=true;const slot=body.querySelector('[data-td-proposals-slot]');slot.innerHTML=proposalsMarkup(proposals,data.teams,data.pool,true);slot.scrollIntoView({block:'start',behavior:'instant'});return;}
         if(event.target.closest('[data-td-save-proposal]')){
           if(!deal)return;const row=savedTradeProposal(deal),fingerprint=r=>JSON.stringify([r.teamIds,r.sends,r.destinations]),existing=proposals.findIndex(r=>fingerprint(r)===fingerprint(row));
           if(existing<0&&proposals.length>=3){toast('Three deals are saved. Remove one from Compare saved deals before saving another.',true);return;}
@@ -590,7 +617,7 @@ function page(data, tradeAlerts = []) {
         if (event.target.closest("[data-tb-generate]")) { shop.visibleCount += OFFER_BATCH_SIZE; draw(); return; }
         const button = event.target.closest("[data-td-load-offer]");
         if (!button) return;
-        const sourceCard=button.closest(".tb-offer"),origins=connection.capture(sourceCard);activeOfferKey=sourceCard?.dataset.offerKey||null;
+        negotiation.clearEdit();const sourceCard=button.closest(".tb-offer"),origins=connection.capture(sourceCard);activeOfferKey=sourceCard?.dataset.offerKey||null;
         const auditInput = { season: data.projectionSeason, week: data.liveWeek, teamId: selectedId, partnerId: button.dataset.partner,
           sendA: (button.dataset.sendA || "").split(",").filter(Boolean), sendB: (button.dataset.sendB || "").split(",").filter(Boolean),
           weeklyDelta: button.dataset.weeklyDelta };

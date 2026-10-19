@@ -1,0 +1,66 @@
+/* The Deal Room uses the same compact type and Medicine Wheel surfaces as Trade. */
+#view[data-route="trade"] [data-mode="room"] :is(.td-custom,[data-td-proposals-slot],.td-data-context,[data-td-health]) {display:none;}
+#view[data-route="trade"] .tr-room {padding:4px 12px 12px;color:var(--text);}
+#view[data-route="trade"] [data-mode="room"] .tb-board {margin-bottom:8px;}
+.tr-room-head,.tr-compose header {display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.tr-room-head small {font-size:10px;letter-spacing:.12em;font-weight:800;color:var(--accent);}
+.tr-room-head h2,.tr-compose h2 {font:800 22px/1.15 var(--font-display);margin:4px 0 12px;}
+.tr-tabs {display:flex;border-bottom:1px solid var(--line);margin:8px 0 14px;}
+.tr-tabs button {flex:1;min-height:44px;border:0;background:transparent;color:var(--muted);font:700 13px var(--font-body);cursor:pointer;}
+.tr-tabs button[aria-pressed="true"] {color:var(--text);box-shadow:inset 0 -2px var(--accent);}
+.tr-list {display:grid;gap:12px;}
+.tr-offer,.tr-detail {border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg-2);}
+.tr-open {position:relative;display:grid;gap:6px;text-align:left;width:100%;padding:12px 36px 12px 12px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer;}
+.tr-open strong {font:750 14px/1.35 var(--font-body);overflow-wrap:anywhere;}
+.tr-open small,.tr-status {font-size:11px;color:var(--muted);}
+.tr-status {font-weight:800;color:var(--accent);}
+.tr-open-arrow {position:absolute;right:12px;top:50%;font-size:20px;color:var(--accent);}
+.tr-package {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;}
+.tr-package section {min-width:0;padding:10px 12px;}
+.tr-package section:nth-child(even) {border-left:1px solid var(--line);}
+.tr-package section:nth-child(n+3) {border-top:1px solid var(--line);}
+.tr-package h3 {font:750 12px/1.35 var(--font-body);color:var(--body-text);margin:0 0 8px;overflow-wrap:anywhere;}
+.tr-package ul {list-style:none;margin:0;padding:0;display:grid;gap:10px;}
+.tr-package li {display:flex;align-items:center;gap:6px;min-width:0;}
+.tr-package li>span {min-width:0;}
+.tr-package li b {display:block;font:750 13px/1.3 var(--font-body);overflow-wrap:anywhere;}
+.tr-package li small {display:block;margin-top:2px;font:500 10px/1.35 var(--font-body);color:var(--muted);overflow-wrap:anywhere;}
+.tr-package .dfl-player-portrait {width:26px;height:30px;min-width:26px;flex-shrink:0;}
+.tr-back {min-height:44px;margin:4px 0 8px;font-size:13px;}
+.tr-detail-status,.tr-balance {display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid var(--line);font-size:13px;}
+.tr-detail-status strong,.tr-balance b {color:var(--accent);}
+.tr-detail-status span {color:var(--muted);font-size:11px;}
+.tr-balance {border-top:1px solid var(--line);border-bottom:0;padding-block:10px;}
+.tr-agreements {display:grid;gap:6px;list-style:none;margin:0;padding:10px 12px;border-top:1px solid var(--line);}
+.tr-agreements li {display:flex;justify-content:space-between;gap:12px;font-size:12px;line-height:1.4;}
+.tr-agreements li span {min-width:0;overflow-wrap:anywhere;}
+.tr-agreements b {font-size:11px;white-space:nowrap;color:var(--muted);}
+.tr-actions {display:flex;flex-wrap:wrap;gap:8px;padding:12px;border-top:1px solid var(--line);}
+.tr-actions .btn {min-height:44px;flex:1 1 auto;}
+.tr-handoff {color:var(--muted);font-size:12px;line-height:1.4;padding:0 12px 12px;margin:0;}
+.tr-history {margin-top:14px;}
+.tr-history summary {min-height:44px;padding:12px 0;cursor:pointer;font-size:13px;font-weight:700;}
+.tr-history article {border-top:1px solid var(--line);padding:10px 0;font-size:12px;}
+.tr-history article>header {display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:space-between;margin-bottom:5px;}
+.tr-history article small,.tr-history article>span {color:var(--muted);font-size:11px;}
+.tr-history article>ul {padding-left:16px;line-height:1.6;}
+.tr-history article details {border:1px solid var(--line);border-radius:8px;padding:0 8px;margin-top:8px;}
+.tr-history .tr-package section {padding-inline:6px;}
+.tr-empty {display:grid;justify-items:start;gap:12px;padding:24px 12px;font-size:14px;color:var(--muted);}
+.tr-error,.tr-compose-error {color:var(--danger);font-size:13px;line-height:1.4;padding:8px 12px;}
+.tr-unlock {display:grid;gap:12px;padding:16px 0;}
+.tr-unlock label,.tr-compose label {display:grid;gap:6px;font-size:13px;font-weight:700;}
+.tr-unlock input,.tr-compose input {min-height:44px;max-width:100%;border:1px solid var(--control-line);background:var(--bg-2);color:var(--text);border-radius:8px;padding:8px 12px;font:500 16px var(--font-body);}
+.tr-compose {width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 32px);padding:0;border:1px solid var(--line);border-radius:16px;background:var(--bg-2);color:var(--text);box-shadow:var(--shadow);}
+.tr-compose::backdrop {background:rgb(0 0 0 / .48);}
+.tr-compose form {margin:0;}
+.tr-compose header {padding:12px 14px;border-bottom:1px solid var(--line);}
+.tr-compose header h2 {font-size:20px;margin:0;}
+.tr-compose footer {display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line);}
+.tr-compose footer .btn {flex:1;min-height:44px;}
+.tr-compose label {padding:10px 14px;}
+.tr-compose[open] {animation:tr-offer-enter 180ms ease-out both;}
+@keyframes tr-offer-enter {from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+[data-ui-motion="off"] .tr-compose[open] {animation:none;}
+@media(prefers-reduced-motion:reduce){.tr-compose[open]{animation:none;}}
+@media(min-width:650px){.tr-list{grid-template-columns:repeat(2,minmax(0,1fr));}}

@@ -1,0 +1,65 @@
+name: Trade room review
+on:
+  pull_request:
+    paths:
+      - 'js/trade-negotiation*'
+      - 'js/pages/trade.js'
+      - 'css/trade-negotiation.css'
+      - 'tools/*trade-room*'
+      - 'tools/render-trade-review.mjs'
+      - 'supabase/migrations/*trade_negotiation*'
+      - 'supabase/migrations/*trade_room*'
+      - 'supabase/tests/trade_room*'
+      - '.github/workflows/trade-room-review.yml'
+permissions:
+  contents: read
+jobs:
+  trade-room-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pip install playwright
+      - run: python -m playwright install --with-deps chromium
+      - name: Check room and existing trade workflows with isolated rosters
+        env:
+          DFL_TRADE_REVIEW_DIR: ${{ github.workspace }}/trade-room-review-output
+        run: |
+          node tools/render-trade-review.mjs
+          python tools/capture-trade-room-review.py
+          python tools/capture-trade-review.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trade-room-review
+          path: trade-room-review-output/
+          retention-days: 7
+  trade-room-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify participant permissions, routing and revision checks
+        env:
+          DFL_TRADE_TEST_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker cp supabase "$DFL_TRADE_TEST_CONTAINER:/qa"
+          docker exec "$DFL_TRADE_TEST_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 -f /qa/tests/trade_room_fixture.sql

@@ -547,3 +547,7 @@ are added. Reduced motion suppresses close-ups/parallax and uses the full field.
 The two scenery tiers reuse existing artwork. Actual source offsets and a
 pixel-stable paused view are checked in the browser fixture. Device fullscreen,
 physical frame rates and assistive-technology output remain unverified.
+
+## 1.443.0 — Trade Deal Room
+
+Reviewed actual mobile screenshots at 320/390px and wider 768px in Medicine Wheel Light and Dark: inbox/open and closed states, current-name three-way routing, counter review, revision history, agreements and Sleeper handoff. New surfaces, borders, controls, text, selected tabs and errors use shared theme tokens; player identity colors retain their NFL meaning. Corrected room padding to match the Trade header. Existing shared navigation/header/receipt regression screenshots were also checked by the Trade browser suite. All 162 room browser checks passed, including overflow, 44px targets and reduced motion; `pnpm themes` and theme unit tests passed. PIN unlock and save-error recovery exercised in both palettes. Physical-device keyboards and screen-reader speech remain unverified. Details: `docs/trade-negotiation-room-validation.md`.
