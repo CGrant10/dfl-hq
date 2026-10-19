@@ -1,5 +1,5 @@
 import {it,expect} from 'vitest';
-import {stadiumShowdown,stadiumShowdownLane,stadiumDepth} from './stadium-scene.js';
+import {stadiumShowdown,stadiumShowdownLane,stadiumDepth,stadiumVerticalCamera,stadiumCameraRacers} from './stadium-scene.js';
 const frame=()=>({countdown:0,finished:false,rows:[{id:'a',index:0,progress:.5,rank:2,place:12},{id:'b',index:11,progress:.505,rank:1,place:1}]});
 const shot={kind:'battle',ids:['b','a']};
 it('keeps separate close-ups in stable lanes while the true lead changes',()=>{
@@ -41,4 +41,27 @@ it('moves distant stands less than the near crowd and foreground, using camera p
  const mid=stadiumDepth(1150);expect(mid).toEqual({far:-9,near:-21,sideline:-37});expect(Math.abs(mid.far)).toBeLessThan(Math.abs(mid.near));expect(Math.abs(mid.near)).toBeLessThan(Math.abs(mid.sideline));
  expect(stadiumDepth(5000)).toEqual(stadiumDepth(2300));expect(stadiumDepth(-500)).toEqual(stadiumDepth(0));
  expect(stadiumDepth(1800,{motion:false})).toEqual(stadiumDepth(0));expect(stadiumDepth(NaN)).toEqual(stadiumDepth(0));
+});
+
+it('keeps helmets and feet inside the field when following either edge lane',()=>{
+ for(const count of [2,12,32])for(const height of [105,144,300,430])for(const index of [0,count-1]){
+  const laneHeight=Math.max(26,height/count),zoom=Math.max(1,Math.min(24,count/1.35));
+  const view=stadiumVerticalCamera({top:30,height,count,laneHeight,zoom,focus:(index+.5)*laneHeight});
+  const ground=view.middle+((index+.5)*laneHeight-view.center)*view.scale+laneHeight*view.scale*.35;
+  const runnerScale=Math.max(.3,Math.min(1.7,laneHeight*view.scale/78));
+  expect(ground-78*runnerScale).toBeGreaterThanOrEqual(30);
+  expect(ground+6*runnerScale).toBeLessThanOrEqual(30+height);
+ }
+});
+it('shows current camera identities without exposing sealed finishing places',()=>{
+ const f=frame();f.ranked=[...f.rows].reverse();
+ expect(stadiumCameraRacers(shot,f)).toEqual([{id:'b',index:11,rank:1},{id:'a',index:0,rank:2}]);
+ expect(stadiumCameraRacers(shot,f,{state:'finished'})).toEqual([{id:'b',index:11,rank:1}]);
+ expect(stadiumCameraRacers({...shot,ids:['a']},f,{camera:'follow'})).toEqual([{id:'a',index:0,rank:2}]);
+ expect(stadiumCameraRacers({...shot,ids:['a']},f,{camera:'follow',state:'finished'})).toEqual([{id:'a',index:0,rank:2}]);
+ expect(stadiumCameraRacers(shot,f,{camera:'field'})).toEqual([]);
+ expect(stadiumCameraRacers({...shot,kind:'field'},f)).toEqual([]);
+ expect(stadiumCameraRacers({...shot,kind:'launch'},f)).toEqual([]);
+ expect(stadiumCameraRacers(shot,f,{state:'idle'})).toEqual([]);
+ expect(stadiumCameraRacers(shot,{...f,countdown:3})).toEqual([]);
 });

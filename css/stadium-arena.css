@@ -177,3 +177,41 @@ body.sr-stadium-expanded #view,body.sr-stadium-expanded .sr-room{transform:none!
 .sr-showdown[data-columns=true] .sr-showdown-racer strong{max-width:calc(100% - 62px);font-size:12px}
 .sr-showdown[data-columns=true] .sr-showdown-racer>span{min-width:19px;padding-inline:3px}
 .sr-showdown[data-columns=true] .sr-showdown-gap{left:50%;right:auto;top:auto;bottom:4px;transform:translateX(-50%);white-space:nowrap}
+
+/* Native-size on-camera identities; the turf never has to carry tiny name text. */
+.sr-camera-identities{position:absolute;inset:0 0 auto;min-height:var(--sr-field-top,30px);height:var(--sr-field-top,30px);display:flex;align-items:center;justify-content:center;gap:12px;padding:2px 8px;color:#f1eee7;background:linear-gradient(90deg,#080d15aa,#080d15e6,#080d15aa);pointer-events:none}
+.sr-camera-identities>span{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;max-width:50%;border-left:2px solid var(--racer,#dbc180);padding-left:6px}
+.sr-camera-identities>span:only-child{max-width:100%}
+.sr-camera-identities b{flex:none;color:#e6d1a1;font:700 12px/1.1 Rajdhani,sans-serif;font-variant-numeric:tabular-nums}
+.sr-camera-identities strong{min-width:0;font:700 13px/1.08 Rajdhani,sans-serif;overflow-wrap:anywhere}
+.sr-room .sr-staging{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;padding:5px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg-2)}
+.sr-room .sr-staging>header{margin:0;min-width:0}
+.sr-room .sr-staging>header>span{font-size:13px;color:var(--body-text)}
+.sr-room .sr-staging>button{margin:0;padding:6px 12px;font-size:13px}
+.sr-ready-status{grid-column:4;grid-row:1;justify-self:end;color:var(--muted);font:700 12px/1.1 Rajdhani,sans-serif}
+.sr-ready-status[data-ready=true]{color:var(--accent)}
+.sr-room[data-race-state=idle] .sr-follow-row .sr-gap{visibility:hidden}
+.sr-board{background:var(--bg-2);color:var(--text);border:1px solid var(--line)}
+.stadium-arena button.sr-follow-row{color:var(--text)}
+.sr-racer-name small{color:var(--body-text);font-size:11px;line-height:1.2;letter-spacing:0}
+.sr-rank,.sr-board-head>span{color:var(--accent)}
+.sr-gap{color:var(--body-text);font-size:12px;letter-spacing:0}
+.sr-position{border-bottom-color:var(--line)}
+.sr-position[data-leader=true]{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 9%,transparent),transparent);border-left-color:var(--accent)}
+.stadium-arena .sr-follow-row:focus-visible{outline-color:var(--accent);outline-offset:-3px}
+.stadium-arena .sr-tools button,.stadium-arena .sr-lobby-actions button{color:var(--text);background:var(--bg-2);border-color:var(--control-line)}
+.stadium-arena .sr-lobby-actions button.sr-primary{color:var(--on-accent);background:var(--accent-fill);border-color:var(--accent-fill)}
+/* Solid sticky surfaces keep scrolled controls from bleeding through the gear editor. */
+.sr-kit-panel header,.sr-kit-panel footer{background:#101720}
+.sr-kit-panel header{box-shadow:0 -18px 0 18px #101720}
+.sr-kit-panel footer{box-shadow:0 14px 0 14px #101720}
+.sr-kit-panel :is(button,input,select):focus-visible{outline:2px solid #dbc180;outline-offset:2px}
+@media(max-width:350px){.sr-camera-identities{gap:8px;padding-inline:6px}.sr-camera-identities strong{font-size:12px}.sr-camera-identities>span{gap:3px;padding-left:4px}.sr-camera-identities b{font-size:11px}}
+
+/* Status ink must remain readable outside the permanently dark stadium. */
+.sr-room>.sr-room-title .sr-state{color:var(--body-text)}
+.sr-room>.sr-room-title .sr-state[data-state=running]{color:var(--danger-ink)}
+.sr-room>.sr-room-title .sr-state[data-state=running]:before{background:currentColor}
+.sr-room>.sr-room-meta .sr-connection{color:var(--warn-ink)}
+.sr-lobby>.sr-title .sr-kicker{color:var(--accent)}
+.sr-ready-status small{font:inherit}

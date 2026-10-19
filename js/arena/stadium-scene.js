@@ -20,3 +20,17 @@ export function stadiumDepth(panX,{worldWidth=2300,motion=true}={}){
  const travel=motion&&Number.isFinite(panX)?clamp(panX/worldWidth,0,1):0;
  return travel?{far:-18*travel,near:-42*travel,sideline:-74*travel}:{far:0,near:0,sideline:0};
 }
+
+// Reserve space for the helmet/badge and feet before zooming into an edge lane.
+export function stadiumVerticalCamera({top,height,count,laneHeight,zoom,focus,overview=false}){
+ const head=overview?10:Math.min(64,Math.max(32,height*.16)),foot=overview?8:Math.min(16,Math.max(8,height*.04)),usable=Math.max(24,height-head-foot),world=count*laneHeight;
+ const scale=usable/world*zoom,half=world/(2*zoom),center=clamp(focus,half,world-half);
+ return {scale,center,middle:top+head+usable/2};
+}
+
+// Only current ranks are suitable for the on-camera identity strip.
+export function stadiumCameraRacers(shot,frame,{camera='auto',state='running',replay=false}={}){
+ if(camera==='field'||state==='idle'||frame.countdown||!shot||['field','launch'].includes(shot.kind))return [];
+ const rows=shot.ids.map(id=>frame.rows.find(row=>row.id===id)).filter(Boolean);
+ return (state==='finished'&&!replay&&camera==='auto'?frame.ranked.slice(0,1):rows.slice(0,2)).map(row=>({id:row.id,index:row.index,rank:row.rank}));
+}

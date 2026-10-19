@@ -24,7 +24,7 @@ export function mountStadiumCrowd(root,{channel,key,getSnapshot,getRacers,getMem
   if(stopped)return;
   const snapshot=getSnapshot(),state=connected?stadiumReadyState(channel.presenceState(),getRacers(),snapshot.event.race_revision):{watching:0,ready:[]};
   const presence=root.querySelector('[data-presence]');presence.textContent=connected?`${state.watching} watching`:'Reconnecting…';presence.hidden=false;
-  staging.querySelectorAll('[data-ready-racer]').forEach(node=>{const done=state.ready.includes(node.dataset.readyRacer);node.dataset.ready=String(done);node.querySelector('small').textContent=done?'Ready':'Waiting'});
+  root.querySelectorAll('[data-ready-racer]').forEach(node=>{const done=state.ready.includes(node.dataset.readyRacer);node.hidden=getSnapshot().event.bc_state!=='idle';node.dataset.ready=String(done);node.querySelector('small').textContent=done?'Ready ✓':'Waiting'});
   const count=staging.querySelector('[data-ready-count]');if(count)count.textContent=connected?`${state.ready.length} / ${getRacers().length} ready`:'Connecting…';
  };
  const paint=()=>{
@@ -34,7 +34,7 @@ export function mountStadiumCrowd(root,{channel,key,getSnapshot,getRacers,getMem
   if(memberId!==member){memberId=member;if(ready){ready=false;void publish()}}
   if(revision!==nextRevision){revision=nextRevision;if(ready){ready=false;void publish()}clear();seen.clear()}
   if(field!==nextField){field=nextField;const selected=select.value;select.innerHTML=racers.map(r=>`<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('');select.value=racers.some(r=>r.id===selected)?selected:racers.some(r=>r.id===member)?member:racers[0]?.id||'';
-   staging.innerHTML='<header><h2>Starting line</h2><span data-ready-count></span></header><div class="sr-ready-racers">'+racers.map(r=>`<span data-ready-racer="${esc(r.id)}"><b>${esc(r.name)}</b><small>Waiting</small></span>`).join('')+'</div><button type="button" data-crowd-ready aria-pressed="false" hidden>I’m ready</button>';
+   staging.innerHTML='<header><span data-ready-count></span></header><button type="button" data-crowd-ready aria-pressed="false" hidden>I’m ready</button>';
   }
   staging.hidden=!idle;const showReady=idle&&racers.some(r=>r.id===member);
   for(const button of root.querySelectorAll('[data-crowd-ready]')){button.hidden=!showReady;button.disabled=!connected||busy;button.setAttribute('aria-pressed',String(ready));button.textContent=ready?'Ready ✓':'I’m ready'}
