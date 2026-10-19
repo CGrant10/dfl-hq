@@ -462,3 +462,31 @@ matchups. Scores remain aligned, long team names wrap, and the new surfaces
 use the app's existing Medicine Wheel hierarchy. Twelve phase/theme/phone-size
 captures passed with no overflow or browser errors; focus, reading position,
 per-phase preferences and controller cleanup passed in Chromium.
+
+## 1.439.0 — Signature matchup finishes
+
+Finished GameDay Watch and Clubhouse matchups reuse their existing two-team
+scoreboards. A compact result line replaces the duplicate Clubhouse summary and
+chirp, with replay and the existing share-card presentation. Clutch wins (up to
+one point), close wins, ordinary wins, blowouts and ties use actual rounded
+hundredths and confirmed weekly completion. No live lead or unknown score earns
+a final celebration, and no upset is inferred without evidence.
+
+Motion reveals the real score digits, followed by the margin and roast. It is
+finite, waits for visible scoreboards, respects Motion off and reduced motion,
+and cancels on hiding or teardown. A bounded local record shares once-per-member,
+league, season, week and matchup behavior between the two surfaces. Corrections
+update the receipt without replaying. Archive Clubhouse views are static unless
+Replay finish is requested.
+
+Reviewed actual Light and Dark screenshots of Clubhouse clutch, blowout and tie
+receipts and GameDay Watch, at 320px and 390px. Names wrap, values stay aligned,
+new actions meet 44px targets, and no horizontal overflow was found. Shared text,
+border, accent-sweep and focus tokens preserve the Medicine Wheel defaults; no
+new logo, asset, palette entry or permanent explanatory subtext was introduced.
+Fixture-backed Chromium checks cover automatic playback, cross-surface dedupe,
+corrections, replay, selected share payloads, archives, motion switches and cleanup.
+GameDay opens at the top; replay expands a scrolled compact scoreboard before
+revealing the teams. The browser review verifies that scroll and compact-state reset.
+Physical-device frame rates, authenticated live data and native share delivery
+remain unverified.

@@ -3663,6 +3663,32 @@ html[data-archive-transition] {view-transition-name:none;}
 @media(min-width:900px) { .clubhouse-pinned-score { top:calc(var(--topbar-h,44px) + var(--season-nav-height,49px)); } }
 
 
+/* Source: css/matchup-finish.css */
+/* Final receipts use the existing scoreboard, with a finite reveal underneath. */
+[data-matchup-finish][hidden] { display:none; }
+.matchup-finish { position:relative; min-width:0; margin:12px 0 20px; padding:18px 0 0; border-bottom:1px solid var(--line); color:var(--text); }
+.matchup-finish-rule { position:absolute; inset:0 0 auto; height:2px; background:var(--accent-sweep); transform-origin:center; }
+.matchup-finish-verdict { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.matchup-finish-verdict > strong { min-width:0; font:700 19px/1.2 var(--font-display); text-transform:uppercase; letter-spacing:.025em; overflow-wrap:anywhere; }
+.matchup-finish-verdict > span { display:grid; justify-items:end; flex-shrink:0; }
+.matchup-finish-verdict b { display:block; color:var(--text); font:700 32px/1.1 var(--font-display); font-variant-numeric:tabular-nums; }
+.matchup-finish-verdict small { color:var(--muted); font:500 12px/1.4 var(--font-display); }
+.matchup-finish-roast { margin:12px 0 8px; color:var(--body-text); font:500 15px/1.45 var(--font-display); overflow-wrap:anywhere; }
+.matchup-finish-actions { display:flex; flex-wrap:wrap; gap:4px 20px; }
+.matchup-finish-actions button { min-height:44px; padding:8px 0; color:var(--text); font:600 13px/1.4 var(--font-display); }
+.matchup-finish-actions button:focus-visible { outline:2px solid var(--accent); outline-offset:3px; border-radius:var(--r-sm); }
+.matchup-finish[data-finish-kind="clutch"] .matchup-finish-rule { inset-inline:24%; }
+.matchup-finish[data-finish-kind="blowout"] .matchup-finish-rule { height:3px; }
+.matchup-finish[data-finish-kind="tie"] .matchup-finish-rule { background:var(--line); }
+#view .clubhouse-matchup-card[data-finish-ready] > .clubhouse-matchup-summary,
+#view .clubhouse-matchup-card[data-finish-ready] > [data-matchup-chirp] { display:none; }
+[data-finish-ready] :is([data-matchup-score-value],.gd-watch-score-team .gd-thermal-value) { display:inline-block; }
+.gameday-watch [data-matchup-finish] { padding-inline:16px; }
+@media (prefers-reduced-motion:reduce) {
+ [data-finish-ready] { scroll-behavior:auto; }
+}
+
+
 /* Source: css/trade-workspace.css */
 /* Trade workspace: the existing DFL ticket palette, with compact readable tools. */
 #view[data-route="trade"] .tb-head-row { padding:16px; gap:10px; }

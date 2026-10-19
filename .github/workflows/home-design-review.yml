@@ -90,6 +90,9 @@ on:
       - 'js/weekly-clubhouse-ui.js'
       - 'js/game-day-score-motion*'
       - 'js/game-day-model*'
+      - 'js/matchup-finish*'
+      - 'css/matchup-finish.css'
+      - 'tools/capture-finish-review.py'
       - 'css/home.css'
       - 'js/sportsbook-pickem.js'
       - 'js/member-wall.js'
@@ -130,6 +133,8 @@ jobs:
       - run: node tools/render-home-review.mjs
       - name: Check phase-aware Home weekly desk
         run: python tools/capture-home-week-review.py
+      - name: Check final matchup presentation
+        run: python tools/capture-finish-review.py
       - name: Check award artwork spacing
         run: python tools/capture-award-review.py
       - name: Check broadcast first-read timing

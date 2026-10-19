@@ -637,7 +637,7 @@ def check_watch_score_strip(page):
     """Real Watch controller, with isolated reads and labeled sample teams."""
     source=(ROOT/'js/game-day-watch.js').read_text().split('export function mountGameDayWatch')[1]
     page.evaluate("""async source=>{
-      const helpers=Object.assign({},...await Promise.all(['ui','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','clubhouse-matchup-model','watch-score-collapse','moment-recap'].map(name=>import(`./js/${name}.js`))));
+      const helpers=Object.assign({},...await Promise.all(['ui','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','clubhouse-matchup-model','watch-score-collapse','moment-recap','matchup-finish','matchup-finish-model','game-day-matchup-share'].map(name=>import(`./js/${name}.js`))));
       const {buildGameDay}=await import('./js/game-day-model.js');
       const members=[1,2,3,4].map(id=>({id,sleeper_user_id:`strip-${id}`,team_name:id===1?'The Very Long Championship Bayou Bombers':id===2?'Klutch Sports Group':`Demo Team ${id}`}));
       const week={season:2099,week:6,leagueId:'strip-demo',completed:false,games:[1,2].map(id=>({matchup_id:id,user1:`strip-${id*2-1}`,user2:`strip-${id*2}`,roster1:id*2-1,roster2:id*2}))};
@@ -862,6 +862,9 @@ with sync_playwright() as p:
     browser = p.chromium.launch(executable_path=executable, headless=True,
         args=['--no-sandbox', '--disable-dev-shm-usage', '--no-proxy-server', '--enable-unsafe-swiftshader'])
     context = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
+    # Every review read has a fixture provider. Fail rather than constructing
+    # a real backend client; importing a renderer must not require CDN access.
+    context.route('**/npm/@supabase/supabase-js@*/+esm', lambda route: route.fulfill(status=200,content_type='text/javascript',body='export function createClient(){throw Error("Real backend access is disabled in browser review")}'))
     # Keep legitimate autoplay out of the hidden-artwork measurement on slow runners.
     context.add_init_script('window.reviewHoldInitialStage=true')
     # Install before Clubhouse imports the shared player controller.

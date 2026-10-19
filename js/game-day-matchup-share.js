@@ -4,8 +4,8 @@ import { SHARE_INK } from './brand-ink.js';
 import { FONT,fitText,shareCanvas,shareText,roundRect } from './share.js';
 import { drawShareFrame,drawShareFooter,shareMonogram,wrapShareText } from './share-card-style.js';
 const finite=value=>value!=null&&Number.isFinite(Number(value));
-export function matchupReceiptData(model){
- const game=model?.games?.find(g=>g.isMine);
+export function matchupReceiptData(model,{gameId=null}={}){
+ const game=model?.games?.find(g=>gameId==null?g.isMine:String(g.id)===String(gameId));
  if(!game||game.sides.length!==2||game.sides.some(t=>!finite(t.score))||!model.completed&&!game.sides.every(t=>t.known&&t.remaining===0))return null;
  const sides=game.sides.map(t=>({name:t.name,score:Number(t.score)})),winner=sides[0].score===sides[1].score?null:sides[sides[0].score>sides[1].score?0:1],margin=Math.abs(sides[0].score-sides[1].score);
  const mvp=game.sides.flatMap(t=>(t.starters||[]).filter(p=>finite(p.points)).map(p=>({...p,owner:t.name}))).sort((a,b)=>Number(b.points)-Number(a.points)||String(a.name).localeCompare(String(b.name)))[0]||null;
