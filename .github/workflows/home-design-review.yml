@@ -11,6 +11,7 @@ on:
       - 'js/arena/stadium-data*'
       - 'js/arena/stadium-renderer*'
       - 'js/arena/stadium-director*'
+      - 'js/arena/stadium-scene*'
       - 'js/arena/stadium-crowd*'
       - 'js/arena/stadium-feedback*'
       - 'tools/capture-broadcast-art-direction.py'

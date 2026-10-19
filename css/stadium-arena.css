@@ -159,3 +159,21 @@ body.sr-stadium-expanded #view,body.sr-stadium-expanded .sr-room{transform:none!
  .sr-room .sr-stage-overlay span{font-size:11px}
 }
 @media(prefers-reduced-motion:reduce){.sr-race-footer:before,.sr-start-lights i{transition:none}}
+
+/* The showdown keeps names at native text size above two shared-scale lanes. */
+.sr-showdown{position:absolute;top:var(--sr-field-top,30px);left:0;width:var(--sr-field-width,100%);height:var(--sr-field-height);display:grid;grid-template-rows:1fr 1fr;pointer-events:none;color:#f1eee7}
+.sr-showdown-racer{position:relative;display:flex;align-items:flex-start;gap:6px;min-width:0;padding:5px 9px 0;background:linear-gradient(180deg,#080d15bf,transparent 30px)}
+.sr-showdown-racer:before{content:'';flex:none;width:3px;height:15px;border-radius:2px;background:var(--duel-color,#dbc180)}
+.sr-showdown-racer b{flex:none;color:#d9c590;font:700 11px/1.2 Rajdhani,sans-serif}
+.sr-showdown-racer strong{min-width:0;max-width:calc(100% - 82px);font:700 13px/1.12 Rajdhani,sans-serif;overflow-wrap:anywhere;text-shadow:0 1px 8px #000}
+.sr-showdown-racer>span{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:22px;min-height:16px;padding:1px 4px;border:1px solid #ffffff30;border-radius:3px;background:#080d15cc;color:#f1eee7;font:700 10px/1 Rajdhani,sans-serif}
+.sr-showdown-racer[data-leading=true] b{color:#f3dda2}
+.sr-showdown-gap{position:absolute;right:9px;top:50%;transform:translateY(-50%);padding:3px 7px;border:1px solid #d7bd7755;border-radius:4px;background:#0b1019;color:#eddbaf;font:700 10px/1.15 Rajdhani,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px #0003}
+.sr-stage:has(.sr-stage-overlay:not([hidden])) .sr-showdown{visibility:hidden}
+@media(min-width:600px){.sr-showdown-racer{padding:8px 12px 0;gap:8px}.sr-showdown-racer strong{font-size:15px}.sr-showdown-racer b{font-size:12px}.sr-showdown-racer>span{min-height:19px;font-size:12px}.sr-showdown-gap{font-size:12px}}
+
+.sr-showdown[data-columns=true]{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:1fr}
+.sr-showdown[data-columns=true] .sr-showdown-racer{gap:4px;padding-inline:6px}
+.sr-showdown[data-columns=true] .sr-showdown-racer strong{max-width:calc(100% - 62px);font-size:12px}
+.sr-showdown[data-columns=true] .sr-showdown-racer>span{min-width:19px;padding-inline:3px}
+.sr-showdown[data-columns=true] .sr-showdown-gap{left:50%;right:auto;top:auto;bottom:4px;transform:translateX(-50%);white-space:nowrap}
