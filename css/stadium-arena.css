@@ -215,3 +215,5 @@ body.sr-stadium-expanded #view,body.sr-stadium-expanded .sr-room{transform:none!
 .sr-room>.sr-room-meta .sr-connection{color:var(--warn-ink)}
 .sr-lobby>.sr-title .sr-kicker{color:var(--accent)}
 .sr-ready-status small{font:inherit}
+
+.sr-watch-toolbar .sr-watch-label{flex:1;padding:0 10px;background:none;border:0;color:#d8caa5;font:700 12px/1.2 Rajdhani,sans-serif;letter-spacing:.06em;text-align:center;text-transform:uppercase}

@@ -96,22 +96,21 @@ with sync_playwright() as p:
   c=browser.new_context(viewport={'width':width,'height':height},service_workers='block',reduced_motion=reduced,has_touch=True)
   c.add_init_script("localStorage.setItem('qaRole',"+json.dumps(role)+");localStorage.setItem('qaMember',"+json.dumps('1' if role=='commissioner' else '2')+")")
   c.add_init_script("""(()=>{const original=CanvasRenderingContext2D.prototype.drawImage;CanvasRenderingContext2D.prototype.drawImage=function(source,...args){if(source?.src?.includes('/assets/stadium-arena/stadium.webp')&&args.length===8){window.qaDepthOffsets??={};qaDepthOffsets[args[5]===0?'far':'near']=args[4];}return original.call(this,source,...args)}})()""")
-  c.add_init_script("""(()=>{const proto=CanvasRenderingContext2D.prototype,set=proto.setTransform,fill=proto.fillText;proto.setTransform=function(...args){if(this.canvas.matches('.sr-watch-surface canvas'))window.qaRunnerBoxes={};return set.apply(this,args)};proto.fillText=function(value,x,y,...args){if(this.canvas.matches('.sr-watch-surface canvas')&&x===0&&y===-63){const m=this.getTransform(),d=Math.min(2,devicePixelRatio||1),point=(x,y)=>({x:(m.a*x+m.c*y+m.e)/d,y:(m.b*x+m.d*y+m.f)/d}),a=point(-38,-78),b=point(26,8);(window.qaRunnerBoxes??={})[value]={left:a.x,right:b.x,top:a.y,bottom:b.y};}return fill.call(this,value,x,y,...args)}})()""")
+  c.add_init_script("""(()=>{const p=CanvasRenderingContext2D.prototype,set=p.setTransform,draw=p.drawImage;p.setTransform=function(...args){if(this.canvas.matches('.sr-watch-surface canvas'))window.qaBodies=[];return set.apply(this,args)};p.drawImage=function(source,...args){if(this.canvas.matches('.sr-watch-surface canvas')&&source?.width===768&&source?.height===256&&args.length===8&&args[4]===-22&&args[5]===-60){const m=this.getTransform(),d=Math.min(2,devicePixelRatio||1),points=[[-22,-60],[26,-60],[-22,6],[26,6]].map(([x,y])=>({x:(m.a*x+m.c*y+m.e)/d,y:(m.b*x+m.d*y+m.f)/d}));(window.qaBodies??=[]).push({left:Math.min(...points.map(p=>p.x)),right:Math.max(...points.map(p=>p.x)),top:Math.min(...points.map(p=>p.y)),bottom:Math.max(...points.map(p=>p.y))});}return draw.call(this,source,...args)}})()""")
   c.route('**/*',lambda r:r.continue_() if r.request.url.startswith(f'http://127.0.0.1:{server.server_port}') else r.abort());page=c.new_page();page.on('pageerror',lambda e:(report['errors'].append(str(e)),print('BROWSER ERROR',str(e),flush=True)));page.goto(url)
   try:page.wait_for_function('window.qaReady===true',timeout=60000)
   except Exception:
    print('LOAD ERROR',json.dumps({'errors':report['errors'],'body':page.locator('body').inner_text()[:700]}),flush=True);raise
-  page.evaluate('document.fonts.ready');page.evaluate("window.qaStartedExpanded=document.querySelector('.sr-stage').classList.contains('sr-expanded')");
+  page.evaluate('document.fonts.ready');page.evaluate('async()=>{const {loadRacerArt}=await import("/js/arena/racer-kit-art.js");await loadRacerArt()}');page.evaluate("window.qaStartedExpanded=document.querySelector('.sr-stage').classList.contains('sr-expanded')");
   if page.evaluate('qaStartedExpanded'):
    check('immersive stage fits the animated app shell',page.locator('.sr-stage').evaluate('e=>{const r=e.getBoundingClientRect();return r.top>=-1&&r.left>=-1&&r.bottom<=innerHeight+1&&r.right<=innerWidth+1}'));page.screenshot(path=str(out/'landscape-immersive-ready.png'));page.locator('.sr-stage').evaluate("e=>{e.style.setProperty('--sr-safe-left','32px');e.style.setProperty('--sr-safe-right','32px')}");check('immersive canvas and scoreboard clear landscape safe areas',page.locator('.sr-stage').evaluate("e=>{const c=e.querySelector('canvas').getBoundingClientRect(),s=e.querySelector('.sr-stage-score').getBoundingClientRect();return c.left>=32&&c.right<=innerWidth-32&&s.left>=32&&s.right<=innerWidth-32}"));page.locator('.sr-stage').evaluate("e=>{e.style.removeProperty('--sr-safe-left');e.style.removeProperty('--sr-safe-right')}");page.locator('[data-expand]').click()
   return c,page
+ def all_visible(page,count):
+  return page.evaluate("""count=>{const s=document.querySelector('.sr-stage'),canvas=s.querySelector('canvas'),w=canvas.getBoundingClientRect().width,top=parseFloat(s.style.getPropertyValue('--sr-field-top')),height=parseFloat(s.style.getPropertyValue('--sr-field-height'));return s.dataset.fieldOverview==='true'&&window.qaBodies?.length===count&&qaBodies.every(b=>b.left>=-1&&b.right<=w+1&&b.top>=top-1&&b.bottom<=top+height+1)}""",count)
  c,admin=context('commissioner');d,watch=context()
  check('commissioner opens with accessible controls instead of forced fullscreen',not admin.evaluate('qaStartedExpanded') and admin.locator('[data-edit]').is_visible())
  admin.locator('[data-expand]').click();admin.wait_for_function('document.fullscreenElement===document.querySelector(".sr-stage")||document.querySelector(".sr-stage").classList.contains("sr-expanded")')
- for mode in ['field','follow','auto']:
-  admin.locator('[data-camera='+mode+']').click();check('fullscreen '+mode+' camera stays inside watch view',admin.locator('[data-camera='+mode+']').evaluate('e=>{const s=e.closest(".sr-stage").getBoundingClientRect(),r=e.getBoundingClientRect();return e.getAttribute("aria-pressed")==="true"&&r.top>=s.top&&r.bottom<=s.bottom&&r.height>=44}'))
-  if mode=='follow':
-   admin.locator('[data-follow-select]').select_option('5');check('fullscreen racer can be chosen',admin.locator('[data-follow-select]').input_value()=='5' and admin.locator('[data-camera=follow]').get_attribute('aria-pressed')=='true')
+ check('fullscreen shows everyone without close-up controls',admin.locator('.sr-watch-label').inner_text().lower()=='full field' and admin.locator('[data-camera],[data-follow-select]').count()==0)
  print('FULLSCREEN LAYOUT',admin.evaluate("()=>({h:innerHeight,native:!!document.fullscreenElement,rows:[...document.querySelectorAll('.sr-stage,.sr-watch-toolbar,.sr-watch-surface,canvas,.sr-moment,.sr-controls')].map(e=>({c:e.className,h:e.getBoundingClientRect().height,css:getComputedStyle(e).height,flex:getComputedStyle(e).flex}))})"),flush=True)
  admin.screenshot(path=str(out/'fullscreen-layout.png'))
  check('compact fullscreen toolbar gives most height to the race',admin.locator('canvas').evaluate('e=>e.getBoundingClientRect().height>=innerHeight*.55'))
@@ -137,13 +136,13 @@ with sync_playwright() as p:
  watch.screenshot(path=str(out/'portrait-theater-ready.png'))
  watch.evaluate("()=>{document.querySelector('.sr-stage').requestFullscreen=()=>Promise.reject(new Error('Unsupported fullscreen'))}");watch.locator('[data-expand]').click();watch.wait_for_function('document.querySelector(".sr-stage").classList.contains("sr-expanded")')
  check('unsupported fullscreen still opens portrait theater',watch.locator('canvas').is_visible() and watch.locator('canvas').evaluate('e=>{const r=e.getBoundingClientRect();return Math.abs(r.width/r.height-16/9)<.02}'))
- check('expanded portrait controls fit inside the viewport',watch.locator('.sr-stage').evaluate('e=>[...e.querySelectorAll("[data-expand],[data-camera],.sr-crowd-menu summary")].every(b=>{const r=b.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight&&r.left>=0&&r.right<=innerWidth&&r.height>=44})'))
+ check('expanded portrait controls fit inside the viewport',watch.locator('.sr-stage').evaluate('e=>[...e.querySelectorAll("[data-expand],.sr-crowd-menu summary")].every(b=>{const r=b.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight&&r.left>=0&&r.right<=innerWidth&&r.height>=44})'))
  watch.screenshot(path=str(out/'portrait-theater-expanded.png'));watch.locator('[data-expand]').click()
  check('portrait fallback closes and restores scrolling',not watch.evaluate('document.body.classList.contains("sr-stadium-expanded")') and watch.locator('[data-expand]').evaluate('e=>e===document.activeElement'))
  watch.evaluate("""()=>{const stage=document.querySelector('.sr-stage');window.qaOrientationLocks=[];stage.requestFullscreen=async()=>{Object.defineProperty(document,'fullscreenElement',{configurable:true,value:stage});document.dispatchEvent(new Event('fullscreenchange'))};screen.orientation.lock=async mode=>qaOrientationLocks.push(mode);document.exitFullscreen=async()=>{Object.defineProperty(document,'fullscreenElement',{configurable:true,value:null});document.dispatchEvent(new Event('fullscreenchange'))}}""")
  watch.locator('[data-expand]').click();watch.wait_for_function('!!document.fullscreenElement')
  check('portrait fullscreen never forces an orientation lock',watch.evaluate('qaOrientationLocks.length===0') and watch.locator('canvas').is_visible())
- watch.set_viewport_size({'width':844,'height':390});watch.wait_for_timeout(100);check('rotation keeps explicit fullscreen and camera controls',watch.evaluate('!!document.fullscreenElement') and watch.locator('[data-camera=auto]').is_visible())
+ watch.set_viewport_size({'width':844,'height':390});watch.wait_for_timeout(100);check('rotation keeps explicit fullscreen and camera controls',watch.evaluate('!!document.fullscreenElement') and watch.locator('[data-expand]').is_visible())
  watch.locator('[data-expand]').click();watch.wait_for_function('!document.fullscreenElement');watch.evaluate("()=>{delete document.fullscreenElement;delete document.exitFullscreen;delete document.querySelector('.sr-stage').requestFullscreen;delete screen.orientation.lock}")
  watch.evaluate('dispatchEvent(new Event("resize"))');check('fullscreen exit stays closed after resize',not watch.locator('.sr-stage').evaluate('e=>e.classList.contains("sr-expanded")'))
  admin.evaluate("""()=>{const stage=document.querySelector('.sr-stage');stage.requestFullscreen=()=>new Promise(resolve=>window.qaFinishFullscreen=()=>{Object.defineProperty(document,'fullscreenElement',{configurable:true,value:stage});document.dispatchEvent(new Event('fullscreenchange'));resolve()});document.exitFullscreen=async()=>{Object.defineProperty(document,'fullscreenElement',{configurable:true,value:null});document.dispatchEvent(new Event('fullscreenchange'))}}""")
@@ -154,7 +153,7 @@ with sync_playwright() as p:
  check('starting grid is reachable in the first phone scroll',watch.locator('.sr-staging').evaluate('e=>e.getBoundingClientRect().height<70'))
  admin.locator('[data-stadium-staging] [data-crowd-ready]').click()
  watch.wait_for_function('[...document.querySelectorAll("[data-ready-racer]")].find(e=>e.dataset.readyRacer==="1").dataset.ready==="true"')
- check('ready status reaches another viewer without affecting the draw',not event['race_manifest'] and len(commands)==0);check('ready status belongs to the same named grid racer',watch.locator('[data-follow-racer="1"] [data-ready-racer="1"]').inner_text()=='Ready ✓')
+ check('ready status reaches another viewer without affecting the draw',not event['race_manifest'] and len(commands)==0);check('ready status belongs to the same named grid racer',watch.locator('[data-highlight-racer="1"] [data-ready-racer="1"]').inner_text()=='Ready ✓')
  watch.locator('[data-stadium-crowd] summary').click()
  watch.locator('[data-crowd-racer]').select_option('5');watch.locator('[data-crowd-call=heckle]').click()
  admin.wait_for_selector('.sr-crowd-pop');check('anonymous racer heckle reaches another viewer', 'Brandon Thomas' in admin.locator('.sr-crowd-pop').inner_text())
@@ -170,7 +169,7 @@ with sync_playwright() as p:
  admin.locator('[data-my-racer]').click();admin.wait_for_selector('.sr-kit-dialog[open]');editor=admin.locator('.sr-kit-dialog');editor.locator('[data-kit-group="NFL"]').click();check('all 32 NFL teams available',editor.locator('[name=preset] option').count()==33);editor.locator('[name=preset]').select_option('nfl:BUF');editor.locator('[data-kit-skin]').last.click();editor.locator('[name=helmetStyle]').select_option('visor');editor.locator('[name=number]').fill('17');editor.locator('[data-kit-part="jersey"]').click();editor.locator('[data-kit-color="#ffb612"]').click();check('palette updates only selected uniform part',editor.locator('[name=jersey]').input_value()=='#ffb612' and editor.locator('[name=helmet]').input_value()=='#ffffff');editor.locator('[data-kit-part="pants"]').click();editor.locator('[name=uniformColor]').evaluate("e=>{e.value='#26303b';e.dispatchEvent(new Event('input',{bubbles:true}))}");check('custom color applies to selected pants',editor.locator('[name=pants]').input_value()=='#26303b' and editor.locator('[name=jersey]').input_value()=='#ffb612');check('custom color control has active part label',editor.locator('[data-kit-custom-label]').inner_text()=='Custom pants color');check('sticky editor header and footer are opaque',editor.locator('header,footer').evaluate_all("es=>es.every(e=>getComputedStyle(e).backgroundColor==='rgb(16, 23, 32)')"));admin.wait_for_timeout(500);admin.screenshot(path=str(out/'racer-nfl.png'));editor.locator('[type=submit]').click();admin.wait_for_function('!document.querySelector(".sr-kit-dialog")');check('kit saves to selected member',kits[1]['kit']['preset']=='nfl:BUF' and kits[1]['kit']['number']==17 and kits[1]['kit']['helmetStyle']=='visor');check('saved kit leaves the race draw unchanged',event['race_manifest'] is None)
  admin.locator('[data-my-racer]').click();admin.wait_for_selector('.sr-kit-dialog[open]');editor=admin.locator('.sr-kit-dialog');check('racer persists when editor reopens',editor.locator('[name=number]').input_value()=='17');editor.locator('[data-kit-group="Pokémon"]').click();editor.locator('[name=preset]').select_option('pokemon:pikachu');admin.wait_for_timeout(300);admin.screenshot(path=str(out/'racer-pokemon.png'));editor.locator('[data-kit-group="Anime"]').click();editor.locator('[name=preset]').select_option('anime:naruto');admin.wait_for_timeout(300);admin.screenshot(path=str(out/'racer-anime.png'));admin.keyboard.press('Escape');admin.wait_for_function('!document.querySelector(".sr-kit-dialog")');check('cancel keeps saved kit',kits[1]['kit']['preset']=='nfl:BUF')
  watch.locator('[data-my-racer]').click();watch.wait_for_selector('.sr-kit-dialog[open]');second=watch.locator('.sr-kit-dialog');second.locator('[data-kit-group="Pokémon"]').click();second.locator('[name=preset]').select_option('pokemon:pikachu');second.locator('[name=number]').fill('25');second.locator('[type=submit]').click();watch.wait_for_function('!document.querySelector(".sr-kit-dialog")');check('members save independent racers',kits[1]['kit']['preset']=='nfl:BUF' and kits[2]['kit']['preset']=='pokemon:pikachu');shared=watch.evaluate('async()=>{const {loadStadiumRace}=await import("/js/arena/stadium-data.js");return (await loadStadiumRace(999)).racer_kits}');check('spectators receive both saved looks',len(shared)==2)
- admin.locator('[data-camera=field]').click();check('full field selected',admin.locator('[data-camera=field]').get_attribute('aria-pressed')=='true');admin.screenshot(path=str(out/'arena-full-field.png'));admin.locator('[data-follow-racer="5"]').click();check('tap a racer follows them',admin.locator('[data-camera=follow]').get_attribute('aria-pressed')=='true');admin.locator('[data-camera=auto]').click()
+ check('full field is always selected',admin.locator('.sr-stage').get_attribute('data-field-overview')=='true');admin.screenshot(path=str(out/'arena-full-field.png'));admin.locator('[data-highlight-racer="5"]').click();check('tap highlights a racer without a close-up',admin.locator('[data-highlight-racer="5"]').get_attribute('aria-pressed')=='true' and admin.locator('.sr-stage').get_attribute('data-field-overview')=='true')
  admin.locator('[data-edit]').click();check('commissioner can choose racers',admin.locator('[name=racer]').count()==12)
  admin.locator('[data-all]').click();admin.locator('[type=submit]').click();check('requires at least two selected racers',admin.locator('.sr-form-error').is_visible());admin.locator('[data-all]').click();admin.locator('[name=name]').fill('The Boys • Draft Order');admin.locator('[data-duration="90"]').click();admin.locator('[type=submit]').click();admin.wait_for_function('document.querySelector("[data-name]").textContent.includes("The Boys")')
  check('saved duration displayed',admin.locator('[data-duration-label]').inner_text()=='1:30');check('race editor closes',not admin.locator('.sr-editor-host').is_visible())
@@ -181,37 +180,17 @@ with sync_playwright() as p:
  admin.wait_for_function('Number(document.querySelector(".sr-stage").dataset.count)>0');admin.set_viewport_size({'width':390,'height':844});admin.evaluate('scrollTo({top:0,behavior:"instant"})');admin.wait_for_timeout(120);admin.screenshot(path=str(out/'stadium-countdown.png'));check('live countdown has three stadium start lights',admin.locator('.sr-start-lights i').count()==3 and admin.locator('.sr-start-lights').is_visible());admin.set_viewport_size({'width':844,'height':390})
  admin.locator('[data-command=pause]').click();admin.wait_for_selector('[data-command=resume]');watch.wait_for_function('document.querySelector(".sr-stage").dataset.raceState==="paused"');positions=watch.locator('.sr-position').evaluate_all('es=>es.map(e=>e.style.transform)');watch.wait_for_timeout(900);check('pause status stays outside the field',watch.locator('.sr-stage-overlay').is_hidden() and watch.locator('[data-moment-title]').inner_text()=='RACE PAUSED');check('paused positions do not advance',positions==watch.locator('.sr-position').evaluate_all('es=>es.map(e=>e.style.transform)'))
  admin.locator('[data-command=resume]').click();admin.wait_for_selector('[data-command=pause]');set_elapsed(36000);admin.wait_for_timeout(2400)
- admin.locator('[data-camera=field]').click();admin.wait_for_timeout(700);admin.evaluate('scrollTo({top:0,behavior:"instant"})');admin.wait_for_function('document.querySelector(".sr-stage").dataset.fieldOverview==="true"');admin.screenshot(path=str(out/'arena-full-field-racing.png'));check('full-field overlay stays within map',admin.locator('.sr-stage').get_attribute('data-field-overview')=='true');admin.locator('[data-camera=auto]').click();admin.wait_for_timeout(700);admin.evaluate('scrollTo({top:0,behavior:"instant"})');admin.screenshot(path=str(out/'arena-390-racing.png'));watch.screenshot(path=str(out/'arena-390-spectator.png'))
- # Real shared race frames drive the separated-lane showdown; no renderer hook.
- before_showdown_commands=len(commands)
- for width in [320,390,768]:
-  for theme in ['dark','light']:
-   set_elapsed(16300)
-   duel_c,duel=context(width=width,height=1024 if width==768 else 844)
-   duel.evaluate('m=>qaTheme(m)',theme);duel.locator('.sr-showdown:not([hidden])').wait_for();duel.wait_for_timeout(450)
-   duel.evaluate('scrollTo({top:0,behavior:"instant"})');duel.screenshot(path=str(out/f'showdown-{width}-{theme}.png'))
-   check(f'{width}px {theme} showdown names and gap fit the field',duel.locator('.sr-showdown').evaluate('e=>{const b=e.getBoundingClientRect();return [...e.querySelectorAll("strong,[data-duel-gap]")].every(n=>{const r=n.getBoundingClientRect();return r.width>0&&r.left>=b.left&&r.right<=b.right+1&&r.top>=b.top&&r.bottom<=b.bottom})}'))
-   check(f'{width}px {theme} showdown uses the right feed layout',duel.locator('.sr-showdown').get_attribute('data-columns')==('true' if width<650 else 'false'))
-   check(f'{width}px {theme} showdown shows two actual member identities',duel.locator('[data-duel-slot]').evaluate_all('es=>es.length===2&&es.every(e=>e.dataset.racerId&&e.querySelector("strong").textContent&&/^#\d+$/.test(e.querySelector("b").textContent))') and len(set(duel.locator('[data-duel-slot]').evaluate_all('es=>es.map(e=>e.dataset.racerId)')))==2)
-   if width==390 and theme=='dark':
-    depth_before=duel.evaluate('({...qaDepthOffsets})');duel.wait_for_timeout(900);depth_after=duel.evaluate('({...qaDepthOffsets})')
-    check('near crowd moves farther than distant stands while tracking the race',abs(depth_after['near']-depth_before['near'])>abs(depth_after['far']-depth_before['far'])>.001)
-    duel.locator('[data-camera=field]').click();check('manual field camera overrides showdown',duel.locator('.sr-showdown').is_hidden());duel.locator('[data-camera=follow]').click();check('manual follow camera overrides showdown',duel.locator('.sr-showdown').is_hidden())
-    duel.locator('[data-expand]').click();duel.wait_for_function('document.fullscreenElement||document.querySelector(".sr-stage").classList.contains("sr-expanded")');duel.set_viewport_size({'width':844,'height':390});duel.locator('[data-camera=auto]').click();duel.locator('.sr-showdown:not([hidden])').wait_for();duel.wait_for_timeout(450);duel.screenshot(path=str(out/'showdown-landscape-expanded.png'));check('expanded landscape keeps showdown and camera controls usable',duel.locator('[data-expand]').is_visible() and duel.locator('[data-camera=auto]').is_visible());duel.locator('[data-expand]').click()
-    set_elapsed(17500,True);duel.evaluate('qaRefresh()');duel.wait_for_function('document.querySelector(".sr-stage").dataset.raceState==="paused"');duel.wait_for_timeout(450)
-    frozen=duel.locator('canvas').evaluate('e=>e.toDataURL()');frozen_depth=duel.evaluate('({...qaDepthOffsets})');duel.wait_for_timeout(900)
-    check('pause freezes the showdown, stands and sideline together',duel.locator('canvas').evaluate('e=>e.toDataURL()')==frozen and duel.evaluate('({...qaDepthOffsets})')==frozen_depth)
-    duel.locator('[data-camera=follow]').click();duel.wait_for_timeout(700);duel.locator('[data-camera=auto]').click();duel.wait_for_timeout(800);paused_camera=duel.locator('canvas').evaluate('e=>e.toDataURL()');duel.wait_for_timeout(700)
-    check('paused camera changes settle and then hold without restarting race motion',duel.locator('canvas').evaluate('e=>e.toDataURL()')==paused_camera and duel.locator('.sr-stage').get_attribute('data-showdown')=='true')
-   duel.evaluate('window.qaLeave()');duel.wait_for_timeout(100);duel_c.close()
- set_elapsed(16300);still_c,still=context(width=390,height=844,reduced='reduce');still.wait_for_timeout(400)
- check('reduced motion keeps full field and static stadium layers',still.locator('.sr-showdown').is_hidden() and still.evaluate('qaDepthOffsets.far===-80&&qaDepthOffsets.near===-80'))
- still.evaluate('window.qaLeave()');still.wait_for_timeout(100);still_c.close();check('showdown camera never sends commissioner commands',len(commands)==before_showdown_commands)
+ admin.evaluate('scrollTo({top:0,behavior:"instant"})');admin.wait_for_function('document.querySelector(".sr-stage").dataset.fieldOverview==="true"');admin.screenshot(path=str(out/'arena-full-field-racing.png'))
+ set_elapsed(16300,True);watch.evaluate('qaRefresh()');watch.wait_for_function('document.querySelector(".sr-stage").dataset.raceState==="paused"');watch.wait_for_timeout(300)
+ frozen=watch.locator('canvas').evaluate('e=>e.toDataURL()');watch.wait_for_timeout(900);check('pause freezes the full-field race',watch.locator('canvas').evaluate('e=>e.toDataURL()')==frozen)
+ set_elapsed(16300);still_c,still=context(width=390,height=844,reduced='reduce');still.wait_for_timeout(200)
+ check('reduced motion keeps the same full field',still.locator('.sr-stage').get_attribute('data-field-overview')=='true' and still.locator('[data-camera]').count()==0)
+ still.evaluate('qaLeave()');still.wait_for_timeout(100);still_c.close()
  set_elapsed(36000);admin.evaluate('qaRefresh()');watch.evaluate('qaRefresh()');admin.wait_for_timeout(300)
  # Reordered live rows keep the keyboard user's current control focused.
- admin.locator('[data-follow-racer="1"]').focus();focused_order=admin.locator('.sr-board').get_attribute('data-order')
+ admin.locator('[data-highlight-racer="1"]').focus();focused_order=admin.locator('.sr-board').get_attribute('data-order')
  set_elapsed(42000);admin.wait_for_function('previous=>document.querySelector(".sr-board").dataset.order!==previous',arg=focused_order)
- check('live position changes preserve keyboard focus',admin.locator('[data-follow-racer="1"]').evaluate('e=>e===document.activeElement'))
+ check('live position changes preserve keyboard focus',admin.locator('[data-highlight-racer="1"]').evaluate('e=>e===document.activeElement'))
  set_elapsed(36000);admin.evaluate('qaRefresh()')
  # Review live portrait camera modes in both app themes, not just the lobby.
  for width in [320,390,768]:
@@ -219,14 +198,14 @@ with sync_playwright() as p:
   for theme in ['light','dark']:
    admin.evaluate('m=>qaTheme(m)',theme)
    check(f'{width}px {theme} race status has readable text contrast',admin.locator('.sr-room-title .sr-state').evaluate(r"""e=>{const rgb=v=>(v.match(/[\d.]+/g)||[]).slice(0,3).map(Number),l=v=>rgb(v).map(x=>x/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4).reduce((n,x,i)=>n+x*[.2126,.7152,.0722][i],0),probe=document.createElement('i');probe.style.background='var(--bg)';e.append(probe);const a=l(getComputedStyle(e).color),b=l(getComputedStyle(probe).backgroundColor);probe.remove();return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)>=4.5}"""))
-   for camera in ['auto','follow','field']:
-    admin.locator('[data-camera='+camera+']').click();admin.wait_for_timeout(650);admin.evaluate('scrollTo({top:0,behavior:"instant"})');admin.screenshot(path=str(out/f'portrait-{width}-{theme}-{camera}.png'))
-    check(f'{width}px {theme} {camera} portrait race stays wide and readable',admin.locator('canvas').evaluate('e=>{const r=e.getBoundingClientRect();return r.height>150&&Math.abs(r.width/r.height-16/9)<.02}') and admin.locator('[data-camera='+camera+']').evaluate('e=>e.getBoundingClientRect().height>=44') and admin.evaluate('document.documentElement.scrollWidth<=innerWidth'))
-    if camera!='field':
-     check(f'{width}px {theme} {camera} on-camera identities fit the stadium band',admin.locator('[data-camera-identities]').evaluate('e=>{if(e.hidden)return true;const r=e.getBoundingClientRect();return [...e.querySelectorAll("strong")].every(n=>{const b=n.getBoundingClientRect();return b.top>=r.top&&b.bottom<=r.bottom+1&&b.left>=r.left&&b.right<=r.right+1&&n.scrollWidth<=n.clientWidth+1})}'))
-     if camera=='follow':check(f'{width}px {theme} follow identity matches selected racer',admin.locator('[data-camera-identities] strong').inner_text()==admin.locator('[data-follow-select] option:checked').inner_text())
-    check(f'{width}px {theme} {camera} camera labels fit',admin.locator('[data-camera]').evaluate_all('es=>es.every(e=>e.scrollWidth<=e.clientWidth)'))
-    check(f'{width}px {theme} {camera} crowd button never covers the field',admin.locator('.sr-crowd-menu summary').evaluate('e=>e.getBoundingClientRect().top>=document.querySelector("canvas").getBoundingClientRect().bottom-1'))
+   admin.evaluate('scrollTo({top:0,behavior:"instant"})');admin.wait_for_timeout(150);admin.screenshot(path=str(out/f'full-field-{width}-{theme}.png'))
+   check(f'{width}px {theme} race stays wide without page overflow',admin.locator('canvas').evaluate('e=>{const r=e.getBoundingClientRect();return r.height>150&&Math.abs(r.width/r.height-16/9)<.02}') and admin.evaluate('document.documentElement.scrollWidth<=innerWidth'))
+   check(f'{width}px {theme} draws all 12 racers inside the field',all_visible(admin,12))
+   check(f'{width}px {theme} has no close-up or split-screen controls',admin.locator('[data-camera],[data-follow-select],.sr-showdown,.sr-camera-identities').count()==0)
+   check(f'{width}px {theme} crowd button stays below the field',admin.locator('.sr-crowd-menu summary').evaluate('e=>e.getBoundingClientRect().top>=document.querySelector("canvas").getBoundingClientRect().bottom-1'))
+ admin.locator('[data-expand]').click();admin.set_viewport_size({'width':844,'height':390});admin.wait_for_timeout(200)
+ check('expanded live race shows every racer without a close-up panel',all_visible(admin,12) and admin.locator('[data-camera],.sr-showdown').count()==0)
+ admin.screenshot(path=str(out/'full-field-expanded.png'));admin.locator('[data-expand]').click()
  portrait_c,portrait=context(width=390,height=844)
  check('a direct watch link opens a live race in portrait',not portrait.evaluate('qaStartedExpanded') and portrait.locator('canvas').is_visible() and portrait.locator('[data-overlay]').inner_text()=='')
  before_commands=len(commands);portrait_clock=portrait.locator('[data-clock]').inner_text();portrait_pixels=portrait.locator('canvas').evaluate('e=>e.toDataURL()');portrait.wait_for_timeout(1250)
@@ -234,7 +213,7 @@ with sync_playwright() as p:
  portrait.set_viewport_size({'width':844,'height':390});portrait.wait_for_function('document.querySelector(".sr-stage").classList.contains("sr-expanded")');check('rotating an inline portrait spectator expands the stadium')
  portrait.set_viewport_size({'width':390,'height':844});portrait.wait_for_function('!document.querySelector(".sr-stage").classList.contains("sr-expanded")');check('rotating back returns automatic viewing inline without a scroll lock',not portrait.evaluate('document.body.classList.contains("sr-stadium-expanded")'))
  portrait.evaluate('window.qaLeave()');portrait_c.close()
- admin.set_viewport_size({'width':844,'height':390});admin.locator('[data-camera=auto]').click()
+ admin.set_viewport_size({'width':844,'height':390})
  check('callout never covers the running field',admin.locator('.sr-stage').evaluate('e=>e.querySelector(".sr-moment").getBoundingClientRect().top>=e.querySelector("canvas").getBoundingClientRect().bottom-1'))
  check('rank order is live rather than future official order',watch.locator('.sr-position').evaluate_all('es=>es.map(e=>[e.dataset.racerId,e.querySelector(".sr-rank").textContent])')!=[[str(i+1),str(12-i)] for i in range(12)])
  admin.locator('[data-command=pause]').click();admin.wait_for_selector('[data-command=resume]');admin.locator('[data-edit]').click();check('racers locked during a paused draw',admin.locator('[name=racer]:disabled').count()==12);admin.locator('[data-duration="120"]').click();admin.locator('[type=submit]').click();admin.wait_for_function('document.querySelector("[data-duration-label]").textContent==="2:00"');check('paused duration edit works')
@@ -248,7 +227,7 @@ with sync_playwright() as p:
  watch.evaluate('qaRefresh()');watch.wait_for_selector('[data-photo-finish]:not([hidden])');watch.locator('[data-photo-finish]').click()
  watch.wait_for_function('document.querySelector("[data-moment-title]").textContent.includes("0.25×")')
  check('goal-line replay is local and keeps official order',len(results)==12 and results[0]['member_id']==12)
- watch.screenshot(path=str(out/'photo-finish-replay.png'))
+ check('goal-line replay keeps every racer visible',all_visible(watch,12));watch.screenshot(path=str(out/'photo-finish-replay.png'))
  watch.locator('[data-stop-replay]').click();check('photo finish can return directly to the result',watch.locator('[data-stop-replay]').is_hidden())
  for width in [320,390,768]:
   admin.set_viewport_size({'width':width,'height':844});admin.wait_for_timeout(400);check(f'{width}px finished race is visible in a wide portrait window',admin.locator('canvas').is_visible() and admin.locator('canvas').evaluate('e=>{const r=e.getBoundingClientRect();return Math.abs(r.width/r.height-16/9)<.02}'));check(f'{width}px has no horizontal overflow',admin.evaluate('document.documentElement.scrollWidth<=innerWidth'));admin.screenshot(path=str(out/f'arena-{width}-final.png'))
@@ -277,13 +256,13 @@ with sync_playwright() as p:
   event['race_manifest']=None;event['race_duration_ms']=90000;results=[];set_elapsed(36000,True)
   for width in [320,390,1440]:
    frame_c,framed=context(role='commissioner',width=width,height=900 if width==1440 else 844)
-   framed.locator('[data-camera=follow]').click()
    for racer in ['1',str(size)]:
-    framed.locator('[data-follow-select]').select_option(racer);framed.wait_for_timeout(750)
-    check(f'{size} racers {width}px follow edge {racer} has the correct identity',framed.locator('[data-camera-identities] strong').inner_text()==members[int(racer)-1]['display_name'])
-    check(f'{size} racers {width}px edge {racer} has no clipping or page overflow',framed.locator('[data-camera-identities]').evaluate('e=>{const b=e.getBoundingClientRect(),n=e.querySelector("strong"),r=n.getBoundingClientRect();return r.top>=b.top&&r.bottom<=b.bottom+1&&document.documentElement.scrollWidth<=innerWidth}') and framed.locator('[data-expand]').is_visible())
-    number=kits.get(int(racer),{}).get('kit',{}).get('number',int(racer))
-    check(f'{size} racers {width}px edge {racer} body is actually inside the field',framed.evaluate("""number=>{const e=document.querySelector('.sr-stage'),top=parseFloat(e.style.getPropertyValue('--sr-field-top')),h=parseFloat(e.style.getPropertyValue('--sr-field-height')),b=window.qaRunnerBoxes?.[number],w=document.querySelector('canvas').getBoundingClientRect().width;return !!b&&b.top>=top-1&&b.bottom<=top+h+1&&b.left>=0&&b.right<=w}""",str(number)))
+    framed.locator(f'[data-highlight-racer="{racer}"]').click();framed.wait_for_timeout(100)
+    check(f'{size} racers {width}px can highlight racer {racer}',framed.locator(f'[data-highlight-racer="{racer}"]').get_attribute('aria-pressed')=='true')
+    check(f'{size} racers {width}px highlighting keeps everyone visible',all_visible(framed,size))
+   for elapsed_ms in [500,45000,89900]:
+    set_elapsed(elapsed_ms,True);framed.evaluate('qaRefresh()');framed.wait_for_timeout(100)
+    check(f'{size} racers {width}px all racers visible at {elapsed_ms}ms',all_visible(framed,size))
    for theme in ['dark','light']:
     framed.evaluate('m=>qaTheme(m)',theme);framed.evaluate('scrollTo({top:0,behavior:"instant"})');framed.screenshot(path=str(out/f'edge-{size}-{width}-{theme}.png'))
    framed.evaluate('qaLeave()');framed.wait_for_timeout(100);frame_c.close()

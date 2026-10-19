@@ -2,7 +2,6 @@ import {describe,it,expect,vi} from 'vitest';
 vi.mock('../supabase.js',()=>({db:()=>{throw Error('No database in model tests');}}));
 import {buildStadiumRace,stadiumFrame,stadiumElapsed,stadiumFinishFraction,STADIUM_ENGINE} from './stadium-model.js';
 import {createStadiumClock} from './stadium-data.js';
-import {stadiumTrackWindow} from './stadium-renderer.js';
 
 const make=(count=12,duration=60000,seed=2407)=>{
  const racers=Array.from({length:count},(_,i)=>({id:String(i+1),name:`Member ${i+1}`}));
@@ -57,14 +56,5 @@ describe('shared stadium race',()=>{
  it('anchors time to monotonic elapsed time and half the request round trip',()=>{
   let now=100;const clock=createStadiumClock(()=>now);clock.sync(100000,80,100);expect(clock.now()).toBe(100010);now=5100;expect(clock.now()).toBe(105010);
  });
- it('tracks the actual pack without treating the starting line as a trailing racer',()=>{
-  const window=stadiumTrackWindow([{progress:.40},{progress:.43}],.43);
-  expect(window.span).toBe(240);expect(window.start).toBeCloseTo(885);
-  expect((2300-window.start)/window.span).toBeGreaterThan(1);
- });
- it('keeps trailing racers and the finish in frame during the final sprint',()=>{
-  const rows=[{progress:.875},{progress:.935}],window=stadiumTrackWindow(rows,.92);
-  expect(window.start).toBeLessThan(rows[0].progress*2300);
-  expect(window.start+window.span).toBeGreaterThan(2300);
- });
+
 });

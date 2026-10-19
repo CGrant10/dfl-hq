@@ -8,7 +8,6 @@ import {getReduceRaceMotion,setReduceRaceMotion} from '../store.js';
 import {loadStadiumRace,commandStadiumRace,removeStadiumRace,createStadiumClock} from '../arena/stadium-data.js';
 import {buildStadiumRace,stadiumFrame,stadiumElapsed,stadiumMoment,STADIUM_ENGINE} from '../arena/stadium-model.js';
 import {createStadiumRenderer,stadiumColor} from '../arena/stadium-renderer.js';
-import {stadiumCameraRacers} from '../arena/stadium-scene.js';
 import {normalizeKit,footballSpot,finishMargin} from '../arena/racer-kit-model.js';
 import {mountStadiumOrientation} from '../arena/stadium-orientation.js';
 
@@ -91,7 +90,7 @@ async function lobby(view,members,life){
 }
 
 async function room(view,members,id,life){
- const clock=createStadiumClock();let snapshot=null,racers=[],race=null,renderer=null,channel=null,poll=0,raf=0,cameraRaf=0,inflight=null,busy=false,lastDOM=0,lastKey='',finishAt=null,replayAt=null,replayFinished=false,lastLeader='',leadChange=null,stageVisible=true,cameraMode='auto',followId=null,crowd=null,replayFrom=0,replayRate=1,replayUntil=0,replayKind='full',lastCue='';
+ const clock=createStadiumClock();let snapshot=null,racers=[],race=null,renderer=null,channel=null,poll=0,raf=0,inflight=null,busy=false,lastDOM=0,lastKey='',finishAt=null,replayAt=null,replayFinished=false,lastLeader='',leadChange=null,stageVisible=true,highlightId=null,crowd=null,replayFrom=0,replayRate=1,replayUntil=0,replayKind='full',lastCue='';
  const sent=performance.now();snapshot=await loadStadiumRace(id);clock.sync(snapshot.server_ms,sent);if(life.closed)return;
  // Only untouched legacy setup can be upgraded. Its historical/live renderer stays intact.
  if(snapshot.event.race_engine!==STADIUM_ENGINE&&!(snapshot.event.bc_state==='idle'&&snapshot.event.status!=='complete'&&!snapshot.results.length)){
@@ -101,7 +100,7 @@ async function room(view,members,id,life){
  const root=document.createElement('section');root.className='stadium-arena sr-room';
  root.innerHTML=`<header class="sr-title sr-room-title"><a class="sr-back" href="#/arena">← Arena</a><h1 data-name></h1><span class="sr-state" data-state-label></span></header>
  <div class="sr-room-meta"><span data-racer-count></span><span data-duration-label></span><span data-presence hidden></span><span class="sr-connection" role="status" hidden></span></div>
- <div class="sr-stage"><div class="sr-watch-toolbar sr-stage-score"><div class="sr-watch-clock"><span data-clock>0:00</span><small data-field-spot></small></div><div class="sr-camera-selector" style="--camera-slot:0" role="group" aria-label="Race camera"><button type="button" data-camera="auto" aria-pressed="true">Auto</button><button type="button" data-camera="field" aria-label="Full field camera" aria-pressed="false">Field</button><button type="button" data-camera="follow" aria-pressed="false">Follow</button></div><select data-follow-select aria-label="Follow racer" hidden></select><button type="button" data-expand aria-label="Expand race"><span aria-hidden="true">⛶</span><b data-expand-label>Watch</b></button></div><div class="sr-watch-surface"><canvas role="img" aria-label="Live football stadium race"></canvas><div class="sr-camera-identities" data-camera-identities hidden></div><div class="sr-showdown" hidden aria-label="Showdown racers"><div class="sr-showdown-racer" data-duel-slot="0"><b data-duel-rank></b><strong data-duel-name></strong><span data-duel-number></span></div><div class="sr-showdown-racer" data-duel-slot="1"><b data-duel-rank></b><strong data-duel-name></strong><span data-duel-number></span></div><span class="sr-showdown-gap" data-duel-gap></span></div><div class="sr-stage-overlay" aria-live="polite"><div class="sr-start-lights" aria-hidden="true"><i></i><i></i><i></i></div><strong data-overlay></strong><span data-overlay-name></span></div></div><div class="sr-race-footer"><div class="sr-moment" aria-live="polite"><span data-moment-title></span><strong data-moment-name></strong></div><details class="sr-crowd-menu" data-stadium-crowd></details></div><div class="sr-finish-tools" hidden><button type="button" data-replay>Replay race</button><button type="button" data-photo-finish hidden>Photo finish</button><button type="button" data-stop-replay hidden>Back to result</button></div><div class="sr-controls" aria-label="Commissioner race controls"></div></div>
+ <div class="sr-stage"><div class="sr-watch-toolbar sr-stage-score"><div class="sr-watch-clock"><span data-clock>0:00</span><small data-field-spot></small></div><span class="sr-watch-label">Full field</span><button type="button" data-expand aria-label="Expand race"><span aria-hidden="true">⛶</span><b data-expand-label>Watch</b></button></div><div class="sr-watch-surface"><canvas role="img" aria-label="Live football stadium race"></canvas><div class="sr-stage-overlay" aria-live="polite"><div class="sr-start-lights" aria-hidden="true"><i></i><i></i><i></i></div><strong data-overlay></strong><span data-overlay-name></span></div></div><div class="sr-race-footer"><div class="sr-moment" aria-live="polite"><span data-moment-title></span><strong data-moment-name></strong></div><details class="sr-crowd-menu" data-stadium-crowd></details></div><div class="sr-finish-tools" hidden><button type="button" data-replay>Replay race</button><button type="button" data-photo-finish hidden>Photo finish</button><button type="button" data-stop-replay hidden>Back to result</button></div><div class="sr-controls" aria-label="Commissioner race controls"></div></div>
  <div class="sr-tools">${currentMember()?'<button type="button" data-my-racer>My racer</button>':''}<button type="button" data-motion aria-pressed="true">Motion on</button><button type="button" data-share>Copy watch link</button></div>
  <div class="sr-editor-host" hidden></div><div class="sr-final" hidden aria-live="polite"></div>
  <div class="sr-board-head"><h2 data-board-title>Starting grid</h2><span data-board-status></span></div><section class="sr-staging" data-stadium-staging hidden></section><ol class="sr-board" aria-label="Race positions"></ol></section>`;
@@ -118,13 +117,11 @@ async function room(view,members,id,life){
   const next=snapshot.participants.map((p,index)=>{const m=memberMap.get(String(p.member_id)),kit=normalizeKit(kits.get(String(p.member_id)),{number:p.number??index+1});return {id:String(p.member_id),name:m?.display_name||`Racer ${p.number||index+1}`,team:m?.team_name||'',photo:m?.profile_image||'',number:kit.number,kit,color:kits.has(String(p.member_id))?kit.jersey:p.color||m?.accent_color,index};});
   const signature=JSON.stringify(next);if(signature!==JSON.stringify(racers)){
    const sameField=racers.length===next.length&&racers.every((r,i)=>r.id===next[i].id);racers=next;
-   if(renderer&&sameField)renderer.updateRacers(racers);else{renderer?.stop();renderer=createStadiumRenderer(q('canvas'),{racers,motion,camera:()=>({mode:cameraMode,racerId:followId}),onLayout:({overview,top,fieldHeight,fieldWidth})=>{stage.dataset.fieldOverview=String(overview);stage.style.setProperty('--sr-field-top',`${top}px`);stage.style.setProperty('--sr-field-height',`${fieldHeight}px`);stage.style.setProperty('--sr-field-width',`${fieldWidth}px`);}});}
-   board.innerHTML=racers.map(r=>`<li class="sr-position" data-racer-id="${esc(r.id)}"><button class="sr-follow-row" type="button" aria-describedby="sr-ready-${esc(r.id)}" data-follow-racer="${esc(r.id)}" aria-pressed="false"><span class="sr-rank">${r.index+1}</span>${portrait(r)}<span class="sr-racer-name">${esc(r.name)}<small>${esc(r.team)}</small></span><span class="sr-gap">On deck</span><span class="sr-ready-status" id="sr-ready-${esc(r.id)}" data-ready-racer="${esc(r.id)}" hidden><small>Waiting</small></span></button></li>`).join('');
-   board.querySelectorAll('[data-follow-racer]').forEach(b=>b.onclick=()=>{followId=b.dataset.followRacer;setCamera('follow');stage.scrollIntoView({behavior:motion()?'smooth':'auto',block:'center'});});
+   if(renderer&&sameField)renderer.updateRacers(racers);else{renderer?.stop();renderer=createStadiumRenderer(q('canvas'),{racers,motion,highlight:()=>highlightId,onLayout:({overview,top,fieldHeight,fieldWidth})=>{stage.dataset.fieldOverview=String(overview);stage.style.setProperty('--sr-field-top',`${top}px`);stage.style.setProperty('--sr-field-height',`${fieldHeight}px`);stage.style.setProperty('--sr-field-width',`${fieldWidth}px`);}});}
+   board.innerHTML=racers.map(r=>`<li class="sr-position" data-racer-id="${esc(r.id)}"><button class="sr-follow-row" type="button" aria-describedby="sr-ready-${esc(r.id)}" data-highlight-racer="${esc(r.id)}" aria-pressed="false"><span class="sr-rank">${r.index+1}</span>${portrait(r)}<span class="sr-racer-name">${esc(r.name)}<small>${esc(r.team)}</small></span><span class="sr-gap">On deck</span><span class="sr-ready-status" id="sr-ready-${esc(r.id)}" data-ready-racer="${esc(r.id)}" hidden><small>Waiting</small></span></button></li>`).join('');
+   board.querySelectorAll('[data-highlight-racer]').forEach(b=>b.onclick=()=>{highlightId=b.dataset.highlightRacer;lastDOM=0;draw(performance.now(),{forceStage:true});stage.scrollIntoView({behavior:motion()?'smooth':'auto',block:'center'});});
    board.style.height=`${racers.length*76}px`;
-   q('[data-follow-select]').innerHTML=racers.map(r=>`<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('');
-   if(!racers.some(r=>r.id===followId))followId=racers.find(r=>r.id===String(currentMember()?.id))?.id||racers[0]?.id;
-   q('[data-follow-select]').value=followId||'';
+   if(!racers.some(r=>r.id===highlightId))highlightId=racers.find(r=>r.id===String(currentMember()?.id))?.id||racers[0]?.id;
   }
   race=snapshot.event.race_manifest?buildStadiumRace(racers,snapshot.event.race_manifest,eventDuration(snapshot.event)):null;
  };
@@ -177,26 +174,14 @@ async function room(view,members,id,life){
   }catch(error){await refresh();if(rethrow)throw error;toast(error.code==='40001'?'Race changed. Try again.':error.message||'Race could not be changed.');}
   finally{busy=false;if(!life.closed)paintControls();}
  }
- function draw(now,{settleCamera=false}={}){
+ function draw(now,{forceStage=false}={}){
   if(!visible()||!renderer)return;
   const e=snapshot.event,replaying=replayAt!==null,elapsed=replaying?Math.min(replayUntil,replayFrom+(now-replayAt)*replayRate):stadiumElapsed(e,clock.now());
   const frame=race?stadiumFrame(race,elapsed):{elapsed:-3000,u:0,countdown:0,finished:false,rows:racers.map((r,index)=>({id:r.id,index,progress:0,speed:0,rank:index+1})),ranked:[]};
   if(replaying&&elapsed>=replayUntil&&!replayFinished){replayFinished=true;finishAt=now;}
   if(!replaying&&e.bc_state==='running'&&frame.finished){if(finishAt===null)finishAt=now;void refresh();}
-  if(stageVisible)renderer.draw(frame,{state:e.bc_state,runId:e.race_manifest?.run_id||'',now,replay:replaying,celebration:finishAt===null?0:(now-finishAt)/1000,photo:replaying&&replayKind==='photo',settleCamera});
+  if(stageVisible||forceStage)renderer.draw(frame,{state:e.bc_state,replay:replaying,celebration:finishAt===null?0:(now-finishAt)/1000});
   if(now-lastDOM<100)return;lastDOM=now;setMotionLabel();
-  const duel=renderer.getShowdown(),duelPanel=q('.sr-showdown'),wasHidden=duelPanel.hidden;duelPanel.hidden=!duel;stage.dataset.showdown=String(!!duel);
-  if(duel){
-   const newPair=wasHidden||duelPanel.dataset.pair!==duel.key;duelPanel.dataset.pair=duel.key;duelPanel.dataset.columns=String(duel.columns);
-   duel.rows.forEach((row,index)=>{const label=duelPanel.querySelector(`[data-duel-slot="${index}"]`),racer=racers[row.index];label.dataset.racerId=row.id;label.dataset.leading=String(row.id===duel.leaderId);label.style.setProperty('--duel-color',stadiumColor(racer,row.index));setText(label.querySelector('[data-duel-rank]'),`#${row.rank}`);setText(label.querySelector('[data-duel-name]'),racer.name);setText(label.querySelector('[data-duel-number]'),String(racer.number));});
-   setText(q('[data-duel-gap]'),duel.gapYards<.05?'NECK & NECK':`${duel.gapYards.toFixed(1)} YD`);
-   if(newPair&&motion())duelPanel.animate([{opacity:0,transform:'translateY(4px)'},{opacity:1,transform:'translateY(0)'}],{duration:240,easing:'cubic-bezier(.16,1,.3,1)'});
-  }
-
-  const cameraRacers=stadiumCameraRacers(renderer.getShot(),frame,{camera:cameraMode,state:e.bc_state,replay:replaying});
-  const identities=q('[data-camera-identities]'),identityKey=cameraRacers.map(row=>`${row.id}:${row.rank}:${racers[row.index].name}`).join('|');
-  identities.hidden=!!duel||!cameraRacers.length;
-  if(identities.dataset.key!==identityKey){identities.dataset.key=identityKey;identities.innerHTML=cameraRacers.map(row=>{const racer=racers[row.index];return `<span style="--racer:${stadiumColor(racer,row.index)}"><b>#${row.rank}</b><strong>${esc(racer.name)}</strong></span>`;}).join('');}
   root.dataset.raceState=e.bc_state;
 
   const cue=frame.countdown?'count-'+frame.countdown:frame.ranked[0]?.finished?'finish':frame.u<.06&&!frame.countdown?'launch':'';if(!['idle','paused'].includes(e.bc_state)&&cue&&cue!==lastCue){lastCue=cue;crowd?.cue(cue.startsWith('count-')?'countdown':cue)}
@@ -208,38 +193,33 @@ async function room(view,members,id,life){
   stage.dataset.raceState=replaying?'replay':e.bc_state;
   stage.style.setProperty('--sr-race-progress',String(Math.min(1,Math.max(0,frame.ranked[0]?.progress||0))));
   let moment=idle?{key:'idle',title:'THE BOYS ARE LINED UP',name:'WHO’S GOT THE LEGS?'}:paused?{key:'paused',title:'RACE PAUSED',name:'NOBODY’S GOING ANYWHERE'}:race?stadiumMoment(race,frame):{key:'loading',title:'',name:''};
-  const shot=renderer.getShot(),shotRows=shot?.ids.map(id=>frame.rows.find(row=>row.id===id)).filter(Boolean)||[];
-  if(cameraMode==='auto'&&shot?.kind==='pass'&&frame.elapsed-shot.at<1800&&!idle&&!paused)moment={key:shot.key+shot.at,title:shotRows[0]?.rank===1?'TAKES THE LEAD':'ON THE MOVE',name:racers.find(r=>r.id===shot.ids[0])?.name||'DFL'};
-  if(replaying&&replayKind==='photo')moment={key:'photo-replay',title:'PHOTO FINISH · 0.25×',name:shotRows.slice(0,2).map(row=>racers[row.index].name).join(' vs ')};
+  if(replaying&&replayKind==='photo')moment={key:'photo-replay',title:'PHOTO FINISH · 0.25×',name:frame.ranked.slice(0,2).map(row=>racers[row.index].name).join(' vs ')};
   const leader=frame.ranked[0];if(leader&&leader.id!==lastLeader){if(lastLeader&&frame.u>.06&&frame.u<.90&&(!leadChange||now-leadChange.at>1400))leadChange={id:leader.id,at:now};lastLeader=leader.id;}
-  const focused=cameraMode==='follow'?frame.rows.find(r=>r.id===followId):leader;setText(q('[data-field-spot]'),footballSpot(focused?.progress||0));
+  const focused=frame.rows.find(r=>r.id===highlightId)||leader;setText(q('[data-field-spot]'),footballSpot(focused?.progress||0));
   if(frame.u>.94&&!frame.finished&&!leader?.finished&&frame.ranked[1]&&leader.progress-frame.ranked[1].progress<.008){moment.key='tight-finish';moment.title='TOO TIGHT TO CALL';moment.name='GET TO THE FUCKING LINE';}
-  if(!idle&&!paused&&frame.u<.9&&shot?.kind!=='pass'&&leadChange&&now-leadChange.at<1400){moment.key=`lead-${leadChange.at}`;moment.title='TAKES THE LEAD';moment.name=racers.find(r=>r.id===leadChange.id)?.name||'DFL';}
+  if(!idle&&!paused&&frame.u<.9&&leadChange&&now-leadChange.at<1400){moment.key=`lead-${leadChange.at}`;moment.title='TAKES THE LEAD';moment.name=racers.find(r=>r.id===leadChange.id)?.name||'DFL';}
   if(frame.finished&&e.bc_state!=='finished'&&!replaying){moment.title='FINISHING';moment.name='LOCKING THE ORDER';}
   if(lastKey!==moment.key){lastKey=moment.key;q('[data-moment-title]').textContent=moment.title;q('[data-moment-name]').textContent=moment.name;if(motion())q('.sr-moment').animate([{opacity:.4,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{duration:220,easing:'ease-out'});}
   q('[data-board-title]').textContent=idle?'Starting grid':frame.finished?'Finish order':'Live positions';q('[data-board-status]').textContent=replaying?'Replay':paused?'Paused':e.bc_state==='running'?'Live':'';
   const ranked=frame.ranked.length?frame.ranked:frame.rows;
   for(const row of ranked){const el=board.querySelector(`[data-racer-id="${row.id}"]`);if(!el)continue;const rank=row.rank||row.index+1;el.style.transform=`translateY(${(rank-1)*76}px)`;setText(el.querySelector('.sr-rank'),rank);el.dataset.leader=String(rank===1&&!idle&&!frame.countdown);
    el.querySelector('.sr-gap').textContent=idle?'On deck':frame.countdown?'Set':row.finished?`${(row.finishMs/1000).toFixed(2)}s`:rank===1?'Leader':`${Math.max(0,((ranked[0]?.progress||0)-row.progress)*100).toFixed(1)} yd`;
-   const button=el.querySelector('button');if(idle)button.setAttribute('aria-describedby',`sr-ready-${row.id}`);else button.removeAttribute('aria-describedby');button.setAttribute('aria-label',`Follow ${racers[row.index].name}, position ${rank}${row.finished?', finished':''}`);button.setAttribute('aria-pressed',String(cameraMode==='follow'&&followId===row.id));
+   const button=el.querySelector('button');if(idle)button.setAttribute('aria-describedby',`sr-ready-${row.id}`);else button.removeAttribute('aria-describedby');button.setAttribute('aria-label',`Highlight ${racers[row.index].name}, position ${rank}${row.finished?', finished':''}`);button.setAttribute('aria-pressed',String(highlightId===row.id));
   }
   const rankKey=ranked.map(r=>r.id).join(',');if(board.dataset.order!==rankKey){const focused=board.contains(document.activeElement)?document.activeElement:null;board.dataset.order=rankKey;for(const row of ranked){const el=board.querySelector(`[data-racer-id="${row.id}"]`);if(el)board.append(el);}if(focused?.isConnected&&document.activeElement!==focused)focused.focus({preventScroll:true});}
  }
  function setMotionLabel(){const enabled=motion();root.dataset.motion=enabled?'on':'off';q('[data-motion]').textContent=`Motion ${enabled?'on':'off'}`;q('[data-motion]').setAttribute('aria-pressed',String(enabled));}
- function setCamera(mode){cancelAnimationFrame(cameraRaf);cameraRaf=0;cameraMode=mode;if(mode==='follow'&&!racers.some(r=>r.id===followId))followId=racers.find(r=>r.id===String(currentMember()?.id))?.id||racers[0]?.id;root.querySelectorAll('[data-camera]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.camera===mode)));q('.sr-camera-selector').style.setProperty('--camera-slot',String(['auto','field','follow'].indexOf(mode)));q('[data-follow-select]').hidden=mode!=='follow';q('[data-follow-select]').value=followId||'';lastDOM=0;draw(performance.now());if(snapshot.event.bc_state!=='running'){let end=performance.now()+600;const glide=now=>{cameraRaf=0;if(life.closed)return;if(now>=end){draw(now,{settleCamera:true});return;}draw(now);cameraRaf=requestAnimationFrame(glide);};if(motion())cameraRaf=requestAnimationFrame(glide);}schedule();}
- root.querySelectorAll('[data-camera]').forEach(b=>b.onclick=()=>setCamera(b.dataset.camera));
- q('[data-follow-select]').onchange=event=>{followId=event.target.value;setCamera('follow');};
  wireMyRacer(root,life,async saved=>{snapshot.racer_kits=[...(snapshot.racer_kits||[]).filter(k=>String(k.member_id)!==String(saved.member_id)),saved];configureRacers();lastDOM=0;draw(performance.now());void refresh();},()=>racers.find(r=>r.id===String(currentMember()?.id))?.kit);
  function schedule(){if(raf||!visible())return;const animating=snapshot.event.bc_state==='running'||replayAt!==null||(finishAt!==null&&performance.now()-finishAt<4000);if(!animating)return;raf=requestAnimationFrame(now=>{raf=0;draw(now);if(replayAt!==null&&now-replayAt>(replayUntil-replayFrom)/replayRate+4000){replayAt=null;lastDOM=0;q('[data-stop-replay]').hidden=true;draw(now);}schedule();});}
  q('[data-motion]').onclick=()=>{setReduceRaceMotion(!getReduceRaceMotion());setMotion();};
  q('[data-share]').onclick=async()=>{try{const url=new URL(location.href);url.hash=`#/arena?id=${id}`;await navigator.clipboard.writeText(url.href);toast('Watch link copied.');}catch{toast('Could not copy the watch link.');}};
- const beginReplay=photo=>{if(snapshot.event.bc_state!=='finished'||!race)return;const sorted=[...snapshot.results].sort((a,b)=>a.place-b.place);if(photo&&(sorted.length!==racers.length||finishMargin(sorted)===null||finishMargin(sorted)>250))return;replayFrom=photo?Math.max(0,Number(sorted[0].finish_ms)-1600):0;replayUntil=photo?Math.min(race.duration,Number(sorted[1].finish_ms)+800):race.duration;replayRate=photo?.25:1;replayKind=photo?'photo':'full';replayAt=performance.now()+(photo?0:3000);replayFinished=false;finishAt=null;lastKey='';lastLeader='';leadChange=null;lastCue='';q('[data-stop-replay]').hidden=false;setCamera('auto');schedule();};
+ const beginReplay=photo=>{if(snapshot.event.bc_state!=='finished'||!race)return;const sorted=[...snapshot.results].sort((a,b)=>a.place-b.place);if(photo&&(sorted.length!==racers.length||finishMargin(sorted)===null||finishMargin(sorted)>250))return;replayFrom=photo?Math.max(0,Number(sorted[0].finish_ms)-1600):0;replayUntil=photo?Math.min(race.duration,Number(sorted[1].finish_ms)+800):race.duration;replayRate=photo?.25:1;replayKind=photo?'photo':'full';replayAt=performance.now()+(photo?0:3000);replayFinished=false;finishAt=null;lastKey='';lastLeader='';leadChange=null;lastCue='';q('[data-stop-replay]').hidden=false;lastDOM=0;draw(performance.now(),{forceStage:true});schedule();};
  q('[data-replay]').onclick=()=>beginReplay(false);q('[data-photo-finish]').onclick=()=>beginReplay(true);q('[data-stop-replay]').onclick=()=>{replayAt=null;finishAt=null;lastDOM=0;q('[data-stop-replay]').hidden=true;draw(performance.now());};
  q('[data-expand]').onclick=()=>void orientation.expand();
  const onKey=e=>{if(e.key==='Escape')void orientation.exit();};window.addEventListener('keydown',onKey);
  const visibility=()=>{if(document.hidden){cancelAnimationFrame(raf);raf=0;}else{void refresh();draw(performance.now());schedule();}};
  document.addEventListener('visibilitychange',visibility);window.addEventListener('online',visibility);
- life.cleanup.push(()=>{cancelAnimationFrame(raf);cancelAnimationFrame(cameraRaf);clearInterval(poll);renderer?.stop();crowd?.stop();channel?.unsubscribe();document.removeEventListener('visibilitychange',visibility);window.removeEventListener('online',visibility);window.removeEventListener('keydown',onKey);stage.classList.remove('sr-expanded');if(document.fullscreenElement===stage)void document.exitFullscreen();});
+ life.cleanup.push(()=>{cancelAnimationFrame(raf);clearInterval(poll);renderer?.stop();crowd?.stop();channel?.unsubscribe();document.removeEventListener('visibilitychange',visibility);window.removeEventListener('online',visibility);window.removeEventListener('keydown',onKey);stage.classList.remove('sr-expanded');if(document.fullscreenElement===stage)void document.exitFullscreen();});
  configureRacers();paintControls();accept(snapshot,sent);setMotion();orientation.sync();
  const presenceKey=globalThis.crypto.randomUUID();
  channel=db().channel(`stadium-room-${id}`,{config:{presence:{key:presenceKey},broadcast:{ack:true,self:false}}});
