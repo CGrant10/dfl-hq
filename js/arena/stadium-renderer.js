@@ -97,6 +97,10 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
   ctx.setTransform(ratio,0,0,ratio,0,0);ctx.fillStyle='#080d15';ctx.fillRect(0,0,width,height);
   if(stadium.complete&&stadium.naturalWidth)ctx.drawImage(stadium,0,0,stadium.naturalWidth,stadium.naturalHeight*.65,0,0,width,top);
   else {const gradient=ctx.createLinearGradient(0,0,0,top);gradient.addColorStop(0,'#07111f');gradient.addColorStop(1,'#351625');ctx.fillStyle=gradient;ctx.fillRect(0,0,width,top);}
+  // Static floodlights add stadium depth without an extra animation loop.
+  ctx.save();ctx.fillStyle='#fff2d1';ctx.shadowColor='#e6d2aa';ctx.shadowBlur=9;
+  for(const fraction of [.12,.35,.65,.88])for(let bulb=0;bulb<4;bulb++)ctx.fillRect(width*fraction+bulb*4-6,Math.max(4,top*.25),2,2);
+  ctx.restore();
   const shade=ctx.createLinearGradient(0,top-28,0,top+10);shade.addColorStop(0,'#09101b00');shade.addColorStop(1,'#0b1821');ctx.fillStyle=shade;ctx.fillRect(0,top-28,width,38);
   ctx.fillStyle='#dfcdae';ctx.font='700 10px Rajdhani, sans-serif';ctx.textAlign='center';ctx.fillText(following?racers[following.index].name.toUpperCase():photo?'GOAL-LINE REPLAY · 0.25×':view.mode==='field'?'FULL FIELD':state==='finished'&&!replay?'OFFICIAL FINISH':shot.kind==='pass'?'OVERTAKE':shot.kind==='finish'?'THE FINAL SPRINT':battle?'BATTLE CAM':'DFL ARENA',width/2,top-12,width-32);
   ctx.save();ctx.beginPath();ctx.rect(0,top,trackWidth,fieldH+5);ctx.clip();
@@ -134,6 +138,10 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
    if(row.id===leader?.id&&!frame?.countdown&&u>.03){ctx.fillStyle='#e3c374';ctx.beginPath();ctx.moveTo(x,y-84*scale);ctx.lineTo(x-4,y-91*scale);ctx.lineTo(x+4,y-91*scale);ctx.fill();}
    if(row.finished){ctx.fillStyle='#f4e7c4';ctx.font=`700 ${overview?8:11}px Rajdhani,sans-serif`;ctx.textAlign='left';ctx.fillText(`#${row.place}`,Math.min(width-24,x+20),y-8);}
   }
+  // A soft lens falloff gives close shots depth; the final sprint warms
+  // gradually from real race progress and is static with motion disabled.
+  const lens=ctx.createLinearGradient(0,top,0,top+fieldH);lens.addColorStop(0,'#03091238');lens.addColorStop(.32,'#03091200');lens.addColorStop(.72,'#03091200');lens.addColorStop(1,'#03091244');ctx.fillStyle=lens;ctx.fillRect(0,top,trackWidth,fieldH);
+  if(enabled&&u>.88&&u<1&&!frame?.countdown){const heat=Math.min(1,(u-.88)/.09),glow=ctx.createLinearGradient(trackWidth-70,0,trackWidth,0);glow.addColorStop(0,'#dbc18000');glow.addColorStop(1,`rgba(219,193,128,${heat*.13})`);ctx.fillStyle=glow;ctx.fillRect(Math.max(0,trackWidth-70),top,70,fieldH);}
   ctx.restore();
   ctx.fillStyle='#d8caa5';ctx.fillRect(0,top+fieldH,width,2);ctx.fillStyle='#7d2437';ctx.fillRect(0,top+fieldH+5,width,4);
   if(overview){const picks=leaders.length?leaders:rows;if(sideBattle)leadBattle(picks,top,fieldH,elapsed,moving,replay?'running':state,trackWidth+8,width-trackWidth-8);else leadBattle(picks,top+fieldH+10,height-top-fieldH-10,elapsed,moving,replay?'running':state);}
