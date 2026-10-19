@@ -207,3 +207,11 @@ body.sr-stadium-expanded #view,body.sr-stadium-expanded .sr-room{transform:none!
 .sr-kit-panel footer{box-shadow:0 14px 0 14px #101720}
 .sr-kit-panel :is(button,input,select):focus-visible{outline:2px solid #dbc180;outline-offset:2px}
 @media(max-width:350px){.sr-camera-identities{gap:8px;padding-inline:6px}.sr-camera-identities strong{font-size:12px}.sr-camera-identities>span{gap:3px;padding-left:4px}.sr-camera-identities b{font-size:11px}}
+
+/* Status ink must remain readable outside the permanently dark stadium. */
+.sr-room>.sr-room-title .sr-state{color:var(--body-text)}
+.sr-room>.sr-room-title .sr-state[data-state=running]{color:var(--danger-ink)}
+.sr-room>.sr-room-title .sr-state[data-state=running]:before{background:currentColor}
+.sr-room>.sr-room-meta .sr-connection{color:var(--warn-ink)}
+.sr-lobby>.sr-title .sr-kicker{color:var(--accent)}
+.sr-ready-status small{font:inherit}

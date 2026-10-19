@@ -18,7 +18,9 @@ Readiness now belongs to each racer’s existing starting-grid row, with one
 compact ready-count/action strip. The duplicate roster is removed. Standings,
 secondary actions, ranks and supporting team names use the selected app theme;
 the stadium and NFL/member identity colors retain their intended roles.
-Supporting team text is larger and loses excessive letter spacing. Keyboard
+Outer race-state and connection labels use theme-aware status ink. The old
+Light-mode gold/live colors had insufficient text contrast; the new live status
+is checked at 4.5:1 or higher in each mobile theme. Supporting team text is larger and loses excessive letter spacing. Keyboard
 focus is restored to the same control when real position changes reorder rows.
 Ready descriptions are exposed to assistive technology only while on deck.
 
@@ -75,8 +77,8 @@ paused pixel stability, live keyboard focus and shared-clock management. Canvas
 instrumentation checks the actual selected runner body bounds in edge-lane
 shots, including a paused first-to-last racer switch. Actual
 screenshots were inspected before and after the changes. Current artifacts and
-JSON checks are retained in `/tmp/dfl-1445-arena-ship/`; CI uploads the stadium
-review as an artifact. The final browser run passes 252 checks with no page errors. Release validation
+JSON checks are retained in `/tmp/dfl-1445-arena-accessibility/`; CI uploads the stadium
+review as an artifact. The final browser run passes 258 checks with no page errors. Release validation
 includes `pnpm check` (1,936 tests across 234 files) and the hosted
 Arena database/control and Home regression checks.
 

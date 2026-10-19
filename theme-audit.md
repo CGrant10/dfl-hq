@@ -565,7 +565,10 @@ expanded landscape and 1440px desktop edge-lane captures. Starting grid, live
 standings, secondary actions, ranks, team-name text and readiness now follow
 shared app ground/ink/accent/border tokens. The venue, uniform editor, kit colors
 and member identity accents retain their explicit dark-stadium/identity roles.
-The editor’s sticky surfaces are opaque, and the in-grid focus ring uses the
+Outer race-state and connection text use theme-aware status ink; the old
+Light-mode status colors failed text contrast. Live race labels are checked
+against the theme ground at 4.5:1 or higher. Ready text keeps its intended 12px
+size instead of inheriting a smaller browser default. The editor’s sticky surfaces are opaque, and the in-grid focus ring uses the
 selected accent without clipping at the board edge. On-camera names use native
 text above the field rather than small compressed Canvas labels.
 

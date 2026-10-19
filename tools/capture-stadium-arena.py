@@ -218,6 +218,7 @@ with sync_playwright() as p:
   admin.set_viewport_size({'width':width,'height':1024 if width==768 else 844})
   for theme in ['light','dark']:
    admin.evaluate('m=>qaTheme(m)',theme)
+   check(f'{width}px {theme} race status has readable text contrast',admin.locator('.sr-room-title .sr-state').evaluate(r"""e=>{const rgb=v=>(v.match(/[\d.]+/g)||[]).slice(0,3).map(Number),l=v=>rgb(v).map(x=>x/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4).reduce((n,x,i)=>n+x*[.2126,.7152,.0722][i],0),probe=document.createElement('i');probe.style.background='var(--bg)';e.append(probe);const a=l(getComputedStyle(e).color),b=l(getComputedStyle(probe).backgroundColor);probe.remove();return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)>=4.5}"""))
    for camera in ['auto','follow','field']:
     admin.locator('[data-camera='+camera+']').click();admin.wait_for_timeout(650);admin.evaluate('scrollTo({top:0,behavior:"instant"})');admin.screenshot(path=str(out/f'portrait-{width}-{theme}-{camera}.png'))
     check(f'{width}px {theme} {camera} portrait race stays wide and readable',admin.locator('canvas').evaluate('e=>{const r=e.getBoundingClientRect();return r.height>150&&Math.abs(r.width/r.height-16/9)<.02}') and admin.locator('[data-camera='+camera+']').evaluate('e=>e.getBoundingClientRect().height>=44') and admin.evaluate('document.documentElement.scrollWidth<=innerWidth'))
