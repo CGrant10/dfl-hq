@@ -26,6 +26,15 @@ export function tradeSuggestionQuality(result){
 
 const packageSize=offer=>Array.isArray(offer.sends)?offer.sends.reduce((n,ids)=>n+ids.length,0):(offer.sendA?.length||0)+(offer.sendB?.length||0);
 const riskCount=offer=>['missing','stale','fallback','injuries'].reduce((n,key)=>n+(offer.projectionEvidence?.[key]?.length||0),0);
+export function tradeSuggestionPriority(offer){
+ const quality=offer.utility||tradeSuggestionQuality(offer);
+ return [n(quality.group),Math.floor(n(quality.score)/10),Math.floor(n(offer.fairness)/10),-riskCount(offer)];
+}
+export function prioritizeTradeSuggestions(offers,limit,choose){
+ const bands=new Map();for(const offer of offers){const key=tradeSuggestionPriority(offer).join(':');if(!bands.has(key))bands.set(key,[]);bands.get(key).push(offer)}
+ const sorted=[...bands.values()].sort((a,b)=>{const left=tradeSuggestionPriority(a[0]),right=tradeSuggestionPriority(b[0]);for(let i=0;i<left.length;i++)if(left[i]!==right[i])return right[i]-left[i];return 0});
+ const selected=[];for(const rows of sorted){const remaining=Math.max(0,limit-selected.length);if(!remaining)break;selected.push(...choose(rows,remaining))}return selected;
+}
 export function compareTradeSuggestions(a,b){
  const qa=a.utility||tradeSuggestionQuality(a),qb=b.utility||tradeSuggestionQuality(b);
  // Fixed bands keep sorting transitive. Simplicity only breaks a comparable

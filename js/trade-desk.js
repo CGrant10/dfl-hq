@@ -336,7 +336,7 @@ function packageRows(ids, pool) {
   const players = ids.map(id => pool.get(String(id))).filter(Boolean)
     .sort((a, b) => num(b.tradeValue) - num(a.tradeValue));
   if (!players.length) return `<div class="td-item is-empty"><span><b>Nobody yet</b></span></div>`;
-  return players.map(player => `<div class="td-item">
+  return players.map(player => `<div class="td-item" data-trade-player="${esc(player.id)}">
     ${playerPortrait(player)}<span class="td-item-copy"><b>${esc(player.name)}</b><small>${esc(player.position)} &middot; ${esc(player.nflTeam)}</small></span>
     <span class="td-item-value">${Math.round(num(player.tradeValue))}</span>
   </div>`).join("");

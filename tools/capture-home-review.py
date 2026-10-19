@@ -1090,7 +1090,7 @@ with sync_playwright() as p:
                     expected_opacity=.8 if art['mode']=='light' else .85
                     assert art['artWidth']/art['stageWidth']>=.35 and abs(art['opacity']-expected_opacity)<.01, f'Award backdrop lost its scale or settled opacity: {layout}'
                     assert art['masked'] and art['decorative'] and art['copyLayer']>art['artLayer'], f'Award backdrop does not sit beneath readable copy: {layout}'
-                    assert all(b['right']<=art['left']-8 for b in art['copyBoxes']), f'Award picture overlaps copy: {layout}'
+                    assert all(b['right']<=art['left']-8 or b['left']>=art['right']+8 for b in art['copyBoxes']), f'Award picture overlaps copy: {layout}'
                     assert page.locator('.bx-award-heading').evaluate('e=>e.getBoundingClientRect().bottom<=e.parentElement.querySelector(".bx-editorial-illustration").getBoundingClientRect().top-8'), f'Award picture overlaps headline: {layout}'
                 else:
                     assert art['artWidth']/art['stageWidth']>=.45 and art['opacity']>=.9, f'Foreground artwork is too small or faint: {layout}'

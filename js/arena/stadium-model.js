@@ -65,6 +65,6 @@ export function stadiumMoment(race,frame){
  if(first.finished)return {key:'winner',title:'FIRST ACROSS',name:name(first.id)};
  if(frame.u<.06)return {key:'launch',title:'LET’S FUCKING GO',name:'THE DFL DASH'};
  if(frame.u>.90)return {key:'final',title:'FINAL SPRINT',name:second&&first.progress-second.progress<.01?'RIGHT TO THE LINE':name(first.id)};
- const beat=clamp(Math.floor((frame.u-.09)/.83*(race.beats-1)),0,race.beats-1),leader=race.leaders[beat];
- return {key:`beat-${beat}`,title:['HIT THE GAS','HEARD FOOTSTEPS','MAKING A MOVE','NO FREE RIDES'][beat%4],name:name(leader)};
+ const beat=clamp(Math.floor((frame.u-.09)/.83*(race.beats-1)),0,race.beats-1);
+ return {key:`beat-${beat}-${first.id}`,title:['HIT THE GAS','HEARD FOOTSTEPS','MAKING A MOVE','NO FREE RIDES'][beat%4],name:name(first.id)};
 }
