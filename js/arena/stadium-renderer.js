@@ -1,5 +1,5 @@
 import {drawKitRunner,onRacerArtReady} from './racer-kit-art.js';
-import {normalizeKit,footballYardNumber,kitInk} from './racer-kit-model.js';
+import {normalizeKit,footballYardNumber} from './racer-kit-model.js';
 import {runnerCadence} from './stadium-motion.js';
 import {stadiumDepth,stadiumVerticalCamera} from './stadium-scene.js';
 import {stadiumCelebration} from './stadium-director.js';
@@ -25,14 +25,14 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
   if(!sizeDirty)return;const box=canvas.getBoundingClientRect();width=Math.max(1,box.width);height=Math.max(1,box.height);ratio=Math.min(2,window.devicePixelRatio||1);
   canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);sizeDirty=false;
  };
- function runner(r,x,y,scale,elapsed,moving,index,speed=1,finishAge=-1,celebrate=false){
+ function runner(r,x,y,scale,elapsed,moving,index,speed=1,finishAge=-1,celebrate=false,finishLean=0,travelPhase=null){
   ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
-  const cadence=runnerCadence(elapsed,speed,index,moving),stride=cadence.stride,alpha=ctx.globalAlpha;
+  const cadence=runnerCadence(elapsed,speed,index,moving,travelPhase),stride=cadence.stride,alpha=ctx.globalAlpha;
   ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(-2,0,18,3.5,0,0,Math.PI*2);ctx.fill();
   const kit=kits.get(String(r.id));
   if(moving&&scale>.35){for(let i=0;i<4;i++){const age=((cadence.phase/2+i*.25)%1);ctx.globalAlpha=alpha*(1-age)*.16;ctx.fillStyle=i%2?'#d7c7a0':'#80a18a';ctx.beginPath();ctx.ellipse(-12-age*(cadence.burst?25:16),-age*5,1+age*2,.6+age,0,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=alpha;}
   const pose=stadiumCelebration(finishAge,index,celebrate);
-  ctx.save();ctx.translate(0,cadence.bob-pose.lift-30);ctx.rotate(cadence.lean+pose.lean);ctx.scale(pose.turn,1);ctx.translate(0,30);
+  ctx.save();ctx.translate(0,cadence.bob-pose.lift-30);ctx.rotate(cadence.lean+pose.lean+finishLean);ctx.scale(pose.turn,1);ctx.translate(0,30);
   if(cadence.burst&&scale>.55){ctx.globalAlpha=alpha*.12;drawKitRunner(ctx,kit,{x:-29,y:-60,width:48,height:66,stride:(stride+5)%6});ctx.globalAlpha=alpha;}
   if(drawKitRunner(ctx,kit,{x:-22,y:-60,width:48,height:66,stride})){
    // The recolored shared atlas keeps the original runner detail.
@@ -49,7 +49,7 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
 
  function draw(frame,{state='running',replay=false,celebration=0}={}){
   if(closed)return;getSize();lastFrame=frame;lastOptions={state,replay,celebration};const enabled=motion();
-  const n=racers.length,top=Math.max(30,Math.min(44,height*.11)),fieldH=Math.max(24,height-top-22),laneH=Math.max(26,fieldH/n),worldH=laneH*n,trackWidth=width,overview=true;
+  const n=racers.length,top=Math.max(22,Math.min(30,height*.08)),fieldH=Math.max(24,height-top-16),laneH=Math.max(26,fieldH/n),worldH=laneH*n,trackWidth=width,overview=true;
   const layout=`${top}:${fieldH}:${width}`;if(layout!==lastLayout){lastLayout=layout;onLayout({overview:true,top,fieldHeight:fieldH,fieldWidth:width});}
   const live=state==='running'||replay,elapsed=Math.max(0,frame?.elapsed||0),u=frame?.u||0,rows=frame?.rows||racers.map((r,index)=>({id:String(r.id),index,progress:0,speed:0,finished:false}));
   const leaders=frame?.ranked||rows,leader=leaders[0],highlighted=String(highlight()??'');
@@ -99,17 +99,18 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
   }
   const moving=enabled&&live&&!frame?.countdown&&!frame?.finished;
   for(const row of rows){
-   const r=racers[row.index],y=yOf(row.index)+laneH*yScale*.35,x=padding+(row.progress*worldWidth-panX)*pxScale,color=stadiumColor(r,row.index),scale=Math.max(.06,Math.min(.9,laneH*yScale/78));
+   const r=racers[row.index],y=yOf(row.index)+laneH*yScale*.42,x=padding+(row.progress*worldWidth-panX)*pxScale,color=stadiumColor(r,row.index),scale=Math.max(.06,Math.min(1.08,laneH*yScale/72));
    if(row.id===highlighted){ctx.fillStyle=color+'18';ctx.fillRect(0,yOf(row.index)-laneH*yScale/2,width,laneH*yScale);}
    if(enabled&&row.id===leader?.id&&elapsed-leadAt<700){ctx.fillStyle=`rgba(235,211,151,${Math.max(0,1-(elapsed-leadAt)/700)*.15})`;ctx.fillRect(0,yOf(row.index)-laneH*yScale/2,width,laneH*yScale);}
    // Screen-space turf kicks stay visible in a wide phone view, without speed lines.
    if(moving&&row.speed>1.12&&laneH*yScale>=8){for(let i=0;i<3;i++){const age=((elapsed/420+row.index*.31+i/3)%1);ctx.globalAlpha=(1-age)*.32;ctx.fillStyle=i%2?'#dbc180':'#9ba88a';ctx.beginPath();ctx.ellipse(x-3-age*9,y-age*2,1+age,Math.max(.5,age),0,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;}
    const crossed=Math.max(0,elapsed-(row.finishMs||Infinity)),bounce=enabled&&row.finished&&crossed<800?Math.sin(crossed/800*Math.PI)*5:0;
-   ctx.save();runner(r,x,y-bounce,scale,elapsed,moving&&!row.finished,row.index,row.speed,row.finished?Math.max(0,elapsed-row.finishMs):-1,enabled);ctx.restore();
-   if(overview&&n<=16){const badgeH=laneH*yScale>=10?9:7,badgeW=badgeH===9?18:14;ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x-badgeW-5,y-badgeH,badgeW,badgeH,2);ctx.fill();ctx.fillStyle=kitInk(color);ctx.font=`700 ${badgeH===9?8:6}px Rajdhani,sans-serif`;ctx.textAlign='center';ctx.fillText(String(kits.get(String(r.id)).number),x-badgeW/2-5,y-1.5);}
+   const finishLean=moving&&!row.finished&&row.progress>.92?Math.min(.14,(row.progress-.92)/.055*.14):0;
+   ctx.save();runner(r,x,y-bounce,scale,elapsed,moving&&!row.finished,row.index,row.speed,row.finished?Math.max(0,elapsed-row.finishMs):-1,enabled,finishLean,row.progress*(frame?.duration||60000)/110);ctx.restore();
+   if(overview&&n<=16){const font=Math.max(7,Math.min(11,laneH*yScale*.27));ctx.font=`700 ${font}px Rajdhani,sans-serif`;ctx.textAlign='right';ctx.lineWidth=3;ctx.strokeStyle='#0a201be6';const number=String(kits.get(String(r.id)).number),bx=x-22*scale-3,by=y-13*scale;ctx.strokeText(number,bx,by);ctx.fillStyle='#f4e7c4';ctx.fillText(number,bx,by);}
    if(row.id===highlighted){ctx.strokeStyle='#f0d17baa';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y+2,24*scale,5*scale,0,0,Math.PI*2);ctx.stroke();}
-   if(row.id===leader?.id&&!frame?.countdown&&u>.03){ctx.fillStyle='#e3c374';ctx.beginPath();ctx.moveTo(x,y-84*scale);ctx.lineTo(x-4,y-91*scale);ctx.lineTo(x+4,y-91*scale);ctx.fill();}
-   if(row.finished&&laneH*yScale>=9){ctx.fillStyle='#f4e7c4';ctx.font='700 8px Rajdhani,sans-serif';ctx.textAlign='right';ctx.fillText(String(row.place),width-3,yOf(row.index)+3);}
+   if(row.id===leader?.id&&!frame?.countdown&&u>.03){ctx.fillStyle='#e3c374';ctx.beginPath();ctx.moveTo(x,y-66*scale);ctx.lineTo(x-3,y-66*scale-5);ctx.lineTo(x+3,y-66*scale-5);ctx.fill();}
+   if(row.finished&&laneH*yScale>=9){ctx.fillStyle=row.place===1?'#e3c374':'#f4e7c4';ctx.font=`700 ${Math.min(14,Math.max(8,laneH*yScale*.35))}px Rajdhani,sans-serif`;ctx.textAlign='right';ctx.fillText(String(row.place),width-3,yOf(row.index)+3);}
   }
   ctx.globalAlpha=1;
   // The field keeps its lens falloff; the final sprint warms

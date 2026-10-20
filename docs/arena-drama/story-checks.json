@@ -1,0 +1,208 @@
+[
+  {
+    "version": 1,
+    "maximumSpreadYards": 3.224331901957378,
+    "leadChanges": 12,
+    "distinctLeaders": 12,
+    "bestThreeSecondGain": 11,
+    "finishTimes": [
+      60000,
+      59864,
+      59727,
+      59591,
+      59455,
+      59318,
+      59182,
+      59045,
+      58909,
+      58773,
+      58636,
+      58500
+    ],
+    "calls": [
+      {
+        "elapsed": 6000,
+        "title": "8TH → 4TH",
+        "name": "Fixture team 7"
+      },
+      {
+        "elapsed": 9000,
+        "title": "TAKES THE LEAD",
+        "name": "Fixture team 7"
+      },
+      {
+        "elapsed": 12000,
+        "title": "TAKES THE LEAD",
+        "name": "Fixture team 11"
+      },
+      {
+        "elapsed": 15000,
+        "title": "10TH → 3RD",
+        "name": "Fixture team 4"
+      },
+      {
+        "elapsed": 18000,
+        "title": "TAKES THE LEAD",
+        "name": "Fixture team 4"
+      },
+      {
+        "elapsed": 21000,
+        "title": "TAKES THE LEAD",
+        "name": "Fixture team 9"
+      },
+      {
+        "elapsed": 24000,
+        "title": "TAKES THE LEAD",
+        "name": "Fixture team 2"
+      },
+      {
+        "elapsed": 27000,
+        "title": "12TH → 3RD",
+        "name": "Fixture team 3"
+      },
+      {
+        "elapsed": 30000,
+        "title": "TAKES THE LEAD",
+        "name": "Fixture team 3"
+      },
+      {
+        "elapsed": 33000,
+        "title": "TAKES THE LEAD",
+        "name": "Fixture team 5"
+      },
+      {
+        "elapsed": 36000,
+        "title": "11TH → 2ND",
+        "name": "Fixture team 12"
+      },
+      {
+        "elapsed": 39000,
+        "title": "TAKES THE LEAD",
+        "name": "Fixture team 12"
+      },
+      {
+        "elapsed": 42000,
+        "title": "TAKES THE LEAD",
+        "name": "Fixture team 8"
+      },
+      {
+        "elapsed": 45000,
+        "title": "TAKES THE LEAD",
+        "name": "Fixture team 6"
+      },
+      {
+        "elapsed": 48000,
+        "title": "11TH → 4TH",
+        "name": "Fixture team 1"
+      },
+      {
+        "elapsed": 51000,
+        "title": "TAKES THE LEAD",
+        "name": "Fixture team 1"
+      }
+    ]
+  },
+  {
+    "version": 2,
+    "maximumSpreadYards": 21.78949079974467,
+    "leadChanges": 4,
+    "distinctLeaders": 5,
+    "bestThreeSecondGain": 3,
+    "finishTimes": [
+      60000,
+      59864,
+      59727,
+      59591,
+      59455,
+      59318,
+      59182,
+      59045,
+      58909,
+      58773,
+      58636,
+      58500
+    ],
+    "calls": [
+      {
+        "elapsed": 6000,
+        "title": "11TH → 9TH",
+        "name": "Fixture team 9"
+      },
+      {
+        "elapsed": 9000,
+        "title": "SIDE BY SIDE",
+        "name": "Fixture team 6"
+      },
+      {
+        "elapsed": 12000,
+        "title": "9TH → 7TH",
+        "name": "Fixture team 9"
+      },
+      {
+        "elapsed": 15000,
+        "title": "5TH → 3RD",
+        "name": "Fixture team 2"
+      },
+      {
+        "elapsed": 18000,
+        "title": "OUT IN FRONT",
+        "name": "Fixture team 6"
+      },
+      {
+        "elapsed": 21000,
+        "title": "TAKES THE LEAD",
+        "name": "Fixture team 2"
+      },
+      {
+        "elapsed": 24000,
+        "title": "OUT IN FRONT",
+        "name": "Fixture team 2"
+      },
+      {
+        "elapsed": 27000,
+        "title": "OUT IN FRONT",
+        "name": "Fixture team 2"
+      },
+      {
+        "elapsed": 30000,
+        "title": "OUT IN FRONT",
+        "name": "Fixture team 2"
+      },
+      {
+        "elapsed": 33000,
+        "title": "OUT IN FRONT",
+        "name": "Fixture team 2"
+      },
+      {
+        "elapsed": 36000,
+        "title": "TAKES THE LEAD",
+        "name": "Fixture team 11"
+      },
+      {
+        "elapsed": 39000,
+        "title": "11TH → 9TH",
+        "name": "Fixture team 1"
+      },
+      {
+        "elapsed": 42000,
+        "title": "SIDE BY SIDE",
+        "name": "Fixture team 11"
+      },
+      {
+        "elapsed": 45000,
+        "title": "TAKES THE LEAD",
+        "name": "Fixture team 12"
+      },
+      {
+        "elapsed": 48000,
+        "title": "6TH → 4TH",
+        "name": "Fixture team 7"
+      },
+      {
+        "elapsed": 51000,
+        "title": "OUT IN FRONT",
+        "name": "Fixture team 12"
+      }
+    ]
+  }
+]

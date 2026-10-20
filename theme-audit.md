@@ -683,3 +683,21 @@ Broken image chains reveal the next image or initials without stale photo state.
 Screenshots and checks are in `docs/power-rankings-polish/`, using sample artwork;
 Sleeper's live image URLs were verified separately. Physical mobile hardware
 and comprehensive screen-reader speech remain unverified.
+
+## 1.453.0 — Larger Arena players and race drama
+
+Reviewed the taller portrait field, live controls, full named standings, gear
+editor and official finish in Medicine Wheel Light/Dark at 320, 390 and 768px,
+plus expanded landscape and 2/12/32-player edge fields. The illustrated stadium
+keeps its explicit turf, lighting and jersey identity colors; app surfaces,
+controls, focus and semantic state continue using the existing theme rules.
+Saved uniforms are preserved. Default jerseys now match their racer identity
+rather than all sharing one red kit. Number labels no longer dominate the body.
+Atlas frames are about 35px on phones and 46px on tablet, and actual draw bounds
+keep every helmet and foot inside the full field. Footer calls stay below it.
+Podium exits expanded viewing and restores a meaningful focus target. Motion-off,
+reduced motion, all-racer visibility, gear focus/scrolling, native fullscreen
+fallback and cleanup pass the isolated production-browser review. Screens and
+279 checks are in `docs/arena-drama/`; scope, model and rollout details are in
+`docs/arena-drama.md`. Physical device audio/frame pacing, native mobile
+fullscreen and comprehensive screen-reader speech remain unverified.

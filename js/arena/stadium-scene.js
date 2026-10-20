@@ -23,7 +23,7 @@ export function stadiumDepth(panX,{worldWidth=2300,motion=true}={}){
 
 // Reserve space for the helmet/badge and feet before zooming into an edge lane.
 export function stadiumVerticalCamera({top,height,count,laneHeight,zoom,focus,overview=false}){
- const head=overview?10:Math.min(64,Math.max(32,height*.16)),foot=overview?8:Math.min(16,Math.max(8,height*.04)),usable=Math.max(24,height-head-foot),world=count*laneHeight;
+ const head=overview?18:Math.min(64,Math.max(32,height*.16)),foot=overview?12:Math.min(16,Math.max(8,height*.04)),usable=Math.max(24,height-head-foot),world=count*laneHeight;
  const scale=usable/world*zoom,half=world/(2*zoom),center=clamp(focus,half,world-half);
  return {scale,center,middle:top+head+usable/2};
 }

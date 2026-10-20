@@ -1,6 +1,6 @@
 import {describe,it,expect,vi} from 'vitest';
 vi.mock('../supabase.js',()=>({db:()=>{throw Error('No database in model tests');}}));
-import {buildStadiumRace,stadiumFrame,stadiumElapsed,stadiumFinishFraction,STADIUM_ENGINE} from './stadium-model.js';
+import {buildStadiumRace,stadiumFrame,stadiumElapsed,stadiumFinishFraction,stadiumMoment,STADIUM_ENGINE} from './stadium-model.js';
 import {createStadiumClock} from './stadium-data.js';
 
 const make=(count=12,duration=60000,seed=2407)=>{
@@ -57,4 +57,39 @@ describe('shared stadium race',()=>{
   let now=100;const clock=createStadiumClock(()=>now);clock.sync(100000,80,100);expect(clock.now()).toBe(100010);now=5100;expect(clock.now()).toBe(105010);
  });
 
+});
+
+describe('versioned dramatic stadium presentation',()=>{
+ const modern=(count=12,duration=60000,seed=2407)=>{const base=make(count,duration,seed);return buildStadiumRace(base.racers,{engine:STADIUM_ENGINE,seed,order:base.order,story_duration_ms:60000,presentation_version:2},duration)};
+ it.each([2,12,32])('keeps every one of %i runners moving forward into the same official finish times',count=>{
+  for(const seed of [1,2407,9811])for(const duration of [15000,60000,600000]){
+   const race=modern(count,duration,seed),previous=Array(count).fill(0);
+   for(let i=0;i<=400;i++)for(const row of stadiumFrame(race,duration*i/400).rows){
+    if(!Number.isFinite(row.progress)||!Number.isFinite(row.speed)||row.progress<previous[row.index]-1e-10||row.speed<0||row.progress>1||!row.finished&&row.progress>=1)throw Error(`Invalid dramatic path: ${count} racers, seed ${seed}, ${duration}ms, frame ${i}, racer ${row.id}`);
+    previous[row.index]=row.progress;
+   }
+   expect(race.paths.map(p=>p.finishMs)).toEqual(make(count,duration,seed).paths.map(p=>p.finishMs));
+   expect(stadiumFrame(race,duration).ranked.map(r=>r.id)).toEqual(race.order);
+  }
+ });
+ it('makes visible breakaways and comebacks without changing legacy replays',()=>{
+  const race=modern(),leaders=new Set();let spread=0,bestComeback=0;
+  for(let t=6000;t<54000;t+=500){const f=stadiumFrame(race,t),before=stadiumFrame(race,t-4000);leaders.add(f.ranked[0].id);spread=Math.max(spread,f.ranked[0].progress-f.ranked.at(-1).progress);for(const row of f.rows)bestComeback=Math.max(bestComeback,before.rows[row.index].rank-row.rank);}
+  expect(spread).toBeGreaterThan(.18);expect(leaders.size).toBeGreaterThanOrEqual(4);expect(bestComeback).toBeGreaterThanOrEqual(3);
+  const old=make();expect(old.presentationVersion).toBe(1);expect(stadiumFrame(old,28000).rows).not.toEqual(stadiumFrame(race,28000).rows);
+  expect(stadiumFrame(race,28000)).toEqual(stadiumFrame(modern(),28000));
+  expect(stadiumFrame(modern(12,120000),56000).rows.map(r=>r.progress)).toEqual(stadiumFrame(race,28000).rows.map(r=>r.progress));
+ });
+ it('only calls rank changes that happened in the shared measured window',()=>{
+  const race=modern();let passes=0,leads=0;
+  for(let t=6000;t<54000;t+=3000){
+   const frame=stadiumFrame(race,t),call=stadiumMoment(race,frame),before=stadiumFrame(race,t-3000);
+   if(call.title==='TAKES THE LEAD'){expect(frame.ranked[0].id).not.toBe(before.ranked[0].id);expect(call.name).toBe(race.racers[frame.ranked[0].index].name);leads++;}
+   if(call.title.includes('→')){const row=frame.rows.find(r=>race.racers[r.index].name===call.name);expect(before.rows[row.index].rank-row.rank).toBeGreaterThanOrEqual(2);passes++;}
+  }
+  expect(leads).toBeGreaterThan(1);expect(passes).toBeGreaterThan(0);
+ });
+ it('refuses an unknown presentation instead of showing an incompatible race',()=>{
+  const race=make();expect(()=>buildStadiumRace(race.racers,{engine:STADIUM_ENGINE,seed:1,order:race.order,presentation_version:3},60000)).toThrow('Update DFL');
+ });
 });
