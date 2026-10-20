@@ -615,7 +615,9 @@ Dark (`docs/home-trade-polish/`). Home now uses The DFL Daily for its masthead
 and loading announcement, leaving Clubhouse as the matchup destination. Actual
 and Final score labels remain available to accessibility and the scrolling
 scoreboard, without repeating visibly under each team. Projected labels remain
-visible. Existing type, score colors and navigation tokens are preserved.
+visible. A reserved feedback lane keeps score-change badges above the totals
+without moving the score when an update arrives. Existing type, score colors
+and navigation tokens are preserved.
 
 Trade opens with extra setup collapsed and both player pickers visible. Its
 compact player targeting row uses shared border, surface and text tokens; the

@@ -3,7 +3,9 @@
 Home has a distinct masthead, The DFL Daily, including its loading announcement.
 Clubhouse retains its own route name. Per-team Actual/Final labels are visually
 hidden while score semantics, phase status and the collapsing scoreboard remain
-intact. Upcoming projections keep their visible Projected label.
+intact. Upcoming projections keep their visible Projected label. A stable lane
+above actual totals prevents score-update badges from obscuring the number;
+targeted checks cover both themes at 320/390/1280px and 100%/200% text.
 
 Trade starts with team/package settings collapsed. Both player targeting buttons
 and selected player chips stay outside that disclosure, before intent/results.

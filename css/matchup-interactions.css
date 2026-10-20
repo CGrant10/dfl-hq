@@ -13,6 +13,8 @@
 #home-wrap .home-team-total { position: relative; width: 100%; justify-self: stretch; grid-template-columns: minmax(0,1fr); }
 #home-wrap .home-team-total > small { grid-column: 1; grid-row: 1; }
 #home-wrap .home-team-total > :is(.gd-thermal-number,.home-projected-total) { grid-column: 1; grid-row: 2; }
+/* Keep a stable feedback lane when repeated status labels are visually hidden. */
+#home-wrap .gameday-matchup:not(.is-projected) .home-team-total { padding-top:16px; }
 #home-wrap .home-team-total > .gd-score-delta { top: -4px; bottom: auto; right: 0; font: 600 12px/1 var(--home-ui-font); }
 #home-wrap .home-game-phase[data-phase="live"]::before,
 .clubhouse-matchup-state[data-state="live"]::before {
