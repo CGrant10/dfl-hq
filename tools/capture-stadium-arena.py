@@ -11,7 +11,7 @@ root=Path(__file__).resolve().parents[1];out=Path(os.environ.get('DFL_ARENA_REVI
 members=[{'id':i+1,'display_name':name,'team_name':team,'active':True,'profile_image':'','accent_color':''} for i,(name,team) in enumerate([('Cody Grant','The Bayou Bombers'),('Kirk Franklin','Dakota Thunder'),('Marcus Williams','Full Send Football'),('David Jefferson','Fourth & Fuck It'),('Brandon Thomas','The Longest Team Name In The Entire League'),('Nathan Lewis','Red River Renegades'),('Chris Brown','Monday Night Mayhem'),('Andrew Martin','Big Sack Energy'),('Tyler James','Bison Stampede'),('Matt Robertson','No Punt Intended'),('Alex Johnson','The Bench Mob'),('Jesse Peterson','Saturday’s Hangover')])]
 event={'id':999,'name':'2026 Draft Order','race_engine':'stadium-v1','race_duration_ms':60000,'race_revision':1,'race_manifest':None,'status':'setup','bc_state':'idle','bc_offset_ms':0,'bc_started_at':None}
 participants=[{'member_id':m['id'],'sort_order':i,'number':i+1,'color':None} for i,m in enumerate(members)]
-presence={};broadcasts=[];removed=False;kits={};kit_saves=[];results=[];commands=[];base=time.time()*1000;elapsed=0;started=time.time();freeze=False;lock=threading.RLock()
+create_error=None;presence={};broadcasts=[];removed=False;kits={};kit_saves=[];results=[];commands=[];base=time.time()*1000;elapsed=0;started=time.time();freeze=False;lock=threading.RLock()
 def server_ms():return time.time()*1000
 def shared_elapsed():return elapsed+(0 if freeze else (time.time()-started)*1000)
 def set_elapsed(value,paused=False):
@@ -41,7 +41,7 @@ class Handler(SimpleHTTPRequestHandler):
   if body is not None:self.send_response(200);self.send_header('Content-Type','text/html' if name=='/qa.html' else 'text/javascript');self.end_headers();self.wfile.write(body.encode());return
   super().do_GET()
  def do_POST(self):
-  global elapsed,freeze,started,participants,results,removed
+  global elapsed,freeze,started,participants,results,removed,create_error
   body=json.loads(self.rfile.read(int(self.headers['Content-Length'])));role=self.headers.get('X-Role');me=int(self.headers.get('X-Member') or 1);error=None
   if self.path.rsplit('/',1)[-1] in ['qa_crowd','qa_track','qa_send','qa_untrack']:
    with lock:
@@ -65,6 +65,12 @@ class Handler(SimpleHTTPRequestHandler):
    if self.path.endswith('arena_stadium_command'):
     commands.append(body);action=body['p_action']
     if role!='commissioner':error={'code':'42501','message':'Only Arena commissioners can control races.'}
+    elif action=='create':
+     if create_error:error=create_error;create_error=None
+     elif len(body.get('p_member_ids') or [])<2:error={'code':'22023','message':'Choose at least two racers.'}
+     else:
+      event.update(name=body['p_name'],race_duration_ms=body['p_duration_seconds']*1000,race_revision=1,race_manifest=None,status='setup',bc_state='idle',bc_offset_ms=0,bc_started_at=None)
+      participants=[{'member_id':id,'sort_order':i,'number':i+1} for i,id in enumerate(body['p_member_ids'])];results=[];removed=False;elapsed=0;freeze=True
     elif body['p_revision']!=event['race_revision']:error={'code':'40001','message':'Race changed. Refresh the controls.'}
     elif action=='start':set_elapsed(-3000)
     elif action=='pause':set_elapsed(shared_elapsed(),True)
@@ -107,6 +113,46 @@ with sync_playwright() as p:
   return c,page
  def all_visible(page,count):
   return page.evaluate("""count=>{const s=document.querySelector('.sr-stage'),canvas=s.querySelector('canvas'),w=canvas.getBoundingClientRect().width,top=parseFloat(s.style.getPropertyValue('--sr-field-top')),height=parseFloat(s.style.getPropertyValue('--sr-field-height'));return s.dataset.fieldOverview==='true'&&window.qaBodies?.length===count&&qaBodies.every(b=>b.left>=-1&&b.right<=w+1&&b.top>=top-1&&b.bottom<=top+height+1)}""",count)
+ # Exercise new-race setup with the real fixed navigation, including an empty
+ # lobby. The normal race fixture below keeps its original lightweight shell.
+ saved_event=copy.deepcopy(event);saved_participants=copy.deepcopy(participants);saved_html=html;saved_stub=stub
+ index=(root/'index.html').read_text();nav_start=index.index('<nav class="tabbar"');nav=index[nav_start:index.index('</nav>',nav_start)+6]
+ html=html.replace('<nav class="bottomnav" style="height:54px"><b>DFL</b><span>Home</span><span>GameDay</span><span>Clubhouse</span></nav>',nav)
+ stub=stub.replace('resolve({data:value.event?[value.event]:[],error:null})','resolve({data:[],error:null})')
+ for width,height in [(320,700),(390,844),(844,390)]:
+  for theme in ['dark','light']:
+   create_context=browser.new_context(viewport={'width':width,'height':height},is_mobile=True,has_touch=True,reduced_motion='reduce',service_workers='block')
+   create_context.add_init_script("localStorage.setItem('qaRole','commissioner');localStorage.setItem('qaMember','1')")
+   create_context.route('**/*',lambda r:r.continue_() if r.request.url.startswith(f'http://127.0.0.1:{server.server_port}') else r.abort())
+   setup=create_context.new_page();setup.on('pageerror',lambda e:report['errors'].append(str(e)))
+   setup.goto(url.split('#')[0]+'#/arena');setup.wait_for_function('window.qaReady===true');setup.evaluate('window.qaTheme',theme);setup.evaluate('document.fonts.ready')
+   setup.locator('[data-new]').click()
+   check(f'{width}px {theme} new race opens without a software-keyboard focus',setup.locator('.sr-editor h2').evaluate('e=>e===document.activeElement'))
+   def visible_create():
+    return setup.locator('.sr-editor [type=submit]').evaluate("e=>{const r=e.getBoundingClientRect(),nav=document.querySelector('#tabbar').getBoundingClientRect();return r.top>=document.querySelector('.topbar').getBoundingClientRect().bottom&&r.bottom<=Math.min(innerHeight,nav.top)&&e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))}")
+   check(f'{width}px {theme} Create clears the fixed bottom navigation',visible_create())
+   setup.locator('.sr-editor [type=submit]').tap()
+   check(f'{width}px {theme} racer validation is beside the visible Create button',setup.locator('.sr-form-error').is_visible() and visible_create())
+   for racer in ['1','2','5']:setup.locator(f'[name=racer][value="{racer}"]').check()
+   check(f'{width}px {theme} valid racer selection clears the old validation message',not setup.locator('.sr-form-error').is_visible())
+   setup.locator('.sr-editor-body').evaluate('e=>e.scrollTop=e.scrollHeight')
+   check(f'{width}px {theme} scrolling racers keeps Create on screen',visible_create())
+   if width==390:setup.screenshot(path=str(out/f'create-{theme}-390.png'))
+   create_error={'code':'NETWORK','message':'Connection lost. Try again.'};before_creates=len(commands);pending_states=[]
+   def creating(route):
+    pending_states.append(setup.locator('.sr-editor').evaluate("e=>e.getAttribute('aria-busy')==='true'&&e.querySelector('[type=submit]').disabled&&e.querySelector('[type=submit]').textContent==='Creating…'"))
+    setup.locator('.sr-editor').evaluate('e=>e.requestSubmit()')
+    route.continue_()
+   setup.route('**/qa/arena_stadium_command',creating)
+   setup.locator('.sr-editor [type=submit]').tap();setup.wait_for_function("document.querySelector('.sr-form-error')?.textContent==='Connection lost. Try again.'")
+   check(f'{width}px {theme} failed create keeps selection and supports retry',setup.locator('[name=racer]:checked').count()==3 and setup.locator('.sr-form-error').is_visible() and setup.locator('[type=submit]').inner_text()=='Create race' and visible_create())
+   setup.locator('[type=submit]').tap();setup.wait_for_function("location.hash==='#/arena?id=999'")
+   check(f'{width}px {theme} create is submitted once per tap with visible progress',len(commands)==before_creates+2 and len(pending_states)==2 and all(pending_states))
+   check(f'{width}px {theme} create sends exactly the selected racers',commands[-1]['p_action']=='create' and commands[-1]['p_revision']==0 and commands[-1]['p_member_ids']==[1,2,5])
+   setup.evaluate('qaRefresh()');setup.wait_for_selector('.sr-room')
+   check(f'{width}px {theme} created race opens the selected starting grid',setup.locator('.sr-position').count()==3 and setup.locator('[data-name]').text_content()=='DFL Stadium Dash')
+   create_context.close()
+ html=saved_html;stub=saved_stub;event.clear();event.update(saved_event);participants[:]=saved_participants;results=[];removed=False;elapsed=0;freeze=False;started=time.time();commands.clear();presence.clear();broadcasts.clear()
  c,admin=context('commissioner');d,watch=context()
  check('commissioner opens with accessible controls instead of forced fullscreen',not admin.evaluate('qaStartedExpanded') and admin.locator('[data-edit]').is_visible())
  admin.locator('[data-expand]').click();admin.wait_for_function('document.fullscreenElement===document.querySelector(".sr-stage")||document.querySelector(".sr-stage").classList.contains("sr-expanded")')

@@ -627,3 +627,17 @@ overflow or browser errors. Team selection, package controls, routing and player
 search remain available. Automated review covers 320/390/768px, enlarged text,
 keyboard focus and reopening controls. Real mobile hardware and screen-reader
 speech remain unverified; fixture player images may use identity fallbacks.
+
+## 1.449.0 — Reachable mobile race creation
+
+Reviewed the new-race editor in Light and Dark with the actual fixed app
+navigation at 320×700, 390×844 and 844×390. Its height and opening scroll position
+now clear the app header, navigation and safe-area allowance. Create stays
+visible while the member list scrolls; validation and retry errors stay beside
+the submit action. Buttons, selection, errors and surfaces keep shared theme
+tokens. Opening setup focuses the heading; the in-flight action has a visible
+Creating/Saving label and accessible busy state. Valid selections clear stale
+racer warnings. Evidence and scope are in `docs/arena-create.md`; 390px captures
+are in `docs/arena-create/`. All 271 isolated browser checks and the full release
+checks pass. Physical keyboards, device safe-area reporting and
+comprehensive screen-reader behavior remain unverified.
