@@ -202,6 +202,7 @@ html = html.replace('</body>', `<script type="module">
   window.reviewEmptyWeek = ${JSON.stringify({focus:renderHomeReview.homeWeeklyFocus(null),forecast:renderHomeReview.homeWeeklyDigest(null)})};
   window.reviewPowerRankings = ${JSON.stringify(rankings)};
   ${homeReviewWiring}
+  // END_HOME_REVIEW_HANDLERS
   window.reviewPowerStop=wireHomeRankings(document.querySelector('[data-home-rankings-slot]'),window.reviewPowerRankings);
   wireHomeWeekHub(document.querySelector('#home-wrap'));
   wireHomeLeagueFeed(document.querySelector('#home-wrap'));

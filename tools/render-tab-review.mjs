@@ -7,7 +7,9 @@ const rendered=spawnSync(process.execPath,['tools/render-home-review.mjs'],{env:
 if(rendered.status!==0)throw Error(rendered.stderr);
 let html=readFileSync(`${out}/index.html`,'utf8');
 const theme=html.slice(html.indexOf('  const themes ='),html.indexOf('  // Model already loaded reactions'));
-const home=html.slice(html.indexOf('function wireHomeWeekHub('),html.indexOf('\n\n  wireHomeRankings(document'));
+const homeStart=html.indexOf('function wireHomeWeekHub('),homeEnd=html.indexOf('  // END_HOME_REVIEW_HANDLERS');
+if(homeStart<0||homeEnd<=homeStart)throw Error('Home review handler boundaries are missing');
+const home=html.slice(homeStart,homeEnd);
 const book=readFileSync(new URL('../js/pages/sportsbook.js',import.meta.url),'utf8');
 const bookHandlers=book.slice(book.indexOf('function wireBookTabs('),book.indexOf('\nlet stopRemembering='));
 const club=readFileSync(new URL('../js/weekly-clubhouse-ui.js',import.meta.url),'utf8');
