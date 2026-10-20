@@ -22,6 +22,16 @@ const weekly = { season: 2026, week: 2, teams: [
 ]) };
 
 describe("dashboard next move", () => {
+  it('does not call a worse or marginal market player a starting upgrade',()=>{
+    const covered={...mine,positionGrades:{...mine.positionGrades,RB:{...mine.positionGrades.RB,starters:[player('starter','Starter','RB',16,60)]}}};
+    expect(buildNextMove({analysis:{...analysis,teams:[covered,partner]},weekly,meSleeperId:'u1'})).toBeNull();
+  });
+  it('ranks verified upgrade impact instead of stopping at the lowest unit grade',()=>{
+    const changed={...mine,positionGrades:{...mine.positionGrades,WR:{percentile:.3,starters:[player('wr','WR','WR',8,30)]}}};
+    const pool=new Map(weekly.pool);pool.set('wr-target',{id:'wr-target',name:'WR Target',position:'WR',points:18,hasGame:true});
+    const view=buildNextMove({analysis:{...analysis,teams:[changed,partner]},weekly:{...weekly,pool},meSleeperId:'u1'});
+    expect(view.need.position).toBe('WR');expect(view.impact).toBe(10);
+  });
   it("separates another roster's depth from a truly unrostered waiver", () => {
     const view = buildNextMove({ analysis, weekly, meSleeperId: "u1", trending: { adds: new Map([["free", 1234]]) } });
     expect(view.need).toMatchObject({ position: "RB", urgent: true });

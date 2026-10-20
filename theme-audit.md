@@ -655,3 +655,17 @@ movement honors reduced motion and app motion-off. No idle animation was added.
 Screens and checks are in `docs/power-rankings/`; model and publication details
 are in `docs/power-rankings.md`. The full release check passes. Real mobile
 hardware and comprehensive screen-reader speech remain unverified.
+
+## 1.451.0 — Useful Home next moves
+
+Reviewed Home's action row in Medicine Wheel Light and Dark at 320, 390 and
+768px, with long player names, IR returns, waiver targets, lineup cover, bye
+coverage, trade targets and holding depth. Existing accent, surface and text
+tokens are retained; the action link now has a 44px minimum target and safe
+wrapping. No colors or picker entries are added. Keyboard focus stays on the
+same link during refresh. Offline/failed refresh replaces named advice and
+resets the external link attributes. The 36 browser states pass without
+horizontal overflow or browser errors. Reviewed screenshots and evidence are
+in `docs/next-move/`; policy and validation are in `docs/next-move.md`. Physical
+mobile hardware, screen-reader speech and external Sleeper app handoff remain
+unverified.

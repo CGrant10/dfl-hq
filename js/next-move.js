@@ -17,7 +17,7 @@ const pts = value => Number.isFinite(Number(value)) ? Number(value).toFixed(1) :
 
 function needsOf(team) {
   return ANALYZER_POSITIONS.map(position => ({ position, ...(team?.positionGrades?.[position] || {}) }))
-    .filter(row => Number.isFinite(Number(row.percentile)))
+    .filter(row => row.percentile!=null&&row.percentile!==''&&Number.isFinite(Number(row.percentile)))
     .sort((a, b) => num(a.percentile) - num(b.percentile) || num(b.leagueRank) - num(a.leagueRank));
 }
 
@@ -27,8 +27,10 @@ function weeklyPlayer(weekly, id) {
 
 function projectedWeek(weekly, player) {
   const current = weeklyPlayer(weekly, player?.id);
-  return current?.hasGame && !current?.isOut && Number.isFinite(Number(current.points))
-    ? Number(current.points) : num(player?.expectedPerGame);
+  if(current?.isOut||current?.hasGame===false)return 0;
+  if(current)return current.hasGame&&current.points!=null&&current.points!==''&&Number.isFinite(Number(current.points))?Number(current.points):null;
+  const baseline=player?.expectedPerGame??player?.forwardPerGame;
+  return baseline!=null&&Number.isFinite(Number(baseline))?Number(baseline):null;
 }
 
 function tradeCandidate(analysis, mine, need, weekly) {
@@ -48,7 +50,7 @@ function tradeCandidate(analysis, mine, need, weekly) {
 
 function waiverCandidate(analysis, need, weekly, trending) {
   if (!need || !(weekly?.pool instanceof Map)) return null;
-  const owned = new Set((analysis.teams || []).flatMap(team => team.playerIds || []).map(String));
+  const owned = new Set((analysis.teams || []).flatMap(team => [...(team.playerIds||[]),...(team.reserve||[]),...(team.taxi||[])]).map(String));
   const adds = trending?.adds instanceof Map ? trending.adds : new Map();
   return [...weekly.pool.values()]
     .filter(player => player.position === need.position && !owned.has(String(player.id))
@@ -67,8 +69,9 @@ function internalCandidate(mine, need, weekly) {
 
 function weakestStarterWeek(mine, need, weekly) {
   const starters = mine?.positionGrades?.[need.position]?.starters || [];
-  if (!starters.length) return 0;
-  return Math.min(...starters.map(player => projectedWeek(weekly, player)).filter(value => value > 0));
+  if (!starters.length) return null;
+  const points=starters.map(player=>projectedWeek(weekly,player));
+  return points.every(p=>p!=null&&Number.isFinite(p))?Math.min(...points):null;
 }
 
 export function buildNextMove({ analysis, weekly, trending, meSleeperId = null } = {}) {
@@ -78,6 +81,7 @@ export function buildNextMove({ analysis, weekly, trending, meSleeperId = null }
   const live = weekly.teams.find(team => String(team.sleeper_user_id) === String(meSleeperId));
   const weekRank = [...weekly.teams].sort((a, b) => num(b.projection) - num(a.projection))
     .findIndex(team => String(team.sleeper_user_id) === String(meSleeperId)) + 1;
+  const options=[];
   for (const weakest of needsOf(mine)) {
     const need = { ...weakest, urgent: num(weakest.percentile) < .42 };
     /* Auto-scout is for actual holes, not endless shopping. A league-average
@@ -88,17 +92,22 @@ export function buildNextMove({ analysis, weekly, trending, meSleeperId = null }
     /* If an active reserve is already as playable as the weakest starter,
        the roster has an internal answer and does not need another player. */
     if (internal && starterFloor > 0 && internal.week >= starterFloor) continue;
-    const trade = tradeCandidate(analysis, mine, need, weekly);
-    const waiver = waiverCandidate(analysis, need, weekly, trending);
+    let trade = tradeCandidate(analysis, mine, need, weekly);
+    let waiver = waiverCandidate(analysis, need, weekly, trending);
+    const knownFloor=starterFloor!=null&&Number.isFinite(starterFloor);
+    if(knownFloor&&trade&&trade.week<starterFloor+3)trade=null;
+    if(knownFloor&&waiver&&Number(waiver.player.points)<starterFloor+3)waiver=null;
     if (!trade && !waiver) continue;
     const marketBest = Math.max(num(trade?.week), num(waiver?.player?.points));
     if (internal && internal.week >= marketBest * .9) continue;
-    return {
+    options.push({
       season: weekly.season, week: weekly.week, mine, need, live, weekRank,
-      leagueSize: weekly.teams.length, trade, waiver,
-    };
+      leagueSize: weekly.teams.length, trade, waiver,tradeGain:knownFloor&&trade?trade.week-starterFloor:null,
+      impact:knownFloor?marketBest-starterFloor:0,
+      tradeHref:trade?`#/trade?team=${encodeURIComponent(mine.id)}&partner=${encodeURIComponent(trade.team.id)}&target=${encodeURIComponent(trade.player.id)}`:null,
+    });
   }
-  return null;
+  return options.sort((a,b)=>b.impact-a.impact||a.need.percentile-b.need.percentile)[0]||null;
 }
 
 function trend(adds) {

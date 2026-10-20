@@ -1,16 +1,24 @@
 import { scenarioLine, stakeLine } from "./league-stakes.js";
+import {freshRosterAdvice,rosterNextAction} from './roster-next-action.js';
 
 const key = value => value == null ? "" : String(value);
+
+export function applyWeeklyBriefing(root,next){
+  const line=root.querySelector('[data-brief-lineup]'),action=root.querySelector('[data-brief-action]'),label=root.querySelector('[data-brief-action-kind]'),stamp=root.querySelector('[data-brief-checked]');
+  if(line&&next.lineup!=null)line.textContent=next.lineup;
+  if(action){action.textContent=next.action;action.href=next.actionUrl;action.target=next.actionUrl.startsWith('https://')?'_blank':'';action.rel=next.actionUrl.startsWith('https://')?'noopener noreferrer':'';action.closest('[data-brief-next-move]').hidden=!next.actionUrl||next.actionUrl==='#/analyzer';}
+  if(label)label.textContent=next.actionLabel||'NEXT MOVE';
+  if(stamp)stamp.textContent=next.checkedStatus||'';
+}
 
 export function buildWeeklyBriefing({ outlook, stakes, move, coach, meSleeperId, now = new Date() } = {}) {
   const mine = stakes?.rows?.find(row => key(row.sleeperUserId) === key(meSleeperId)) || null;
   const matchup = outlook?.predictions?.find(game => game.isMine) || null;
   const swap = outlook?.startSit?.swaps?.[0] || null;
   const tuesday = now.getDay() === 2;
-  const fresh=coach&&coach.plan?.state==='ready'&&Number(coach.plan.week)===Number(outlook?.week)&&Number(coach.checkedAt)>0&&now.getTime()-coach.checkedAt<120000;
+  const fresh=freshRosterAdvice(coach,outlook?.week,now.getTime());
   const alert=fresh?coach.rescue?.find(row=>row.actionable):null;
-  const pickup=fresh?coach.plan.offers?.[0]:null;
-  const actionUrl=meSleeperId?'#/analyzer?owner='+encodeURIComponent(meSleeperId):'#/analyzer';
+  const next=rosterNextAction({coach,outlook,move,meSleeperId,now:now.getTime()});
   return {
     title: tuesday ? "Tuesday Briefing" : "Weekly Briefing",
     week: outlook?.week || stakes?.week || null,
@@ -20,9 +28,7 @@ export function buildWeeklyBriefing({ outlook, stakes, move, coach, meSleeperId,
     playoffDetail: mine ? scenarioLine(mine, stakes?.berths) : "Sync the league to build your path.",
     lineup: alert ? `${alert.player.name}: ${alert.status}${alert.backup?` · ${alert.backup.name} can cover ${alert.slot}`:` · no unlocked ${alert.slot} backup`}` : swap ? `Start ${swap.start.name} over ${swap.sit.name} · +${Number(swap.gain).toFixed(1)}`
       : outlook?.startSit?.lineupIsSet ? "No lineup move worth forcing" : "Set your lineup",
-    action: pickup ? `Add ${pickup.player.name}${pickup.drop?` · drop ${pickup.drop.name}`:''}${pickup.targetWeek!==coach.plan.week?` · Week ${pickup.targetWeek} cover`:''}`
-      : fresh ? 'No clear pickup improvement. Keep your depth.' : move?.headline || move?.title || move?.label || "Keep the roster ready",
-    actionUrl, checkedAt:fresh?coach.checkedAt:null,
+    action:next.text,actionUrl:next.url,actionLabel:next.label,actionKind:next.kind,checkedAt:fresh?coach.checkedAt:null,
     needsAttention:!!alert,
   };
 }
