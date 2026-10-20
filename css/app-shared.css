@@ -3515,6 +3515,8 @@ html[data-archive-transition] {view-transition-name:none;}
 #home-wrap .home-team-total { position: relative; width: 100%; justify-self: stretch; grid-template-columns: minmax(0,1fr); }
 #home-wrap .home-team-total > small { grid-column: 1; grid-row: 1; }
 #home-wrap .home-team-total > :is(.gd-thermal-number,.home-projected-total) { grid-column: 1; grid-row: 2; }
+/* Keep a stable feedback lane when repeated status labels are visually hidden. */
+#home-wrap .gameday-matchup:not(.is-projected) .home-team-total { padding-top:16px; }
 #home-wrap .home-team-total > .gd-score-delta { top: -4px; bottom: auto; right: 0; font: 600 12px/1 var(--home-ui-font); }
 #home-wrap .home-game-phase[data-phase="live"]::before,
 .clubhouse-matchup-state[data-state="live"]::before {
@@ -5766,6 +5768,12 @@ dialog.dfl-player-card { height:min(720px,calc(100dvh - 24px),var(--dialog-viewp
 #view.view[data-page-system][data-route][data-route="trade"] .tb-setup>.tb-setup-summary::after{display:none}
 #view.view[data-page-system][data-route][data-route="analyzer"] [data-ta-body]{margin-inline:0;min-width:0;max-width:100%}
 #view .tb-setup-summary strong i{display:inline-flex;vertical-align:middle}
+
+/* Keep player targeting available while team and package settings are tucked away. */
+#view.view[data-page-system][data-route][data-route="trade"] .tb-quick-targets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0;border-bottom:1px solid var(--line)}
+#view.view[data-page-system][data-route][data-route="trade"] .tb-quick-targets>section{min-width:0;padding:12px 0;border:0;background:transparent}
+#view.view[data-page-system][data-route][data-route="trade"] .tb-quick-targets>section+section{padding-left:12px;border-left:1px solid var(--line)}
+#view.view[data-page-system][data-route][data-route="trade"] .tb-quick-targets .tb-anchor-chips:has(>.tb-anchor-empty:only-child){display:none}
 
 
 /* Source: css/readability.css */

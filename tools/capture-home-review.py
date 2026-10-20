@@ -917,7 +917,7 @@ with sync_playwright() as p:
         metrics[str(width)] = page.evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth,canvas:!!document.querySelector("canvas"), sections:[...document.querySelectorAll(".topbar,.home-newspaper-masthead,.bx-stage,.gameday-matchup,.home-thermal-leaders,.tabbar")].map(e=>({class:e.className,top:e.getBoundingClientRect().top,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,height:e.getBoundingClientRect().height}))})')
         page.screenshot(path=str(OUT / f'home-{width}.png'))
         masthead = page.locator('.home-newspaper-masthead').evaluate("e=>({width:e.getBoundingClientRect().width,title:e.querySelector('h1').textContent.trim()})")
-        assert masthead['title'] == 'The clubhouse' and masthead['width'] <= width, f'Masthead overflow or missing wordmark: {masthead}'
+        assert masthead['title'] == 'The DFL Daily' and masthead['width'] <= width, f'Masthead overflow or missing wordmark: {masthead}'
         metrics[str(width)]['masthead'] = masthead
         if width < 900:
             # The full-width banner adds natural scroll. Every player must
@@ -945,6 +945,7 @@ with sync_playwright() as p:
     assert page.locator('.home-thermal-leaders [data-score-temperature="hot"]').count() == 2
     assert page.locator('.home-thermal-leaders [data-score-temperature="cold"]').count() == 2
     assert page.locator('.home-score-key').count() == 0, 'The hot/cold info text should be removed'
+    assert page.locator('.home-team-total > small').evaluate_all("es=>es.length===2&&es.every(e=>e.textContent==='Projected'?!e.classList.contains('sr-only'):e.classList.contains('sr-only')&&e.getBoundingClientRect().width<=1)"), 'Repeated actual/final labels should be visually hidden while projection labels remain visible'
     page.locator('[data-home-live-slot]').scroll_into_view_if_needed()
     page.locator('[data-home-live-slot]').evaluate("e=>e.dataset.motion='on'")
     page.wait_for_timeout(300)
@@ -1404,7 +1405,7 @@ with sync_playwright() as p:
                 assert page.locator('.topbar .brand-edition').count() == 0
                 assert not page.locator('.topbar .brand-lockup').is_visible()
                 assert page.evaluate("[...document.querySelectorAll('.topbar-actions > button')].every(e=>{const b=e.getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&b.top>=0&&b.bottom<=document.querySelector('.topbar').getBoundingClientRect().bottom+1})"), 'Status bar content is clipped'
-                assert page.locator('.home-newspaper-name h1').inner_text() == 'THE CLUBHOUSE'
+                assert page.locator('.home-newspaper-name h1').inner_text() == 'THE DFL DAILY'
                 assert page.locator('.home-newspaper-masthead .home-newspaper-seal').count() == 0
                 composition = page.evaluate('''() => {
                     const box=s=>document.querySelector(s).getBoundingClientRect(), name=box('.home-newspaper-name h1'), date=box('.home-newspaper-date'), stage=box('.home-broadcast'), desk=box('.home-personal-desk'), focus=box('.home-week-focus'), leaders=box('.home-thermal-leaders');

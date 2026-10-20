@@ -607,3 +607,23 @@ The theme scan and 217 isolated browser checks pass. Current mobile captures
 are in `docs/arena-presentation/`; details are in
 `docs/arena-presentation-validation.md`. Physical mobile hardware, native
 fullscreen and comprehensive assistive-technology behavior remain unverified.
+
+## 1.448.0 — Home identity and compact Trade entry
+
+Reviewed Home and Trade entry screenshots at 390px in Medicine Wheel Light and
+Dark (`docs/home-trade-polish/`). Home now uses The DFL Daily for its masthead
+and loading announcement, leaving Clubhouse as the matchup destination. Actual
+and Final score labels remain available to accessibility and the scrolling
+scoreboard, without repeating visibly under each team. Projected labels remain
+visible. A reserved feedback lane keeps score-change badges above the totals
+without moving the score when an update arrives. Existing type, score colors
+and navigation tokens are preserved.
+
+Trade opens with extra setup collapsed and both player pickers visible. Its
+compact player targeting row uses shared border, surface and text tokens; the
+existing intent selection retains semantic status colors. In the isolated
+390px fixture the first offer begins at 594px in both themes, with no horizontal
+overflow or browser errors. Team selection, package controls, routing and player
+search remain available. Automated review covers 320/390/768px, enlarged text,
+keyboard focus and reopening controls. Real mobile hardware and screen-reader
+speech remain unverified; fixture player images may use identity fallbacks.

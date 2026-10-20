@@ -1,7 +1,7 @@
 import { loadingRows } from './loading-presentation.js';
 
 const pages = {
-  home: ['The Clubhouse', 'home'], clubhouse: ['Clubhouse', 'clubhouse'],
+  home: ['The DFL Daily', 'home'], clubhouse: ['Clubhouse', 'clubhouse'],
   sportsbook: ['Sportsbook', 'sportsbook'], trade: ['Trade Board', 'trade'], analyzer: ['Team Analyzer', 'analyzer'],
   history: ['History', 'archive'], rules: ['League Rules', 'archive'], keepers: ['Keepers', 'archive'],
   finances: ['League Fees', 'archive'], facts: ['DFL Lore', 'story'], profile: ['Team Profile', 'story'],

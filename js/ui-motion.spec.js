@@ -28,7 +28,7 @@ describe('route loading handoff', () => {
 
   it('uses known route labels rather than inserting untrusted hash text', () => {
     const html = routePlaceholder('<img src=x onerror=alert(1)>');
-    expect(html).toContain('Loading The Clubhouse');
+    expect(html).toContain('Loading The DFL Daily');
     expect(html).not.toContain('<img');
   });
 });
