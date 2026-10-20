@@ -8,7 +8,7 @@ export const stadiumColor=(racer,index)=>/^#[0-9a-f]{6}$/i.test(racer?.color||''
 const image=(src,onload)=>{const img=new Image();img.decoding='async';img.onload=onload;img.src=src;return img;};
 export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=()=>null,onLayout=(_layout)=>{}}={}){
  const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw Error('The race display could not open.');
- let width=0,height=0,ratio=1,closed=false,lastFrame=null,lastOptions={},sizeDirty=true,lastLayout='';
+ let width=0,height=0,ratio=1,closed=false,lastFrame=null,lastOptions={},sizeDirty=true,lastLayout='',lastLeader='',leadAt=-Infinity,lastElapsed=0;
  const redraw=()=>{if(lastFrame)draw(lastFrame,lastOptions);};
  const stopArt=onRacerArtReady(redraw);
  const stadium=image(new URL('../../assets/stadium-arena/stadium.webp',import.meta.url),redraw);
@@ -53,6 +53,8 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
   const layout=`${top}:${fieldH}:${width}`;if(layout!==lastLayout){lastLayout=layout;onLayout({overview:true,top,fieldHeight:fieldH,fieldWidth:width});}
   const live=state==='running'||replay,elapsed=Math.max(0,frame?.elapsed||0),u=frame?.u||0,rows=frame?.rows||racers.map((r,index)=>({id:String(r.id),index,progress:0,speed:0,finished:false}));
   const leaders=frame?.ranked||rows,leader=leaders[0],highlighted=String(highlight()??'');
+  if(elapsed<lastElapsed){lastLeader='';leadAt=-Infinity;}lastElapsed=elapsed;
+  if(leader?.id!==lastLeader){if(lastLeader&&live&&u>.06&&u<.94&&elapsed-leadAt>900)leadAt=elapsed;lastLeader=leader?.id||'';}
   // One fixed view includes both endzones and every lane for the whole race.
   const worldWidth=2300,padding=Math.min(24,width*.05),panX=-worldWidth*.1,span=worldWidth*1.2,pxScale=(width-padding*2)/span;
   ctx.setTransform(ratio,0,0,ratio,0,0);ctx.fillStyle='#080d15';ctx.fillRect(0,0,width,height);
@@ -99,12 +101,15 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
   for(const row of rows){
    const r=racers[row.index],y=yOf(row.index)+laneH*yScale*.35,x=padding+(row.progress*worldWidth-panX)*pxScale,color=stadiumColor(r,row.index),scale=Math.max(.06,Math.min(.9,laneH*yScale/78));
    if(row.id===highlighted){ctx.fillStyle=color+'18';ctx.fillRect(0,yOf(row.index)-laneH*yScale/2,width,laneH*yScale);}
+   if(enabled&&row.id===leader?.id&&elapsed-leadAt<700){ctx.fillStyle=`rgba(235,211,151,${Math.max(0,1-(elapsed-leadAt)/700)*.15})`;ctx.fillRect(0,yOf(row.index)-laneH*yScale/2,width,laneH*yScale);}
+   // Screen-space turf kicks stay visible in a wide phone view, without speed lines.
+   if(moving&&row.speed>1.12&&laneH*yScale>=8){for(let i=0;i<3;i++){const age=((elapsed/420+row.index*.31+i/3)%1);ctx.globalAlpha=(1-age)*.32;ctx.fillStyle=i%2?'#dbc180':'#9ba88a';ctx.beginPath();ctx.ellipse(x-3-age*9,y-age*2,1+age,Math.max(.5,age),0,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;}
    const crossed=Math.max(0,elapsed-(row.finishMs||Infinity)),bounce=enabled&&row.finished&&crossed<800?Math.sin(crossed/800*Math.PI)*5:0;
    ctx.save();runner(r,x,y-bounce,scale,elapsed,moving&&!row.finished,row.index,row.speed,row.finished?Math.max(0,elapsed-row.finishMs):-1,enabled);ctx.restore();
-   if(overview&&n<=16){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x-20,y-7,14,7,2);ctx.fill();ctx.fillStyle=kitInk(color);ctx.font=`700 ${laneH*yScale<9?6:7}px Rajdhani,sans-serif`;ctx.textAlign='center';ctx.fillText(String(kits.get(String(r.id)).number),x-13,y-1.5);}
+   if(overview&&n<=16){const badgeH=laneH*yScale>=10?9:7,badgeW=badgeH===9?18:14;ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x-badgeW-5,y-badgeH,badgeW,badgeH,2);ctx.fill();ctx.fillStyle=kitInk(color);ctx.font=`700 ${badgeH===9?8:6}px Rajdhani,sans-serif`;ctx.textAlign='center';ctx.fillText(String(kits.get(String(r.id)).number),x-badgeW/2-5,y-1.5);}
    if(row.id===highlighted){ctx.strokeStyle='#f0d17baa';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y+2,24*scale,5*scale,0,0,Math.PI*2);ctx.stroke();}
    if(row.id===leader?.id&&!frame?.countdown&&u>.03){ctx.fillStyle='#e3c374';ctx.beginPath();ctx.moveTo(x,y-84*scale);ctx.lineTo(x-4,y-91*scale);ctx.lineTo(x+4,y-91*scale);ctx.fill();}
-   if(row.finished){ctx.fillStyle='#f4e7c4';ctx.font=`700 ${overview?8:11}px Rajdhani,sans-serif`;ctx.textAlign='left';ctx.fillText(`#${row.place}`,Math.min(width-24,x+20),y-8);}
+   if(row.finished&&laneH*yScale>=9){ctx.fillStyle='#f4e7c4';ctx.font='700 8px Rajdhani,sans-serif';ctx.textAlign='right';ctx.fillText(String(row.place),width-3,yOf(row.index)+3);}
   }
   ctx.globalAlpha=1;
   // The field keeps its lens falloff; the final sprint warms

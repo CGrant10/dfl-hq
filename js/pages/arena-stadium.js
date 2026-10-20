@@ -8,7 +8,8 @@ import {getReduceRaceMotion,setReduceRaceMotion} from '../store.js';
 import {loadStadiumRace,commandStadiumRace,removeStadiumRace,createStadiumClock} from '../arena/stadium-data.js';
 import {buildStadiumRace,stadiumFrame,stadiumElapsed,stadiumMoment,STADIUM_ENGINE} from '../arena/stadium-model.js';
 import {createStadiumRenderer,stadiumColor} from '../arena/stadium-renderer.js';
-import {normalizeKit,footballSpot,finishMargin} from '../arena/racer-kit-model.js';
+import {normalizeKit,footballSpot,finishMargin,kitInk} from '../arena/racer-kit-model.js';
+import {drawKitRunner,onRacerArtReady} from '../arena/racer-kit-art.js';
 import {mountStadiumOrientation} from '../arena/stadium-orientation.js';
 
 let active=null;
@@ -16,6 +17,7 @@ export function leave(){active?.stop();active=null;}
 const safePhoto=value=>{if(!String(value||'').trim())return '';try{const u=new URL(value,location.href);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch{return '';}};
 const initials=name=>String(name||'DFL').split(/\s+/).map(p=>p[0]).slice(0,2).join('');
 const portrait=r=>{const photo=safePhoto(r.photo);return `<span class="sr-avatar" data-initials="${esc(initials(r.name))}" style="--racer:${stadiumColor(r,r.index||0)}">${photo?`<img src="${esc(photo)}" alt="" loading="lazy" decoding="async">`:esc(initials(r.name))}</span>`;};
+const jersey=r=>`<span class="sr-jersey" aria-label="Jersey ${r.number}" style="--jersey:${stadiumColor(r,r.index)};--jersey-ink:${kitInk(stadiumColor(r,r.index))}">${r.number}</span>`;
 const seconds=ms=>`${Math.floor(Math.max(0,ms)/60000)}:${String(Math.floor(Math.max(0,ms)/1000)%60).padStart(2,'0')}`;
 const eventDuration=e=>e.race_engine===STADIUM_ENGINE?Number(e.race_duration_ms):Math.max(15000,Math.min(600000,Number(e.length_ticks||1500)*40));
 const motion=()=>!getReduceRaceMotion()&&document.documentElement.dataset.uiMotion!=='off'&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -40,14 +42,14 @@ export async function render(view){
 function editorMarkup(members,{event=null,selected=[],paused=false}={}){
  const picked=new Set(selected.map(String)),duration=event?eventDuration(event)/1000:60;
  members=members.filter(m=>m.active===true||picked.has(String(m.id)));
- return `<form class="sr-editor"><div class="sr-editor-head"><h2>${event?'Edit race':'New race'}</h2><button type="button" data-cancel aria-label="Close race editor">×</button></div>
+ return `<form class="sr-editor"><div class="sr-editor-head"><h2>${event?'Edit race':'New race'}</h2><button type="button" data-cancel aria-label="Close race editor">×</button></div><div class="sr-editor-body">
  <label>Race name<input name="name" maxlength="80" required value="${esc(event?.name||'DFL Stadium Dash')}"></label>
  <div class="sr-duration-presets" aria-label="Race duration">${[30,60,90,120,180].map(n=>`<button type="button" data-duration="${n}" aria-pressed="${n===duration}">${n<60?`${n}s`:`${n/60}m`}</button>`).join('')}</div>
- <label>Duration · seconds<input name="duration" type="number" min="15" max="600" step="1" required value="${duration}" inputmode="numeric"></label>
+ <details class="sr-custom-duration" ${[30,60,90,120,180].includes(duration)?'':'open'}><summary>Custom duration</summary><label>Seconds<input name="duration" type="number" min="15" max="600" step="1" required value="${duration}" inputmode="numeric"></label></details>
  <div class="sr-pick-head"><h3>Racers <span data-picked>${picked.size}</span></h3>${paused?'':'<button type="button" data-all>Select all</button>'}</div>
  ${paused?'':`<label class="sr-search"><span class="sr-only">Find a racer</span><input name="search" type="search" placeholder="Find a racer" autocomplete="off"></label>`}
  <div class="sr-member-picks">${members.filter(m=>!paused||picked.has(String(m.id))).map((m,index)=>`<label class="sr-member-pick"><input type="checkbox" name="racer" value="${esc(m.id)}" ${picked.has(String(m.id))?'checked':''} ${paused?'disabled':''}>${portrait({photo:m.profile_image,name:m.display_name,index})}<span>${esc(m.display_name)}<small>${esc(m.team_name||'')}</small></span></label>`).join('')}</div>
- <p class="sr-form-error" role="alert" hidden></p><button class="sr-primary" type="submit">${event?'Save race':'Create race'}</button></form>`;
+ </div><div class="sr-editor-save"><p class="sr-form-error" role="alert" hidden></p><button class="sr-primary" type="submit">${event?'Save race':'Create race'}</button></div></form>`;
 }
 
 function wireEditor(host,members,{event=null,selected=[],onSave,onCancel}={}){
@@ -57,6 +59,7 @@ function wireEditor(host,members,{event=null,selected=[],onSave,onCancel}={}){
  const presets=()=>form.querySelectorAll('[data-duration]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.duration)===Number(duration.value))));
  form.querySelector('[data-cancel]').onclick=onCancel;
  form.querySelectorAll('[data-duration]').forEach(b=>b.onclick=()=>{duration.value=b.dataset.duration;presets();});duration.oninput=presets;
+ form.addEventListener('invalid',()=>{form.querySelector('.sr-custom-duration').open=true;},true);
  checks.forEach(c=>c.onchange=count);
  const all=form.querySelector('[data-all]');if(all)all.onclick=()=>{const select=!checks.every(c=>c.checked);checks.forEach((c,i)=>c.checked=select&&i<32);count();};
  const search=form.elements.namedItem('search');if(search)search.oninput=()=>{const q=search.value.trim().toLowerCase();checks.forEach(c=>c.closest('label').hidden=!c.closest('label').textContent.toLowerCase().includes(q));};
@@ -100,7 +103,7 @@ async function room(view,members,id,life){
  const root=document.createElement('section');root.className='stadium-arena sr-room';
  root.innerHTML=`<header class="sr-title sr-room-title"><a class="sr-back" href="#/arena">← Arena</a><h1 data-name></h1><span class="sr-state" data-state-label></span></header>
  <div class="sr-room-meta"><span data-racer-count></span><span data-duration-label></span><span data-presence hidden></span><span class="sr-connection" role="status" hidden></span></div>
- <div class="sr-stage"><div class="sr-watch-toolbar sr-stage-score"><div class="sr-watch-clock"><span data-clock>0:00</span><small data-field-spot></small></div><span class="sr-watch-label">Full field</span><button type="button" data-expand aria-label="Expand race"><span aria-hidden="true">⛶</span><b data-expand-label>Watch</b></button></div><div class="sr-watch-surface"><canvas role="img" aria-label="Live football stadium race"></canvas><div class="sr-stage-overlay" aria-live="polite"><div class="sr-start-lights" aria-hidden="true"><i></i><i></i><i></i></div><strong data-overlay></strong><span data-overlay-name></span></div></div><div class="sr-race-footer"><div class="sr-moment" aria-live="polite"><span data-moment-title></span><strong data-moment-name></strong></div><details class="sr-crowd-menu" data-stadium-crowd></details></div><div class="sr-finish-tools" hidden><button type="button" data-replay>Replay race</button><button type="button" data-photo-finish hidden>Photo finish</button><button type="button" data-stop-replay hidden>Back to result</button></div><div class="sr-controls" aria-label="Commissioner race controls"></div></div>
+ <div class="sr-stage"><div class="sr-watch-toolbar sr-stage-score"><div class="sr-watch-clock"><span data-clock>0:00</span></div><div class="sr-watch-identity"><span data-highlight-number aria-hidden="true"></span><div aria-hidden="true"><strong data-highlight-name></strong><small data-field-spot></small></div><select data-racer-highlight aria-label="Highlight racer"></select></div><button type="button" data-expand aria-label="Expand race"><span aria-hidden="true">⛶</span><b data-expand-label>Watch</b></button></div><div class="sr-watch-surface"><canvas role="img" aria-label="Live football stadium race"></canvas><div class="sr-stage-overlay" aria-live="polite"><div class="sr-start-lights" aria-hidden="true"><i></i><i></i><i></i></div><strong data-overlay></strong><span data-overlay-name></span></div></div><div class="sr-race-footer"><canvas class="sr-winner-art" width="128" height="160" aria-hidden="true" hidden></canvas><div class="sr-moment" aria-live="polite"><span data-moment-title></span><strong data-moment-name></strong></div><details class="sr-crowd-menu" data-stadium-crowd></details></div><div class="sr-finish-tools" hidden><button type="button" data-replay>Replay race</button><button type="button" data-photo-finish hidden>Photo finish</button><button type="button" data-stop-replay hidden>Back to result</button></div><div class="sr-controls" aria-label="Commissioner race controls"></div></div>
  <div class="sr-tools">${currentMember()?'<button type="button" data-my-racer>My racer</button>':''}<button type="button" data-motion aria-pressed="true">Motion on</button><button type="button" data-share>Copy watch link</button></div>
  <div class="sr-editor-host" hidden></div><div class="sr-final" hidden aria-live="polite"></div>
  <div class="sr-board-head"><h2 data-board-title>Starting grid</h2><span data-board-status></span></div><section class="sr-staging" data-stadium-staging hidden></section><ol class="sr-board" aria-label="Race positions"></ol></section>`;
@@ -111,17 +114,20 @@ async function room(view,members,id,life){
  const orientation=mountStadiumOrientation(stage,{autoExpand:()=>!snapshot.can_control,onChange:()=>{lastDOM=0;draw(performance.now());schedule();}});life.cleanup.push(()=>orientation.stop());
  const visible=()=>!document.hidden&&!life.closed;
  const showConnection=message=>{const el=q('.sr-connection');el.textContent=message;el.hidden=!message;};
- const setMotion=()=>{crowd?.motionChanged();root.dataset.motion=motion()?'on':'off';q('[data-motion]').textContent=`Motion ${motion()?'on':'off'}`;q('[data-motion]').setAttribute('aria-pressed',String(motion()));if(!raf)draw(performance.now());};
+ const setMotion=()=>{crowd?.motionChanged();root.dataset.motion=motion()?'on':'off';q('[data-motion]').textContent=`Motion ${motion()?'on':'off'}`;q('[data-motion]').setAttribute('aria-pressed',String(motion()));if(!motion())root.getAnimations({subtree:true}).forEach(animation=>animation.cancel());if(!raf)draw(performance.now());};
  const configureRacers=()=>{
   const kits=new Map((snapshot.racer_kits||[]).map(k=>[String(k.member_id),k.kit]));
   const next=snapshot.participants.map((p,index)=>{const m=memberMap.get(String(p.member_id)),kit=normalizeKit(kits.get(String(p.member_id)),{number:p.number??index+1});return {id:String(p.member_id),name:m?.display_name||`Racer ${p.number||index+1}`,team:m?.team_name||'',photo:m?.profile_image||'',number:kit.number,kit,color:kits.has(String(p.member_id))?kit.jersey:p.color||m?.accent_color,index};});
   const signature=JSON.stringify(next);if(signature!==JSON.stringify(racers)){
    const sameField=racers.length===next.length&&racers.every((r,i)=>r.id===next[i].id);racers=next;
    if(renderer&&sameField)renderer.updateRacers(racers);else{renderer?.stop();renderer=createStadiumRenderer(q('canvas'),{racers,motion,highlight:()=>highlightId,onLayout:({overview,top,fieldHeight,fieldWidth})=>{stage.dataset.fieldOverview=String(overview);stage.style.setProperty('--sr-field-top',`${top}px`);stage.style.setProperty('--sr-field-height',`${fieldHeight}px`);stage.style.setProperty('--sr-field-width',`${fieldWidth}px`);}});}
-   board.innerHTML=racers.map(r=>`<li class="sr-position" data-racer-id="${esc(r.id)}"><button class="sr-follow-row" type="button" aria-describedby="sr-ready-${esc(r.id)}" data-highlight-racer="${esc(r.id)}" aria-pressed="false"><span class="sr-rank">${r.index+1}</span>${portrait(r)}<span class="sr-racer-name">${esc(r.name)}<small>${esc(r.team)}</small></span><span class="sr-gap">On deck</span><span class="sr-ready-status" id="sr-ready-${esc(r.id)}" data-ready-racer="${esc(r.id)}" hidden><small>Waiting</small></span></button></li>`).join('');
+   board.innerHTML=racers.map(r=>`<li class="sr-position" data-racer-id="${esc(r.id)}"><button class="sr-follow-row" type="button" aria-describedby="sr-ready-${esc(r.id)}" data-highlight-racer="${esc(r.id)}" aria-pressed="false"><span class="sr-rank">${r.index+1}</span><span class="sr-racer-mark">${portrait(r)}${jersey(r)}</span><span class="sr-racer-name">${esc(r.name)}<small>${esc(r.team)}</small></span><span class="sr-gap">On deck</span><span class="sr-ready-status" id="sr-ready-${esc(r.id)}" data-ready-racer="${esc(r.id)}" hidden><small>Waiting</small></span></button></li>`).join('');
+   delete board.dataset.order;
    board.querySelectorAll('[data-highlight-racer]').forEach(b=>b.onclick=()=>{highlightId=b.dataset.highlightRacer;lastDOM=0;draw(performance.now(),{forceStage:true});stage.scrollIntoView({behavior:motion()?'smooth':'auto',block:'center'});});
-   board.style.height=`${racers.length*76}px`;
    if(!racers.some(r=>r.id===highlightId))highlightId=racers.find(r=>r.id===String(currentMember()?.id))?.id||racers[0]?.id;
+   q('[data-racer-highlight]').innerHTML=racers.map(r=>`<option value="${esc(r.id)}">${r.number} · ${esc(r.name)}${r.team?` · ${esc(r.team)}`:''}</option>`).join('');
+   q('[data-racer-highlight]').value=highlightId;
+   const selected=racers.find(r=>r.id===highlightId);q('[data-highlight-number]').innerHTML=jersey(selected);q('[data-highlight-name]').textContent=selected.name;
   }
   race=snapshot.event.race_manifest?buildStadiumRace(racers,snapshot.event.race_manifest,eventDuration(snapshot.event)):null;
  };
@@ -149,10 +155,20 @@ async function room(view,members,id,life){
  };
  const paintFinal=()=>{
   const final=q('.sr-final');if(snapshot.event.bc_state!=='finished'||snapshot.results.length!==racers.length){final.hidden=true;return;}
-  const key=snapshot.results.map(r=>`${r.member_id}:${r.place}`).join('|');if(final.dataset.result===key){final.hidden=false;return;}final.dataset.result=key;final.hidden=false;
-  const podium=snapshot.results.slice(0,3).map(result=>{const r=racers.find(p=>p.id===String(result.member_id));return `<div class="sr-podium-place" data-place="${result.place}">${portrait(r)}<b>${result.place===1?'WINNER':`#${result.place}`}</b><strong>${esc(r.name)}</strong></div>`;}).join('');
+  const key=JSON.stringify([snapshot.results,racers.map(r=>r.kit)]);if(final.dataset.result===key){final.hidden=false;return;}final.dataset.result=key;final.hidden=false;
+  const podium=[...snapshot.results].sort((a,b)=>a.place-b.place).slice(0,3).map(result=>{const r=racers.find(p=>p.id===String(result.member_id));return `<div class="sr-podium-place" data-place="${result.place}"><canvas width="128" height="160" data-podium-racer="${esc(r.id)}" aria-hidden="true"></canvas><b>${result.place===1?'WINNER':`#${result.place}`}</b><strong>${esc(r.name)}</strong>${jersey(r)}</div>`;}).join('');
   const margin=finishMargin(snapshot.results);final.innerHTML=`<span class="sr-kicker">OFFICIAL ORDER</span><h2>That’s the fucking order.</h2><div class="sr-finish-margin">${margin!==null?`${margin<=200?'PHOTO FINISH · ':''}${(margin/1000).toFixed(2)}s margin`:''}</div><div class="sr-podium">${podium}</div>`;
+  paintRacerArt();
  };
+ function paintRacerArt(){
+  const winner=snapshot.results.find(result=>result.place===1),winnerRacer=racers.find(r=>r.id===String(winner?.member_id));
+  for(const canvas of root.querySelectorAll('[data-podium-racer],.sr-winner-art')){
+   const r=canvas.classList.contains('sr-winner-art')?winnerRacer:racers.find(r=>r.id===canvas.dataset.podiumRacer);if(!r)continue;
+   const ctx=canvas.getContext('2d');ctx.clearRect(0,0,128,160);drawKitRunner(ctx,r.kit,{x:24,y:0,width:80,height:158,stride:1});
+  }
+ }
+ const stopPodiumArt=onRacerArtReady(()=>{if(!life.closed)paintRacerArt();});life.cleanup.push(stopPodiumArt);
+ q('[data-racer-highlight]').onchange=e=>{highlightId=e.target.value;const r=racers.find(r=>r.id===highlightId);q('[data-highlight-number]').innerHTML=jersey(r);setText(q('[data-highlight-name]'),r.name);lastDOM=0;draw(performance.now(),{forceStage:true});};
  const accept=(data,sentAt)=>{
   if(life.closed||Number(data.event.race_revision)<Number(snapshot.event.race_revision))return;
   const before=snapshot.event.bc_state,revision=snapshot.event.race_revision,permission=snapshot.can_control;snapshot=data;clock.sync(data.server_ms,sentAt);configureRacers();
@@ -195,18 +211,23 @@ async function room(view,members,id,life){
   let moment=idle?{key:'idle',title:'THE BOYS ARE LINED UP',name:'WHO’S GOT THE LEGS?'}:paused?{key:'paused',title:'RACE PAUSED',name:'NOBODY’S GOING ANYWHERE'}:race?stadiumMoment(race,frame):{key:'loading',title:'',name:''};
   if(replaying&&replayKind==='photo')moment={key:'photo-replay',title:'PHOTO FINISH · 0.25×',name:frame.ranked.slice(0,2).map(row=>racers[row.index].name).join(' vs ')};
   const leader=frame.ranked[0];if(leader&&leader.id!==lastLeader){if(lastLeader&&frame.u>.06&&frame.u<.90&&(!leadChange||now-leadChange.at>1400))leadChange={id:leader.id,at:now};lastLeader=leader.id;}
-  const focused=frame.rows.find(r=>r.id===highlightId)||leader;setText(q('[data-field-spot]'),footballSpot(focused?.progress||0));
+  const focused=frame.rows.find(r=>r.id===highlightId)||leader;setText(q('[data-field-spot]'),idle?'On deck':`${focused?.rank||1} · ${footballSpot(focused?.progress||0)}`);
+  const selected=racers.find(r=>r.id===highlightId);if(selected&&q('[data-racer-highlight]').value!==highlightId){q('[data-racer-highlight]').value=highlightId;q('[data-highlight-number]').innerHTML=jersey(selected);setText(q('[data-highlight-name]'),selected.name);}
   if(frame.u>.94&&!frame.finished&&!leader?.finished&&frame.ranked[1]&&leader.progress-frame.ranked[1].progress<.008){moment.key='tight-finish';moment.title='TOO TIGHT TO CALL';moment.name='GET TO THE FUCKING LINE';}
   if(!idle&&!paused&&frame.u<.9&&leadChange&&now-leadChange.at<1400){moment.key=`lead-${leadChange.at}`;moment.title='TAKES THE LEAD';moment.name=racers.find(r=>r.id===leadChange.id)?.name||'DFL';}
   if(frame.finished&&e.bc_state!=='finished'&&!replaying){moment.title='FINISHING';moment.name='LOCKING THE ORDER';}
+  const official=!replaying&&e.bc_state==='finished'&&snapshot.results.length===racers.length,showWinner=official&&snapshot.results.some(result=>result.place===1);
+  q('.sr-winner-art').hidden=!showWinner;stage.dataset.officialWinner=String(showWinner);
+  if(showWinner){const winner=racers.find(r=>r.id===String(snapshot.results.find(result=>result.place===1).member_id));moment={key:'official-winner',title:'OFFICIAL WINNER',name:winner.name};}
   if(lastKey!==moment.key){lastKey=moment.key;q('[data-moment-title]').textContent=moment.title;q('[data-moment-name]').textContent=moment.name;if(motion())q('.sr-moment').animate([{opacity:.4,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{duration:220,easing:'ease-out'});}
   q('[data-board-title]').textContent=idle?'Starting grid':frame.finished?'Finish order':'Live positions';q('[data-board-status]').textContent=replaying?'Replay':paused?'Paused':e.bc_state==='running'?'Live':'';
   const ranked=frame.ranked.length?frame.ranked:frame.rows;
-  for(const row of ranked){const el=board.querySelector(`[data-racer-id="${row.id}"]`);if(!el)continue;const rank=row.rank||row.index+1;el.style.transform=`translateY(${(rank-1)*76}px)`;setText(el.querySelector('.sr-rank'),rank);el.dataset.leader=String(rank===1&&!idle&&!frame.countdown);
+  const rankKey=ranked.map(r=>r.id).join(','),reorder=board.dataset.order!==rankKey,positions=reorder&&motion()?new Map([...board.children].map(el=>[el,el.getBoundingClientRect().top])):null;
+  for(const row of ranked){const el=board.querySelector(`[data-racer-id="${row.id}"]`);if(!el)continue;const rank=row.rank||row.index+1;setText(el.querySelector('.sr-rank'),rank);el.dataset.leader=String(rank===1&&!idle&&!frame.countdown);
    el.querySelector('.sr-gap').textContent=idle?'On deck':frame.countdown?'Set':row.finished?`${(row.finishMs/1000).toFixed(2)}s`:rank===1?'Leader':`${Math.max(0,((ranked[0]?.progress||0)-row.progress)*100).toFixed(1)} yd`;
-   const button=el.querySelector('button');if(idle)button.setAttribute('aria-describedby',`sr-ready-${row.id}`);else button.removeAttribute('aria-describedby');button.setAttribute('aria-label',`Highlight ${racers[row.index].name}, position ${rank}${row.finished?', finished':''}`);button.setAttribute('aria-pressed',String(highlightId===row.id));
+   const button=el.querySelector('button');if(idle)button.setAttribute('aria-describedby',`sr-ready-${row.id}`);else button.removeAttribute('aria-describedby');button.setAttribute('aria-label',`Highlight ${racers[row.index].name}, jersey ${racers[row.index].number}, position ${rank}${row.finished?', finished':''}`);button.setAttribute('aria-pressed',String(highlightId===row.id));
   }
-  const rankKey=ranked.map(r=>r.id).join(',');if(board.dataset.order!==rankKey){const focused=board.contains(document.activeElement)?document.activeElement:null;board.dataset.order=rankKey;for(const row of ranked){const el=board.querySelector(`[data-racer-id="${row.id}"]`);if(el)board.append(el);}if(focused?.isConnected&&document.activeElement!==focused)focused.focus({preventScroll:true});}
+  if(reorder){const focused=board.contains(document.activeElement)?document.activeElement:null;board.dataset.order=rankKey;for(const row of ranked){const el=board.querySelector(`[data-racer-id="${row.id}"]`);if(el){el.getAnimations().forEach(animation=>animation.cancel());board.append(el);}}if(positions)for(const el of board.children){const delta=positions.get(el)-el.getBoundingClientRect().top;if(Math.abs(delta)>1)el.animate([{transform:`translateY(${delta}px)`},{transform:'translateY(0)'}],{duration:420,easing:'cubic-bezier(.22,.7,.25,1)'});}if(focused?.isConnected&&document.activeElement!==focused)focused.focus({preventScroll:true});}
  }
  function setMotionLabel(){const enabled=motion();root.dataset.motion=enabled?'on':'off';q('[data-motion]').textContent=`Motion ${enabled?'on':'off'}`;q('[data-motion]').setAttribute('aria-pressed',String(enabled));}
  wireMyRacer(root,life,async saved=>{snapshot.racer_kits=[...(snapshot.racer_kits||[]).filter(k=>String(k.member_id)!==String(saved.member_id)),saved];configureRacers();lastDOM=0;draw(performance.now());void refresh();},()=>racers.find(r=>r.id===String(currentMember()?.id))?.kit);

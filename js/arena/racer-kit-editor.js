@@ -15,23 +15,27 @@ export async function openRacerEditor({onSave=(_saved)=>{},motion=()=>true,initi
  let kit=normalizeKit(record?.kit??initialKit,{number:initialKit?.number??0}),revision=record?.revision||0,closed=false,raf=0,lastDraw=0,saving=false,stopDrag=null;
  const restoreFocus=opener||document.activeElement;
  const dialog=document.createElement('dialog');dialog.className='sr-kit-dialog';dialog.dataset.motion=motion()?'on':'off';dialog.setAttribute('aria-labelledby','sr-kit-title');
- dialog.innerHTML=`<form class="sr-kit-panel"><header><div><span class="sr-kicker">${esc(member.display_name)}</span><h2 id="sr-kit-title">My racer</h2></div><button type="button" data-kit-close aria-label="Close racer editor">×</button></header>
+ dialog.innerHTML=`<form class="sr-kit-panel"><header><div><span class="sr-kicker">${esc(member.display_name)}</span><h2 id="sr-kit-title">My racer</h2></div><canvas class="sr-kit-mini" width="128" height="160" aria-hidden="true"></canvas><button type="button" data-kit-close aria-label="Close racer editor">×</button></header>
  <div class="sr-kit-preview"><canvas aria-label="Your animated football racer"></canvas><span data-kit-name></span><button type="button" data-preview-retry hidden>Retry preview</button></div>
  <fieldset class="sr-kit-groups"><legend class="sr-only">Kit collection</legend>${['DFL','NFL','Pokémon','Anime'].map(group=>`<button type="button" data-kit-group="${group}" aria-pressed="${group===(KIT_PRESETS.find(p=>p.id===kit.preset)?.group||'DFL')}">${group}</button>`).join('')}</fieldset>
  <label>Kit<select name="preset" aria-label="Racer kit preset"></select></label>
  <fieldset class="sr-kit-skin"><legend>Skin tone</legend>${SKIN_TONES.map(([name,color])=>`<button type="button" style="--tone:${color}" data-kit-skin="${color}" aria-label="${name}" aria-pressed="${kit.skin===color}"></button>`).join('')}</fieldset>
  <div class="sr-kit-fields"><label>Helmet<select name="helmetStyle">${HELMETS.map(([id,name])=>`<option value="${id}" ${id===kit.helmetStyle?'selected':''}>${name}</option>`).join('')}</select></label><label>Jersey number<input name="number" type="number" min="0" max="99" step="1" value="${kit.number}" inputmode="numeric" required></label></div>
- <fieldset class="sr-kit-colors"><legend>Uniform colors</legend>${[['helmet','Helmet'],['jersey','Jersey'],['pants','Pants'],['trim','Trim']].map(([key,name])=>`<input name="${key}" type="hidden" value="${kit[key]}"><button type="button" data-kit-part="${key}" aria-pressed="${key==='helmet'}"><strong>${name}</strong><i style="--tone:${kit[key]}" aria-hidden="true"></i></button>`).join('')}</fieldset>
+ <fieldset class="sr-kit-colors"><legend>Uniform colors</legend><div class="sr-kit-parts">${[['helmet','Helmet'],['jersey','Jersey'],['pants','Pants'],['trim','Trim']].map(([key,name])=>`<input name="${key}" type="hidden" value="${kit[key]}"><button type="button" data-kit-part="${key}" aria-pressed="${key==='helmet'}"><strong>${name}</strong><i style="--tone:${kit[key]}" aria-hidden="true"></i></button>`).join('')}</div></fieldset>
  <div class="sr-kit-palette" aria-label="Quick uniform colors">${quickColors.map(([name,color])=>`<button type="button" data-kit-color="${color}" data-color-name="${name}" style="--tone:${color}" aria-label="Set helmet color to ${name}"></button>`).join('')}</div>
  <label class="sr-kit-custom"><span data-kit-custom-label>Custom helmet color</span><input name="uniformColor" type="color" value="${kit.helmet}"></label>
  <label class="sr-kit-pin" ${lockResult.data&&!verifiedPin(member.id)?'':'hidden'}>Profile PIN<input name="pin" type="password" inputmode="numeric" maxlength="6" autocomplete="one-time-code" pattern="[0-9]{4,6}"></label>
  <p class="sr-kit-error" role="alert" hidden></p><footer><button type="button" data-kit-reset>DFL original</button><button type="submit" class="sr-primary">Save racer</button></footer></form>`;
- document.body.append(dialog);const form=dialog.querySelector('form'),canvas=dialog.querySelector('canvas'),ctx=canvas.getContext('2d');canvas.width=420;canvas.height=440;
+ document.body.append(dialog);const form=dialog.querySelector('form'),canvas=dialog.querySelector('.sr-kit-preview canvas'),ctx=canvas.getContext('2d');canvas.width=420;canvas.height=440;
  const header=form.querySelector('header'),syncHeader=()=>dialog.style.setProperty('--kit-header',`${Math.ceil(header.getBoundingClientRect().height)+6}px`),headerSize=new ResizeObserver(syncHeader);headerSize.observe(header);
+ const mini=form.querySelector('.sr-kit-mini'),miniContext=mini.getContext('2d');
+ const compact=()=>{const next=dialog.scrollTop>120;if(dialog.dataset.compact!==String(next)){dialog.dataset.compact=String(next);draw(performance.now(),true);}};
+ dialog.addEventListener('scroll',compact,{passive:true});
  const field=name=>form.elements.namedItem(name),groupButtons=[...form.querySelectorAll('[data-kit-group]')];
  function sync(force=true){
   for(const key of ['helmet','jersey','pants','trim','number','helmetStyle'])field(key).value=kit[key];
   form.querySelectorAll('[data-kit-part]').forEach(button=>{button.setAttribute('aria-pressed',String(button.dataset.kitPart===activeColor));button.querySelector('i').style.setProperty('--tone',kit[button.dataset.kitPart]);});
+  form.querySelector('.sr-kit-parts').style.setProperty('--kit-part',String(['helmet','jersey','pants','trim'].indexOf(activeColor)));
   field('uniformColor').value=kit[activeColor];form.querySelector('[data-kit-custom-label]').textContent=`Custom ${activeColor} color`;
   form.querySelectorAll('[data-kit-color]').forEach(button=>{button.setAttribute('aria-label',`Set ${activeColor} color to ${button.dataset.colorName}`);button.setAttribute('aria-pressed',String(button.dataset.kitColor===kit[activeColor]));});
   form.querySelectorAll('[data-kit-skin]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.kitSkin===kit.skin)));
@@ -42,6 +46,7 @@ export async function openRacerEditor({onSave=(_saved)=>{},motion=()=>true,initi
   if(closed||document.hidden)return;if(!force&&motion()&&now-lastDraw<50)return;lastDraw=now;
   ctx.clearRect(0,0,420,440);ctx.strokeStyle='#d6c17a20';ctx.lineWidth=2;for(const x of [48,210,372]){ctx.beginPath();ctx.moveTo(x,360);ctx.lineTo(x,425);ctx.stroke();}ctx.fillStyle='#0008';ctx.beginPath();ctx.ellipse(206,411,94,12,0,0,Math.PI*2);ctx.fill();
   const stride=motion()?Math.floor(now/110)%6:1;drawKitRunner(ctx,kit,{x:107,y:5,width:205,height:410,stride});
+  if(dialog.dataset.compact==='true'){miniContext.clearRect(0,0,128,160);drawKitRunner(miniContext,kit,{x:24,y:0,width:80,height:158,stride});}
  }
  function schedulePreview(){if(!raf&&!closed&&!document.hidden&&motion())raf=requestAnimationFrame(animate);}
  function animate(now){raf=0;if(closed)return;draw(now);schedulePreview();}

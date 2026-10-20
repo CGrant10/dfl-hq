@@ -591,3 +591,19 @@ The full field uses the entire Canvas width, with no lead-battle sidebar.
 Actual atlas draw bounds verify all racers remain on the field while selecting
 rows, progressing through the race and replaying. Physical mobile fullscreen
 and hardware performance remain unverified.
+
+## 1.447.0 — Arena identities, results and gear controls
+
+Reviewed live racing and compact standings in Light and Dark at 320, 390 and
+768px, expanded landscape, and desktop edge fields. Jersey badges retain each
+member's explicit uniform identity colors with contrast-aware number ink; the
+full-field toolbar uses the existing dark venue ink and warm secondary text.
+Outside the venue, standings, selected rows, setup fields and podium surfaces
+use shared theme tokens. The uniform editor now follows the app's Light/Dark
+surface, text, control-line, accent and focus tokens; its illustrated preview
+keeps its dark stadium backdrop. Reviewed selected part/palette/skin states,
+compact header preview, persistent save controls, winner art and full names.
+The theme scan and 217 isolated browser checks pass. Current mobile captures
+are in `docs/arena-presentation/`; details are in
+`docs/arena-presentation-validation.md`. Physical mobile hardware, native
+fullscreen and comprehensive assistive-technology behavior remain unverified.
