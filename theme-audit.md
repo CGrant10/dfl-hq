@@ -669,3 +669,17 @@ horizontal overflow or browser errors. Reviewed screenshots and evidence are
 in `docs/next-move/`; policy and validation are in `docs/next-move.md`. Physical
 mobile hardware, screen-reader speech and external Sleeper app handoff remain
 unverified.
+
+## 1.452.0 — Compact power board and Sleeper pictures
+
+Reviewed power rankings and team details in Medicine Wheel Light/Dark at 320,
+390 and 768px. Current team pictures use the existing shared portrait frame;
+team artwork retains its own colors. Shared accent, text, dividers, semantic
+movement and focus tokens are unchanged. Rows are tighter while photos are
+slightly larger. Full names wrap, controls retain 44px targets, and the detail
+close button retains space beside long names. Keyboard focus and Escape,
+expanded week changes, 200% text at 320px, reduced motion and app motion-off pass.
+Broken image chains reveal the next image or initials without stale photo state.
+Screenshots and checks are in `docs/power-rankings-polish/`, using sample artwork;
+Sleeper's live image URLs were verified separately. Physical mobile hardware
+and comprehensive screen-reader speech remain unverified.

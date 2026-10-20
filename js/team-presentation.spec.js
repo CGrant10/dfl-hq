@@ -17,4 +17,11 @@ describe("team presentation", () => {
     expect(html).toContain("2-0");
     expect(html).toContain("▲2");
   });
+  it('uses the league team photo before the owner photo and keeps the DFL upload as a failure fallback',()=>{
+    const html=teamPortrait({...team,sleeper_team_image:'https://sleepercdn.com/uploads/team.jpg',sleeper_profile_image:'https://sleepercdn.com/avatars/thumbs/owner'});
+    expect(html).toContain('src="https://sleepercdn.com/uploads/team.jpg"');
+    expect(html).toContain('data-photo-fallbacks="[&quot;https://sleepercdn.com/avatars/thumbs/owner&quot;,&quot;https://example.com/me.jpg&quot;]"');
+    expect(teamPortrait({...team,sleeper_profile_image:'https://sleepercdn.com/avatars/thumbs/owner'})).toContain('src="https://sleepercdn.com/avatars/thumbs/owner"');
+    expect(html).toContain('RC');
+  });
 });

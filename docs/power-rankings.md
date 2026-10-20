@@ -87,3 +87,32 @@ and saved history intact.
 
 Device hardware, comprehensive screen-reader speech and future-season
 prediction performance remain unverified.
+
+## 1.452.0 — Compact board and current Sleeper pictures
+
+The existing Sleeper league-user read now supplies current team avatars
+(`metadata.avatar`) and owner avatars to the shared team renderer. No extra
+API request or database write is needed. Team picture takes priority, followed
+by the owner picture, the DFL upload and initials. Image errors advance through
+that finite fallback chain. Missing/failed user reads retain the existing DFL
+profile/initials behavior. Current images also appear in ranking details and
+stay current when reading an older weekly edition. Profile uploads are not
+modified. A read-only check of this league found 12 owner avatars and 10 team
+avatars; representative live URLs returned HTTP 200 image responses.
+
+The board keeps full names, power, record and movement while reducing routine
+row height from 68 to 58px, trimming header space and giving photos a 34px frame
+(30px on narrow phones). View all remains expanded when changing weeks. Ranking
+details now display the same 1/2/3 recent-week weighting as the model, replacing
+the inconsistent simple average. Movement copy reports actual rank/score
+changes rather than guessing which input caused them. Model weights, published
+scores and historical rank order are unchanged.
+
+Validation: `pnpm check` passes 239 files / 1,980 tests, plus the production Home
+ranking browser fixture at 320/390/768px in Light and Dark. The fixture checks
+team/owner/DFL/initial fallbacks, broken images, complete names, 44px controls,
+keyboard focus/Escape, expanded week changes, 200% text, reduced motion and
+edition labels. Screenshots and results are in `power-rankings-polish/`.
+Fixture screenshots use sample artwork to keep image failure tests deterministic;
+actual Sleeper URL availability was checked separately. Physical mobile hardware
+and comprehensive screen-reader speech remain unverified.
