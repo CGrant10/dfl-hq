@@ -42,7 +42,7 @@ with sync_playwright() as p:
             page.keyboard.press('Tab')
             assert page.evaluate('document.activeElement.closest("dialog")!==null')
             dialog.screenshot(path=str(out/f'power-detail-{theme}-{width}.png'))
-            page.keyboard.press('Escape');assert dialog.count()==0
+            page.keyboard.press('Escape');dialog.wait_for(state='detached')
             assert page.evaluate('document.activeElement.closest(".is-me")!==null')
             results.append({'theme':theme,'width':width,'rows':4,'detail':'focus, Escape, full name, no overflow','targets':len(rects)})
     page.locator('[data-home-rank-toggle]').click()
