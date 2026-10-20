@@ -55,7 +55,7 @@ function editorMarkup(members,{event=null,selected=[],paused=false}={}){
 function wireEditor(host,members,{event=null,selected=[],onSave,onCancel}={}){
  host.innerHTML=editorMarkup(members,{event,selected,paused:event?.bc_state==='paused'});
  const form=host.querySelector('form'),checks=[...form.querySelectorAll('[name=racer]')],duration=form.elements.namedItem('duration');
- const count=()=>{form.querySelector('[data-picked]').textContent=String(checks.filter(c=>c.checked).length);};
+ const count=()=>{const picked=checks.filter(c=>c.checked).length;form.querySelector('[data-picked]').textContent=String(picked);if(picked>=2&&picked<=32){const error=form.querySelector('.sr-form-error');error.hidden=true;error.textContent='';}};
  const presets=()=>form.querySelectorAll('[data-duration]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.duration)===Number(duration.value))));
  form.querySelector('[data-cancel]').onclick=onCancel;
  form.querySelectorAll('[data-duration]').forEach(b=>b.onclick=()=>{duration.value=b.dataset.duration;presets();});duration.oninput=presets;
@@ -65,10 +65,12 @@ function wireEditor(host,members,{event=null,selected=[],onSave,onCancel}={}){
  const search=form.elements.namedItem('search');if(search)search.oninput=()=>{const q=search.value.trim().toLowerCase();checks.forEach(c=>c.closest('label').hidden=!c.closest('label').textContent.toLowerCase().includes(q));};
  form.onsubmit=async e=>{
   e.preventDefault();const ids=checks.filter(c=>c.checked).map(c=>Number(c.value)),error=form.querySelector('[role=alert]'),submit=form.querySelector('[type=submit]');
+  if(submit.disabled)return;
   error.hidden=true;if(ids.length<2||ids.length>32){error.textContent='Choose 2–32 racers.';error.hidden=false;return;}
-  submit.disabled=true;try{await onSave({name:form.elements.namedItem('name').value.trim(),duration:Number(duration.value),memberIds:ids});}catch(err){error.textContent=err.message||'Race could not be saved.';error.hidden=false;}finally{submit.disabled=false;}
+  const label=submit.textContent;submit.disabled=true;submit.textContent=event?'Saving…':'Creating…';form.setAttribute('aria-busy','true');try{await onSave({name:form.elements.namedItem('name').value.trim(),duration:Number(duration.value),memberIds:ids});}catch(err){error.textContent=err.message||'Race could not be saved.';error.hidden=false;}finally{submit.disabled=false;submit.textContent=label;form.removeAttribute('aria-busy');}
  };
- form.elements.namedItem('name').focus({preventScroll:true});
+ const heading=form.querySelector('h2');heading.tabIndex=-1;heading.focus({preventScroll:true});
+ host.scrollIntoView({behavior:motion()?'smooth':'instant',block:'start'});
 }
 
 async function lobby(view,members,life){
@@ -87,7 +89,7 @@ async function lobby(view,members,life){
  });
  const newButton=view.querySelector('[data-new]');if(newButton)newButton.onclick=()=>{
   const host=view.querySelector('.sr-editor-host');host.hidden=false;
-  wireEditor(host,members,{onCancel:()=>host.hidden=true,onSave:async values=>{const snapshot=await commandStadiumRace(null,'create',values);if(!life.closed)location.hash=`#/arena?id=${snapshot.event.id}`;}});
+  wireEditor(host,members,{onCancel:()=>{host.hidden=true;newButton.focus({preventScroll:true});},onSave:async values=>{const snapshot=await commandStadiumRace(null,'create',values);if(!life.closed)location.hash=`#/arena?id=${snapshot.event.id}`;}});
  };
  wireMyRacer(view,life,()=>{});
 }
@@ -142,7 +144,7 @@ async function room(view,members,id,life){
   controls.querySelectorAll('[data-command]').forEach(b=>b.onclick=()=>void runCommand(b.dataset.command));
   const edit=controls.querySelector('[data-edit]');if(edit)edit.onclick=async()=>{
    if(!await orientation.exit()){toast('Close full screen to edit the race.');return;}if(life.closed)return;
-   host.hidden=false;wireEditor(host,members,{event:snapshot.event,selected:racers.map(r=>r.id),onCancel:()=>{host.hidden=true;root.querySelector('[data-edit]')?.focus({preventScroll:true});},onSave:async values=>{await runCommand('configure',values,true);host.hidden=true;root.querySelector('[data-edit]')?.focus({preventScroll:true});}});host.scrollIntoView({behavior:motion()?'smooth':'auto',block:'start'});
+   host.hidden=false;wireEditor(host,members,{event:snapshot.event,selected:racers.map(r=>r.id),onCancel:()=>{host.hidden=true;root.querySelector('[data-edit]')?.focus({preventScroll:true});},onSave:async values=>{await runCommand('configure',values,true);host.hidden=true;root.querySelector('[data-edit]')?.focus({preventScroll:true});}});
   };
   const reset=controls.querySelector('[data-reset]');if(reset)reset.onclick=()=>{
    const revision=snapshot.event.race_revision;controls.innerHTML='<strong>Reset this race and draw?</strong><button class="sr-primary" data-confirm>Reset race</button><button data-cancel-reset>Keep race</button>';
