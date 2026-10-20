@@ -52,7 +52,7 @@ export function powerPulseView({ analysis, meSleeperId = null, standings = [], c
     playoffTeams: Number(analysis.league?.playoff_teams) || 8,
   });
   const record = projections.get(String(focus.id)) || null;
-  const powerRankings = buildLeaguePowerRankings({
+  const powerRankings = analysis.powerRankings || buildLeaguePowerRankings({
     teams,
     matchups: analysis.matchups || [],
     currentWeek: currentWeek ?? analysis.liveWeek,
@@ -68,12 +68,12 @@ export function powerPulseView({ analysis, meSleeperId = null, standings = [], c
     record, projections, stakes,
     weeks: REGULAR_SEASON_WEEKS,
     season: analysis.projectionSeason,
-    teams: teams.slice(0, 5),
+    teams: (powerRankings?.boards?.at(-1)?.rows||[]).map(row=>({...teams.find(t=>String(t.id)===row.id),rank:row.rank})).slice(0,5),
     allTeams: teams,
-    focus,
-    movement: movement(focus),
-    movementLabel: comparison.label,
-    ratings,
+    focus:{...focus,rosterRank:focus.rank,rank:powerRankings?.boards?.at(-1)?.rows.find(r=>r.id===String(focus.id))?.rank||focus.rank},
+    movement:powerRankings?((row)=>row?.previousRank==null?null:row.movement)(powerRankings.boards.at(-1)?.rows.find(r=>r.id===String(focus.id))):movement(focus),
+    movementLabel:powerRankings?.boards?.at(-1)?.comparison||comparison.label,
+    ratings:powerRankings?Object.fromEntries(powerRankings.boards.at(-1).rows.map(r=>[r.id,r.score.toFixed(1)])):ratings,
     powerRankings,
   };
 }

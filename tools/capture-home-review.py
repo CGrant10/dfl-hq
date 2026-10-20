@@ -164,9 +164,9 @@ def check_score_consistency(page):
             assert all(abs(r['right']-r['phaseRight'])<1 and r['font']==r['trackerFont']=='18px' and r['color']==r['trackerColor'] for r in rows), rows
             results.append({'mode':mode,'width':width,'rows':rows})
     board = page.locator('.home-rankings-card > ol > li')
-    assert board.first.locator('strong').text_content().strip() == 'Jack-HAMMER'
-    assert board.first.locator('em').text_content().strip() == '4-0', board.first.inner_html()
-    assert board.nth(1).locator('em').text_content().strip() == '3-1', board.nth(1).inner_html()
+    assert board.first.locator('strong').text_content().strip() == 'Grant'
+    assert board.first.locator('[data-power-record]').text_content().strip() == '3-1', board.first.inner_html()
+    assert board.nth(1).locator('[data-power-record]').text_content().strip() == '4-0', board.nth(1).inner_html()
     page.set_viewport_size({'width': 1280, 'height': 1200})
     page.locator('[data-home-live-slot]').scroll_into_view_if_needed()
     page.evaluate("document.querySelector('[data-home-live-slot]').dataset.motion='on'")

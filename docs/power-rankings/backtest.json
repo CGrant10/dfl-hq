@@ -1,0 +1,124 @@
+{
+  "method": "Predict next-week pairwise scoring order using only earlier completed regular-season weeks. No historical roster forecasts are available; this evaluates performance weights only. Playoff games are excluded.",
+  "games": 576,
+  "regularSeasonWeeks": {
+    "2019": 13,
+    "2020": 13,
+    "2021": 14,
+    "2022": 14,
+    "2023": 14,
+    "2024": 14,
+    "2025": 14
+  },
+  "sets": {
+    "training": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "validation": [
+      2024
+    ],
+    "holdout": [
+      2025
+    ]
+  },
+  "candidates": [
+    {
+      "weights": {
+        "allPlay": 0.6,
+        "recent": 0.3,
+        "record": 0.1
+      },
+      "training": {
+        "pairwiseAccuracy": 56.69,
+        "correct": 1982,
+        "comparisons": 3496,
+        "weeklyWindows": 53
+      }
+    },
+    {
+      "weights": {
+        "allPlay": 0.7,
+        "recent": 0.2,
+        "record": 0.1
+      },
+      "training": {
+        "pairwiseAccuracy": 56.69,
+        "correct": 1982,
+        "comparisons": 3496,
+        "weeklyWindows": 53
+      }
+    },
+    {
+      "weights": {
+        "allPlay": 0.5,
+        "recent": 0.4,
+        "record": 0.1
+      },
+      "training": {
+        "pairwiseAccuracy": 56.61,
+        "correct": 1979,
+        "comparisons": 3496,
+        "weeklyWindows": 53
+      }
+    },
+    {
+      "weights": {
+        "allPlay": 0.8,
+        "recent": 0.1,
+        "record": 0.1
+      },
+      "training": {
+        "pairwiseAccuracy": 56.58,
+        "correct": 1978,
+        "comparisons": 3496,
+        "weeklyWindows": 53
+      }
+    },
+    {
+      "weights": {
+        "allPlay": 0.6,
+        "recent": 0.2,
+        "record": 0.2
+      },
+      "training": {
+        "pairwiseAccuracy": 56.15,
+        "correct": 1963,
+        "comparisons": 3496,
+        "weeklyWindows": 53
+      }
+    }
+  ],
+  "selected": {
+    "allPlay": 0.6,
+    "recent": 0.3,
+    "record": 0.1
+  },
+  "validation": {
+    "pairwiseAccuracy": 52.62,
+    "correct": 382,
+    "comparisons": 726,
+    "weeklyWindows": 11
+  },
+  "holdout": {
+    "pairwiseAccuracy": 55.25,
+    "correct": 400,
+    "comparisons": 724,
+    "weeklyWindows": 11
+  },
+  "baselineValidation": {
+    "pairwiseAccuracy": 49.45,
+    "correct": 359,
+    "comparisons": 726,
+    "weeklyWindows": 11
+  },
+  "baselineHoldout": {
+    "pairwiseAccuracy": 51.93,
+    "correct": 376,
+    "comparisons": 724,
+    "weeklyWindows": 11
+  }
+}

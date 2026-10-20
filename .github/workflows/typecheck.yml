@@ -25,6 +25,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - name: Validate power weights against regular-season DFL history
+        run: node tools/backtest-power.mjs
       - name: Verify shipped styles, trade worker and app bundle
         run: |
           git diff --exit-code --stat -- css/app-shared.css js/workers js/bundle

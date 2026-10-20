@@ -1,3 +1,5 @@
+import {powerRosterForecast} from './league-power-roster.js';
+import {buildPowerBoards} from './league-power-model.js';
 import {loadNflGameDay} from "./nfl-game-day.js";
 import {applyAnalyzerPlayerForm,completedCurrentGames} from "./analyzer-player-form.js";
 import { db } from "./supabase.js";
@@ -83,7 +85,7 @@ async function fetchAnalyzerData({freshTrade=false,liveRefresh=false} = {}) {
       .catch(() => ({ data: [], fetchedAt: 0, stale: true })))),
     loadTrendingPlayers().catch(() => ({ adds: new Map(), drops: new Map(), fetchedAt: 0 })),
   ]) : Promise.resolve([{ data: [], fetchedAt: 0 }, [], { adds: new Map(), drops: new Map(), fetchedAt: 0 }]);
-  const [players, statsRes, currentStatsRes, projectionRes, matchupRes, [weeklyProjectionRes, recentStatsRes, trending], latestResults,expertRankings] = await Promise.all([
+  const [players, statsRes, currentStatsRes, projectionRes, matchupRes, [weeklyProjectionRes, recentStatsRes, trending], latestResults,expertRankings,powerRes] = await Promise.all([
     loadPlayers(freshTrade?{maxAgeMs:0}:{}),
     loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
     loadSeasonStats(projectionSeason, { maxAgeMs:freshTrade?0:liveRefresh?60000:TRADE_SIGNALS_CACHE_MS }).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
@@ -93,10 +95,11 @@ async function fetchAnalyzerData({freshTrade=false,liveRefresh=false} = {}) {
        matchup rows, not the full multi-season history payload. */
     db().from("sleeper_matchups")
       .select("season,week,roster1,user1,score1,roster2,user2,score2")
-      .eq("season", projectionSeason).lte("week", 14).order("week", { ascending: true }),
+      .eq("season", projectionSeason).eq('league_id',String(league.sleeper_league_id)).lte("week", 14).order("week", { ascending: true }),
     liveSignals,
     liveWeek > 1 ? loadLatestLeagueResults(league.sleeper_league_id, projectionSeason, liveWeek).catch(() => null) : null,
     loadExpertRankings({season:projectionSeason,scoring:format},{force:freshTrade}),
+    db().from('league_power_publications').select('season,week,model_version,payload,published_at').eq('league_id',String(league.sleeper_league_id)).eq('season',projectionSeason).order('week',{ascending:true}),
   ]);
   if(freshTrade&&liveWeek&&(!weeklyProjectionRes.fetchedAt||weeklyProjectionRes.stale))throw new Error('Could not verify current injuries. Try sharing again.');
   if(freshTrade&&(!currentStatsRes.fetchedAt||currentStatsRes.stale))throw new Error('Could not verify current player stats. Try sharing again.');
@@ -129,10 +132,13 @@ async function fetchAnalyzerData({freshTrade=false,liveRefresh=false} = {}) {
     completed:recentStatsRes.map((bundle,index)=>({...bundle,week:completedWeeks[index]})),
     current:currentWeekStats,matchups:liveMatchups,schedule:nfl?.teams});
   const teams = analyzeLeague({ rosters: namedRosters, pool });
+  for(const team of teams)team.powerForecast=powerRosterForecast(team,weeklyProjectionRes.stale?[]:weeklyProjectionRes.data||[],players,league.scoring_settings);
   const results = reconcileLeagueResults({ season: projectionSeason, teams,
     standings: standingRes?.error ? [] : standingRes.data || [],
     matchups: matchupRes?.error ? [] : matchupRes.data || [], snapshot: latestResults });
+  const powerRankings=buildPowerBoards({teams,...results,currentWeek:liveWeek,season:projectionSeason,publications:powerRes?.error?[]:powerRes?.data||[]});
   return {
+    powerRankings,
     state: teams.length ? "ready" : "empty",
     league, rosterSeason, projectionSeason, teams, pool, members,nflSchedule:nfl?.teams||null,
     leagueFormat:{teams:rosters.length,scoring:format,startingSlots:(league.roster_positions||DFL_STARTING_SLOTS).filter(p=>p!=='BN'),verified:league!==storedLeague},

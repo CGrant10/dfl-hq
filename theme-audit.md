@@ -641,3 +641,17 @@ racer warnings. Evidence and scope are in `docs/arena-create.md`; 390px captures
 are in `docs/arena-create/`. All 271 isolated browser checks and the full release
 checks pass. Physical keyboards, device safe-area reporting and
 comprehensive screen-reader behavior remain unverified.
+
+## 1.450.0 — Weekly power rankings
+
+Reviewed the compact Home board and ranking detail sheet in Medicine Wheel
+Light/Dark at 320, 390 and 768px using the production Home fixture. Existing
+shared surfaces, text, dividers, accent and semantic movement colors are used.
+Full team names wrap; power, movement and the reader’s row remain distinct.
+The close control, week controls and row targets are at least 44px. Focus is
+visible, Escape restores the opening row, route cleanup removes the sheet, and
+enlarged text at 320px does not create horizontal overflow. The one-time rank
+movement honors reduced motion and app motion-off. No idle animation was added.
+Screens and checks are in `docs/power-rankings/`; model and publication details
+are in `docs/power-rankings.md`. The full release check passes. Real mobile
+hardware and comprehensive screen-reader speech remain unverified.
