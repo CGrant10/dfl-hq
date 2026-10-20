@@ -72,11 +72,11 @@ export function nextMoveSlide(move) {
     kind: "move", treatment: "announcement", temporal: "upcoming",
     priority: P.MINE - 10, dwell: 3000,
     kicker: `WEEK ${move.week} · AUTO-SCOUT`,
-    headline: "Your next move",
+    headline: "Upgrade radar",
     subtitle: move.need.urgent ? `${move.need.position} need` : `${move.need.position} upgrade`,
     body: lane,
-    href: move.mine?.sleeper_user_id
-      ? `#/analyzer?owner=${encodeURIComponent(move.mine.sleeper_user_id)}` : "#/analyzer",
+    href: move.tradeHref || (move.mine?.sleeper_user_id
+      ? `#/analyzer?owner=${encodeURIComponent(move.mine.sleeper_user_id)}` : "#/analyzer"),
   };
 }
 

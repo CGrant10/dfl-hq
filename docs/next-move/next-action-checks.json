@@ -1,0 +1,295 @@
+{
+  "cases": [
+    {
+      "theme": "light",
+      "width": 320,
+      "case": "hold",
+      "kind": "hold",
+      "text": "Hold your depth \u00b7 no worthwhile upgrade",
+      "url": "#/analyzer?owner=u1"
+    },
+    {
+      "theme": "light",
+      "width": 320,
+      "case": "ir",
+      "kind": "ir",
+      "text": "Activate Returning Wide Receiver With a Long Team Nickname from IR",
+      "url": "https://sleeper.com/leagues/1337852874733936640/team"
+    },
+    {
+      "theme": "light",
+      "width": 320,
+      "case": "waiver",
+      "kind": "waiver",
+      "text": "Add Useful Free RB \u00b7 drop Expendable Bench WR \u00b7 +10.0 projected",
+      "url": "https://sleeper.com/leagues/1337852874733936640/players"
+    },
+    {
+      "theme": "light",
+      "width": 320,
+      "case": "lineup",
+      "kind": "lineup",
+      "text": "Start Returning Wide Receiver With a Long Team Nickname for Injured Starter",
+      "url": "https://sleeper.com/leagues/1337852874733936640/team"
+    },
+    {
+      "theme": "light",
+      "width": 320,
+      "case": "gap",
+      "kind": "waiver",
+      "text": "Add Free Kicker \u00b7 drop Bye Kicker \u00b7 +30.0 projected",
+      "url": "https://sleeper.com/leagues/1337852874733936640/players"
+    },
+    {
+      "theme": "light",
+      "width": 320,
+      "case": "trade",
+      "kind": "trade",
+      "text": "Price a trade for Target WR",
+      "url": "#/trade?team=1&partner=2&target=Target%20WR"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "case": "hold",
+      "kind": "hold",
+      "text": "Hold your depth \u00b7 no worthwhile upgrade",
+      "url": "#/analyzer?owner=u1"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "case": "ir",
+      "kind": "ir",
+      "text": "Activate Returning Wide Receiver With a Long Team Nickname from IR",
+      "url": "https://sleeper.com/leagues/1337852874733936640/team"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "case": "waiver",
+      "kind": "waiver",
+      "text": "Add Useful Free RB \u00b7 drop Expendable Bench WR \u00b7 +10.0 projected",
+      "url": "https://sleeper.com/leagues/1337852874733936640/players"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "case": "lineup",
+      "kind": "lineup",
+      "text": "Start Returning Wide Receiver With a Long Team Nickname for Injured Starter",
+      "url": "https://sleeper.com/leagues/1337852874733936640/team"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "case": "gap",
+      "kind": "waiver",
+      "text": "Add Free Kicker \u00b7 drop Bye Kicker \u00b7 +30.0 projected",
+      "url": "https://sleeper.com/leagues/1337852874733936640/players"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "case": "trade",
+      "kind": "trade",
+      "text": "Price a trade for Target WR",
+      "url": "#/trade?team=1&partner=2&target=Target%20WR"
+    },
+    {
+      "theme": "light",
+      "width": 768,
+      "case": "hold",
+      "kind": "hold",
+      "text": "Hold your depth \u00b7 no worthwhile upgrade",
+      "url": "#/analyzer?owner=u1"
+    },
+    {
+      "theme": "light",
+      "width": 768,
+      "case": "ir",
+      "kind": "ir",
+      "text": "Activate Returning Wide Receiver With a Long Team Nickname from IR",
+      "url": "https://sleeper.com/leagues/1337852874733936640/team"
+    },
+    {
+      "theme": "light",
+      "width": 768,
+      "case": "waiver",
+      "kind": "waiver",
+      "text": "Add Useful Free RB \u00b7 drop Expendable Bench WR \u00b7 +10.0 projected",
+      "url": "https://sleeper.com/leagues/1337852874733936640/players"
+    },
+    {
+      "theme": "light",
+      "width": 768,
+      "case": "lineup",
+      "kind": "lineup",
+      "text": "Start Returning Wide Receiver With a Long Team Nickname for Injured Starter",
+      "url": "https://sleeper.com/leagues/1337852874733936640/team"
+    },
+    {
+      "theme": "light",
+      "width": 768,
+      "case": "gap",
+      "kind": "waiver",
+      "text": "Add Free Kicker \u00b7 drop Bye Kicker \u00b7 +30.0 projected",
+      "url": "https://sleeper.com/leagues/1337852874733936640/players"
+    },
+    {
+      "theme": "light",
+      "width": 768,
+      "case": "trade",
+      "kind": "trade",
+      "text": "Price a trade for Target WR",
+      "url": "#/trade?team=1&partner=2&target=Target%20WR"
+    },
+    {
+      "theme": "dark",
+      "width": 320,
+      "case": "hold",
+      "kind": "hold",
+      "text": "Hold your depth \u00b7 no worthwhile upgrade",
+      "url": "#/analyzer?owner=u1"
+    },
+    {
+      "theme": "dark",
+      "width": 320,
+      "case": "ir",
+      "kind": "ir",
+      "text": "Activate Returning Wide Receiver With a Long Team Nickname from IR",
+      "url": "https://sleeper.com/leagues/1337852874733936640/team"
+    },
+    {
+      "theme": "dark",
+      "width": 320,
+      "case": "waiver",
+      "kind": "waiver",
+      "text": "Add Useful Free RB \u00b7 drop Expendable Bench WR \u00b7 +10.0 projected",
+      "url": "https://sleeper.com/leagues/1337852874733936640/players"
+    },
+    {
+      "theme": "dark",
+      "width": 320,
+      "case": "lineup",
+      "kind": "lineup",
+      "text": "Start Returning Wide Receiver With a Long Team Nickname for Injured Starter",
+      "url": "https://sleeper.com/leagues/1337852874733936640/team"
+    },
+    {
+      "theme": "dark",
+      "width": 320,
+      "case": "gap",
+      "kind": "waiver",
+      "text": "Add Free Kicker \u00b7 drop Bye Kicker \u00b7 +30.0 projected",
+      "url": "https://sleeper.com/leagues/1337852874733936640/players"
+    },
+    {
+      "theme": "dark",
+      "width": 320,
+      "case": "trade",
+      "kind": "trade",
+      "text": "Price a trade for Target WR",
+      "url": "#/trade?team=1&partner=2&target=Target%20WR"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "case": "hold",
+      "kind": "hold",
+      "text": "Hold your depth \u00b7 no worthwhile upgrade",
+      "url": "#/analyzer?owner=u1"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "case": "ir",
+      "kind": "ir",
+      "text": "Activate Returning Wide Receiver With a Long Team Nickname from IR",
+      "url": "https://sleeper.com/leagues/1337852874733936640/team"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "case": "waiver",
+      "kind": "waiver",
+      "text": "Add Useful Free RB \u00b7 drop Expendable Bench WR \u00b7 +10.0 projected",
+      "url": "https://sleeper.com/leagues/1337852874733936640/players"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "case": "lineup",
+      "kind": "lineup",
+      "text": "Start Returning Wide Receiver With a Long Team Nickname for Injured Starter",
+      "url": "https://sleeper.com/leagues/1337852874733936640/team"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "case": "gap",
+      "kind": "waiver",
+      "text": "Add Free Kicker \u00b7 drop Bye Kicker \u00b7 +30.0 projected",
+      "url": "https://sleeper.com/leagues/1337852874733936640/players"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "case": "trade",
+      "kind": "trade",
+      "text": "Price a trade for Target WR",
+      "url": "#/trade?team=1&partner=2&target=Target%20WR"
+    },
+    {
+      "theme": "dark",
+      "width": 768,
+      "case": "hold",
+      "kind": "hold",
+      "text": "Hold your depth \u00b7 no worthwhile upgrade",
+      "url": "#/analyzer?owner=u1"
+    },
+    {
+      "theme": "dark",
+      "width": 768,
+      "case": "ir",
+      "kind": "ir",
+      "text": "Activate Returning Wide Receiver With a Long Team Nickname from IR",
+      "url": "https://sleeper.com/leagues/1337852874733936640/team"
+    },
+    {
+      "theme": "dark",
+      "width": 768,
+      "case": "waiver",
+      "kind": "waiver",
+      "text": "Add Useful Free RB \u00b7 drop Expendable Bench WR \u00b7 +10.0 projected",
+      "url": "https://sleeper.com/leagues/1337852874733936640/players"
+    },
+    {
+      "theme": "dark",
+      "width": 768,
+      "case": "lineup",
+      "kind": "lineup",
+      "text": "Start Returning Wide Receiver With a Long Team Nickname for Injured Starter",
+      "url": "https://sleeper.com/leagues/1337852874733936640/team"
+    },
+    {
+      "theme": "dark",
+      "width": 768,
+      "case": "gap",
+      "kind": "waiver",
+      "text": "Add Free Kicker \u00b7 drop Bye Kicker \u00b7 +30.0 projected",
+      "url": "https://sleeper.com/leagues/1337852874733936640/players"
+    },
+    {
+      "theme": "dark",
+      "width": 768,
+      "case": "trade",
+      "kind": "trade",
+      "text": "Price a trade for Target WR",
+      "url": "#/trade?team=1&partner=2&target=Target%20WR"
+    }
+  ],
+  "focusRetained": true,
+  "failedRefreshClearsAction": true,
+  "errors": []
+}

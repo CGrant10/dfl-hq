@@ -58,7 +58,7 @@ import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity } from "../player-presentation.js";
 import { playerLiveState } from "../live-score.js";
 import { loadLeagueState } from "../league-state.js";
-import { buildWeeklyBriefing } from "../weekly-briefing.js";
+import { buildWeeklyBriefing,applyWeeklyBriefing } from "../weekly-briefing.js";
 import { buildAftermath } from "../aftermath-share.js";
 import { weeklySignalChanges } from "../weekly-signal-changes.js";
 import {loadNflInjuries} from "../injury-report-data.js";
@@ -171,7 +171,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
         <div class="home-brief-grid">
           <article><small>PLAYOFF PATH</small><strong>${esc(briefing?.playoff || "Model pending")}</strong><span>${esc(briefing?.playoffDetail || "Sync the league to build your path.")}</span></article>
           <article><small>LINEUP CALL</small><span data-brief-lineup>${esc(briefing?.lineup || "Checking your starters")}</span></article>
-          <article data-brief-next-move${briefing?.actionUrl&&briefing.actionUrl!=='#/analyzer'?'':' hidden'}><small>NEXT MOVE</small><a href="${esc(briefing?.actionUrl||'#/analyzer')}" data-brief-action>${esc(briefing?.action || "Keep the roster ready")}</a><small data-brief-checked></small></article>
+          <article data-brief-next-move${briefing?.actionUrl&&briefing.actionUrl!=='#/analyzer'?'':' hidden'}><small data-brief-action-kind>${esc(briefing?.actionLabel||'NEXT MOVE')}</small><a href="${esc(briefing?.actionUrl||'#/analyzer')}"${briefing?.actionUrl?.startsWith('https://')?' target="_blank" rel="noopener noreferrer"':''} data-brief-action>${esc(briefing?.action || "Keep the roster ready")}</a><small data-brief-checked></small></article>
         </div>
         <a class="home-text-action" href="#/stakes"><span>Playoff race</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>
         ${report ? `<aside class="home-tuesday-receipt"><div><small>LAST WEEK · FINAL</small><strong>${esc(report.title)}</strong><span>${esc(report.highlights?.[0]?.title || "League receipts ready")} · ${esc(report.highlights?.[0]?.detail || "")}</span></div><a class="btn small" href="#/clubhouse?season=${report.season}&amp;week=${report.week}">Open &amp; share recap</a></aside>` : ""}
@@ -734,17 +734,17 @@ export async function render(view) {
       finishLoadingContent(homeReportSlot);
       const briefTeam=analysis?.teams?.find(team=>String(team.sleeper_user_id)===String(myMember?.sleeper_user_id));
       if(briefTeam&&outlook?.week){
+        const adviceUnavailable=message=>{
+          applyWeeklyBriefing(homeReportSlot,{action:'Refresh your roster advice',actionUrl:'#/analyzer?owner='+encodeURIComponent(myMember.sleeper_user_id),checkedStatus:message});
+        };
         const briefRefresh=mountLiveScoreRefresh({active:()=>mine===generation&&view.isConnected,
           refresh:async()=>{
             const coach=await loadRosterCoach({data:analysis,team:briefTeam,season:analysis.projectionSeason,week:outlook.week});
             if(mine!==generation||!view.isConnected)return;
             const next=buildWeeklyBriefing({outlook,stakes:pulse?.stakes,move,coach,meSleeperId:myMember.sleeper_user_id});
-            const line=homeReportSlot.querySelector('[data-brief-lineup]'),action=homeReportSlot.querySelector('[data-brief-action]'),stamp=homeReportSlot.querySelector('[data-brief-checked]');
-            if(line)line.textContent=next.lineup;
-            if(action){action.textContent=next.action;action.href=next.actionUrl;action.closest('[data-brief-next-move]').hidden=!next.actionUrl||next.actionUrl==='#/analyzer'}
-            if(stamp)stamp.textContent='';
-          },onError:()=>{const stamp=homeReportSlot.querySelector('[data-brief-checked]');if(stamp)stamp.textContent='Roster refresh unavailable';},
-          onOffline:()=>{const stamp=homeReportSlot.querySelector('[data-brief-checked]');if(stamp)stamp.textContent='Offline · last roster check';},
+            applyWeeklyBriefing(homeReportSlot,next);
+          },onError:()=>adviceUnavailable('Roster refresh unavailable'),
+          onOffline:()=>adviceUnavailable('Offline · refresh before making a move'),
         });
         briefRefresh.start();deferredStops.push(()=>briefRefresh.stop());
       }

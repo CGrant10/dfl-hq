@@ -47,6 +47,10 @@ on:
       - 'tools/build-shared-css.mjs'
       - 'js/home-presentation*'
       - 'js/home-week-flow*'
+      - 'js/roster-next-action*'
+      - 'js/weekly-briefing*'
+      - 'js/waiver-coach*'
+      - 'tools/capture-next-action-review.py'
       - 'tools/capture-home-week-review.py'
       - 'js/season-nav*'
       - 'js/home-clubhouse*'
@@ -141,6 +145,8 @@ jobs:
           test -n "$dfl_review_browser"
           printf 'DFL_REVIEW_CHROMIUM=%s\n' "$dfl_review_browser" >> "$GITHUB_ENV"
       - run: node tools/render-home-review.mjs
+      - name: Check safe actionable roster advice
+        run: python tools/capture-next-action-review.py
       - name: Check weekly power editions and ranking details
         run: python tools/capture-power-review.py
       - name: Check phase-aware Home weekly desk

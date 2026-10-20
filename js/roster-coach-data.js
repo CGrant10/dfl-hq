@@ -33,7 +33,7 @@ export async function loadRosterCoach({data,team,season,week}){
     const user=(Array.isArray(snapshot.users)?snapshot.users:[]).find(u=>String(u.user_id)===String(r.owner_id));
     return [String(r.roster_id),user?.metadata?.team_name||user?.display_name||data.teams?.find(t=>String(t.id)===String(r.roster_id))?.team_name||`Team ${r.roster_id}`];
   }));
-  const basePlan=buildWaiverPlan({rosters:submitted,rosterId:team.id,weekly,schedule:nfl?.teams,values:data.pool,league});
+  const basePlan=buildWaiverPlan({rosters:submitted,rosterId:team.id,weekly,schedule:nfl?.teams,values:data.pool,players,league});
   const plan=buildWaiverIntelligence({plan:basePlan,history:snapshot.history,rosters:submitted,weekly,schedule:nfl?.teams,players,teamNames,league,season,week});
   const live=gameDayLineup({...row,players:roster.players},players,nfl?.teams,{rosterPositions:league.roster_positions});
   const rescue=lineupRescuePlan({...live,bench:live.bench.map(p=>({...p,activeRoster:![...(roster.reserve||[]),...(roster.taxi||[])].map(String).includes(p.id),projection:weekly[0].pool.get(p.id)?.points}))});

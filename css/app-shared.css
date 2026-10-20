@@ -3422,7 +3422,7 @@ body:has(#view) { padding-top: var(--topbar-h); }
   #home-wrap .home-league-desk { margin-top: 28px; }
 }
 
-.home-brief-grid [data-brief-action]{color:inherit;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px;line-height:1.45;display:block}.home-brief-grid [data-brief-checked]{margin-top:5px;opacity:.65;text-transform:none;letter-spacing:0}
+.home-brief-grid [data-brief-action]{color:inherit;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px;line-height:1.45;display:block;min-height:44px;overflow-wrap:anywhere}.home-brief-grid [data-brief-checked]{margin-top:5px;opacity:.65;text-transform:none;letter-spacing:0}
 
 /* A compact identity row leaves room for the matchup and broadcast. */
 #home-wrap > .home-newspaper-masthead {display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;gap:4px 14px;padding-block:0 12px;}

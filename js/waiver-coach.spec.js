@@ -12,6 +12,36 @@ const schedule=new Map([['CHI',{key:'upcoming',kickoff:'2026-10-11T17:00:00Z'}]]
 const values=new Map([['drop',{tradeValue:8,positionRank:90}]]);
 const input={rosters,rosterId:1,weekly:[{week:6,pool:current}],schedule,values,league,now};
 describe('league-aware waiver recommendations',()=>{
+ it('never cuts a receiver for a routine kicker pickup',()=>{
+  const pool=new Map(current);pool.set('k',p('k','K',30));
+  const plan=buildWaiverPlan({...input,weekly:[{week:6,pool}]});
+  expect(plan.offers.find(o=>o.player.id==='k').drop.position).toBe('K');
+ });
+ it('protects injured and returning depth even when the temporary trade value is low',()=>{
+  for(const changed of [{isOut:true},{injuryStatus:'IR'},{injuryValueFactor:.86},{estimatedMissedGames:1},{forwardPerGame:12},{projectedPoints:200}]){
+   const protectedValues=new Map([['drop',{tradeValue:8,positionRank:90,...changed}]]);
+   expect(buildWaiverPlan({...input,values:protectedValues}).offers.some(o=>o.drop?.id==='drop')).toBe(false);
+  }
+ });
+ it('uses fresh player availability to protect a newly injured receiver from a stale value',()=>{
+  expect(buildWaiverPlan({...input,players:{drop:{i:'Out'}}}).offers.some(o=>o.drop?.id==='drop')).toBe(false);
+ });
+ it('can replace a confirmed bye kicker without cutting skill-position depth',()=>{
+  const pool=new Map(current);pool.set('s7',{...pool.get('s7'),hasGame:false,points:0,team:'BYE'});pool.set('k',p('k','K',8));
+  expect(buildWaiverPlan({...input,weekly:[{week:6,pool}]}).offers.find(o=>o.player.id==='k')).toMatchObject({drop:{id:'s7',position:'K'},kind:'Fill a gap'});
+ });
+ it('ranks an actual skill-position improvement above a larger healthy kicker stream',()=>{
+  const pool=new Map(current);pool.set('k',p('k','K',30));
+  const offers=buildWaiverPlan({...input,weekly:[{week:6,pool}]}).offers;
+  expect(offers[0].player.id).toBe('pickup');
+ });
+ it('keeps healthy IR returns separate from pickups and never drops or starts taxi players',()=>{
+  const pool=new Map(current);pool.set('return',p('return','WR',22,{injuryStatus:null}));pool.set('taxi',p('taxi','WR',40,{injuryStatus:null}));
+  const copy=rosters.map(r=>r.roster_id===1?{...r,players:r.players.concat('return','taxi'),reserve:['return'],taxi:['taxi']}:r);
+  const plan=buildWaiverPlan({...input,rosters:copy,weekly:[{week:6,pool}]});
+  expect(plan.returns).toMatchObject([{player:{id:'return'},gain:12,needsSpace:true}]);
+  expect(plan.offers.every(o=>!['return','taxi'].includes(o.drop?.id))).toBe(true);
+ });
  it('maximizes a legal nine-player lineup with one QB and a skill-only flex',()=>{
   expect(rosterLineupScore([...current.keys()],current)).toMatchObject({filled:9,total:111});
   const qbOnly=new Map(Array.from({length:9},(_,i)=>[String(i),p(String(i),'QB',30)]));
