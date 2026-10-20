@@ -5767,6 +5767,12 @@ dialog.dfl-player-card { height:min(720px,calc(100dvh - 24px),var(--dialog-viewp
 #view.view[data-page-system][data-route][data-route="analyzer"] [data-ta-body]{margin-inline:0;min-width:0;max-width:100%}
 #view .tb-setup-summary strong i{display:inline-flex;vertical-align:middle}
 
+/* Keep player targeting available while team and package settings are tucked away. */
+#view.view[data-page-system][data-route][data-route="trade"] .tb-quick-targets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0;border-bottom:1px solid var(--line)}
+#view.view[data-page-system][data-route][data-route="trade"] .tb-quick-targets>section{min-width:0;padding:12px 0;border:0;background:transparent}
+#view.view[data-page-system][data-route][data-route="trade"] .tb-quick-targets>section+section{padding-left:12px;border-left:1px solid var(--line)}
+#view.view[data-page-system][data-route][data-route="trade"] .tb-quick-targets .tb-anchor-chips:has(>.tb-anchor-empty:only-child){display:none}
+
 
 /* Source: css/readability.css */
 /* Optional reading preference; the default compact scale stays intact. */

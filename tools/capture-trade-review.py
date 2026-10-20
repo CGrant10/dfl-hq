@@ -33,6 +33,8 @@ with sync_playwright() as p:
         page.goto(url);page.wait_for_function('window.reviewReady===true');page.evaluate('document.fonts.ready')
         def click(selector):
             node=page.locator(selector).first
+            if node.evaluate("e=>{const d=e.closest('.tb-setup');return d&&!d.open&&!e.matches('.tb-setup > summary')}"):
+                page.locator('.tb-setup > summary').click()
             if node.evaluate("e=>{const d=e.closest('.tb-refine');return d&&!d.open&&!e.matches('.tb-refine > summary')}"):
                 page.locator('.tb-refine > summary').click()
             node.evaluate("e=>{const r=e.getBoundingClientRect();window.scrollBy({top:r.top-innerHeight/3,behavior:'instant'})}")
@@ -43,6 +45,8 @@ with sync_playwright() as p:
             click(f'[data-td-pick="{side}"][value="{pid}"]')
         def select(selector,value):
             node=page.locator(selector)
+            if node.evaluate("e=>!!e.closest('.tb-setup')&&!e.closest('.tb-setup').open"):
+                click('.tb-setup > summary')
             if node.evaluate("e=>!!e.closest('.tb-refine')&&!e.closest('.tb-refine').open"):
                 click('.tb-refine > summary')
             if node.get_attribute('hidden') is not None:
@@ -54,7 +58,8 @@ with sync_playwright() as p:
                 page.wait_for_function('!document.querySelector(".trade-player-picker")?.open')
             else:node.select_option(value)
         assert page.locator('[data-tb-tier="fair"]').evaluate('e=>e.open')
-        # Compact setup keeps the first useful offer near the top on phones.
+        # Extra setup starts closed, but both primary player pickers remain usable.
+        assert not page.locator('.tb-setup').evaluate('e=>e.open')
         assert page.locator('[data-trade-picker="send"]').is_visible()
         assert page.locator('[data-trade-picker="league"]').is_visible()
         # Primary player selectors stay visible with advanced preferences closed.
@@ -67,6 +72,10 @@ with sync_playwright() as p:
             page.wait_for_function(r"[...document.querySelectorAll('.tb-intent-options [data-tb-intent-count]')].length===3&&[...document.querySelectorAll('.tb-intent-options [data-tb-intent-count]')].every(e=>/^\(\d+\)$/.test(e.textContent))")
             return page.locator('.tb-intent-options [data-tb-intent]').evaluate_all("es=>Object.fromEntries(es.map(e=>[e.dataset.tbIntent,Number(e.querySelector('[data-tb-intent-count]').textContent.replace(/[()]/g,''))]))")
         counts=settled_counts()
+        assert page.locator('.tb-offer').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-44')
+        assert page.locator('[data-trade-picker="send"]').evaluate('e=>e.getBoundingClientRect().height>=44')
+        assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
+        page.screenshot(path=str(output/f'trade-{width}-entry.png'))
         click('[data-tb-view-offers]')
         assert not page.locator('.tb-setup').evaluate('e=>e.open')
         assert page.locator('[data-tb-intent="fair"]').evaluate('e=>e===document.activeElement')
@@ -157,6 +166,8 @@ with sync_playwright() as p:
         click('[data-td-load-offer]')
         assert page.locator('.td-ticket').count(),f'{width}: Analyze offer did not open a ticket'
         page.evaluate('window.renderReview()');settled_counts()
+        assert not page.locator('.tb-setup').evaluate('e=>e.open'), 'A saved expanded search must not reopen setup on a new visit'
+        assert page.locator('[data-trade-picker="send"]').is_visible()
         assert page.locator('[data-ta-shop-partner]').input_value()=='all'
         assert page.locator('[data-trade-picker="league"]').count()==1
         click('[data-td-mode="manual"]')

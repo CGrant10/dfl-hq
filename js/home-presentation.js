@@ -13,7 +13,7 @@ export function homeNewspaperMasthead({ now = new Date(), founded = 2017 } = {})
   const anniversary = season > 0 && season % 10 === 0;
   return `<header class="home-newspaper-masthead">
     <div class="home-newspaper-date"><time datetime="${esc(`${year}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`)}">${esc(now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' }))}</time></div>
-    <div class="home-newspaper-name"><h1>The clubhouse</h1><p class="home-newspaper-edition${anniversary ? ' is-anniversary dfl-anniversary' : ''}">${anniversary ? `<span class="dfl-anniversary__number">${season}</span> <span class="dfl-anniversary__label">YEAR ANNIVERSARY</span>` : `Season ${season} · Est. ${esc(founded)}`}</p></div>
+    <div class="home-newspaper-name"><h1>The DFL Daily</h1><p class="home-newspaper-edition${anniversary ? ' is-anniversary dfl-anniversary' : ''}">${anniversary ? `<span class="dfl-anniversary__number">${season}</span> <span class="dfl-anniversary__label">YEAR ANNIVERSARY</span>` : `Season ${season} · Est. ${esc(founded)}`}</p></div>
   </header>`;
 }
 
@@ -104,7 +104,7 @@ export function homeGameDayMatchup(model, weekly = null) {
     return `<span class="gameday-faceoff-team" data-gameday-team="${esc(team.roster)}">
     ${teamPortrait({ team_name: team.name, identity: team.identity }, { className: 'gameday-faceoff-mark' })}
     <span class="home-team-name"><small class="home-team-record">${esc(record)}</small><strong>${esc(team.identity?.team_name || team.name || team.identity?.display_name)}</strong><small class="home-team-progress">${esc(remaining)}</small></span>
-    <span class="home-team-total"${projected ? '' : ` data-gameday-total-key="${esc(team.roster)}"`}><small>${scoreLabel}</small>${projected ? `<strong class="home-projected-total">${forecasts[index].projection.toFixed(1)}</strong>` : thermalScore(team.score, 'neutral')}</span>
+    <span class="home-team-total"${projected ? '' : ` data-gameday-total-key="${esc(team.roster)}"`}><small${projected ? '' : ' class="sr-only"'}>${scoreLabel}</small>${projected ? `<strong class="home-projected-total">${forecasts[index].projection.toFixed(1)}</strong>` : thermalScore(team.score, 'neutral')}</span>
   </span>`;
   }).join('<i aria-hidden="true">vs</i>');
   const summary=matchupSummary(game.sides[0],game.sides[1],{completed:model.completed,memberId:model.memberId,compact:true});

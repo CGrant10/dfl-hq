@@ -43,6 +43,6 @@ describe('truthful loading placeholders', () => {
     expect(routePlaceholder('wall')).toContain('loading-composer');
   });
   it.each(['__proto__', 'constructor', '<script>'])('uses the safe Home fallback for %s', name => {
-    expect(routePlaceholder(name)).toContain('Loading The Clubhouse');
+    expect(routePlaceholder(name)).toContain('Loading The DFL Daily');
   });
 });
