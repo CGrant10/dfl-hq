@@ -216,4 +216,97 @@ body.sr-stadium-expanded #view,body.sr-stadium-expanded .sr-room{transform:none!
 .sr-lobby>.sr-title .sr-kicker{color:var(--accent)}
 .sr-ready-status small{font:inherit}
 
-.sr-watch-toolbar .sr-watch-label{flex:1;padding:0 10px;background:none;border:0;color:#d8caa5;font:700 12px/1.2 Rajdhani,sans-serif;letter-spacing:.06em;text-align:center;text-transform:uppercase}
+/* Race identity stays readable outside the fixed wide field. */
+.sr-stage-score .sr-watch-identity{position:relative;display:flex;flex-direction:row;align-items:center;gap:7px;flex:1;min-width:0;min-height:44px;margin-inline:5px;padding:2px 5px;border-radius:7px}
+.sr-watch-identity>div{min-width:0;flex:1}
+.sr-watch-identity strong{display:block;color:#f1eee7;font:700 14px/1.12 Rajdhani,sans-serif;overflow-wrap:anywhere}
+.sr-stage-score .sr-watch-identity span{padding:0;background:none;border:0;font:inherit}
+.sr-stage-score .sr-watch-identity small{display:block;padding:2px 0 0;background:none;color:#d8caa5;font:700 11px/1.1 Rajdhani,sans-serif}
+.sr-watch-identity select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
+.sr-watch-identity:after{content:'⌄';color:#d8caa5;flex:none;font-size:16px}
+.sr-watch-identity:focus-within{outline:2px solid #dbc180;outline-offset:1px}
+.sr-jersey,.sr-stage-score .sr-watch-identity .sr-jersey{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:25px;min-height:20px;padding:2px 4px;border-radius:4px;color:var(--jersey-ink);background:var(--jersey);border:1px solid color-mix(in srgb,var(--jersey-ink) 25%,transparent);font:800 12px/1 Rajdhani,sans-serif;font-variant-numeric:tabular-nums}
+
+/* Natural row heights preserve long team names; FLIP animates actual order changes. */
+.sr-board{height:auto}
+.sr-position{position:relative;inset:auto;height:auto;min-height:56px;transition:background .3s}
+.stadium-arena button.sr-follow-row{height:auto;min-height:56px;grid-template-columns:22px 34px minmax(0,1fr) 49px;gap:8px;padding:7px 9px}
+.sr-racer-mark{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:38px}
+.sr-racer-mark .sr-avatar{width:30px;height:30px;font-size:10px;margin-top:-6px}
+.sr-racer-mark .sr-jersey{position:absolute;bottom:-2px;min-width:22px;min-height:15px;padding:1px 3px;font-size:10px}
+.sr-racer-name{font-size:14px;line-height:1.15}
+.sr-racer-name small{margin-top:2px;line-height:1.15;overflow-wrap:anywhere}
+.sr-rank{font-size:18px}
+.sr-follow-row>.sr-rank{grid-column:1;grid-row:1}
+.sr-follow-row>.sr-racer-mark{grid-column:2;grid-row:1}
+.sr-follow-row>.sr-racer-name{grid-column:3;grid-row:1}
+.sr-follow-row>.sr-gap{grid-column:4;grid-row:1}
+.sr-ready-status{font-size:11px}
+.sr-room .sr-follow-row[aria-pressed=true]{box-shadow:inset 3px 0 var(--accent);background:color-mix(in srgb,var(--accent) 5%,transparent)!important}
+@media(max-width:350px){.stadium-arena button.sr-follow-row{grid-template-columns:19px 30px minmax(0,1fr) 46px;gap:6px;padding-inline:6px}.sr-racer-name{font-size:13px}.sr-racer-name small{font-size:11px}.sr-watch-identity{gap:5px;margin-inline:0}.sr-watch-identity strong{font-size:13px}}
+
+/* The result belongs to the racers, including in expanded viewing. */
+.sr-room .sr-stage .sr-race-footer .sr-winner-art{display:block;flex:none;width:48px;height:60px}
+.sr-stage[data-official-winner=true] .sr-race-footer{background:radial-gradient(ellipse at left,#dbc18020,transparent 75%),#101620}
+.sr-stage[data-official-winner=true] .sr-moment strong{font-size:18px}
+.sr-stage[data-official-winner=true] .sr-winner-art{animation:sr-winner-in .5s cubic-bezier(.16,1,.3,1) both}
+.sr-final{background:radial-gradient(ellipse at 50% 0,color-mix(in srgb,var(--accent) 10%,transparent),transparent 75%),var(--bg-2);border-color:var(--line);color:var(--text)}
+.sr-final .sr-kicker,.sr-final .sr-finish-margin,.sr-podium-place b{color:var(--accent)}
+.sr-podium-place canvas{width:70px;height:88px;max-width:100%;filter:drop-shadow(0 5px 8px #0003)}
+.sr-podium-place[data-place="1"] canvas{width:88px;height:110px}
+.sr-podium-place{gap:5px}
+.sr-podium-place strong{color:var(--text)}
+.sr-final .sr-jersey{margin-top:3px}
+.sr-finish-tools [data-again]{margin-left:auto;background:transparent!important;border-color:#dbc18066!important;color:#eddbaf!important}
+@keyframes sr-winner-in{from{opacity:0;transform:translateX(-9px) translateY(3px)}to{opacity:1;transform:none}}
+
+/* Commissioner setup uses one readable phone column and a persistent save action. */
+.stadium-arena .sr-editor{max-height:calc(100dvh - 110px);gap:12px}
+.sr-editor-head,.sr-editor-save{flex:none}
+.sr-editor-body{display:flex;flex-direction:column;gap:16px;overflow:auto;min-height:0;padding:3px;scroll-padding-block:12px;overscroll-behavior:contain}
+.sr-editor-body>*{flex-shrink:0}
+.sr-editor .sr-member-picks{grid-template-columns:1fr;max-height:none;overflow:visible}
+.sr-editor .sr-member-pick{min-height:48px;padding:7px 5px}
+.sr-editor .sr-member-pick>span:last-child{font-size:14px}
+.sr-editor .sr-member-pick small{font-size:12px}
+.sr-custom-duration summary{display:flex;align-items:center;min-height:44px;cursor:pointer;font-size:13px;font-weight:700;color:var(--body-text)}
+.sr-custom-duration summary:after{content:'+';margin-left:auto;font-size:20px}
+.sr-custom-duration[open] summary:after{content:'−'}
+.sr-editor-save{padding:0;background:var(--bg-2)}
+.sr-editor-save>button{width:100%}
+@media(min-width:700px){.sr-editor .sr-member-picks{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* The large preview scrolls with the form; a small header preview takes over. */
+.sr-kit-panel header{display:grid;grid-template-columns:minmax(0,1fr) 54px 44px;gap:8px;min-height:84px}
+.sr-kit-panel .sr-kit-preview{position:relative;top:auto;z-index:auto;box-shadow:none}
+.sr-kit-mini{width:54px;height:68px;opacity:0;transition:opacity .2s,transform .3s;transform:translateY(5px);pointer-events:none}
+.sr-kit-dialog[data-compact=true] .sr-kit-mini{opacity:1;transform:none}
+.sr-kit-dialog{scroll-padding-top:calc(var(--kit-header,90px) + 12px);scroll-padding-bottom:88px;color-scheme:inherit;color:var(--text);background:var(--bg-2);border-color:var(--line)}
+.sr-kit-panel header,.sr-kit-panel footer{background:var(--bg-2);box-shadow:none}
+.sr-kit-panel :is(label,legend){color:var(--body-text)}
+.sr-kit-panel :is(button,input,select){color:var(--text)}
+.sr-kit-panel :is(button,input:not([type=hidden]),select){border-color:var(--control-line)}
+.sr-kit-panel button{background:var(--bg-3)}
+.sr-kit-panel header button{background:transparent}
+.sr-kit-panel header .sr-kicker{color:var(--accent)}
+.sr-kit-panel select,.sr-kit-panel input:not([type=color]){background:var(--bg);font-size:16px}
+.sr-kit-panel button.sr-primary{color:var(--on-accent);background:var(--accent-fill);border-color:var(--accent-fill)}
+.sr-kit-panel :is(button,input,select):focus-visible{outline-color:var(--accent)}
+.sr-kit-panel .sr-kit-colors{display:block}
+.sr-kit-parts{position:relative;isolation:isolate;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;padding:3px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+.sr-kit-parts:before{content:'';position:absolute;z-index:-1;inset:3px auto 3px 3px;width:calc((100% - 6px)/4);background:color-mix(in srgb,var(--accent) 9%,var(--bg-2));border:1px solid var(--accent);border-radius:7px;transform:translateX(calc(var(--kit-part,0)*100%));transition:transform .28s cubic-bezier(.22,.7,.25,1)}
+.sr-kit-colors .sr-kit-parts button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:7px 2px;background:transparent;border:0;font-size:13px;min-height:58px}
+.sr-kit-colors .sr-kit-parts button[aria-pressed=true]{background:transparent;color:var(--accent)}
+.sr-kit-colors .sr-kit-parts i{width:20px;height:20px;border-color:var(--control-line);border-radius:4px}
+.sr-kit-panel .sr-kit-groups{background:var(--bg)}
+.sr-kit-groups:before{background:color-mix(in srgb,var(--accent) 9%,var(--bg-2));border-color:var(--accent)}
+.sr-kit-groups button{background:transparent}
+.sr-kit-groups button[aria-pressed=true]{color:var(--accent)}
+.sr-kit-panel .sr-kit-skin button,.sr-kit-panel .sr-kit-palette button{background:var(--tone);border-color:var(--bg-2);box-shadow:0 0 0 1px var(--control-line)}
+.sr-kit-panel .sr-kit-skin button[aria-pressed=true],.sr-kit-panel .sr-kit-palette button[aria-pressed=true]{box-shadow:0 0 0 2px var(--accent)}
+.sr-kit-custom input{background:var(--bg)}
+.sr-kit-error{color:var(--danger-ink)}
+@media(orientation:landscape) and (max-height:600px){.sr-kit-panel>.sr-kit-preview{position:sticky;top:var(--kit-header,84px)}}
+.sr-room[data-motion=off] .sr-winner-art,.sr-kit-dialog[data-motion=off] .sr-kit-parts:before{animation:none;transition:none}
+.sr-kit-dialog[data-motion=off] .sr-kit-mini{transition:none}
+@media(prefers-reduced-motion:reduce){.sr-winner-art{animation:none!important}.sr-kit-mini,.sr-kit-parts:before{transition:none}}
