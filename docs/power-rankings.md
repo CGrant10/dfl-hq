@@ -52,7 +52,9 @@ backtested. The full report is in [power-rankings/backtest.json](power-rankings/
 `sync-sleeper` inserts an edition after Sleeper advances beyond the completed
 week. It requires contiguous, complete, identified slates, accepts finalized
 zero/negative scores, excludes live/future weeks, and scopes reads by league
-and season. Adaptive game polls skip publication. Existing editions are not
+and season. If the week-state lookup is unavailable, previews stop at the last
+validated publication, rather than counting positive live scores. Adaptive game
+polls skip publication. Existing editions are not
 updated; later trades/injuries cannot rewrite their scores or rank movements.
 Names remain current, and the detail sheet can show a changed current lineup
 separately. Missing publications produce an explicitly marked Preview.
@@ -67,14 +69,14 @@ The additive migration `20261020175526_league_power_publications.sql` is live.
 RLS and grants allow public reads and service inserts, with no anonymous/member
 writes or service update/delete access. All six initial editions were validated
 before insertion; public-client reads returned six editions of 12 teams.
-The scheduled worker is deployed as `sync-sleeper` v19 and retains its custom authentication; an unauthenticated
+The scheduled worker is deployed as `sync-sleeper` v20 and retains its custom authentication; an unauthenticated
 request returns 401. Publication failures leave other sync work available and
 retry on the next full sync. Reverting the frontend leaves the additive table
 and saved history intact.
 
 ## Verification
 
-- Full `pnpm check`: 237 files / 1,953 tests; theme, name, type, release and bundle checks pass.
+- Full `pnpm check`: 237 files / 1,954 tests; theme, name, type, release and bundle checks pass.
 - Targeted final model/publisher/roster checks pass; the deployed Edge Function passes Deno check.
 - Browser review exercises 12 teams, 320/390/768px, long names, escaping,
   200% text enlargement, 44px targets, row details, keyboard focus/Escape,

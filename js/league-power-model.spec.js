@@ -24,6 +24,13 @@ describe('performance power, separate from standings',()=>{
   const base=build({currentWeek:3});
   expect(build({currentWeek:3,matchups:[...games.filter(g=>g.week<3),...games.filter(g=>g.week>=3).map(g=>({...g,score1:999})),...games.map(g=>({...g,season:2025,score2:777}))]})).toEqual(base);
  });
+ it('holds unknown week state at the last published boundary instead of counting Sunday partials',()=>{
+  expect(build({currentWeek:0}).latestWeek).toBe(0);
+  const board=build({currentWeek:3}).boards.at(-1),saved={season:2026,week:2,model_version:POWER_MODEL_VERSION,published_at:'2026-10-01T00:00:00Z',payload:board};
+  const held=build({currentWeek:0,publications:[saved]});
+  expect(held.latestWeek).toBe(2);
+  expect(held.boards.at(-1).rows).toEqual(board.rows);
+ });
  it('requires a contiguous, uniquely identified complete slate',()=>{
   expect(build({matchups:games.filter(g=>g.week!==2)}).latestWeek).toBe(1);
   expect(build({matchups:[...games,games[0]]}).latestWeek).toBe(0);

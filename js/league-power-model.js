@@ -36,7 +36,11 @@ export function buildPowerBoards({teams=[],matchups=[],currentWeek=null,season=n
   if(season!=null&&row.season!=null&&Number(row.season)!==Number(season)||!Number.isInteger(w)||w<1||w>weeks||!finite(row.score1)||!finite(row.score2))continue;
   if(!grouped.has(w))grouped.set(w,[]);grouped.get(w).push(row);
  }
- const cutoff=Number(currentWeek),complete=[...grouped].filter(([w,rows])=>{
+ let cutoff=Number(currentWeek);
+ // An explicitly unavailable week state must not promote positive Sunday
+ // partials. Published editions are the only known-final boundary in that case.
+ if(currentWeek!=null&&!(cutoff>0))cutoff=1+Math.max(0,...publications.filter(p=>Number(p.season)===Number(season)&&p.model_version===POWER_MODEL_VERSION&&Number(p.week)>0&&Number(p.week)<=weeks&&validPublication(p,active,Number(p.week))).map(p=>Number(p.week)));
+ const complete=[...grouped].filter(([w,rows])=>{
   if(cutoff>0&&w>=cutoff)return false;
   if(!(cutoff>0)&&!rows.every(r=>Number(r.score1)>0&&Number(r.score2)>0))return false;
   const ids=rows.flatMap(r=>[side(r,1),side(r,2)]).filter(Boolean).map(t=>key(t.id));
