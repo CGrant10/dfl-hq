@@ -274,6 +274,7 @@ body.sr-stadium-expanded #view,body.sr-stadium-expanded .sr-room{transform:none!
 .sr-custom-duration[open] summary:after{content:'−'}
 .sr-editor-save{padding:0;background:var(--bg-2)}
 .sr-editor-save>button{width:100%}
+.sr-editor-save .sr-form-error:not([hidden]){margin-bottom:8px}
 @media(min-width:700px){.sr-editor .sr-member-picks{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* The large preview scrolls with the form; a small header preview takes over. */

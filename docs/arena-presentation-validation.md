@@ -28,13 +28,15 @@ the phone standings, and brings the customized runners into the result.
   controls in both Light and Dark.
 - Simplify commissioner setup with a single phone picker column, optional custom
   duration and a separate scrolling field area above the persistent Save button.
+  Validation messages stay beside Save instead of disappearing in the field area.
 
 ## Verification
 
 `pnpm check` passes: 1,934 tests across 234 files, release consistency, theme
 colors, TypeScript, name checks and the production build. The final source
-adjustment to invalidate rebuilt standings order is also covered by the browser
-regression below; name checking and the production build were rerun afterward.
+adjustments to invalidate rebuilt standings order and keep validation messages
+visible are covered by the browser regressions below; name checking and the
+production build were rerun afterward.
 The bundle contains 78 application modules, 3 startup modules and 4 Home modules;
 no dependencies or extra race animation loops were added.
 

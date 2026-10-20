@@ -49,7 +49,7 @@ function editorMarkup(members,{event=null,selected=[],paused=false}={}){
  <div class="sr-pick-head"><h3>Racers <span data-picked>${picked.size}</span></h3>${paused?'':'<button type="button" data-all>Select all</button>'}</div>
  ${paused?'':`<label class="sr-search"><span class="sr-only">Find a racer</span><input name="search" type="search" placeholder="Find a racer" autocomplete="off"></label>`}
  <div class="sr-member-picks">${members.filter(m=>!paused||picked.has(String(m.id))).map((m,index)=>`<label class="sr-member-pick"><input type="checkbox" name="racer" value="${esc(m.id)}" ${picked.has(String(m.id))?'checked':''} ${paused?'disabled':''}>${portrait({photo:m.profile_image,name:m.display_name,index})}<span>${esc(m.display_name)}<small>${esc(m.team_name||'')}</small></span></label>`).join('')}</div>
- <p class="sr-form-error" role="alert" hidden></p></div><div class="sr-editor-save"><button class="sr-primary" type="submit">${event?'Save race':'Create race'}</button></div></form>`;
+ </div><div class="sr-editor-save"><p class="sr-form-error" role="alert" hidden></p><button class="sr-primary" type="submit">${event?'Save race':'Create race'}</button></div></form>`;
 }
 
 function wireEditor(host,members,{event=null,selected=[],onSave,onCancel}={}){
