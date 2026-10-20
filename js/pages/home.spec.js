@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const source = readFileSync(new URL("./home.js", import.meta.url), "utf8");
+const source = readFileSync(new URL("./home.js", import.meta.url), "utf8") + readFileSync(new URL("../league-power-ui.js", import.meta.url), "utf8");
 
 describe("Home redesign wiring", () => {
   it("carries the retired dashboard's unique stories as stage slides", () => {
@@ -51,7 +51,7 @@ describe("Home redesign wiring", () => {
   it("retains the power rankings composition in the visible league desk", () => {
     expect(source).toContain("export function homeRankingsCard");
     expect(source).toContain("home-rank-head");
-    expect(source).toContain('row(item, index, String(item.id) === String(focus.id))');
+    expect(source).toContain("powerRankingsMarkup(view,members)");
     expect(source).toContain("home-rank-ellipsis");
     expect(source).toContain("data-home-rankings-slot");
     expect(source).toContain("data-home-rank-toggle");

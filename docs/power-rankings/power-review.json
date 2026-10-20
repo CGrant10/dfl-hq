@@ -1,0 +1,69 @@
+[
+  {
+    "theme": "light",
+    "width": 320,
+    "rows": 4,
+    "detail": "focus, Escape, full name, no overflow",
+    "targets": 8
+  },
+  {
+    "theme": "light",
+    "width": 390,
+    "rows": 4,
+    "detail": "focus, Escape, full name, no overflow",
+    "targets": 8
+  },
+  {
+    "theme": "light",
+    "width": 768,
+    "rows": 4,
+    "detail": "focus, Escape, full name, no overflow",
+    "targets": 8
+  },
+  {
+    "theme": "dark",
+    "width": 320,
+    "rows": 4,
+    "detail": "focus, Escape, full name, no overflow",
+    "targets": 8
+  },
+  {
+    "theme": "dark",
+    "width": 390,
+    "rows": 4,
+    "detail": "focus, Escape, full name, no overflow",
+    "targets": 8
+  },
+  {
+    "theme": "dark",
+    "width": 768,
+    "rows": 4,
+    "detail": "focus, Escape, full name, no overflow",
+    "targets": 8
+  },
+  {
+    "reduced": "reduce",
+    "motion": "on",
+    "animations": 0
+  },
+  {
+    "reduced": "no-preference",
+    "motion": "off",
+    "animations": 0
+  },
+  {
+    "expanded": 12,
+    "weekNavigation": "both boundaries",
+    "textEnlargement": "200% at 320px",
+    "cleanup": "dialog removed",
+    "reveal": "once per edition"
+  },
+  {
+    "sources": [
+      "Preview",
+      "Published",
+      "Rebuilt",
+      "Roster model"
+    ]
+  }
+]

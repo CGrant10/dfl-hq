@@ -1,3 +1,4 @@
+import {powerRankingsMarkup,mountPowerRankings} from '../league-power-ui.js';
 import {homeWeekReceipt,mountHomeWeekFlow} from '../home-week-flow.js';
 import {startSitContent} from '../start-sit-ui.js';
 import {syncHomePrimaryAction} from '../home-primary-action.js';
@@ -129,46 +130,10 @@ function memberAvatar(team, members, cls) {
 }
 
 
-/** The always-visible standings board from the approved Home composition. */
-export function homeRankingsCard(view, members = []) {
-  const rankings = view?.powerRankings;
-  const board = rankings?.boards?.at(-1);
-  if (!board?.rows?.length) return `<section class="home-rankings-card is-loading"><strong>Power rankings</strong><p>Run a Sleeper sync to build the weekly board.</p></section>`;
-  const focus = board.rows.find(row => String(row.id) === String(view.focus?.id)) || board.rows[0];
-  const teamFor = row => view.allTeams?.find(team => String(team.id) === String(row.id));
-  const visible = board.rows.slice(0, 3);
-  const showFocus = focus && !visible.some(row => String(row.id) === String(focus.id));
-  const row = (item, index, mine = false) => `<li class="${mine ? "is-me" : ""} ${index >= 3 && !mine ? "is-rank-collapsed" : ""}" data-assemble>
-    <b>${esc(String(item.rank))}</b>${memberAvatar(teamFor(item), members, "home-rank-face")}
-    <span><strong>${esc(item.name)}</strong></span><em>${esc(item.record)}</em>${rankMove(item.movement)}
-  </li>`;
-  return `<section class="home-rankings-card">
-    <header><h2 class="section-title">Power rankings</h2><a class="home-text-action" href="#/analyzer">${esc(board.label)} of ${esc(String(view.weeks || 14))}<svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
-    <div class="home-rank-head"><span>Rank</span><span>Team</span><span>Record</span><span>Move</span></div>
-    <ol>${board.rows.slice(0, 3).map((item, index) => row(item, index, String(item.id) === String(focus.id))).join("")}${showFocus ? `<li class="home-rank-ellipsis" aria-hidden="true">•••</li>` : ""}${board.rows.slice(3).map((item, offset) => row(item, offset + 3, String(item.id) === String(focus.id))).join("")}</ol>
-    <button class="home-rank-all" type="button" data-home-rank-toggle aria-expanded="false"><span>View all ${board.rows.length}</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button>
-  </section>`;
-}
+/** Weekly performance editions stay separate from the league standings. */
+export function homeRankingsCard(view,members=[]){return powerRankingsMarkup(view,members);}
+function wireHomeRankings(root,view=null,members=[]){return mountPowerRankings(root,view,members);}
 
-function wireHomeRankings(root) {
-  const card = root?.querySelector?.(".home-rankings-card");
-  const toggle = card?.querySelector?.("[data-home-rank-toggle]");
-  if (!card || !toggle) return;
-  toggle.addEventListener("click", () => {
-    const expanded = !card.classList.contains("is-expanded");
-    card.classList.toggle("is-expanded", expanded);
-    toggle.setAttribute("aria-expanded", String(expanded));
-    toggle.querySelector("span").textContent = expanded ? "Show top teams" : `View all ${card.querySelectorAll("ol > li:not(.home-rank-ellipsis)").length}`;
-  });
-}
-
-/*
-  NO ICON. Each column used to open with a 34px glyph in its own grid track,
-  which bought nothing - three different marks that all read as "a fact about
-  the week" - and cost a third of the narrowest column's width. Losing it
-  gives the words the whole column, which is the only thing in here anybody
-  reads.
-*/
 function outlookPlayerRow(player, index) {
   const matchup = player.matchup ? ` · ${player.matchup.tone} vs ${player.matchup.opponent}`
     : player.opponent ? ` · vs ${player.opponent}` : "";
@@ -760,7 +725,7 @@ export async function render(view) {
     const homeTradeSlot = view.querySelector("[data-home-trade-slot]");
     if (homeRankingsSlot) {
       homeRankingsSlot.innerHTML = homeRankingsCard(pulse, memberRows);
-      wireHomeRankings(homeRankingsSlot);
+      deferredStops.push(wireHomeRankings(homeRankingsSlot,pulse,memberRows));
       finishLoadingContent(homeRankingsSlot);
     }
     if (homeReportSlot) {

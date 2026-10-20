@@ -20,12 +20,13 @@ describe('fresh completed league results',()=>{
     expect(result.matchups.filter(r=>r.week<4)).toEqual(stale.filter(r=>r.week<4));
     const built=buildLeaguePowerRankings({teams,...result,currentWeek:5,season:2026});
     expect(built.boards.at(-1).rows.find(r=>r.id==='1')).toMatchObject({record:'3-1',weeklyScore:145.38});
-    expect(built.boards.at(-1).rows[0]).toMatchObject({name:'Jack-HAMMER',record:'4-0'});
+    expect(built.boards.at(-1).rows.find(r=>r.id==='2')).toMatchObject({name:'Jack-HAMMER',record:'4-0'});
     expect(standings[0].wins).toBe(2);
   });
-  it('puts the only undefeated team first even if a 3-1 team scored far more',()=>{
+  it('ranks dominant all-play scoring above a lucky undefeated record',()=>{
     const built=buildLeaguePowerRankings({teams,matchups:finalWeeks,currentWeek:5});
-    expect(built.boards.at(-1).rows[0]).toMatchObject({id:'2',record:'4-0'});
+    expect(built.boards.at(-1).rows[0]).toMatchObject({id:'1'});
+    expect(built.boards.at(-1).rows.find(r=>r.id==='2').record).toBe('4-0');
   });
   it('uses points to break equal-record ties and retains prior week movement',()=>{
     const built=buildLeaguePowerRankings({teams,matchups:finalWeeks,currentWeek:5});

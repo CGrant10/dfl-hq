@@ -11,27 +11,27 @@ const analysis = {
 };
 
 describe("Home power pulse", () => {
-  it("uses the reader's real analyzer rank and compares with prior standings", () => {
+  it("uses the roster baseline without inventing movement against last season", () => {
     const view = powerPulseView({ analysis, meSleeperId: "u2", standings: [
       { season: 2025, sleeper_user_id: "u1", rank: 2 },
       { season: 2025, sleeper_user_id: "u2", rank: 3 },
       { season: 2025, sleeper_user_id: "u3", rank: 1 },
     ] });
     expect(view.focus.team_name).toBe("Beta");
-    expect(view.movement).toBe(1);
-    expect(view.movementLabel).toBe("VS 2025");
+    expect(view.movement).toBeNull();
+    expect(view.movementLabel).toBe("New model");
     expect(Number(view.ratings[view.teams[0].id])).toBeGreaterThan(Number(view.ratings[view.teams[1].id]));
     expect(powerPulseCard(view)).toContain("#2");
-    expect(powerPulseCard(view)).toContain("+1 VS 2025");
+    expect(powerPulseCard(view)).toContain("NEW MODEL");
   });
 
-  it("uses current standings after games have been played", () => {
+  it("does not confuse a standings position with weekly power movement", () => {
     const view = powerPulseView({ analysis, meSleeperId: "u1", standings: [
       { season: 2026, sleeper_user_id: "u1", rank: 3, wins: 1, losses: 0 },
       { season: 2026, sleeper_user_id: "u2", rank: 1, wins: 1, losses: 0 },
     ] });
-    expect(view.movement).toBe(2);
-    expect(view.movementLabel).toBe("VS STANDINGS");
+    expect(view.movement).toBeNull();
+    expect(view.movementLabel).toBe("New model");
   });
 
   it("escapes team names and never invents movement without a baseline", () => {

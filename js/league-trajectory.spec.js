@@ -18,9 +18,9 @@ describe("weekly league power rankings", () => {
     expect(result.boards.map(board => board.label)).toEqual(["Roster model", "Week 1"]);
     const delta = result.boards[1].rows.find(team => team.id === "4");
     expect(delta.rank).toBeLessThan(4);
-    expect(delta.movement).toBeGreaterThan(0);
-    expect(delta.previousRank).toBe(4);
-    expect(result.boards[1].comparison).toBe("vs roster model");
+    expect(delta.movement).toBe(0);
+    expect(delta.previousRank).toBeNull();
+    expect(result.boards[1].comparison).toBe("New model");
   });
 
   it("compares a new board with the prior completed week", () => {

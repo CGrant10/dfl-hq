@@ -1,3 +1,4 @@
+import {publishLeaguePower} from '../../../js/league-power-publish.js';
 import {captureScheduledTrades} from "./trade-alerts.ts";
 import {leagueHealth} from '../../../js/league-health.js';
 import {backgroundSyncPolicy} from '../../../js/background-sync-policy.js';
@@ -322,7 +323,7 @@ Deno.serve(async (request) => {
       sleeper(`/league/${leagueId}/matchups/${week}`),
       sleeper(`/league/${leagueId}/transactions/${week}`),
       adaptive || dryRun ? Promise.resolve([]) : sleeperAbsolute(`https://api.sleeper.app/projections/nfl/${season}/${week}?season_type=regular`),
-      adaptive && week > 1 && policy.mode === 'rosters' ? sleeper(`/league/${leagueId}/matchups/${week-1}`) : Promise.resolve(null),
+      week > 1 && (!adaptive || policy.mode === 'rosters') ? sleeper(`/league/${leagueId}/matchups/${week-1}`) : Promise.resolve(null),
     ]);
 
     const health = leagueHealth({league,state:nflState,rosters,rows:weeklyMatchups,users,week});
@@ -338,6 +339,10 @@ Deno.serve(async (request) => {
       const previousOwners=new Map<number,string>(rosters.map((row:Json)=>[row.roster_id,row.owner_id]));
       await upsert(admin,'sleeper_matchups',matchups(previousMatchups,season,week-1,leagueId,previousOwners),'season,week,matchup_id');
     }
+    // Scheduled editions are append-only. A failed provider read can retry on
+    // the next scheduled sync without delaying scores, trades or notifications.
+    if(!adaptive)await publishLeaguePower({database:admin,league,users,rosters,projections:weeklyProjections||[],week,
+      loadPlayers:()=>sleeper('/players/nfl')}).catch(error=>console.warn('Power edition pending:',error.message));
     // Capture shared moments even when no member has GameDay open.
     const { error: momentsError } = await admin.rpc("capture_gameday_snapshot", {
       p_league_id: leagueId, p_season: season, p_week: week, p_rows: weeklyMatchups || [],

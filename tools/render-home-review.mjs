@@ -1,3 +1,4 @@
+import {powerRankingsMarkup} from '../js/league-power-ui.js';
 // Browser review fixture: the production renderers with the selected mock's
 // sample scores. It lives outside the app and never writes to league data.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -71,7 +72,7 @@ const rankMarkup = homeSource.slice(homeSource.indexOf('function rankMove('), ho
 const weeklyMarkup = homeSource.slice(homeSource.indexOf('function outlookPlayerRow('), homeSource.indexOf('function wireHomeWeekHub(')).replaceAll('export ', '');
 const tradeMarkup = homeSource.slice(homeSource.indexOf('function tradePackageLine('), homeSource.indexOf('async function weekAheadSlide(')).replaceAll('export ', '');
 const feedMarkup = homeSource.slice(homeSource.indexOf('function snapshot('), homeSource.indexOf('function wireHomeLeagueFeed('));
-const renderHomeReview = Function('startSitContent', 'esc', 'money', 'fmtShort', 'teamPortrait', 'playerIdentity', 'playerLiveState', 'HOME_OUTLOOK_POSITIONS', 'activityLine', 'visible', 'hiddenClass', 'editControls', 'addControl', 'adminRow', `${rankMarkup}\n${weeklyMarkup}\n${tradeMarkup}\n${feedMarkup}\nreturn {homeRankingsCard,homeWeeklyDigest,homeWeeklyFocus,homeTradeWire,homeLeagueFeed,snapshot};`)(startSitContent, esc, money, fmtShort, teamPortrait, playerIdentity, playerLiveState, HOME_OUTLOOK_POSITIONS, activityLine, (_table, rows) => rows, () => '', () => '', () => '', () => '');
+const renderHomeReview = Function('powerRankingsMarkup','startSitContent', 'esc', 'money', 'fmtShort', 'teamPortrait', 'playerIdentity', 'playerLiveState', 'HOME_OUTLOOK_POSITIONS', 'activityLine', 'visible', 'hiddenClass', 'editControls', 'addControl', 'adminRow', `${rankMarkup}\n${weeklyMarkup}\n${tradeMarkup}\n${feedMarkup}\nreturn {homeRankingsCard,homeWeeklyDigest,homeWeeklyFocus,homeTradeWire,homeLeagueFeed,snapshot};`)(powerRankingsMarkup,startSitContent, esc, money, fmtShort, teamPortrait, playerIdentity, playerLiveState, HOME_OUTLOOK_POSITIONS, activityLine, (_table, rows) => rows, () => '', () => '', () => '', () => '');
 const pickemSource = readFileSync(new URL('../js/sportsbook-pickem.js', import.meta.url), 'utf8');
 const homePickem = Function('pickemState', 'fmt', `${pickemSource.slice(pickemSource.indexOf('export function homePickemMarkup(')).replace('export ', '')}\nreturn homePickemMarkup;`)(pickemState, value => new Date(value).toLocaleDateString('en-US'));
 const homeReviewWiring = homeSource.slice(homeSource.indexOf('function wireHomeRankings('), homeSource.indexOf('function outlookPlayerRow('))
@@ -169,6 +170,7 @@ html = html.replace('</head>', `<style>${previewCss}</style><link rel="styleshee
 const sportsbookHeader = readFileSync(new URL('../js/pages/sportsbook.js',import.meta.url),'utf8').match(/<header class="sb-masthead page-identity">[\s\S]*?<\/header>/)[0].replace('${esc(sportsbookWeekCaption(leagueWeek))}','Week 5').replace('${num(wallet?.balance)}','100');
 const tradeHeader = readFileSync(new URL('../js/pages/trade.js',import.meta.url),'utf8').match(/<div class="tb-head-row page-identity">[\s\S]*?<\/div>/)[0];
 html = html.replace('</body>', `<script type="module">
+  import {mountPowerRankings} from './js/league-power-ui.js';
   import {homeWeekReceipt,homeLeagueRace,mountHomeWeekFlow} from './js/home-week-flow.js';
   import { wireHomeNewspaperSections, homeBroadcastDeck } from './js/home-presentation.js';
   import { startStage } from './js/broadcast-stage.js';
@@ -198,8 +200,10 @@ html = html.replace('</body>', `<script type="module">
   document.querySelectorAll('[data-reaction-status]').forEach(status => status.textContent = '');
   window.reviewTextContrast = reviewTextContrast;
   window.reviewEmptyWeek = ${JSON.stringify({focus:renderHomeReview.homeWeeklyFocus(null),forecast:renderHomeReview.homeWeeklyDigest(null)})};
+  window.reviewPowerRankings = ${JSON.stringify(rankings)};
   ${homeReviewWiring}
-  wireHomeRankings(document.querySelector('#home-wrap'));
+  // END_HOME_REVIEW_HANDLERS
+  window.reviewPowerStop=wireHomeRankings(document.querySelector('[data-home-rankings-slot]'),window.reviewPowerRankings);
   wireHomeWeekHub(document.querySelector('#home-wrap'));
   wireHomeLeagueFeed(document.querySelector('#home-wrap'));
   wireHomeNewspaperSections(document.querySelector('#home-wrap'));

@@ -51,6 +51,9 @@ on:
       - 'js/season-nav*'
       - 'js/home-clubhouse*'
       - 'js/pages/home.js'
+      - 'js/league-power*'
+      - 'tools/*power*'
+      - 'supabase/migrations/*league_power*'
       - 'js/pages/clubhouse.js'
       - 'css/app-reading.css'
       - 'css/nav-neutral.css'
@@ -138,6 +141,8 @@ jobs:
           test -n "$dfl_review_browser"
           printf 'DFL_REVIEW_CHROMIUM=%s\n' "$dfl_review_browser" >> "$GITHUB_ENV"
       - run: node tools/render-home-review.mjs
+      - name: Check weekly power editions and ranking details
+        run: python tools/capture-power-review.py
       - name: Check phase-aware Home weekly desk
         run: python tools/capture-home-week-review.py
       - name: Check final matchup presentation
