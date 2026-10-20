@@ -13,17 +13,32 @@ with sync_playwright() as p:
     browser = p.chromium.launch(executable_path=os.environ.get('DFL_REVIEW_CHROMIUM','/usr/bin/chromium'),headless=True,args=['--no-sandbox'])
     context = browser.new_context(viewport={'width':390,'height':844},is_mobile=True,has_touch=True)
     context.route('**/npm/@supabase/supabase-js@*/+esm',lambda r:r.fulfill(status=200,content_type='text/javascript',body='export function createClient(){throw Error("Backend disabled in review")}'))
+    # Exercise actual CDN URL selection/failure behavior without a network dependency.
+    def portrait(route):
+        if 'broken' in route.request.url:
+            route.fulfill(status=404,body='Missing portrait')
+        else:
+            route.fulfill(status=200,content_type='image/webp',body=(source_root/'assets/dfl-daily-champion.webp').read_bytes())
+    source_root=Path(__file__).resolve().parents[1]
+    context.route('https://sleepercdn.com/**',portrait)
     page = context.new_page()
+    errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
     page.goto(scope['url'],wait_until='networkidle')
     page.wait_for_function('!!window.reviewStage')
     page.evaluate("window.reviewStage.suspend('power-review',true)")
     page.evaluate("()=>{window.powerMotionStarts=0;const original=Element.prototype.animate;Element.prototype.animate=function(...args){if(this.closest('.power-edition'))window.powerMotionStarts++;return original.apply(this,args)}}")
-    page.evaluate("async()=>{const {buildPowerBoards}=await import('./js/league-power-model.js');const {powerRankingsMarkup,mountPowerRankings}=await import('./js/league-power-ui.js');window.powerReviewMount=()=>{window.reviewPowerStop?.();const root=document.querySelector('[data-home-rankings-slot]');root.innerHTML=powerRankingsMarkup(window.reviewPowerRankings);window.reviewPowerStop=mountPowerRankings(root,window.reviewPowerRankings)};const teams=Array.from({length:12},(_,i)=>({id:String(i+1),roster_id:i+1,team_name:i===8?'The Bastards of the Very Long Championship Team Name':i===0?'<script>Team One</script>':'DFL Team '+(i+1),powerForecast:{complete:true,points:120+i}}));const matchups=Array.from({length:4},(_,w)=>Array.from({length:6},(_,i)=>({season:2026,week:w+1,roster1:i+1,roster2:i+7,score1:80+i*8+(w===3?i*12:0),score2:100+i*4-(w===3?i*8:0)}))).flat();window.reviewPowerRankings={focus:{id:'9'},allTeams:teams,powerRankings:buildPowerBoards({teams,matchups,currentWeek:5,season:2026})};powerReviewMount()}")
+    page.evaluate("async()=>{const {buildPowerBoards}=await import('./js/league-power-model.js');const {currentAnalyzerRoster}=await import('./js/analyzer-league-context.js');const {powerRankingsMarkup,mountPowerRankings}=await import('./js/league-power-ui.js');window.powerReviewMount=()=>{window.reviewPowerStop?.();const root=document.querySelector('[data-home-rankings-slot]');root.innerHTML=powerRankingsMarkup(window.reviewPowerRankings);window.reviewPowerStop=mountPowerRankings(root,window.reviewPowerRankings)};const teams=Array.from({length:12},(_,i)=>({id:String(i+1),roster_id:i+1,team_name:i===8?'The Bastards of the Very Long Championship Team Name':i===0?'<script>Team One</script>':'DFL Team '+(i+1),powerForecast:{complete:true,points:120+i}}));teams.forEach((t,i)=>{const owner='review-owner-'+i,custom=i===8||i===11?'https://sleepercdn.com/uploads/broken-team.jpg':i%2?'https://sleepercdn.com/uploads/team-'+i+'.jpg':null;Object.assign(t,currentAnalyzerRoster({...t,sleeper_user_id:owner},i===11?{profile_image:'https://sleepercdn.com/uploads/dfl-profile.jpg'}:null,[{user_id:owner,metadata:{team_name:t.team_name,avatar:custom},avatar:i===10?null:i===11?'broken-owner':'owner-avatar-'+i}]))});const matchups=Array.from({length:4},(_,w)=>Array.from({length:6},(_,i)=>({season:2026,week:w+1,roster1:i+1,roster2:i+7,score1:80+i*8+(w===3?i*12:0),score2:100+i*4-(w===3?i*8:0)}))).flat();window.reviewPowerRankings={focus:{id:'9'},allTeams:teams,powerRankings:buildPowerBoards({teams,matchups,currentWeek:5,season:2026})};powerReviewMount()}")
     card=page.locator('.power-edition')
     card.scroll_into_view_if_needed();page.wait_for_timeout(800)
     assert page.locator('.power-edition>ol>li:visible [data-power-team]').count()==4
     assert page.locator('.power-edition .is-me').is_visible()
     assert page.locator('.power-edition script').count()==0
+    page.wait_for_function("()=>document.querySelector('[data-power-id=\"9\"] img')?.currentSrc.endsWith('/owner-avatar-8')&&document.querySelector('[data-power-id=\"9\"] .has-photo')")
+    page.wait_for_function("()=>document.querySelector('[data-power-id=\"12\"] img')?.currentSrc.endsWith('/dfl-profile.jpg')&&document.querySelector('[data-power-id=\"12\"] .has-photo')")
+    assert page.locator('[data-power-id="11"] img').count()==0
+    assert page.locator('[data-power-id="11"] .dfl-team-mark i').inner_text()=='DT'
+    assert page.locator('[data-power-id="6"] img').get_attribute('src').endswith('/team-5.jpg')
+    results.append({'photos':'current team, owner, DFL profile, initials; broken URLs fall through without loops'})
     for theme in ['light','dark']:
         page.evaluate('(theme)=>window.reviewSetTheme(theme)',theme)
         for width in [320,390,768]:
@@ -36,6 +51,7 @@ with sync_playwright() as p:
             page.locator('.power-edition .is-me [data-power-team]').click()
             dialog=page.locator('dialog.power-detail')
             assert dialog.is_visible()
+            page.wait_for_function("()=>document.querySelector('.power-detail-face img')?.complete&&document.querySelector('.power-detail-face.has-photo')")
             assert 'The Bastards of the Very Long Championship Team Name' in dialog.text_content(), dialog.text_content()
             assert dialog.evaluate('e=>e.scrollWidth<=e.clientWidth'),(theme,width)
             assert page.evaluate('document.activeElement.matches("[data-power-close]")')
@@ -48,6 +64,11 @@ with sync_playwright() as p:
     page.locator('[data-home-rank-toggle]').click()
     assert page.locator('.power-edition>ol>li:visible [data-power-team]').count()==12
     assert page.locator('[data-home-rank-toggle]').get_attribute('aria-expanded')=='true'
+    page.locator('[data-power-week="-1"]').click()
+    assert page.locator('.power-edition>ol>li:visible [data-power-team]').count()==12
+    assert page.locator('[data-home-rank-toggle]').get_attribute('aria-expanded')=='true'
+    page.locator('[data-power-week="1"]').click()
+    assert page.locator('.power-edition>ol>li:visible [data-power-team]').count()==12
     page.locator('[data-home-rank-toggle]').click()
     for _ in range(4):page.locator('[data-power-week="-1"]').click()
     assert page.locator('.power-week-nav strong').inner_text()=='Roster model'
@@ -85,6 +106,13 @@ with sync_playwright() as p:
     page.evaluate("()=>{reviewPowerRankings.powerRankings.boards.at(-1).reconstructed=true;powerReviewMount()}")
     assert page.locator('.power-edition-state').inner_text().lower()=='rebuilt'
     results.append({'sources':['Preview','Published','Rebuilt','Roster model']})
+    page.locator('[data-power-id="9"]').scroll_into_view_if_needed()
+    page.locator('[data-power-id="9"] img').evaluate("e=>{e.dataset.photoFallbacks='[]';e.src='https://sleepercdn.com/uploads/broken-final.jpg'}")
+    page.wait_for_function("()=>!document.querySelector('[data-power-id=\"9\"] img')&&!document.querySelector('[data-power-id=\"9\"] .has-photo')")
+    assert page.locator('[data-power-id="9"] .dfl-team-mark i').is_visible()
+    results.append({'failedLastImage':'initials visible; no stale has-photo state'})
+    assert not errors,errors
+    results.append({'browserErrors':errors,'expandedWeekNavigation':'preserved'})
     browser.close()
 scope['server'].shutdown()
 (out/'power-review.json').write_text(json.dumps(results,indent=2)+'\n')

@@ -14,10 +14,11 @@ export function teamOwner(team) {
 export function teamPortrait(team, { className = "" } = {}) {
   const identity = team?.identity || team || {};
   const name = teamLabel(team);
-  const photo = identity.profile_image;
+  const photos=[...new Set([team?.sleeper_team_image,team?.sleeper_profile_image,identity.profile_image].filter(Boolean))];
+  const photo=photos.shift();
   return `<span class="dfl-team-mark ${esc(className)}" style="--team-accent:${esc(accentOf(identity))}" aria-hidden="true">
     <i>${esc(teamInitials(name || "?"))}</i>
-    ${photo ? `<img src="${esc(photo)}" alt="" loading="lazy" decoding="async" onload="this.parentElement.classList.add('has-photo')" onerror="this.remove()">` : ""}
+    ${photo ? `<img src="${esc(photo)}" data-photo-fallbacks="${esc(JSON.stringify(photos))}" alt="" loading="lazy" decoding="async" onload="this.parentElement.classList.add('has-photo')" onerror="const next=JSON.parse(this.dataset.photoFallbacks||'[]'),src=next.shift();this.dataset.photoFallbacks=JSON.stringify(next);if(src){this.src=src}else{this.parentElement.classList.remove('has-photo');this.remove()}">` : ""}
   </span>`;
 }
 

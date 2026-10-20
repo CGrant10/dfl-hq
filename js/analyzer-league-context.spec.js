@@ -27,4 +27,15 @@ describe('current analyzer league context',()=>{
   expect(currentAnalyzerRoster(roster,{team_name:'Older profile'}).team_name).toBe('Synced name');
   expect(currentAnalyzerRoster({roster_id:1},null).team_name).toBe('Team 1');
  });
+ it('attaches current Sleeper team and owner photos without overwriting the DFL profile',()=>{
+  const member={profile_image:'https://example.com/dfl.jpg'},roster={roster_id:1,sleeper_user_id:'owner'};
+  const users=[{user_id:'wrong',avatar:'other-owner'},{user_id:'owner',metadata:{avatar:'https://sleepercdn.com/uploads/team.jpg'},avatar:'owner123'}];
+  const result=currentAnalyzerRoster(roster,member,users);
+  expect(result.sleeper_team_image).toBe('https://sleepercdn.com/uploads/team.jpg');
+  expect(result.sleeper_profile_image).toBe('https://sleepercdn.com/avatars/thumbs/owner123');
+  expect(result.identity.profile_image).toBe(member.profile_image);
+  expect(currentAnalyzerRoster(roster,member).sleeper_team_image).toBeNull();
+  expect(currentAnalyzerRoster(roster,member,[{user_id:'owner',avatar:'javascript:alert(1)',metadata:{avatar:'http://example.com/photo'}}]).sleeper_profile_image).toBeNull();
+  expect(currentAnalyzerRoster(roster,member,[{user_id:'owner',metadata:{avatar:'https://user:password@example.com/photo'}}]).sleeper_team_image).toBeNull();
+ });
 });
