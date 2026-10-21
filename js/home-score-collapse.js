@@ -79,10 +79,21 @@ export function mountHomeScoreCollapse(root){
  const schedule=()=>{if(!stopped&&!frame)frame=requestAnimationFrame(paint)};
  const invalidate=()=>{dirty=true;schedule()};
  const preferences=()=>{if(!motion())reset();invalidate()},visibility=()=>{if(document.hidden)reset();invalidate()};
- const observer=new MutationObserver(records=>{if(records.every(record=>record.target===dock||dock.contains(record.target)||record.target===layer||layer.contains(record.target)||record.type==='childList'&&[...record.addedNodes,...record.removedNodes].every(node=>node===layer||layer.contains(node))))return;invalidate()});
+ // Broadcast rotations, wall replies and section entrances must not rebuild
+ // a flight already following the finger. Only matchup changes affect its parts.
+ const observer=new MutationObserver(records=>{
+  const slot=root.querySelector('[data-home-gameday-slot]');
+  if(records.some(record=>record.target===root&&record.type==='attributes'||slot?.contains(record.target)||record.type==='childList'&&[...record.addedNodes,...record.removedNodes].some(node=>node.nodeType===1&&(node===source||node.contains(source)||node.matches('[data-home-gameday-slot]')||node.querySelector('[data-home-gameday-slot]')))))invalidate();
+ });
  observer.observe(root,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['src','data-phase','data-route']});
- const resize=new ResizeObserver(invalidate);resize.observe(root);
+ const sizes=new WeakMap();
+ const resize=new ResizeObserver(entries=>{
+  let changed=false;
+  for(const entry of entries){const {width,height}=entry.contentRect,next=entry.target===root?`${width}`:`${width}:${height}`;if(sizes.get(entry.target)!==next){sizes.set(entry.target,next);changed=true}}
+  if(changed)invalidate();
+ });resize.observe(root);
+ const entrance=event=>{if(event.target===root||event.target===source)invalidate()};
  dock.addEventListener('click',()=>{source?.focus({preventScroll:true});source?.scrollIntoView({block:'center',behavior:motion()?'smooth':'instant'})});
- window.addEventListener('scroll',schedule,{passive:true});window.addEventListener('dfl:scroll-chrome',invalidate);window.addEventListener('resize',invalidate);window.addEventListener('dfl:ui-motion-change',preferences);window.addEventListener('pageshow',invalidate);window.addEventListener('pagehide',reset);document.addEventListener('visibilitychange',visibility);reduced.addEventListener('change',preferences);root.addEventListener('animationend',invalidate);document.fonts?.addEventListener('loadingdone',invalidate);document.fonts?.ready.then(invalidate);schedule();
- return()=>{stopped=true;cancelAnimationFrame(frame);observer.disconnect();resize.disconnect();restore();unfade();dock.remove();layer.remove();root.classList.remove('has-home-score-dock');window.removeEventListener('scroll',schedule);window.removeEventListener('dfl:scroll-chrome',invalidate);window.removeEventListener('resize',invalidate);window.removeEventListener('dfl:ui-motion-change',preferences);window.removeEventListener('pageshow',invalidate);window.removeEventListener('pagehide',reset);document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',preferences);root.removeEventListener('animationend',invalidate);document.fonts?.removeEventListener('loadingdone',invalidate)};
+ window.addEventListener('scroll',schedule,{passive:true});window.addEventListener('dfl:scroll-chrome',invalidate);window.addEventListener('resize',invalidate);window.addEventListener('dfl:ui-motion-change',preferences);window.addEventListener('pageshow',invalidate);window.addEventListener('pagehide',reset);document.addEventListener('visibilitychange',visibility);reduced.addEventListener('change',preferences);root.addEventListener('animationend',entrance);document.fonts?.addEventListener('loadingdone',invalidate);document.fonts?.ready.then(invalidate);schedule();
+ return()=>{stopped=true;cancelAnimationFrame(frame);observer.disconnect();resize.disconnect();restore();unfade();dock.remove();layer.remove();root.classList.remove('has-home-score-dock');window.removeEventListener('scroll',schedule);window.removeEventListener('dfl:scroll-chrome',invalidate);window.removeEventListener('resize',invalidate);window.removeEventListener('dfl:ui-motion-change',preferences);window.removeEventListener('pageshow',invalidate);window.removeEventListener('pagehide',reset);document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',preferences);root.removeEventListener('animationend',entrance);document.fonts?.removeEventListener('loadingdone',invalidate)};
 }

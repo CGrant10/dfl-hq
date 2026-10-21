@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { nextMoveSlide } from "./home-slides.js";
+import { nextMoveSlide, weeklyHeadlineSlide } from "./home-slides.js";
 import { fitSize, focusShouldPause, renderItem, renderStage, sameStageItem, shouldRun, STAGE_CONTROL } from "./broadcast-stage.js";
 
 describe("editorial Home broadcast", () => {
+  it('presents the actual weekly result as two complete score rows with its exact matchup link',()=>{
+    const item=weeklyHeadlineSlide({final:true,season:2026,week:5,games:[{winner:{uid:'a',name:'Bayou & Co',value:131.22},loser:{uid:'b',name:'Monday Night Mayhem',value:120}}]},{season:2026,week:6});
+    const html=renderItem(item,{editorial:true});
+    expect(html).toContain('LEAGUE SPOTLIGHT');expect(html).toContain('bx-league-result');
+    expect(html).toContain('<strong>Bayou &amp; Co</strong><b>131.22</b>');
+    expect(html).toContain('<strong>Monday Night Mayhem</strong><b>120.00</b>');
+    expect(html).toContain('href="#/clubhouse?season=2026&amp;week=5&amp;tab=matchups"');
+    expect(html).not.toContain('class="bx-body"');
+  });
   it('keeps the daily opener independent and gives odds and anniversary cards their own composition',()=>{
     const daily=renderItem({homeFeature:true,headline:'Talk your shit.',subtitle:'Set your lineup.',kicker:'DFL DAILY'},{editorial:true});
     expect(daily).toContain('<section');expect(daily).not.toContain('href=');expect(daily).not.toContain('bx-home-action');

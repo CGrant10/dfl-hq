@@ -777,3 +777,18 @@ Inspected actual mobile Light/Dark frames for player-card returns at 320/390px, 
 ## 1.462.0 — Clean broadcast presentation
 
 Reviewed actual current-run Light/Dark 320/390px award, trade, injury and rivalry captures, including fully loaded house illustrations and long champion names. Secondary broadcast stories now use the app's square type, quiet surfaces, restrained dividers and complete opaque award artwork. All authored colors use shared text/body/accent/surface/line tokens; no theme options or new palette values. Contrast, text/art separation, 44px transport controls, motion opt-outs and stable rotation height are covered by the production browser fixtures. `pnpm themes` passed. Before/after evidence and device limitations: [broadcast-presentation.md](docs/broadcast-presentation.md).
+
+
+## 1.463.0 — mobile Spotlight, score motion and Sportsbook
+
+Reviewed actual production-component Light/Dark phone screenshots at 320/390px;
+layout checks also cover 430px Sportsbook/scroll and 768px broadcast. Spotlight's
+number/headline collision is removed; complete result rows and the destination
+remain readable. Sportsbook Review/Clear and 44px removal targets use shared
+palette tokens, retain navigation clearance and keep the last market reachable.
+Inspected selected and confirmation states. No palette options were added;
+Medicine Wheel defaults and legacy aliases are unchanged.
+
+Screens, checks and physical-device limits: [mobile refinement](docs/mobile-refinement-1463.md).
+`pnpm check` passes with 2,020 tests; fixtures cover reduced motion, current
+scores/names and unrelated Home animations without restarting score flights.

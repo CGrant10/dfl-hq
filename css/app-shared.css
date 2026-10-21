@@ -5833,7 +5833,7 @@ html[data-readability="comfortable"] #view :is(h1,h2,h3){overflow-wrap:anywhere;
 #home-wrap .bx-home-feature .bx-home-shade {background:linear-gradient(90deg,color-mix(in srgb,var(--bg) 97%,transparent),color-mix(in srgb,var(--bg) 88%,transparent) 44%,color-mix(in srgb,var(--bg) 50%,transparent) 64%,transparent 86%);}
 #home-wrap .home-broadcast .bx-stage{border-top:0;background:transparent}
 #home-wrap .bx-story-edition{align-content:start;gap:14px;border:0;padding-top:0;background:none}
-#home-wrap .bx-story-edition .bx-kicker{margin:0;font:700 11px/1.4 var(--home-ui-font);letter-spacing:.07em;color:var(--body-text)}
+#home-wrap .bx-story-edition .bx-kicker{margin:0;font:700 11px/1.4 var(--home-ui-font);letter-spacing:.06em;word-spacing:normal;white-space:normal;color:var(--body-text)}
 #home-wrap .bx-story-edition .bx-kicker::after{display:none}
 #home-wrap .bx-story-edition :is(.bx-head,.bx-name){font:700 clamp(28px,7.8vw,32px)/1.1 var(--home-ui-font);letter-spacing:-.015em;text-transform:none;text-wrap:balance}
 #home-wrap .bx-story-edition :is(.bx-body,.bx-sub){font:500 15px/1.4 var(--home-ui-font);color:var(--body-text)}
@@ -5855,18 +5855,26 @@ html[data-readability="comfortable"] #view :is(h1,h2,h3){overflow-wrap:anywhere;
 #home-wrap .bx-award-story .bx-editorial-portrait{display:block;width:100%;height:100%;object-fit:contain;object-position:center;transform:none;filter:none}
 #home-wrap .bx-award-story>.bx-story-action{grid-column:1/-1;display:flex;justify-content:space-between;width:100%;margin:0;padding-top:10px;border-top:1px solid var(--line-soft)}
 
-/* The number is the headline; supporting facts stay readable beside it. */
+/* Headlines get a full measure; large results never intrude on the words. */
 #home-wrap .bx-number-story{display:grid;align-content:start;gap:16px}
-#home-wrap .bx-stat-story-main{display:grid;grid-template-columns:116px minmax(0,1fr);align-items:center;gap:18px;width:100%;padding:14px 0;border:0;background:none}
-#home-wrap .bx-stat-story-main .bx-head{margin:0;font-size:28px}
-#home-wrap .bx-stat-metric{position:relative;display:grid;align-content:center;justify-items:center;min-height:116px;gap:4px}
-#home-wrap .bx-stat-metric .bx-figure{font-size:64px;line-height:1;margin:0}
+#home-wrap .bx-stat-story-main{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:14px;width:100%;padding:4px 0;border:0;background:none}
+#home-wrap .bx-stat-story-main .bx-head{grid-row:1;margin:0;font-size:30px;max-width:20ch;overflow-wrap:normal;word-break:normal}
+#home-wrap .bx-stat-metric{position:relative;display:grid;align-content:center;justify-items:start;min-width:0;min-height:0;gap:4px}
+#home-wrap .bx-stat-metric .bx-figure{font:700 clamp(56px,16vw,72px)/1 var(--home-ui-font);letter-spacing:-.04em;font-variant-numeric:tabular-nums;white-space:nowrap;margin:0}
 #home-wrap .bx-stat-metric .bx-figure::after{display:none}
 #home-wrap .bx-stat-metric>small{font:600 12px/1.25 var(--home-ui-font);color:var(--body-text)}
+#home-wrap .bx-stat-story-main:has(.is-dial){grid-template-columns:116px minmax(0,1fr);align-items:center;gap:18px}
+#home-wrap .bx-stat-story-main:has(.is-dial) .bx-head{grid-column:2;grid-row:1}
+#home-wrap .bx-stat-metric.is-dial{min-height:116px;justify-items:center}
 #home-wrap .bx-stat-metric.is-dial .bx-figure{font-size:40px}
 #home-wrap .bx-stat-metric svg{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke-width:2;stroke:var(--line)}
 #home-wrap .bx-stat-metric svg circle:last-child{stroke:var(--accent);stroke-linecap:round;transform:rotate(-90deg);transform-origin:center}
 #home-wrap .bx-number-story .bx-body{margin:0}
+#home-wrap .bx-result-scores{display:grid;width:100%;border-top:1px solid var(--line-soft)}
+#home-wrap .bx-result-scores>div{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:16px;padding:10px 0;border-bottom:1px solid var(--line-soft)}
+#home-wrap .bx-result-scores strong{font:600 15px/1.35 var(--home-ui-font);overflow-wrap:anywhere;color:var(--text)}
+#home-wrap .bx-result-scores b{font:700 17px/1.35 var(--home-ui-font);font-variant-numeric:tabular-nums;color:var(--text)}
+#home-wrap .bx-league-result>.bx-story-action{display:flex;justify-content:space-between;width:100%}
 #home-wrap .bx-number-story .bx-when{justify-self:start}
 #home-wrap .bx-season-story{display:grid;align-content:start;gap:20px}
 #home-wrap .bx-season-lockup{display:flex;align-items:end;gap:18px;width:100%;padding:12px 0;background:none;border:0}
@@ -5932,8 +5940,8 @@ html[data-ui-motion="off"] #home-wrap .bx-slide *,html[data-ui-motion="off"] #ho
  #home-wrap .bx-award-story{gap:12px}
  #home-wrap .bx-award-story .bx-editorial-illustration{height:190px}
  #home-wrap .bx-award-story .bx-award-heading{font-size:30px}
- #home-wrap .bx-stat-story-main{grid-template-columns:100px minmax(0,1fr);gap:12px}
- #home-wrap .bx-stat-metric{min-height:100px}
+ #home-wrap .bx-stat-story-main:has(.is-dial){grid-template-columns:100px minmax(0,1fr);gap:12px}
+ #home-wrap .bx-stat-metric.is-dial{min-height:100px}
  #home-wrap .bx-stat-metric.is-dial .bx-figure{font-size:36px}
  #home-wrap .bx-season-number{font-size:120px}
  #home-wrap .bx-scout-target{grid-template-columns:78px minmax(0,1fr)}

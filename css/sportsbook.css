@@ -26,6 +26,9 @@
    ===================================================================== */
 
 #sportsbook-wrap { max-width: 1080px; margin: 0 auto; }
+/* The route owns its entrance. Transforming this wrapper traps the fixed
+   review bar below the board while the entrance is running. */
+#view > #sportsbook-wrap { animation:none; transform:none; }
 #sportsbook-wrap [hidden] { display: none !important; }
 
 .sb-product-tabs { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin:0 0 var(--s-5); padding:4px; border:1px solid var(--line); border-radius:var(--r-pill); background:color-mix(in srgb,var(--bg-2) 82%,transparent); }
@@ -897,80 +900,26 @@
    --------------------------------------------------------------------- */
 #sportsbook-wrap.has-slip { padding-bottom: 132px; }
 .sb-slipbar {
-  position: fixed;
-  z-index: 40;
-  right: var(--s-3);
-  bottom: calc(var(--season-nav-height,60px) + var(--s-3));
-  left: var(--s-3);
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  max-width: 1056px;
-  margin: 0 auto;
-  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
-  border: 1px solid color-mix(in srgb, var(--accent-2) 30%, var(--card-border));
-  border-radius: var(--r-lg);
-  background: color-mix(in srgb, var(--bg-2) 94%, var(--accent-2));
-  box-shadow: var(--e-3);
-  backdrop-filter: blur(12px);
+  position:fixed;z-index:40;left:var(--s-3);right:var(--s-3);
+  bottom:calc(var(--season-nav-height,60px) + var(--s-3));
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;
+  gap:4px 12px;max-width:1056px;margin:0 auto;padding:10px 12px;
+  border:1px solid var(--line);border-radius:var(--r-lg);
+  background:var(--bg-2);box-shadow:var(--e-3);
 }
-@media(min-width:900px) { .sb-slipbar { bottom:calc(var(--s-3) + env(safe-area-inset-bottom)); } }
-.sb-slipbar-body { min-width: 0; flex: 1; }
-.sb-slipbar-head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s-3);
-}
-.sb-slipbar-head strong {
-  font-family: var(--font-display);
-  font-size: var(--fs-h3);
-  letter-spacing: var(--ls-tight);
-}
-.sb-slipbar-odds {
-  color: var(--accent-2);
-  font-family: var(--font-display);
-  font-size: var(--fs-stat-sm);
-  font-weight: var(--fw-bold);
-  line-height: 1;
-  letter-spacing: var(--ls-tight);
-  font-variant-numeric: tabular-nums;
-}
-.sb-slipbar-head .linkbtn { margin-left: auto; font-size: var(--fs-label); }
-/* The chips scroll rather than wrap: six picks must not make the bar tall
-   enough to eat the board it is sitting on. */
-.sb-slipbar-chips {
-  display: flex;
-  gap: var(--s-2);
-  margin-top: 5px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-.sb-slipbar-chips::-webkit-scrollbar { display: none; }
-.sb-slipbar-chip {
-  flex: none;
-  padding: 3px 9px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-pill);
-  background: var(--bg-3);
-  color: var(--body-text);
-  font-size: var(--fs-micro);
-  font-weight: var(--fw-semi);
-  white-space: nowrap;
-}
-.sb-slipbar-chip b { color: var(--accent-2); font-variant-numeric: tabular-nums; }
-.sb-slipbar-go {
-  flex: none;
-  min-height: 48px;
-  padding: 0 var(--s-4);
-  border: 0;
-  border-radius: var(--r-control);
-  background: linear-gradient(180deg,
-    color-mix(in srgb, var(--accent-fill) 86%, var(--text)), var(--accent-fill));
-  color: var(--on-accent);
-  font-size: var(--fs-body);
-  font-weight: var(--fw-bold);
-}
+@media(min-width:900px){.sb-slipbar{bottom:calc(var(--s-3) + env(safe-area-inset-bottom))}}
+.sb-slipbar-body{min-width:0}
+.sb-slipbar-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+.sb-slipbar-head strong{font:700 14px/1.3 var(--font-body);color:var(--text)}
+.sb-slipbar-odds{color:var(--accent-2);font:700 18px/1.2 var(--font-body);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.sb-slipbar-selections{grid-column:1/-1;display:flex;align-items:center;gap:12px;min-width:0;border-top:1px solid var(--line-soft);padding-top:4px}
+.sb-slipbar-selections>.linkbtn{flex:none;min-width:44px;min-height:44px;font-size:var(--fs-label)}
+/* A full-width strip preserves legibility without growing with every pick. */
+.sb-slipbar-chips{display:flex;flex:1;min-width:0;gap:var(--s-2);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.sb-slipbar-chips::-webkit-scrollbar{display:none}
+.sb-slipbar-chip{flex:none;padding:5px 9px;border:1px solid var(--line);border-radius:var(--r-pill);background:var(--bg-3);color:var(--body-text);font-size:var(--fs-micro);font-weight:var(--fw-semi);white-space:nowrap}
+.sb-slipbar-chip b{color:var(--accent-2);font-variant-numeric:tabular-nums}
+.sb-slipbar-go{min-width:100px;min-height:44px;padding:8px 12px;border:0;border-radius:var(--r-control);background:var(--action-fill);color:var(--action-ink);font:700 13px/1.3 var(--font-body);white-space:nowrap}
 
 /* ---------------------------------------------------------------------
    THE BET SLIP
@@ -1021,15 +970,15 @@
   overflow-y: auto;
 }
 .sb-slip-pick {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: var(--s-3);
-  padding: var(--s-2) var(--s-3);
-  border: 1px solid var(--line);
-  border-radius: var(--r-control);
-  background: var(--bg-3);
+  display:grid;grid-template-columns:24px minmax(0,1fr) 44px;
+  align-items:center;gap:4px 8px;padding:10px;
+  border:1px solid var(--line);border-radius:var(--r-control);background:var(--bg-3);
 }
+.sb-slip-pick:not(:has(.sb-slip-drop)){grid-template-columns:24px minmax(0,1fr)}
+.sb-slip-pick>.sb-slip-index{grid-column:1;grid-row:1/3;width:24px;height:24px}
+.sb-slip-pick>.sb-slip-pick-body{grid-column:2;grid-row:1;overflow-wrap:anywhere}
+.sb-slip-pick>.sb-slip-pick-odds{grid-column:2;grid-row:2;justify-self:start;font-size:16px;line-height:1.2}
+.sb-slip-pick>.sb-slip-drop{grid-column:3;grid-row:1/3;width:44px;height:44px}
 .sb-slip-index {
   display: grid;
   place-items: center;
@@ -1181,10 +1130,6 @@
   .sb-board-head { margin-top: var(--s-6); }
 }
 @media (max-width: 720px) {
-  /* The bar keeps the button and loses the chip strip's second line only if
-     it has to; the picks are why the bar exists. */
-  .sb-slipbar { gap: var(--s-3); padding: var(--s-2) var(--s-2) var(--s-2) var(--s-3); }
-  .sb-slipbar-go { min-height: 44px; padding: 0 var(--s-3); font-size: var(--fs-label); }
   #sportsbook-wrap.has-slip { padding-bottom: 124px; }
 }
 @media (max-width: 420px) {
@@ -1198,7 +1143,6 @@
   .sb-slip { padding: var(--s-5); }
   .sb-slip-fields { gap: var(--s-4); }
   .sb-slip-price strong { font-size: var(--fs-stat-sm); }
-  .sb-slipbar-odds { font-size: var(--fs-h2); }
 }
 
 /* Current-week prop finder: the game is the collapsible unit, so a real

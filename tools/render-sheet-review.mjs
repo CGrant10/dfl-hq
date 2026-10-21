@@ -11,6 +11,7 @@ const fixture=`import {mountSheetDrag,enterSheet,exitSheet} from './js/sheet-dra
 import {animateUi,cancelUiMotion,cancelUiExit,exitUi,startUiMotion} from './js/ui-motion.js';
 import {fitDialogToViewport} from './js/dialog-viewport.js';
 import {esc} from './js/ui.js';
+import {patchGameDay} from './js/game-day-dom.js';
 import {parseStake,entryReturn,combineOdds} from './js/sportsbook-slip.js';
 import {openPlayerCard} from './js/player-card.js';
 import {saveMode} from './js/theme.js';
@@ -20,9 +21,18 @@ window.memberId='sheet-fixture';const currentMember=()=>({id:window.memberId});
 const fmtOdds=n=>n>0?'+'+n:String(n),num=n=>Number(n||0).toLocaleString();
 const toast=()=>{},needsMigration=()=>false,isOpen=()=>true;
 window.rpcCalls=0;const db=()=>{window.rpcCalls++;throw Error('Review cannot place bets')};
+const MAX_PICKS=6;
 const outcomes=new Map([['1',{id:1,market_id:1,label:'Ja’Marr Chase over 89.5 receiving yards',odds_american:-110}],['2',{id:2,market_id:2,label:'Joe Burrow over 1.5 passing touchdowns',odds_american:120}]]);
-const markets=new Map([[1,{title:'Bengals receiving',status:'open'}],[2,{title:'Bengals passing',status:'open'}]]);
+const markets=new Map([['1',{title:'Bengals receiving',status:'open'}],['2',{title:'Bengals passing',status:'open'}]]);
 ${source.slice(start,end)}
+${source.slice(source.indexOf('function slipBar('),source.indexOf('\n}\n',source.indexOf('function slipBar('))+3)}
+${source.slice(source.indexOf('function wireSlipAndPicks('),source.indexOf('\n}\n',source.indexOf('function wireSlipAndPicks('))+3)}
+window.showReviewBoard=()=>{
+ for(let i=3;i<=6;i++){outcomes.set(String(i),{id:i,market_id:i,label:'Long player name '+i+' over 89.5 receiving yards',odds_american:120});markets.set(String(i),{title:'Player props '+i,status:'open'})}
+ slip=[];document.querySelector('#view').dataset.pageSystem='';
+ document.querySelector('#view').innerHTML='<div id="sportsbook-wrap"><h1>The Book</h1><section class="sb-market"><h2>Player props</h2>'+[...outcomes.values()].map(o=>'<button type="button" class="sb-outcome" data-bet-outcome="'+o.id+'"><span class="sb-team-mark">DFL</span><span class="sb-outcome-label">'+o.label+'</span><span class="sb-price">+120</span></button>').join('')+'</section><div style="height:1200px"></div><p id="board-last">Last market</p></div><nav id="fixture-nav" style="position:fixed;bottom:0;left:0;width:100%;height:60px;background:var(--bg-2)">DFL · Sportsbook</nav>';
+ wireSlipAndPicks(document.querySelector('#view'),outcomes,markets,{balance:500});
+};
 startUiMotion();saveMode('medicine');
 window.reviewTheme=mode=>saveMode(mode);
 window.reviewMotion=value=>{savePageChoice('gameday-motion',value);dispatchEvent(new Event('dfl:route-performance'))};
