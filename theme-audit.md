@@ -765,3 +765,7 @@ Inspected actual Light/Dark mobile captures at 320/390/768px for native action s
 ## 1.459.0 — Member photo choice and honest empty trade searches
 
 Inspected real Profile editor captures in Light/Dark at 320/390/768px, including loaded portrait previews, selected/focused native radio choices and mobile edges. Source cards use existing surface, border, text and accent tokens; no new palette or picker options. Native keyboard focus survives source changes; 44px targets, fallback initials and app/system motion opt-outs are checked. Also inspected Light/Dark 320px empty Steal states, the reset action and honestly labeled closest offer cards. `pnpm themes` passed. Evidence and unverified native-device states: [trade-search-and-member-photos.md](docs/trade-search-and-member-photos.md).
+
+## 1.460.0 — Trade Intentions player pictures
+
+Inspected real 320/390px Light and Dark intentions sheets with loaded player thumbnails and a deliberate failed image. Portraits remain within 34×40px frames, fallback initials are centered, loaded photos hide initials, and names/selects do not overlap. New surface/border/text rules use existing tokens; no theme changes. `pnpm themes` and the full checks passed. Evidence and native-device limitations: [trade-intentions-portraits.md](docs/trade-intentions-portraits.md).

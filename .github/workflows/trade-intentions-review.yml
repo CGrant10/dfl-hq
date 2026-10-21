@@ -8,6 +8,7 @@ on:
       - 'js/pages/trade.js'
       - 'css/trade-intentions.css'
       - 'tools/*trade-intentions*'
+      - 'tools/fixtures/player-portrait.png'
       - 'tools/render-trade-review.mjs'
       - 'supabase/migrations/*trade_manager_intentions*'
       - 'supabase/tests/trade_intentions*'
