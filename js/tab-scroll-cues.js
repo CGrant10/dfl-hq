@@ -7,7 +7,7 @@ export function mountTabScrollCues(root) {
   const resize=new ResizeObserver(schedule);resize.observe(root);
   function sync(){
     frame=0;if(stopped||!root.isConnected)return;
-    const bars=new Set(root.querySelectorAll(strips)),bounds=root.getBoundingClientRect();
+    const bars=new Set(root.querySelectorAll(strips));
     for(const [bar,state]of states)if(!bars.has(bar)){resize.unobserve(bar);state.start.remove();state.end.remove();states.delete(bar);}
     for(const bar of bars){
       let state=states.get(bar);
@@ -18,15 +18,25 @@ export function mountTabScrollCues(root) {
         }
         states.set(bar,state);resize.observe(bar);
       }
+    }
+    // Measure every strip before revealing or positioning any cue. A cue in
+    // one strip must not invalidate the next strip's geometry read.
+    const bounds=root.getBoundingClientRect(),scrollLeft=root.scrollLeft,scrollTop=root.scrollTop,clientLeft=root.clientLeft,clientTop=root.clientTop;
+    const measured=[...bars].map(bar=>{
       const rect=bar.getBoundingClientRect(),overflow=bar.scrollWidth-bar.clientWidth;
-      const visible=bar.getClientRects().length&&overflow>2&&['auto','scroll'].includes(getComputedStyle(bar).overflowX);
+      return {bar,rect,overflow,offset:bar.scrollLeft,width:bar.clientWidth,height:bar.clientHeight,
+        visible:bar.getClientRects().length&&overflow>2&&['auto','scroll'].includes(getComputedStyle(bar).overflowX)};
+    });
+    for(const {bar,rect,overflow,offset,width,height,visible} of measured){
+      const state=states.get(bar);
       for(const side of ['start','end']){
-        const cue=state[side],show=visible&&(side==='start'?bar.scrollLeft>2:bar.scrollLeft<overflow-2);
+        const cue=state[side],show=visible&&(side==='start'?offset>2:offset<overflow-2);
         if(cue.hidden===Boolean(show))cue.hidden=!show;
         if(!show)continue;
-        cue.style.left=`${rect.left-bounds.left+root.scrollLeft-root.clientLeft+(side==='end'?bar.clientWidth-22:0)}px`;
-        cue.style.top=`${rect.top-bounds.top+root.scrollTop-root.clientTop}px`;
-        cue.style.height=`${bar.clientHeight}px`;
+        const left=`${rect.left-bounds.left+scrollLeft-clientLeft+(side==='end'?width-22:0)}px`;
+        const top=`${rect.top-bounds.top+scrollTop-clientTop}px`;
+        const size=`${height}px`;
+        for(const [key,value] of [['left',left],['top',top],['height',size]])if(cue.style[key]!==value)cue.style[key]=value;
       }
     }
   }

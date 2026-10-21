@@ -66,9 +66,39 @@ export function exitUi(node, complete, { immediate = false, surface = node, tran
   if (current) current.finished.then(finish, finish);
   else finish();
 }
+// Touch :active can arrive only after release in mobile browsers. Track the
+// visual press immediately without replacing native clicks or scrolling.
+export function mountPressFeedback(doc=document,win=window) {
+  let press=null;
+  const release=()=>{if(press)delete press.node.dataset.uiPressed;press=null;};
+  const action=target=>{
+    const node=target?.closest?.('.btn,.linkbtn,.player-card-trigger');
+    return node?.closest('.view,dialog,#more')&&!node.matches(':disabled,[aria-disabled="true"]')&&canPlay(node)?node:null;
+  };
+  const down=event=>{
+    if(event.isPrimary===false||event.button!==0){release();return;}
+    release();const node=action(event.target);if(!node)return;
+    press={node,id:event.pointerId,x:event.clientX,y:event.clientY};node.dataset.uiPressed='true';
+  };
+  const move=event=>{if(press?.id===event.pointerId&&Math.hypot(event.clientX-press.x,event.clientY-press.y)>10)release();};
+  const up=event=>{if(press?.id===event.pointerId)release();};
+  const keydown=event=>{
+    if(event.key==='Escape'){release();return;}
+    if(!['Enter',' '].includes(event.key)||event.repeat)return;
+    release();const node=action(event.target);if(!node)return;
+    press={node,key:event.key};node.dataset.uiPressed='true';
+  };
+  const keyup=event=>{if(press?.key===event.key)release();};
+  const options={capture:true,passive:true};
+  const listeners=[['pointerdown',down],['pointermove',move],['pointerup',up],['pointercancel',up],['keydown',keydown],['keyup',keyup],['scroll',release],['visibilitychange',release]];
+  for(const [type,handler]of listeners)doc.addEventListener(type,handler,options);
+  win.addEventListener('blur',release);win.addEventListener('pagehide',release);win.addEventListener('resize',release);win.addEventListener('dfl:ui-motion-change',release);
+  return ()=>{release();for(const [type,handler]of listeners)doc.removeEventListener(type,handler,options);win.removeEventListener('blur',release);win.removeEventListener('pagehide',release);win.removeEventListener('resize',release);win.removeEventListener('dfl:ui-motion-change',release);};
+}
 export function startUiMotion() {
   if (started) return;
   started = true;
+  mountPressFeedback();
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const sync = () => {
     const enabled = motionAllowed({ preference: readPageChoice('gameday-motion', ['on', 'off'], 'on'), reduced: reduced.matches });
@@ -175,12 +205,16 @@ export function mountPageMotion(root) {
       const key = keyFor(button), previous = state.rect;
       const changed = state.key && state.key !== key;
       const shouldAnimate = animate && changed && intent?.bar === spec.bar && performance.now() - intent.at < 1500;
+      // An interrupted tab glide starts where the line is currently drawn,
+      // not at the old selection's destination.
+      const origin=shouldAnimate&&previous&&state.marker.getAnimations().length
+        ?state.marker.getBoundingClientRect():previous;
       state.marker.style.width = `${rect.width}px`;
       state.marker.style.left = `${rect.left - bounds.left + bar.scrollLeft - bar.clientLeft}px`;
       state.marker.style.top = `${rect.bottom - bounds.top + bar.scrollTop - bar.clientTop - 2}px`;
       if (shouldAnimate && visible(button) && previous) {
         animateUi(state.marker, [
-          { transform: `translateX(${previous.left - rect.left}px) scaleX(${previous.width / rect.width})` },
+          { transform: `translateX(${origin.left - rect.left}px) scaleX(${origin.width / rect.width})` },
           { transform: 'translateX(0) scaleX(1)' },
         ], { duration: 260 });
         const panel = button.getAttribute('aria-controls');

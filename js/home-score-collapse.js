@@ -12,12 +12,13 @@ export function mountHomeScoreCollapse(root){
  const reduced=matchMedia('(prefers-reduced-motion: reduce)'),marks=[...dock.querySelectorAll('[data-dock-mark]')],scores=[...dock.querySelectorAll('[data-dock-score]')],names=[...dock.querySelectorAll('[data-dock-name]')];
  let stopped=false,frame=0,dirty=true,source=null,parts=[],flights=[],signature='',geometry=null;const hidden=new Map(),faded=new Map();
  const set=(node,value)=>{if(node.textContent!==value)node.textContent=value};
+ const attr=(node,key,value)=>{if(node.getAttribute(key)!==value)node.setAttribute(key,value)};
  const restore=()=>{for(const[node,value]of hidden)node.style.visibility=value;hidden.clear();if(flights.length)layer.replaceChildren();flights=[];for(const node of [...marks,...scores,...names])if(node.style.visibility)node.style.visibility='';};
  const style=(node,key,value)=>{if(node.style[key]!==value)node.style[key]=value};
  const hide=node=>{if(!hidden.has(node))hidden.set(node,node.style.visibility);node.style.visibility='hidden'};
  const unfade=()=>{for(const[node,value]of faded)node.style.opacity=value;faded.clear()};
  const motion=()=>!reduced.matches&&document.documentElement.dataset.uiMotion!=='off';
- const reset=()=>{restore();unfade();dock.hidden=true;dock.inert=true;dock.setAttribute('aria-hidden','true')};
+ const reset=()=>{restore();unfade();dock.hidden=true;dock.inert=true;attr(dock,'aria-hidden','true')};
  const scan=()=>{
   dirty=false;geometry=null;restore();unfade();const nextSource=root.querySelector('[data-home-gameday-slot] .gameday-matchup');if(source!==nextSource){if(source)resize.unobserve(source);if(nextSource)resize.observe(nextSource);source=nextSource}
   const teams=[...source?.querySelectorAll('.gameday-faceoff-team')||[]];
@@ -33,10 +34,10 @@ export function mountHomeScoreCollapse(root){
   if(document.hidden||root.inert||document.querySelector('dialog[open]')||root.closest('[hidden]')){reset();return}
   const box=source.getBoundingClientRect(),bounds=root.getBoundingClientRect(),top=scrollChromeBottom();
   const p=homeScoreProgress(top,box.top,box.height),phase=text(source.querySelector('.home-team-total > small')),week=text(root.querySelector('[data-gameday-week]'));
-  dock.hidden=false;dock.inert=p<.98;dock.setAttribute('aria-hidden',String(p<.98));style(dock,'left',`${bounds.left}px`);style(dock,'width',`${bounds.width}px`);style(dock,'top',`${top}px`);style(dock,'opacity',String(motion()?p:p===1?1:0));
+  dock.hidden=false;dock.inert=p<.98;attr(dock,'aria-hidden',String(p<.98));style(dock,'left',`${bounds.left}px`);style(dock,'width',`${bounds.width}px`);style(dock,'top',`${top}px`);style(dock,'opacity',String(motion()?p:p===1?1:0));
   set(dock.querySelector('.home-score-caption'),`${week} · ${phase}`);
   parts.forEach((part,i)=>{set(scores[i],text(part.score));set(names[i],part.name)});
-  dock.setAttribute('aria-label',`Back to your matchup. ${phase} scores. ${parts.map((part,i)=>`${part.name}: ${scores[i].textContent}`).join('. ')}`);
+  attr(dock,'aria-label',`Back to your matchup. ${phase} scores. ${parts.map((part,i)=>`${part.name}: ${scores[i].textContent}`).join('. ')}`);
   // Let the original labels recede before the moving identities cross them.
   // These opacity writes preserve both layout and the accessible source.
   if(motion()&&p>0){for(const part of parts){if(!faded.has(part.team))faded.set(part.team,part.team.style.opacity);style(part.team,'opacity',String(1-clamp(p*2.5)))}}else unfade();

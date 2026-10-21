@@ -1,0 +1,489 @@
+{
+  "checks": [
+    {
+      "check": "320 dark: interrupted tab glides keep the visible position and width",
+      "pass": true
+    },
+    {
+      "check": "320 dark: touch press responds and releases once",
+      "pass": true
+    },
+    {
+      "check": "320 dark: press leaves document layout unchanged",
+      "pass": true
+    },
+    {
+      "check": "320 dark: cancelled touches release without firing",
+      "pass": true
+    },
+    {
+      "check": "320 dark: scrolling over an action neither sticks nor clicks",
+      "pass": true
+    },
+    {
+      "check": "320 dark: disabled actions never fire or shrink",
+      "pass": true
+    },
+    {
+      "check": "320 dark: keyboard activation fires once",
+      "pass": true
+    },
+    {
+      "check": "320 dark: unpolished Arena-style actions keep the same press",
+      "pass": true
+    },
+    {
+      "check": "320 dark: native popup actions share press timing",
+      "pass": true
+    },
+    {
+      "check": "320 dark: popup primary action retains its readable foreground after touch",
+      "pass": true
+    },
+    {
+      "check": "320 dark: reduced motion keeps popup controls still",
+      "pass": true
+    },
+    {
+      "check": "320 dark: app motion off keeps popup controls still",
+      "pass": true
+    },
+    {
+      "check": "320 dark: teardown removes tab effects",
+      "pass": true
+    },
+    {
+      "check": "320 dark: document stays inside screen edges",
+      "pass": true
+    },
+    {
+      "check": "320 light: interrupted tab glides keep the visible position and width",
+      "pass": true
+    },
+    {
+      "check": "320 light: touch press responds and releases once",
+      "pass": true
+    },
+    {
+      "check": "320 light: press leaves document layout unchanged",
+      "pass": true
+    },
+    {
+      "check": "320 light: cancelled touches release without firing",
+      "pass": true
+    },
+    {
+      "check": "320 light: scrolling over an action neither sticks nor clicks",
+      "pass": true
+    },
+    {
+      "check": "320 light: disabled actions never fire or shrink",
+      "pass": true
+    },
+    {
+      "check": "320 light: keyboard activation fires once",
+      "pass": true
+    },
+    {
+      "check": "320 light: unpolished Arena-style actions keep the same press",
+      "pass": true
+    },
+    {
+      "check": "320 light: native popup actions share press timing",
+      "pass": true
+    },
+    {
+      "check": "320 light: popup primary action retains its readable foreground after touch",
+      "pass": true
+    },
+    {
+      "check": "320 light: reduced motion keeps popup controls still",
+      "pass": true
+    },
+    {
+      "check": "320 light: app motion off keeps popup controls still",
+      "pass": true
+    },
+    {
+      "check": "320 light: teardown removes tab effects",
+      "pass": true
+    },
+    {
+      "check": "320 light: document stays inside screen edges",
+      "pass": true
+    },
+    {
+      "check": "390 dark: interrupted tab glides keep the visible position and width",
+      "pass": true
+    },
+    {
+      "check": "390 dark: touch press responds and releases once",
+      "pass": true
+    },
+    {
+      "check": "390 dark: press leaves document layout unchanged",
+      "pass": true
+    },
+    {
+      "check": "390 dark: cancelled touches release without firing",
+      "pass": true
+    },
+    {
+      "check": "390 dark: scrolling over an action neither sticks nor clicks",
+      "pass": true
+    },
+    {
+      "check": "390 dark: disabled actions never fire or shrink",
+      "pass": true
+    },
+    {
+      "check": "390 dark: keyboard activation fires once",
+      "pass": true
+    },
+    {
+      "check": "390 dark: unpolished Arena-style actions keep the same press",
+      "pass": true
+    },
+    {
+      "check": "390 dark: native popup actions share press timing",
+      "pass": true
+    },
+    {
+      "check": "390 dark: popup primary action retains its readable foreground after touch",
+      "pass": true
+    },
+    {
+      "check": "390 dark: reduced motion keeps popup controls still",
+      "pass": true
+    },
+    {
+      "check": "390 dark: app motion off keeps popup controls still",
+      "pass": true
+    },
+    {
+      "check": "390 dark: teardown removes tab effects",
+      "pass": true
+    },
+    {
+      "check": "390 dark: document stays inside screen edges",
+      "pass": true
+    },
+    {
+      "check": "390 light: interrupted tab glides keep the visible position and width",
+      "pass": true
+    },
+    {
+      "check": "390 light: touch press responds and releases once",
+      "pass": true
+    },
+    {
+      "check": "390 light: press leaves document layout unchanged",
+      "pass": true
+    },
+    {
+      "check": "390 light: cancelled touches release without firing",
+      "pass": true
+    },
+    {
+      "check": "390 light: scrolling over an action neither sticks nor clicks",
+      "pass": true
+    },
+    {
+      "check": "390 light: disabled actions never fire or shrink",
+      "pass": true
+    },
+    {
+      "check": "390 light: keyboard activation fires once",
+      "pass": true
+    },
+    {
+      "check": "390 light: unpolished Arena-style actions keep the same press",
+      "pass": true
+    },
+    {
+      "check": "390 light: native popup actions share press timing",
+      "pass": true
+    },
+    {
+      "check": "390 light: popup primary action retains its readable foreground after touch",
+      "pass": true
+    },
+    {
+      "check": "390 light: reduced motion keeps popup controls still",
+      "pass": true
+    },
+    {
+      "check": "390 light: app motion off keeps popup controls still",
+      "pass": true
+    },
+    {
+      "check": "390 light: teardown removes tab effects",
+      "pass": true
+    },
+    {
+      "check": "390 light: document stays inside screen edges",
+      "pass": true
+    },
+    {
+      "check": "768 dark: interrupted tab glides keep the visible position and width",
+      "pass": true
+    },
+    {
+      "check": "768 dark: touch press responds and releases once",
+      "pass": true
+    },
+    {
+      "check": "768 dark: press leaves document layout unchanged",
+      "pass": true
+    },
+    {
+      "check": "768 dark: cancelled touches release without firing",
+      "pass": true
+    },
+    {
+      "check": "768 dark: scrolling over an action neither sticks nor clicks",
+      "pass": true
+    },
+    {
+      "check": "768 dark: disabled actions never fire or shrink",
+      "pass": true
+    },
+    {
+      "check": "768 dark: keyboard activation fires once",
+      "pass": true
+    },
+    {
+      "check": "768 dark: unpolished Arena-style actions keep the same press",
+      "pass": true
+    },
+    {
+      "check": "768 dark: native popup actions share press timing",
+      "pass": true
+    },
+    {
+      "check": "768 dark: popup primary action retains its readable foreground after touch",
+      "pass": true
+    },
+    {
+      "check": "768 dark: reduced motion keeps popup controls still",
+      "pass": true
+    },
+    {
+      "check": "768 dark: app motion off keeps popup controls still",
+      "pass": true
+    },
+    {
+      "check": "768 dark: teardown removes tab effects",
+      "pass": true
+    },
+    {
+      "check": "768 dark: document stays inside screen edges",
+      "pass": true
+    },
+    {
+      "check": "768 light: interrupted tab glides keep the visible position and width",
+      "pass": true
+    },
+    {
+      "check": "768 light: touch press responds and releases once",
+      "pass": true
+    },
+    {
+      "check": "768 light: press leaves document layout unchanged",
+      "pass": true
+    },
+    {
+      "check": "768 light: cancelled touches release without firing",
+      "pass": true
+    },
+    {
+      "check": "768 light: scrolling over an action neither sticks nor clicks",
+      "pass": true
+    },
+    {
+      "check": "768 light: disabled actions never fire or shrink",
+      "pass": true
+    },
+    {
+      "check": "768 light: keyboard activation fires once",
+      "pass": true
+    },
+    {
+      "check": "768 light: unpolished Arena-style actions keep the same press",
+      "pass": true
+    },
+    {
+      "check": "768 light: native popup actions share press timing",
+      "pass": true
+    },
+    {
+      "check": "768 light: popup primary action retains its readable foreground after touch",
+      "pass": true
+    },
+    {
+      "check": "768 light: reduced motion keeps popup controls still",
+      "pass": true
+    },
+    {
+      "check": "768 light: app motion off keeps popup controls still",
+      "pass": true
+    },
+    {
+      "check": "768 light: teardown removes tab effects",
+      "pass": true
+    },
+    {
+      "check": "768 light: document stays inside screen edges",
+      "pass": true
+    },
+    {
+      "check": "home: scroll frames do not rewrite unchanged accessible labels",
+      "pass": true
+    },
+    {
+      "check": "home: scroll frames do not rewrite unchanged visibility",
+      "pass": true
+    },
+    {
+      "check": "trade: scroll frames do not rewrite unchanged accessible labels",
+      "pass": true
+    },
+    {
+      "check": "trade: scroll frames do not rewrite unchanged visibility",
+      "pass": true
+    },
+    {
+      "check": "scroll teardown removes fixed surfaces",
+      "pass": true
+    },
+    {
+      "check": "No browser exceptions",
+      "pass": true
+    }
+  ],
+  "measurements": [
+    {
+      "width": 320,
+      "theme": "dark",
+      "interruptedRail": [
+        {
+          "position": 7.62939453125e-06,
+          "width": 7.62939453125e-06
+        },
+        {
+          "position": 3.814697265625e-06,
+          "width": 0
+        },
+        {
+          "position": 0,
+          "width": 0
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "theme": "light",
+      "interruptedRail": [
+        {
+          "position": 7.62939453125e-06,
+          "width": 7.62939453125e-06
+        },
+        {
+          "position": 3.814697265625e-06,
+          "width": 0
+        },
+        {
+          "position": 0,
+          "width": 0
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "interruptedRail": [
+        {
+          "position": 0,
+          "width": 0
+        },
+        {
+          "position": 3.814697265625e-06,
+          "width": 0
+        },
+        {
+          "position": 0,
+          "width": 0
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "interruptedRail": [
+        {
+          "position": 0,
+          "width": 0
+        },
+        {
+          "position": 3.814697265625e-06,
+          "width": 0
+        },
+        {
+          "position": 0,
+          "width": 0
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "interruptedRail": [
+        {
+          "position": 1.52587890625e-05,
+          "width": 0
+        },
+        {
+          "position": 1.52587890625e-05,
+          "width": 1.52587890625e-05
+        },
+        {
+          "position": 0,
+          "width": 0
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "theme": "light",
+      "interruptedRail": [
+        {
+          "position": 1.52587890625e-05,
+          "width": 0
+        },
+        {
+          "position": 1.52587890625e-05,
+          "width": 1.52587890625e-05
+        },
+        {
+          "position": 0,
+          "width": 0
+        }
+      ]
+    },
+    {
+      "route": "home",
+      "scrollFrames": 60,
+      "attributeChanges": {
+        "style": 102
+      }
+    },
+    {
+      "route": "trade",
+      "scrollFrames": 60,
+      "attributeChanges": {
+        "style": 60
+      }
+    }
+  ],
+  "errors": []
+}

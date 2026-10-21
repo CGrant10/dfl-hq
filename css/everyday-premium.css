@@ -93,3 +93,7 @@ body :is(.dfl-player-card,.trade-player-picker) > header button,.sb-slip .sb-sli
 /* Trade buttons already provide a full touch target; the older inset plate
    is removed when the shared control itself supplies the visible surface. */
 #view[data-route="trade"] .td-page .btn::before { content:none; }
+
+/* Native dialogs outside #view keep readable filled-action text after a
+   touch leaves the browser's compatibility hover/active state behind. */
+dialog .btn:not(:is(.ghost,.secondary,.danger)):is(:hover,:active,[data-ui-pressed]) { color:var(--action-ink); }

@@ -49,6 +49,7 @@ on:
       - 'js/horizontal-swipe*'
       - 'css/ui-motion.css'
       - 'tools/*tab-review*'
+      - 'tools/capture-motion-quality.py'
       - 'js/sheet-drag*'
       - 'js/pages/sportsbook.js'
       - 'tools/*sheet-review*'
@@ -199,6 +200,11 @@ jobs:
         run: python tools/capture-scroll-review.py
         env:
           DFL_SCROLL_REVIEW_DIR: home-review-output/scroll
+      - name: Check touch feedback and interrupted tab transitions
+        env:
+          DFL_MOTION_REVIEW_DIR: home-review-output/motion-quality
+          DFL_TAB_REVIEW_DIR: ${{ github.workspace }}/home-review-output/tabs
+        run: python tools/capture-motion-quality.py
       - name: Check contextual Sleeper actions on mobile
         env:
           DFL_SLEEPER_REVIEW_DIR: home-review-output/sleeper

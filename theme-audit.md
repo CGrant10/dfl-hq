@@ -757,3 +757,7 @@ Evidence, verification and physical-device limitations:
 ## 1.457.0 — Trade intentions
 
 Reviewed actual 320/390/768px Light and Dark screenshots of the intentions editor and read-only manager view, including player names, position states, controls, sheet edges and footer. Authored colors use shared surface/text/border/accent/status tokens; no new theme options or retired crest colors. Controls have 44px heights. Checked document/roster overflow, app motion-off and reduced motion, save focus restoration and error recovery. Screenshots: `docs/trade-intentions/`. `pnpm themes` passed. Physical mobile keyboard/native select and screen-reader speech remain unverified; see `docs/trade-intentions-validation.md`.
+
+## 1.458.0 — Shared motion and touch feedback
+
+Inspected actual Light/Dark mobile captures at 320/390/768px for native action states, focus and motion-off/reduced-motion behavior, plus Home scoreboard flight/dock captures at phone widths. Fixed the filled native-dialog hover/active foreground using existing `--action-ink`; no new colors or theme entries. Shared press effects preserve layout and tab underline geometry. Existing Arena/route/sheet/swipe checks pass. Captures, the 90-check interaction report, reproducible before/after measurements and physical-device limitations are recorded in `docs/motion-smoothness-validation.md` and `docs/motion-smoothness/`. `pnpm themes` passed.
