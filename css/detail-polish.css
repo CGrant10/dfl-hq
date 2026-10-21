@@ -109,3 +109,8 @@ html[data-ui-motion="off"] .sb-slip .sb-slip-submit { transition:none; transform
   .dfl-player-card [data-player-card-body] { padding-bottom:max(16px,calc(env(safe-area-inset-bottom) + 8px)); }
   .dfl-sheet-grip { display:block; position:absolute; top:8px; left:calc(50% - 18px); width:36px; height:4px; border-radius:3px; background:var(--muted); opacity:.65; pointer-events:none; }
 }
+
+/* Keep the backdrop on the same clock as a returning portrait. */
+:is(.dfl-player-card,.dfl-player-compare,.power-detail)[data-sheet-connected-close][data-ui-closing]::backdrop { animation:ui-backdrop-out 280ms ease forwards; }
+html[data-ui-motion="off"] .power-detail::backdrop { animation:none!important; }
+@media(prefers-reduced-motion:reduce) { .power-detail::backdrop { animation:none!important; } }

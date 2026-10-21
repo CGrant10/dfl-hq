@@ -4767,6 +4767,11 @@ html[data-ui-motion="off"] .sb-slip .sb-slip-submit { transition:none; transform
   .dfl-sheet-grip { display:block; position:absolute; top:8px; left:calc(50% - 18px); width:36px; height:4px; border-radius:3px; background:var(--muted); opacity:.65; pointer-events:none; }
 }
 
+/* Keep the backdrop on the same clock as a returning portrait. */
+:is(.dfl-player-card,.dfl-player-compare,.power-detail)[data-sheet-connected-close][data-ui-closing]::backdrop { animation:ui-backdrop-out 280ms ease forwards; }
+html[data-ui-motion="off"] .power-detail::backdrop { animation:none!important; }
+@media(prefers-reduced-motion:reduce) { .power-detail::backdrop { animation:none!important; } }
+
 
 /* Source: css/receipt-polish.css */
 /* Saved trades: scan the archive first, then open a readable receipt. */

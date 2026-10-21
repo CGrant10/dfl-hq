@@ -769,3 +769,7 @@ Inspected real Profile editor captures in Light/Dark at 320/390/768px, including
 ## 1.460.0 — Trade Intentions player pictures
 
 Inspected real 320/390px Light and Dark intentions sheets with loaded player thumbnails and a deliberate failed image. Portraits remain within 34×40px frames, fallback initials are centered, loaded photos hide initials, and names/selects do not overlap. New surface/border/text rules use existing tokens; no theme changes. `pnpm themes` and the full checks passed. Evidence and native-device limitations: [trade-intentions-portraits.md](docs/trade-intentions-portraits.md).
+
+## 1.461.0 — Connected player and team details
+
+Inspected actual mobile Light/Dark frames for player-card returns at 320/390px, comparison selection at 390px, and ranking team-photo entry at 390px; existing layout checks include comparison at 320px and rankings at 320/390/768px. Images use recorded loaded portraits, with team fallback coverage in the ranking review. Shared sheet/backdrop motion is synchronized without new colors, surfaces or theme choices. Reduced motion, app motion-off, focus restoration, interrupted returns and viewport/route cleanup are exercised. `pnpm themes` passed. Evidence and device limits: [connected-detail-motion.md](docs/connected-detail-motion.md).

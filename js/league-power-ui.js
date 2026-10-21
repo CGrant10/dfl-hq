@@ -1,5 +1,6 @@
 import {esc} from './ui.js';
 import {teamPortrait} from './team-presentation.js';
+import {connectArtwork} from './connected-artwork.js';
 import {animateUi,cancelUiMotion,cancelUiExit} from './ui-motion.js';
 import {enterSheet,exitSheet,mountSheetDrag} from './sheet-drag.js';
 import {loadingRows} from './loading-presentation.js';
@@ -75,14 +76,21 @@ export function mountPowerRankings(root,view,members=[]){
   const board=boards[index],row=board.rows.find(r=>r.id===opener.dataset.powerTeam);if(!row)return;
   close();dialog=document.createElement('dialog');dialog.className='power-detail';dialog.setAttribute('aria-labelledby','power-detail-title');
   const team=teamFor(view,row,members);dialog.innerHTML=powerDetailMarkup(row,board,boards[index-1],team.powerForecast,team);document.body.append(dialog);
-  const current=dialog;
-  dismiss=(options={})=>exitSheet(current,()=>{drag.reset();current.close();},options);
-  const drag=mountSheetDrag(current,{handle:current.querySelector('header'),dismiss});
-  current.addEventListener('close',()=>{drag.stop();cancelUiExit(current);cancelUiMotion(current);current.remove();if(dialog===current)dialog=null;if(!stopped&&opener.isConnected)opener.focus({preventScroll:true});},{once:true});
+  const current=dialog,source=opener.querySelector('.dfl-team-mark'),target=current.querySelector('.power-detail-face');
+  let stopConnection=()=>{};
+  dismiss=(options={})=>{
+   if(!current.open)return;
+   if(!current.dataset.uiClosing){const origin=stopConnection.position?.();stopConnection();if(!options.immediate&&!current.dataset.sheetMoving)stopConnection=connectArtwork(target,source,{origin,hideSource:true,duration:280});}
+   exitSheet(current,()=>{drag.reset();current.close();},{...options,connected:!!stopConnection.position?.()});
+  };
+  const drag=mountSheetDrag(current,{handle:current.querySelector('header'),dismiss,onStart:()=>stopConnection()});
+  current.addEventListener('close',()=>{stopConnection();drag.stop();cancelUiExit(current);cancelUiMotion(current);current.remove();if(dialog===current)dialog=null;if(!stopped&&opener.isConnected)opener.focus({preventScroll:true});},{once:true});
   current.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();current.querySelector('[data-power-close]').focus({preventScroll:true});}});
   current.addEventListener('cancel',e=>{e.preventDefault();dismiss();});
   current.querySelector('[data-power-close]').onclick=()=>dismiss();current.addEventListener('click',e=>{if(e.target===current){const r=current.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dismiss();}});
-  current.showModal();current.querySelector('[data-power-close]').focus({preventScroll:true});enterSheet(current);
+  current.showModal();current.querySelector('[data-power-close]').focus({preventScroll:true});const entrance=enterSheet(current);
+  const settled=entrance?.finished.catch(()=>{})||Promise.resolve();
+  void settled.then(()=>{if(!stopped&&current.open&&!current.dataset.uiClosing&&!current.dataset.sheetMoving)stopConnection=connectArtwork(source,target,{duration:280});});
  };
  root.addEventListener('click',click);
  return()=>{stopped=true;observer?.disconnect();root.removeEventListener('click',click);cancelUiMotion(root);close();};

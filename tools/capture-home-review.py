@@ -1272,7 +1272,7 @@ with sync_playwright() as p:
         page.keyboard.press('Escape')
         page.wait_for_timeout(30)
         assert page.locator('.dfl-connected-portrait').count()==1, 'Dismissal did not return the portrait to its row'
-        page.wait_for_timeout(250)
+        page.wait_for_function("!document.querySelector('.dfl-connected-portrait,.dfl-player-card[open]')",timeout=1000)
         assert page.locator('.dfl-connected-portrait').count()==0, 'Dismissal left a portrait overlay'
         assert player.evaluate('e=>e===document.activeElement'), 'Player dismissal lost focus'
     page.evaluate('window.reviewCardDelay=0;window.reviewCardHold=true;delete window.reviewCardRelease')
@@ -1282,14 +1282,14 @@ with sync_playwright() as p:
     page.wait_for_function('!!window.reviewCardRelease')
     page.keyboard.press('Escape')
     page.evaluate('window.reviewCardHold=false;window.reviewCardRelease()')
-    page.wait_for_timeout(300)
+    page.wait_for_function("!document.querySelector('.dfl-connected-portrait,.dfl-player-card[open]')",timeout=1000)
     assert page.locator('.dfl-player-card').evaluate('e=>!e.open') and page.evaluate('window.reviewHeldHero===document.querySelector(".player-card-hero")'), 'Late player response replaced a dismissed card'
     assert player.evaluate('e=>e===document.activeElement'), 'Pending card dismissal lost focus'
     page.evaluate('window.reviewCardDelay=75')
     player.click()
     page.wait_for_function("()=>{const a=document.querySelector('.dfl-connected-portrait:popover-open')?.getAnimations()[0];if(!a)return false;a.pause();return true}", timeout=10000)
     page.keyboard.press('Escape')
-    page.wait_for_timeout(300)
+    page.wait_for_function("!document.querySelector('.dfl-connected-portrait,.dfl-player-card[open]')",timeout=1000)
     assert page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.dfl-player-card').evaluate('e=>!e.open'), 'Dismissal left a traveling portrait'
     starts = page.evaluate('window.reviewPortraitStarts')
     page.evaluate("async()=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion','off');dispatchEvent(new Event('dfl:route-performance'))}")

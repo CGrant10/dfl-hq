@@ -28,7 +28,7 @@ with sync_playwright() as p:
  if os.environ.get('HTTPS_PROXY'):launch['proxy']={'server':os.environ['HTTPS_PROXY'],'bypass':'127.0.0.1,localhost'}
  browser=p.chromium.launch(**launch);context=browser.new_context(viewport={'width':390,'height':844},has_touch=True,service_workers='block')
  context.route('**/npm/@supabase/supabase-js@*/+esm',lambda r:r.fulfill(content_type='text/javascript',headers={'Access-Control-Allow-Origin':'*'},body="export function createClient(){throw Error('Comparison review cannot access a database')}"))
- context.route('https://sleepercdn.com/**',lambda r:r.fulfill(content_type='image/webp',body=(ROOT/'assets/dfl-daily-champion.webp').read_bytes()))
+ context.route('https://sleepercdn.com/**',lambda r:r.fulfill(content_type='image/png',body=(ROOT/'tools/fixtures/player-portrait.png').read_bytes()))
  context.route('**/js/player-compare-data.js',lambda r:r.fulfill(content_type='text/javascript',body=stub))
  context.route('**/comparison-review.html',lambda r:r.fulfill(content_type='text/html',body=html))
  page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(base+'comparison-review.html');page.wait_for_function('window.reviewReady',timeout=60000)
@@ -78,4 +78,34 @@ with sync_playwright() as p:
  page.evaluate("()=>{window.savedViewport=Object.getOwnPropertyDescriptor(window,'visualViewport');const v=new EventTarget();v.height=400;v.offsetTop=80;Object.defineProperty(window,'visualViewport',{configurable:true,value:v});dispatchEvent(new Event('resize'))}");opened();page.wait_for_timeout(150)
  check('comparison stays inside the keyboard viewport',sheet.evaluate('e=>{const b=e.getBoundingClientRect();return b.top>=80&&b.bottom<=468}'));closed()
  page.evaluate("()=>{if(window.savedViewport)Object.defineProperty(window,'visualViewport',window.savedViewport);else delete window.visualViewport}")
+ # Choosing a player connects the actual result photo to its comparison slot.
+ for mode in ['light','dark']:
+  page.evaluate('window.reviewTheme',mode);page.set_viewport_size({'width':390,'height':844});opened(False)
+  page.wait_for_function("()=>document.querySelector('[data-compare-pick=\"b\"] img')?.naturalWidth>0")
+  origin=sheet.locator('[data-compare-pick="b"] .dfl-player-portrait').bounding_box()
+  sheet.locator('[data-compare-pick="b"]').evaluate('e=>e.click()')
+  actual=page.wait_for_function("""()=>{const e=document.querySelector('.dfl-connected-portrait'),a=e?.getAnimations()[0];if(!a)return false;a.pause();a.currentTime=0;return e.getBoundingClientRect().toJSON()}""").json_value()
+  check(mode+' selected portrait starts at the tapped result',all(abs(origin[k]-actual[k])<1 for k in ['x','y','width','height']))
+  check(mode+' selection connects only the chosen side',sheet.locator('[data-compare-side="right"] .dfl-player-portrait').evaluate("e=>e.style.visibility==='hidden'") and sheet.locator('[data-compare-side="left"] .dfl-player-portrait').evaluate("e=>e.style.visibility!=='hidden'"))
+  page.evaluate("document.getAnimations().forEach(a=>{a.pause();a.currentTime=140})")
+  check(mode+' moving portrait does not cover readable name text',sheet.locator('[data-compare-side="right"] strong').evaluate('e=>Number(getComputedStyle(e).opacity)<.01'))
+  page.screenshot(path=str(OUT/f'{mode}-selection-motion.png'))
+  # Closing during a right-side flight must not launch the left player from it.
+  page.keyboard.press('Escape');page.wait_for_function('!document.querySelector("dialog[open],.dfl-connected-portrait")')
+  check(mode+' close during selection removes every copy and restores both portraits',sheet.locator('.dfl-player-portrait').evaluate_all("es=>es.every(e=>e.style.visibility!=='hidden')"))
+ opened(False);sheet.locator('[data-compare-pick="b"]').evaluate('e=>{e.click();document.querySelector("[data-compare-close]").click()}')
+ page.wait_for_function('!document.querySelector("dialog[open],.dfl-connected-portrait")')
+ check('same-frame select and close cannot create a late portrait',page.locator('.dfl-connected-portrait').count()==0)
+ page.emulate_media(reduced_motion='reduce');opened(False);sheet.locator('[data-compare-pick="b"]').click();page.wait_for_timeout(60)
+ check('reduced motion keeps selection immediate without hidden portraits',page.locator('.dfl-connected-portrait').count()==0 and sheet.locator('.dfl-player-portrait').evaluate_all("es=>es.every(e=>e.style.visibility!=='hidden')"));closed();page.emulate_media(reduced_motion='no-preference')
+ # When entered from a player image, a right-side selection must not become
+ # the origin of the left player's return to that image.
+ page.evaluate("""async()=>{const button=document.createElement('button');button.id='connected-open';button.className='dfl-player';button.style.cssText='position:fixed;left:20px;top:180px';button.innerHTML='<span class="dfl-player-portrait" style="display:block;width:36px;height:42px"><img src="https://sleepercdn.com/content/nfl/players/a.jpg" style="width:100%;height:100%" alt=""></span>';document.querySelector('#view').append(button);const {openPlayerComparison}=await import('./js/player-compare.js');void openPlayerComparison('a',{source:button})}""")
+ page.wait_for_selector('[data-compare-pick="b"]');page.wait_for_timeout(550)
+ left=sheet.locator('[data-compare-side="left"] .dfl-player-portrait').bounding_box()
+ sheet.locator('[data-compare-pick="b"]').evaluate('e=>e.click()')
+ page.wait_for_function("""()=>{const e=document.querySelector('.dfl-connected-portrait'),a=e?.getAnimations()[0];if(!a)return false;a.pause();a.currentTime=80;return true}""")
+ actual=page.evaluate("""()=>{document.querySelector('[data-compare-close]').click();const e=document.querySelector('.dfl-connected-portrait'),a=e.getAnimations()[0];a.pause();a.currentTime=0;const box=e.getBoundingClientRect().toJSON();a.play();return {box,src:e.querySelector('img')?.src,copies:document.querySelectorAll('.dfl-connected-portrait').length}}""")
+ check('closing during right-side selection returns the left player from its own image',all(abs(left[k]-actual['box'][k])<1 for k in ['x','y','width','height']) and actual['src'].endswith('/a.jpg') and actual['copies']==1)
+ page.wait_for_function('!document.querySelector("dialog[open],.dfl-connected-portrait")')
  check('no browser errors',not errors);browser.close();server.shutdown()

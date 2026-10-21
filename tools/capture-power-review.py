@@ -18,7 +18,7 @@ with sync_playwright() as p:
         if 'broken' in route.request.url:
             route.fulfill(status=404,body='Missing portrait')
         else:
-            route.fulfill(status=200,content_type='image/webp',body=(source_root/'assets/dfl-daily-champion.webp').read_bytes())
+            route.fulfill(status=200,content_type='image/png',body=(source_root/'tools/fixtures/player-portrait.png').read_bytes())
     source_root=Path(__file__).resolve().parents[1]
     context.route('https://sleepercdn.com/**',portrait)
     page = context.new_page()
@@ -61,6 +61,27 @@ with sync_playwright() as p:
             page.keyboard.press('Escape');dialog.wait_for(state='detached')
             assert page.evaluate('document.activeElement.closest(".is-me")!==null')
             results.append({'theme':theme,'width':width,'rows':4,'detail':'focus, Escape, full name, no overflow','targets':len(rects)})
+    # The actual team mark connects both ways, including an interrupted opening.
+    page.set_viewport_size({'width':390,'height':844})
+    for theme in ['light','dark']:
+        page.evaluate('(theme)=>window.reviewSetTheme(theme)',theme)
+        card.evaluate("e=>window.scrollTo({top:scrollY+e.getBoundingClientRect().top-180,behavior:'instant'})");page.wait_for_timeout(150)
+        page.locator('.power-edition .is-me [data-power-team]').evaluate('e=>e.click()')
+        origin=page.wait_for_function("""()=>{const e=document.querySelector('.dfl-connected-artwork'),a=e?.getAnimations()[0];if(!a)return false;a.pause();a.currentTime=140;return e.getBoundingClientRect().toJSON()}""").json_value()
+        assert page.locator('.dfl-connected-artwork img').evaluate('e=>e.complete&&e.naturalWidth>0')
+        page.screenshot(path=str(out/f'power-connected-{theme}.png'))
+        returned=page.evaluate("""()=>{document.querySelector('[data-power-close]').click();const e=document.querySelector('.dfl-connected-artwork'),a=e.getAnimations()[0],sheet=document.querySelector('.power-detail'),exit=sheet.getAnimations()[0];a.pause();a.currentTime=0;const box=e.getBoundingClientRect().toJSON(),end=new DOMMatrixReadOnly(exit.effect.getKeyframes().at(-1).transform).m42;a.play();return {box,end,duration:exit.effect.getTiming().duration}}""")
+        assert all(abs(origin[k]-returned['box'][k])<1 for k in ['x','y','width','height']),(origin,returned)
+        assert abs(returned['end'])<=8 and returned['duration']==280,returned
+        page.wait_for_function('!document.querySelector(".power-detail,.dfl-connected-artwork")')
+        assert page.locator('.power-edition .is-me .dfl-team-mark').evaluate("e=>e.style.visibility!=='hidden'")
+        results.append({'theme':theme,'teamMotion':'loaded photo; continuous reversal; synchronized quiet close; no hidden source'})
+    page.locator('.power-edition .is-me [data-power-team]').evaluate('e=>e.click()')
+    page.wait_for_selector('.dfl-connected-artwork')
+    page.evaluate('window.reviewPowerStop()')
+    assert page.locator('.power-detail,.dfl-connected-artwork').count()==0
+    page.evaluate('powerReviewMount()')
+    results.append({'teamMotionCleanup':'page teardown cancels in-flight copy and removes modal'})
     # Exercise the actual CSS tracks, not just the final class/row count.
     page.set_viewport_size({'width':390,'height':900})
     card.scroll_into_view_if_needed()
