@@ -72,6 +72,9 @@ the member directory/header and invalidates the shared analyzer snapshot.
   unfinished identity field preservation, 44px targets, no horizontal overflow,
   PIN retry, network retry, selected-member changes and broken-image fallbacks.
   Captures and results: [member-photos](member-photos/).
+- Arena also accepts embedded raster profile uploads. Its real commissioner
+  picker checks the selected DFL image, selected Sleeper image and fallback to
+  the preserved upload at 320/390/844px in both themes.
 - Existing secondary-page mobile review passes. Light/Dark 320px empty Steal
   screenshots were inspected in [trade-search](trade-search/).
 - PostgreSQL 17 fixture verifies ownership, RLS blocking direct updates, PIN

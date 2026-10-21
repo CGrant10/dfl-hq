@@ -1,7 +1,7 @@
 """Exercise the real stadium controller against an isolated shared-clock fixture.
 Requires Playwright Chromium; never connects to the league database.
 """
-import json, threading, time, copy
+import json, threading, time, copy, base64
 from pathlib import Path
 from http.server import ThreadingHTTPServer,SimpleHTTPRequestHandler
 from datetime import datetime,timezone
@@ -9,6 +9,9 @@ from playwright.sync_api import sync_playwright
 import os,tempfile
 root=Path(__file__).resolve().parents[1];out=Path(os.environ.get('DFL_ARENA_REVIEW_DIR',tempfile.mkdtemp(prefix='dfl-arena-review-')));out.mkdir(parents=True,exist_ok=True)
 members=[{'id':i+1,'display_name':name,'team_name':team,'active':True,'profile_image':'','accent_color':''} for i,(name,team) in enumerate([('Cody Grant','The Bayou Bombers'),('Kirk Franklin','Dakota Thunder'),('Marcus Williams','Full Send Football'),('David Jefferson','Fourth & Fuck It'),('Brandon Thomas','The Longest Team Name In The Entire League'),('Nathan Lewis','Red River Renegades'),('Chris Brown','Monday Night Mayhem'),('Andrew Martin','Big Sack Energy'),('Tyler James','Bison Stampede'),('Matt Robertson','No Punt Intended'),('Alex Johnson','The Bench Mob'),('Jesse Peterson','Saturday’s Hangover')])]
+# Real uploaded raster data and Sleeper choices must both render in the Arena.
+upload='data:image/webp;base64,'+base64.b64encode((root/'assets/dfl-daily-champion.webp').read_bytes()).decode()
+for i,source in enumerate(['dfl','sleeper']):members[i].update(profile_image=upload,profile_photo_source=source,sleeper_team_image='/assets/dfl-daily-champion.webp')
 event={'id':999,'name':'2026 Draft Order','race_engine':'stadium-v1','race_duration_ms':60000,'race_revision':1,'race_manifest':None,'status':'setup','bc_state':'idle','bc_offset_ms':0,'bc_started_at':None}
 participants=[{'member_id':m['id'],'sort_order':i,'number':i+1,'color':None} for i,m in enumerate(members)]
 create_error=None;presence={};broadcasts=[];removed=False;kits={};kit_saves=[];results=[];commands=[];base=time.time()*1000;elapsed=0;started=time.time();freeze=False;lock=threading.RLock()
@@ -129,6 +132,15 @@ with sync_playwright() as p:
    setup.goto(url.split('#')[0]+'#/arena');setup.wait_for_function('window.qaReady===true');setup.evaluate('window.qaTheme',theme);setup.evaluate('document.fonts.ready')
    setup.locator('[data-new]').click()
    check(f'{width}px {theme} new race opens without a software-keyboard focus',setup.locator('.sr-editor h2').evaluate('e=>e===document.activeElement'))
+   own_photo=setup.locator('.sr-member-pick:has([value="1"]) .sr-avatar img')
+   sleeper_photo=setup.locator('.sr-member-pick:has([value="2"]) .sr-avatar img')
+   own_photo.wait_for();setup.wait_for_function("document.querySelector('.sr-member-pick:has([value=\"1\"]) img')?.naturalWidth>0")
+   check(f'{width}px {theme} Arena uses the selected DFL upload',own_photo.get_attribute('src').startswith('data:image/webp;base64,'))
+   check(f'{width}px {theme} Arena uses the selected Sleeper photo',sleeper_photo.get_attribute('src').endswith('/assets/dfl-daily-champion.webp'))
+   sleeper_photo.evaluate("e=>e.src='/missing-sleeper-avatar.webp'")
+   setup.wait_for_function("()=>{const i=document.querySelector('.sr-member-pick:has([value=\"2\"]) img');return i?.src.startsWith('data:image/webp;base64,')&&i.naturalWidth>0}")
+   check(f'{width}px {theme} broken Sleeper portraits fall back to the DFL upload',sleeper_photo.get_attribute('src').startswith('data:image/webp;base64,'))
+
    def visible_create():
     return setup.locator('.sr-editor [type=submit]').evaluate("e=>{const r=e.getBoundingClientRect(),nav=document.querySelector('#tabbar').getBoundingClientRect();return r.top>=document.querySelector('.topbar').getBoundingClientRect().bottom&&r.bottom<=Math.min(innerHeight,nav.top)&&e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))}")
    check(f'{width}px {theme} Create clears the fixed bottom navigation',visible_create())

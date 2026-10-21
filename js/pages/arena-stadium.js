@@ -18,7 +18,7 @@ import {mountStadiumRacerRoster} from '../arena/stadium-racer-roster.js';
 import {memberPhoto,memberPhotoCandidates} from '../member-photo.js';
 let active=null;
 export function leave(){active?.stop();active=null;}
-const safePhoto=value=>{if(!String(value||'').trim())return '';try{const u=new URL(value,location.href);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch{return '';}};
+const safePhoto=value=>{if(!String(value||'').trim())return '';if(/^data:image\/(?:png|jpeg|webp);base64,/i.test(value))return value;try{const u=new URL(value,location.href);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch{return '';}};
 const initials=name=>String(name||'DFL').split(/\s+/).map(p=>p[0]).slice(0,2).join('');
 const portrait=r=>{const photo=safePhoto(r.photo);return `<span class="sr-avatar" data-initials="${esc(initials(r.name))}" style="--racer:${stadiumColor(r,r.index||0)}">${photo?`<img src="${esc(photo)}" data-photo-fallbacks="${esc(JSON.stringify(r.photoFallbacks||[]))}" alt="" loading="lazy" decoding="async">`:esc(initials(r.name))}</span>`;};
 const jersey=r=>`<span class="sr-jersey" aria-label="Racer ${r.raceNumber}" style="--jersey:${stadiumColor(r,r.index)};--jersey-ink:${kitInk(stadiumColor(r,r.index))}">${r.raceNumber}</span>`;
