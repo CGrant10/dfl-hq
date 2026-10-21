@@ -535,11 +535,10 @@ function slipBar(ids,outcomeMap,marketMap){
       <div class="sb-slipbar-head">
         <strong>${ids.length} pick${ids.length===1?"":"s"}</strong>
         <span class="sb-slipbar-odds">${combined===null?"—":fmtOdds(combined)}</span>
-        <button type="button" class="linkbtn" data-slip-clear>Clear</button>
       </div>
-      <div class="sb-slipbar-chips" role="group" aria-label="Selected picks" tabindex="0">${picks}</div>
     </div>
-    <button type="button" class="btn sb-slipbar-go" data-slip-open>${ids.length===1?"Review bet":`Review ${ids.length}-pick entry`}</button>
+    <button type="button" class="btn sb-slipbar-go" data-slip-open aria-label="Review ${ids.length} selected pick${ids.length===1?'':'s'}">${ids.length===1?"Review bet":"Review picks"}</button>
+    <div class="sb-slipbar-selections"><div class="sb-slipbar-chips" role="group" aria-label="Selected picks" tabindex="0">${picks}</div><button type="button" class="linkbtn" data-slip-clear>Clear</button></div>
   </div>`;
 }
 

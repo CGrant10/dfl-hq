@@ -365,8 +365,11 @@ function renderStoryItem(item, { editorial = false } = {}) {
   if(editorial&&item.treatment==='stat'&&!['fact','record','trade'].includes(item.kind)){
     const percent=/^\d+(?:\.\d+)?%$/.test(String(item.figure)),value=percent?Math.max(0,Math.min(100,parseFloat(item.figure))):0;
     const metric=`<div class="bx-stat-metric${percent?' is-dial':''}">${percent?`<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="53"/><circle cx="60" cy="60" r="53" pathLength="100" stroke-dasharray="${value} 100"/></svg>`:''}<strong class="bx-figure">${esc(item.figure??'—')}</strong>${item.figureLabel?`<small>${esc(item.figureLabel)}</small>`:''}</div>`;
-    const inner=`<span class="bx-kicker">${esc(item.kicker)}</span><div class="bx-stat-story-main">${metric}<h2 class="bx-head">${esc(item.headline)}</h2></div>${item.subtitle?`<p class="bx-body">${esc(item.subtitle)}</p>`:''}${chip(item)}`;
-    return item.href?`<a class="bx-slide bx-number-story is-stat" href="${esc(item.href)}">${inner}</a>`:`<div class="bx-slide bx-number-story is-stat">${inner}</div>`;
+    const results=item.kind==='league-story'&&item.sides?.length===2;
+    const details=results?`<div class="bx-result-scores">${item.sides.map(side=>`<div><strong>${esc(side.name)}</strong><b>${esc(side.score)}</b></div>`).join('')}</div>`:item.subtitle?`<p class="bx-body">${esc(item.subtitle)}</p>`:'';
+    const inner=`<span class="bx-kicker">${esc(item.kicker)}</span><div class="bx-stat-story-main">${metric}<h2 class="bx-head">${esc(item.headline)}</h2></div>${details}${results?'<span class="bx-story-action">View matchup <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>':chip(item)}`;
+    const classes=`bx-slide bx-number-story is-stat${results?' bx-league-result':''}`;
+    return item.href?`<a class="${classes}" href="${esc(item.href)}">${inner}</a>`:`<div class="${classes}">${inner}</div>`;
   }
   if (editorial && item.generator === 'nextMove' && item.scoutPlayer) {
     const player = item.scoutPlayer;

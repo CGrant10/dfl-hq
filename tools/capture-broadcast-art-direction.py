@@ -15,14 +15,17 @@ server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=serv
 with sync_playwright() as p:
  browser=p.chromium.launch(executable_path=os.environ.get('DFL_REVIEW_CHROMIUM'),headless=True,args=['--no-sandbox'])
  page=browser.new_page(viewport={'width':390,'height':844},is_mobile=True,has_touch=True);errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
- page.goto('http://127.0.0.1:'+str(server.server_port)+'/');page.wait_for_function('!!window.reviewDeck');page.evaluate('document.fonts.ready')
+ page.route('https://**/*',lambda r:r.fulfill(content_type='image/png',body=(ROOT/'tools/fixtures/player-portrait.png').read_bytes()) if 'sleepercdn.com/' in r.request.url else r.abort())
+ page.goto('http://127.0.0.1:'+str(server.server_port)+'/',wait_until='domcontentloaded');page.wait_for_function('!!window.reviewDeck');page.evaluate('document.fonts.ready')
  page.evaluate('''async()=>{
   reviewStage.stop();typeof reviewPageMotion==='function'?reviewPageMotion():reviewPageMotion?.stop?.();reviewInjuryPanel?.stop();reviewWeekFlow?.stop();reviewVfx?.stop();
   const {renderStage,startStage}=await import('./js/broadcast-stage.js');
+  const {weeklyHeadlineSlide}=await import('./js/home-slides.js');
+  const spotlight=weeklyHeadlineSlide({final:true,season:2026,week:5,games:[{winner:{uid:'a',name:'Bayou Bombers',value:131.22},loser:{uid:'b',name:'Monday Night Mayhem',value:120}}]},{season:2026,week:6});
   const original=reviewDeck,champ=original.find(s=>s.treatment==='champion'&&s.variant!=='chip'),chip=original.find(s=>s.treatment==='champion'&&s.variant==='chip'),injury=original.find(s=>s.treatment==='injuries');
   const packages=[{teamName:'The Very Long Championship Bayou Bombers',players:[{id:'7547',name:'Amon-Ra St. Brown',position:'WR',nflTeam:'DET'},{id:'1466',name:'Travis Kelce',position:'TE',nflTeam:'KC'}]},{teamName:'Klutch Sports Group',players:[{id:'3198',name:'Derrick Henry',position:'RB',nflTeam:'BAL'},{id:'8137',name:'George Pickens',position:'WR',nflTeam:'DAL'},{id:'2449',name:'Stefon Diggs',position:'WR',nflTeam:'WAS'}]},{teamName:'Monday Night Mayhem',players:[{id:'2216',name:'Mike Evans',position:'WR',nflTeam:'SF'},{id:'12527',name:'Ashton Jeanty',position:'RB',nflTeam:'LV'}]}];
   const trade={id:'review-deal',key:'review-deal',kind:'trade',treatment:'stat',kicker:'2026 · WEEK 6',figure:78,href:'#/trade?tx=review',tradeStory:{packages,outcome:{displayGrade:'Value edge'},balanceLabel:'group balance'}};
-  window.artDeck=[{...champ,key:'champ',headline:'The Bayou Bombers',image:'https://example.invalid/member-profile.jpg'},{...chip,key:'chip',headline:'Monday Night Mayhem'},injury,trade,{...trade,key:'two-team',tradeStory:{...trade.tradeStory,packages:packages.slice(0,2)}},{key:'rivalry',kind:'fact',treatment:'announcement',storyKind:'rivalry',headline:'The rematch',kicker:'DFL RIVALRIES',figure:12,storyNames:['The Bayou Bombers','Klutch Sports Group'],storySeries:'7–5',href:'#/history'}];
+  window.artDeck=[{...champ,key:'champ',headline:'The Bayou Bombers',image:'https://example.invalid/member-profile.jpg'},{...chip,key:'chip',headline:'Monday Night Mayhem'},injury,trade,{...trade,key:'two-team',tradeStory:{...trade.tradeStory,packages:packages.slice(0,2)}},{key:'rivalry',kind:'fact',treatment:'announcement',storyKind:'rivalry',headline:'The rematch',kicker:'DFL RIVALRIES',figure:12,storyNames:['The Bayou Bombers','Klutch Sports Group'],storySeries:'7–5',href:'#/history'},{...spotlight,key:'spotlight'},{key:'percent',kind:'odds',treatment:'stat',kicker:'PLAYOFF PICTURE',figure:'72%',headline:'Still in the fucking fight.',subtitle:'The next matchup sets the tone.'}];
   const view=document.querySelector('#view');view.innerHTML='<div id="home-wrap"><div class="home-frontpage"><div class="home-broadcast"></div></div></div>';
   document.querySelector('.home-broadcast').innerHTML=renderStage(artDeck,{editorial:true});
   window.artStage=startStage(document.querySelector('[data-bx-stage]'),artDeck);artStage.suspend('art-review',true);scrollTo(0,0);
@@ -30,12 +33,12 @@ with sync_playwright() as p:
  for mode in ['light','dark']:
   for width in [320,390,768]:
    page.set_viewport_size({'width':width,'height':844});page.evaluate('mode=>reviewSetTheme(mode)',mode)
-   for i,kind in enumerate(['champion','chip','injury','trade-three','trade-two','rivalry']):
+   for i,kind in enumerate(['champion','chip','injury','trade-three','trade-two','rivalry','spotlight','percent']):
     page.locator(f'[data-bx-go="{i}"]').evaluate('e=>e.click()');page.wait_for_timeout(500)
     slide=page.locator('.bx-layer>.bx-slide').last
     metrics=slide.evaluate('''e=>{
      const rect=e.getBoundingClientRect(),transport=e.closest('.bx-stage').querySelector('.bx-controls').getBoundingClientRect();
-     const elements=[...e.querySelectorAll('h2,.bx-award-copy,.bx-editorial-illustration,.bx-trade-side,.injury-player,.bx-rivalry-pair')].filter(n=>n.getClientRects().length);
+     const elements=[...e.querySelectorAll('h2,.bx-award-copy,.bx-editorial-illustration,.bx-trade-side,.injury-player,.bx-rivalry-pair,.bx-stat-metric,.bx-result-scores')].filter(n=>n.getClientRects().length);
      const within=elements.every(n=>{const r=n.getBoundingClientRect();return r.left>=rect.left-1&&r.right<=rect.right+1&&r.bottom<=transport.top+1});
      const copy=e.querySelector('.bx-award-copy')?.getBoundingClientRect(),art=e.querySelector('.bx-editorial-illustration')?.getBoundingClientRect();
      const overlap=copy&&art&&copy.left<art.right-1&&art.left<copy.right-1&&copy.top<art.bottom-1&&art.top<copy.bottom-1;
@@ -43,6 +46,9 @@ with sync_playwright() as p:
     }''')
     assert not metrics['overflow'] and metrics['within'] and not metrics['overlap'],(mode,width,kind,metrics)
     if kind=='trade-three':assert metrics['parties']==3
+    if kind in ['spotlight','percent']:
+     assert slide.evaluate('''e=>{const h=e.querySelector('.bx-head').getBoundingClientRect(),m=e.querySelector('.bx-stat-metric').getBoundingClientRect(),f=e.querySelector('.bx-figure').getBoundingClientRect();return (h.bottom<=m.top||h.left>=m.right)&&f.left>=m.left-1&&f.right<=m.right+1}'''),(mode,width,kind,'metric overlaps words')
+    if kind=='spotlight':assert slide.locator('.bx-result-scores>div').count()==2
     page.screenshot(path=str(OUT/f'art-{mode}-{width}-{kind}.png'));checks.append({'mode':mode,'width':width,'kind':kind,**metrics})
  page.emulate_media(reduced_motion='reduce');page.locator('[data-bx-go="3"]').evaluate('e=>e.click()');page.wait_for_timeout(60)
  assert page.locator('.bx-layer').evaluate('e=>e.getAnimations({subtree:true}).filter(a=>a.playState==="running").length')==0
