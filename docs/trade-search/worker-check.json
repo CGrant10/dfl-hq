@@ -1,0 +1,8 @@
+{
+  "release": "1.459.0",
+  "worker": "generated production worker",
+  "steals": 15,
+  "rescued": true,
+  "milliseconds": 1296,
+  "measurement": "Headless Chromium in the development environment; not a phone benchmark"
+}

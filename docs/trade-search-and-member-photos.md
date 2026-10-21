@@ -60,7 +60,9 @@ the member directory/header and invalidates the shared analyzer snapshot.
 - Discovery regression uses a fixed, anonymized evidence/value snapshot and
   checks that a formerly lost compact package reaches the actual evaluator.
   Every returned Steal still clears its evidence band, roster usefulness and
-  QB restrictions. Shared valuation/position/confidence tests also pass.
+  QB restrictions. Shared valuation/position/confidence tests also pass. The
+  generated production worker also returned the rescued compact offer in a
+  real browser check: [worker-check.json](trade-search/worker-check.json).
 - Production Trade controller review at 320/390/768px passes, including counts,
   larger requested packages, clean defaults, restricted empty states/reset,
   closest offers, routing, fresh-injury rechecks and ownership checks.
@@ -78,7 +80,9 @@ the member directory/header and invalidates the shared analyzer snapshot.
   is rejected with SQLSTATE 42501; no real member preference was changed by tests.
 - Security advisor counts are unchanged from before deployment. Existing
   search-path/legacy public definer warnings remain existing database debt;
-  this migration adds none. Member-table RLS stays enabled with existing admin
+  this migration adds none. See the existing
+  [search-path warning guidance](https://supabase.com/docs/guides/database/database-linter?lint=0011_function_search_path_mutable).
+  Member-table RLS stays enabled with existing admin
   and commissioner write policies. Anonymous table UPDATE grants alone do not
   bypass those policies.
 
