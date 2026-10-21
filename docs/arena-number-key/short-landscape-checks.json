@@ -1,0 +1,8 @@
+{
+  "checks": [
+    "short landscape commissioner view keeps twelve readable race badges",
+    "short landscape keeps every racer inside the field",
+    "short landscape commissioner controls remain accessible"
+  ],
+  "errors": []
+}

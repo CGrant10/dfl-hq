@@ -164,6 +164,10 @@ with sync_playwright() as p:
  check('stadium heading uses at most 44px',admin.locator('.sr-stage').evaluate('e=>parseFloat(e.style.getPropertyValue("--sr-field-top"))<=44'))
  for mode in ['dark','light']:
   admin.evaluate('m=>qaTheme(m)',mode);admin.screenshot(path=str(out/('fullscreen-'+mode+'.png')))
+ admin.set_viewport_size({'width':700,'height':320});admin.wait_for_timeout(150)
+ check('short landscape commissioner view retains twelve readable badges',admin.evaluate('qaBadges.length===12&&qaBadges.every(b=>b.font>=11)&&new Set(qaBadges.map(b=>b.number)).size===12') and all_visible(admin,12))
+ check('short landscape keeps commissioner controls accessible',admin.locator('[data-command=start]').evaluate('e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight&&r.height>=44}'))
+ admin.screenshot(path=str(out/'number-key-700-short-landscape.png'));admin.set_viewport_size({'width':844,'height':390});admin.wait_for_timeout(100)
  admin.locator('[data-expand]').click();admin.wait_for_function('!document.fullscreenElement&&!document.querySelector(".sr-stage").classList.contains("sr-expanded")')
 
  admin.set_viewport_size({'width':390,'height':844});admin.wait_for_function('document.querySelector(".sr-stage").dataset.portrait==="true"')

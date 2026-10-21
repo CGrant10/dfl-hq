@@ -105,7 +105,7 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
   // Draw identities after all bodies, so another runner cannot paint over one.
   for(const row of rows){
    const r=racers[row.index],lanePixels=laneH*yScale,selected=row.id===highlighted;
-   if(lanePixels<10&&!selected)continue;
+   if(n>16&&lanePixels<10&&!selected)continue;
    const x=padding+(row.progress*worldWidth-panX)*pxScale,scale=Math.max(.06,Math.min(1.3,lanePixels/74,(startX-5)/44,(width-finishX-5)/44));
    const tag=stadiumRacerLabel({x,y:yOf(row.index),laneHeight:lanePixels,width,bodyScale:scale});
    ctx.save();ctx.fillStyle=selected?'#e5ca85':'#0a151eee';ctx.strokeStyle=selected?'#fff1c6':'#c7beaa70';ctx.lineWidth=1;
