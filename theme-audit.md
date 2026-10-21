@@ -773,3 +773,7 @@ Inspected real 320/390px Light and Dark intentions sheets with loaded player thu
 ## 1.461.0 — Connected player and team details
 
 Inspected actual mobile Light/Dark frames for player-card returns at 320/390px, comparison selection at 390px, and ranking team-photo entry at 390px; existing layout checks include comparison at 320px and rankings at 320/390/768px. Images use recorded loaded portraits, with team fallback coverage in the ranking review. Shared sheet/backdrop motion is synchronized without new colors, surfaces or theme choices. Reduced motion, app motion-off, focus restoration, interrupted returns and viewport/route cleanup are exercised. `pnpm themes` passed. Evidence and device limits: [connected-detail-motion.md](docs/connected-detail-motion.md).
+
+## 1.462.0 — Clean broadcast presentation
+
+Reviewed actual current-run Light/Dark 320/390px award, trade, injury and rivalry captures, including fully loaded house illustrations and long champion names. Secondary broadcast stories now use the app's square type, quiet surfaces, restrained dividers and complete opaque award artwork. All authored colors use shared text/body/accent/surface/line tokens; no theme options or new palette values. Contrast, text/art separation, 44px transport controls, motion opt-outs and stable rotation height are covered by the production browser fixtures. `pnpm themes` passed. Before/after evidence and device limitations: [broadcast-presentation.md](docs/broadcast-presentation.md).
