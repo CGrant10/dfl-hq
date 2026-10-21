@@ -41,7 +41,7 @@ function signed(value) {
 }
 
 /** One actual league result, dated and kept separate from the personal score. */
-export function weeklyHeadlineSlide(report,{season,week,meSleeperId=null,teams=[]}={}){
+export function weeklyHeadlineSlide(report,{season,week,meSleeperId=null}={}){
   if(!report?.final||!Number.isInteger(Number(week))||Number(week)<1||report.season!==Number(season)||!Number.isInteger(report.week)
     ||report.week<1||report.week>Number(week)||report.week<Number(week)-1||!report.games?.length)return null;
   const valid=game=>game?.winner?.name&&game?.loser?.name&&typeof game.winner.value==='number'&&Number.isFinite(game.winner.value)
@@ -63,8 +63,7 @@ export function weeklyHeadlineSlide(report,{season,week,meSleeperId=null,teams=[
     figure:(narrow||blowout?margin(game):game.winner.value).toFixed(2),figureLabel:narrow||blowout?'Winning margin':'Fantasy points',
     subtitle:`${game.winner.name} ${game.winner.value.toFixed(2)} · ${game.loser.name} ${game.loser.value.toFixed(2)}`,
     href:`#/clubhouse?season=${report.season}&week=${report.week}&tab=matchups`,
-    sides:[game.winner,game.loser].map((side,i)=>({name:side.name,score:side.value.toFixed(2),up:i===0,down:i===1,
-      identity:teams.find(team=>String(team.sleeper_user_id)===String(side.uid))})),
+    sides:[game.winner,game.loser].map((side,i)=>({name:side.name,score:side.value.toFixed(2),up:i===0,down:i===1})),
   };
 }
 

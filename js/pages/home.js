@@ -757,7 +757,7 @@ export async function render(view) {
 
     /* What the dashboard carried that nothing else does: the completed-trade
        verdict and the auto-scout. Both go to the stage as slides. */
-    const extras = [weeklyHeadlineSlide(completedReport,{season:analysis?.projectionSeason,week:analysis?.liveWeek,meSleeperId:myMember?.sleeper_user_id,teams:analysis?.teams}),playoffPictureSlide(pulse?.stakes, myMember?.sleeper_user_id), tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
+    const extras = [weeklyHeadlineSlide(completedReport,{season:analysis?.projectionSeason,week:analysis?.liveWeek,meSleeperId:myMember?.sleeper_user_id}),playoffPictureSlide(pulse?.stakes, myMember?.sleeper_user_id), tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
     if (extras.length) {
       liveSlides = extras;
     }
