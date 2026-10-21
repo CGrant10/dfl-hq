@@ -10,7 +10,8 @@ import {loadStadiumRace,commandStadiumRace,removeStadiumRace,createStadiumClock}
 import {buildStadiumRace,stadiumFrame,stadiumElapsed,stadiumMoment,STADIUM_ENGINE} from '../arena/stadium-model.js';
 import {createStadiumRenderer,stadiumColor} from '../arena/stadium-renderer.js';
 import {normalizeKit,footballSpot,finishMargin,kitInk} from '../arena/racer-kit-model.js';
-import {drawKitRunner,onRacerArtReady} from '../arena/racer-kit-art.js';
+import {drawCharacterRunner as drawKitRunner} from '../arena/racer-character-art.js';
+import {defaultRacerKit} from '../arena/racer-character.js';
 import {mountStadiumOrientation} from '../arena/stadium-orientation.js';
 
 let active=null;
@@ -120,7 +121,7 @@ async function room(view,members,id,life){
  const setMotion=()=>{crowd?.motionChanged();root.dataset.motion=motion()?'on':'off';q('[data-motion]').textContent=`Motion ${motion()?'on':'off'}`;q('[data-motion]').setAttribute('aria-pressed',String(motion()));if(!motion())root.getAnimations({subtree:true}).forEach(animation=>animation.cancel());if(!raf)draw(performance.now());};
  const configureRacers=()=>{
   const kits=new Map((snapshot.racer_kits||[]).map(k=>[String(k.member_id),k.kit]));
-  const next=snapshot.participants.map((p,index)=>{const m=memberMap.get(String(p.member_id)),kit=normalizeKit(kits.get(String(p.member_id))||{jersey:stadiumColor({color:p.color||m?.accent_color},index)},{number:p.number??index+1});return {id:String(p.member_id),name:m?.display_name||`Racer ${p.number||index+1}`,team:m?.team_name||'',photo:m?.profile_image||'',number:kit.number,kit,color:kit.jersey,index};});
+  const next=snapshot.participants.map((p,index)=>{const m=memberMap.get(String(p.member_id)),number=p.number??index+1,kit=normalizeKit(kits.get(String(p.member_id))||defaultRacerKit(p.member_id,{jersey:p.color||m?.accent_color,number}),{number});return {id:String(p.member_id),name:m?.display_name||`Racer ${p.number||index+1}`,team:m?.team_name||'',photo:m?.profile_image||'',number:kit.number,kit,color:kit.jersey,index};});
   const signature=JSON.stringify(next);if(signature!==JSON.stringify(racers)){
    const sameField=racers.length===next.length&&racers.every((r,i)=>r.id===next[i].id);racers=next;
    if(renderer&&sameField)renderer.updateRacers(racers);else{renderer?.stop();renderer=createStadiumRenderer(q('canvas'),{racers,motion,highlight:()=>highlightId,onLayout:({overview,top,fieldHeight,fieldWidth})=>{stage.dataset.fieldOverview=String(overview);stage.style.setProperty('--sr-field-top',`${top}px`);stage.style.setProperty('--sr-field-height',`${fieldHeight}px`);stage.style.setProperty('--sr-field-width',`${fieldWidth}px`);}});}
@@ -167,10 +168,9 @@ async function room(view,members,id,life){
   const winner=snapshot.results.find(result=>result.place===1),winnerRacer=racers.find(r=>r.id===String(winner?.member_id));
   for(const canvas of root.querySelectorAll('[data-podium-racer],.sr-winner-art')){
    const r=canvas.classList.contains('sr-winner-art')?winnerRacer:racers.find(r=>r.id===canvas.dataset.podiumRacer);if(!r)continue;
-   const ctx=canvas.getContext('2d');ctx.clearRect(0,0,128,160);drawKitRunner(ctx,r.kit,{x:24,y:0,width:80,height:158,stride:1});
+   const ctx=canvas.getContext('2d');ctx.clearRect(0,0,128,160);drawKitRunner(ctx,r.kit,{x:0,y:0,width:128,height:158,identity:r.id,moving:false});
   }
  }
- const stopPodiumArt=onRacerArtReady(()=>{if(!life.closed)paintRacerArt();});life.cleanup.push(stopPodiumArt);
  q('[data-racer-highlight]').onchange=e=>{highlightId=e.target.value;const r=racers.find(r=>r.id===highlightId);q('[data-highlight-number]').innerHTML=jersey(r);setText(q('[data-highlight-name]'),r.name);lastDOM=0;draw(performance.now(),{forceStage:true});};
  const accept=(data,sentAt)=>{
   if(life.closed||Number(data.event.race_revision)<Number(snapshot.event.race_revision))return;

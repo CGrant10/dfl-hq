@@ -724,3 +724,18 @@ scores and one large figure. The opening daily saying and Wall placement remain.
 `pnpm themes` and all theme tests passed; 75 shared-sheet browser checks passed
 with no errors. Evidence and remaining physical-device, native-handoff and
 screen-reader limitations: [mobile-power-polish.md](docs/mobile-power-polish.md).
+
+## 1.455.0 — Arena portrait space and character identity
+
+Reviewed real 320/390/768px Light/Dark race rooms, expanded portrait/landscape,
+gear editor, saved presets and podium. The field remains an explicit stadium
+surface with turf, lighting and member/NFL identity colors. New character labels
+sit inside the dark artwork preview; surrounding app controls retain theme
+tokens. Portrait uses more field height and smaller room headings. Spectators
+open an immersive field without rotating; Close and commissioner controls remain
+accessible. Focus, 44px targets, safe areas, reduced motion, live gear changes and
+actual painted body bounds pass the isolated controller review. Every kit/build
+pose also passes a separate artwork clipping check. No theme options, aliases or
+global navigation change. `pnpm themes`, relevant theme tests and production
+build checks pass. Evidence and physical-device/fullscreen/screen-reader limits:
+[arena-character-presence.md](docs/arena-character-presence.md).
