@@ -1,0 +1,44 @@
+[
+  {
+    "theme": "light",
+    "width": 320,
+    "exactResult": true,
+    "overflow": false,
+    "destination": "2026 week 5"
+  },
+  {
+    "theme": "light",
+    "width": 390,
+    "exactResult": true,
+    "overflow": false,
+    "destination": "2026 week 5"
+  },
+  {
+    "theme": "light",
+    "width": 768,
+    "exactResult": true,
+    "overflow": false,
+    "destination": "2026 week 5"
+  },
+  {
+    "theme": "dark",
+    "width": 320,
+    "exactResult": true,
+    "overflow": false,
+    "destination": "2026 week 5"
+  },
+  {
+    "theme": "dark",
+    "width": 390,
+    "exactResult": true,
+    "overflow": false,
+    "destination": "2026 week 5"
+  },
+  {
+    "theme": "dark",
+    "width": 768,
+    "exactResult": true,
+    "overflow": false,
+    "destination": "2026 week 5"
+  }
+]

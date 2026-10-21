@@ -40,6 +40,33 @@ function signed(value) {
   return `${number > 0 ? "+" : number < 0 ? "−" : ""}${Math.abs(number).toFixed(1)}`;
 }
 
+/** One actual league result, dated and kept separate from the personal score. */
+export function weeklyHeadlineSlide(report,{season,week,meSleeperId=null}={}){
+  if(!report?.final||!Number.isInteger(Number(week))||Number(week)<1||report.season!==Number(season)||!Number.isInteger(report.week)
+    ||report.week<1||report.week>Number(week)||report.week<Number(week)-1||!report.games?.length)return null;
+  const valid=game=>game?.winner?.name&&game?.loser?.name&&typeof game.winner.value==='number'&&Number.isFinite(game.winner.value)
+    &&typeof game.loser.value==='number'&&Number.isFinite(game.loser.value)&&game.winner.value>=game.loser.value;
+  if(!report.games.every(valid))return null;
+  const games=report.games.filter(game=>game.winner.value>game.loser.value);
+  const personal=game=>meSleeperId&&[game.winner.uid,game.loser.uid].some(uid=>String(uid)===String(meSleeperId));
+  const available=games.filter(game=>!personal(game));if(!available.length)return null;
+  const margin=game=>game.winner.value-game.loser.value;
+  const low=Math.min(...games.map(margin)),high=Math.max(...games.map(margin));
+  const close=available.find(game=>Math.abs(margin(game)-low)<1e-7),wide=available.find(game=>Math.abs(margin(game)-high)<1e-7);
+  const narrow=!!close&&low<=5,blowout=!narrow&&!!wide&&high>=30;
+  const game=narrow?close:blowout?wide:[...available].sort((a,b)=>b.winner.value-a.winner.value)[0];
+  return {
+    source:'auto',pinned:true,id:`weekly-story:${report.season}:${report.week}`,generator:'weeklyHeadline',kind:'league-story',
+    treatment:'stat',temporal:'final',priority:P.RECENT+30,dwell:3600,
+    kicker:`${report.season} · WEEK ${report.week} · ${narrow?'CLOSEST WIN':blowout?'BIGGEST BEATDOWN':'LEAGUE SPOTLIGHT'}`,
+    headline:narrow?'Check the fucking decimals.':blowout?'A public ass-whipping.':'Put the league on notice.',
+    figure:(narrow||blowout?margin(game):game.winner.value).toFixed(2),figureLabel:narrow||blowout?'Winning margin':'Fantasy points',
+    subtitle:`${game.winner.name} ${game.winner.value.toFixed(2)} · ${game.loser.name} ${game.loser.value.toFixed(2)}`,
+    href:`#/clubhouse?season=${report.season}&week=${report.week}&tab=matchups`,
+    sides:[game.winner,game.loser].map((side,i)=>({name:side.name,score:side.value.toFixed(2),up:i===0,down:i===1})),
+  };
+}
+
 export function tradeAlertSlide(alert) {
   if (!alert) return null;
   const call = alert.headline || (alert.balanced ? "BALANCED" : alert.winner ? `${alert.winner} WINS` : "NO CLEAR WINNER");

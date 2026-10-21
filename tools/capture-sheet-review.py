@@ -24,8 +24,8 @@ with sync_playwright() as p:
  context.route('**/npm/@supabase/supabase-js@*/+esm',lambda r:r.fulfill(content_type='text/javascript',headers={'Access-Control-Allow-Origin':'*'},body="export function createClient(){throw Error('Sheet fixture cannot access a database')}"))
  context.route('https://sleepercdn.com/**',lambda r:r.fulfill(content_type='image/webp',body=(ROOT/'assets/dfl-daily-champion.webp').read_bytes()))
  context.route('**/sheet-review.html',lambda r:r.fulfill(content_type='text/html',body=(out/'index.html').read_text().replace('http://127.0.0.1:8765/',base)))
- model={'player':{'id':'7564','name':'Ja’Marr Chase','position':'WR','nflTeam':'CIN'},'season':2026,'week':6,'points':29,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'owner':None,'ownerLabel':'Fixture team','myRosterId':1,'recent':[{'week':4,'points':12},{'week':5,'points':22},{'week':6,'points':29}],'stats':{'items':[{'label':'Stat '+str(n),'value':n} for n in range(30)],'updatedAt':None}}
- context.route('**/js/player-card-data.js',lambda r:r.fulfill(content_type='text/javascript',body='export async function loadPlayerCard(){if(window.cardHold)await new Promise(r=>window.releaseCard=r);return '+json.dumps(model)+'}'))
+ model={'player':{'id':'7564','name':'Ja’Marr Chase','position':'WR','nflTeam':'CIN'},'leagueId':'1286077564572037120','season':2026,'week':6,'points':29,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'owner':None,'ownerLabel':'Fixture team','myRosterId':1,'recent':[{'week':4,'points':12},{'week':5,'points':22},{'week':6,'points':29}],'stats':{'items':[{'label':'Stat '+str(n),'value':n} for n in range(30)],'updatedAt':None}}
+ context.route('**/js/player-card-data.js',lambda r:r.fulfill(content_type='text/javascript',body='export async function loadPlayerCard(){window.cardCalls=(window.cardCalls||0)+1;if(window.cardHold)await new Promise(r=>window.releaseCard=r);if(window.cardFail)throw Error("Fixture refresh unavailable");return '+json.dumps(model)+'}'))
  page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  page.goto(base+'sheet-review.html');
  try:page.wait_for_function('window.reviewReady',timeout=60000)
@@ -106,6 +106,25 @@ with sync_playwright() as p:
  sheet=open_sheet('Player')
  check('unchanged player sync retains score node and body position',page.evaluate("""async()=>{const{updatePlayerCard}=await import('./js/player-card.js'),body=document.querySelector('[data-player-card-body]'),score=body.querySelector('.gd-thermal-number');body.scrollTop=80;const y=body.scrollTop;updatePlayerCard({id:'7564',points:29,state:'final',week:6});return score===body.querySelector('.gd-thermal-number')&&body.scrollTop===y}"""))
  page.keyboard.press('Escape');page.wait_for_function('!document.querySelector("dialog[open]")')
+ # A revisit keeps the same identity/stats while fresh data is pending.
+ sheet=open_sheet('Player')
+ check('player card has a verified Sleeper league action',sheet.locator('[data-sleeper-section="waivers"]').get_attribute('href')=='https://sleeper.com/leagues/1286077564572037120/players')
+ page.evaluate('window.cardHero=document.querySelector(".player-card-hero")')
+ page.keyboard.press('Escape');page.wait_for_function('!document.querySelector("dialog[open]")')
+ page.evaluate('window.cardHold=true;window.releaseCard=null;void window.openReviewPlayer()');page.wait_for_function('!!window.releaseCard')
+ check('reopen retains player content and holds actions until refreshed',page.evaluate('window.cardHero===document.querySelector(".player-card-hero")&&!document.querySelector("[data-player-card-loading]")&&document.querySelector(".player-card-actions").inert'))
+ body=page.locator('[data-player-card-body]');body.evaluate('e=>e.scrollTop=100');before=body.evaluate('e=>e.scrollTop')
+ page.evaluate('window.cardHold=false;window.releaseCard()');page.wait_for_function('!document.querySelector("[data-player-card-body]").hasAttribute("aria-busy")')
+ check('unchanged revalidation retains DOM, scroll and enables actions',page.evaluate('window.cardHero===document.querySelector(".player-card-hero")&&!document.querySelector(".player-card-actions").inert') and body.evaluate('e=>e.scrollTop')==before)
+ page.keyboard.press('Escape');page.wait_for_function('!document.querySelector("dialog[open]")')
+ page.evaluate('window.cardFail=true;void window.openReviewPlayer()');page.wait_for_selector('[data-player-card-refresh-error]')
+ check('refresh failure keeps checked stats with disabled actions and retry',page.locator('.player-card-hero').is_visible() and page.locator('.player-card-actions').evaluate('e=>e.inert') and page.locator('[data-player-card-retry]').is_visible())
+ page.evaluate('window.cardFail=false');page.locator('[data-player-card-retry]').click();page.wait_for_function('!document.querySelector("[data-player-card-refresh-error]")&&!document.querySelector(".player-card-actions").inert')
+ check('successful retry removes the recovery state',not body.get_attribute('aria-busy'))
+ page.keyboard.press('Escape');page.wait_for_function('!document.querySelector("dialog[open]")')
+ page.evaluate('''async()=>{const{selectMember}=await import('./js/members.js');selectMember({id:'another-preview-member',display_name:'Another member'});window.cardHold=true;window.releaseCard=null;void window.openReviewPlayer()}''');page.wait_for_function('!!window.releaseCard')
+ check('different member never receives the old preview',page.locator('[data-player-card-loading]').is_visible() and page.locator('.player-card-hero').count()==0)
+ page.keyboard.press('Escape');page.wait_for_function('!document.querySelector("dialog[open]")');page.evaluate('window.cardHold=false;window.releaseCard()')
  # A fully rendered refresh anchors the visible row before the next frame.
  anchor=page.evaluate("""async()=>{const{captureRefreshView,restoreRefreshView}=await import('./js/view-memory.js');const host=document.createElement('section');host.style.height='2600px';host.innerHTML='<div data-spacer style="height:700px"></div><button data-player-card="anchor-player">Sample player</button><details id="refresh-open" open><summary>Saved comparison</summary><p>Keep open</p></details>';document.querySelector('#view').append(host);scrollTo(0,host.querySelector('button').getBoundingClientRect().top+scrollY-180);const before=host.querySelector('button').getBoundingClientRect().top,memory=captureRefreshView(host);host.querySelector('[data-spacer]').style.height='940px';host.querySelector('details').open=false;const stop=restoreRefreshView(host,memory);const result={before,after:host.querySelector('button').getBoundingClientRect().top,open:host.querySelector('details').open};stop();host.remove();scrollTo(0,0);return result}""")
  check('refresh preserves visible player and disclosure before repaint',abs(anchor['before']-anchor['after'])<1 and anchor['open'])

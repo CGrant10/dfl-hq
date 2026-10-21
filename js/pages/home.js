@@ -1,4 +1,4 @@
-import {powerRankingsMarkup,mountPowerRankings} from '../league-power-ui.js';
+import {powerRankingsMarkup,powerRankingsLoading,mountPowerRankings} from '../league-power-ui.js';
 import {homeWeekReceipt,mountHomeWeekFlow} from '../home-week-flow.js';
 import {startSitContent} from '../start-sit-ui.js';
 import {syncHomePrimaryAction} from '../home-primary-action.js';
@@ -52,7 +52,7 @@ import { buildHomeWeekOutlook, HOME_OUTLOOK_POSITIONS } from "../home-week-outlo
 import { buildNextMove } from "../next-move.js";
 import { teamPortrait } from "../team-presentation.js";
 import { startAssembly } from "../scroll-assembly.js";
-import { currentMatchupWeek, nextMoveSlide, playoffPictureSlide, tradeAlertSlide } from "../home-slides.js";
+import { currentMatchupWeek, nextMoveSlide, playoffPictureSlide, tradeAlertSlide,weeklyHeadlineSlide } from "../home-slides.js";
 import { buildLeagueStakes } from "../league-stakes.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity } from "../player-presentation.js";
@@ -458,7 +458,7 @@ export async function render(view) {
     ${homeLeagueTools()}
     </section>
     <section class="home-league-desk" aria-label="Around the league">
-    <div data-home-rankings-slot data-content-state="loading" aria-busy="true">${homeRankingsCard(null)}</div>
+    <div data-home-rankings-slot data-content-state="loading" aria-busy="true">${powerRankingsLoading()}</div>
     ${announcements.data?.[0] ? `<section class="home-weekly-clubhouse card"><div><small>LEAGUE NEWS</small><h2>${esc(announcements.data[0].title)}</h2><p>${esc(String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news.").slice(0,160))}</p></div><button type="button" class="linkbtn home-text-action" data-open-home-news><span>Read league news</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button></section>` : ""}
     ${disclosure("home-league","More from the league","News, trades and league updates",`
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
@@ -757,7 +757,7 @@ export async function render(view) {
 
     /* What the dashboard carried that nothing else does: the completed-trade
        verdict and the auto-scout. Both go to the stage as slides. */
-    const extras = [playoffPictureSlide(pulse?.stakes, myMember?.sleeper_user_id), tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
+    const extras = [weeklyHeadlineSlide(completedReport,{season:analysis?.projectionSeason,week:analysis?.liveWeek,meSleeperId:myMember?.sleeper_user_id}),playoffPictureSlide(pulse?.stakes, myMember?.sleeper_user_id), tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
     if (extras.length) {
       liveSlides = extras;
     }
@@ -770,6 +770,8 @@ export async function render(view) {
       const report = view.querySelector("[data-home-report-slot]");
       if (focus){focus.innerHTML=homeWeeklyFocus(null);const owner=focus.closest('.home-personal-desk');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown');}
       if (report) report.innerHTML = homeWeeklyDigest(null);
+      const rankingSlot=view.querySelector('[data-home-rankings-slot]');
+      if(rankingSlot?.querySelector('.power-edition-loading'))rankingSlot.innerHTML=homeRankingsCard(null);
       for (const selector of ['[data-home-report-slot]', '[data-home-rankings-slot]', '[data-home-trade-slot]']) finishLoadingContent(view.querySelector(selector));
     }
     startHomeStage(fallbackDeck);

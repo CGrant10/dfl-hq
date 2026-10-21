@@ -9,7 +9,7 @@ import { playerCardView, resolvePlayerId } from './player-card-model.js';
 export async function loadPlayerCard(selection, context = null) {
   const [players, state, league, rosters, members, injury] = await Promise.all([
     loadPlayers(), loadLeagueState(),
-    db().from('sleeper_leagues').select('season,scoring_settings').order('season', { ascending: false }).limit(1),
+    db().from('sleeper_leagues').select('season,sleeper_league_id,scoring_settings').order('season', { ascending: false }).limit(1),
     db().from('sleeper_rosters').select('season,roster_id,sleeper_user_id,players,team_name,display_name').order('season', { ascending: false }),
     loadMemberDirectory().catch(() => []), loadNflInjuries().catch(() => null),
   ]);
@@ -23,5 +23,5 @@ export async function loadPlayerCard(selection, context = null) {
   const scoring = !league.error && Number(league.data?.[0]?.season) === season ? league.data[0].scoring_settings : null;
   const p = players[id];
   const analysis = { pool: new Map([[id, { id, name: p.n, position: p.p, nflTeam: p.t }]]) };
-  return playerCardView({ id, players, rosters: rosters.error ? [] : rosters.data || [], members, season, week, scoring, weeks, context, injuries: injury ? buildInjuryReport(injury.payload, { analysis, offenseOnly: false }) : null, rostersKnown: !rosters.error && (rosters.data || []).some(r => Number(r.season) === season && r.players?.length), sleeperUserId: currentMember()?.sleeper_user_id });
+  return {...playerCardView({ id, players, rosters: rosters.error ? [] : rosters.data || [], members, season, week, scoring, weeks, context, injuries: injury ? buildInjuryReport(injury.payload, { analysis, offenseOnly: false }) : null, rostersKnown: !rosters.error && (rosters.data || []).some(r => Number(r.season) === season && r.players?.length), sleeperUserId: currentMember()?.sleeper_user_id }),leagueId:!league.error&&Number(league.data?.[0]?.season)===season?league.data[0].sleeper_league_id:null};
 }
