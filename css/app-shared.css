@@ -5829,6 +5829,8 @@ html[data-readability="comfortable"] #view :is(h1,h2,h3){overflow-wrap:anywhere;
 
 /* Source: css/broadcast-premium.css */
 /* Broadcast stories share the app's type, spacing and quiet surfaces. */
+#home-wrap .bx-home-feature .bx-home-title {width:62%;max-width:62%;font-size:clamp(28px,8vw,34px);line-height:1.08;text-wrap:balance;}
+#home-wrap .bx-home-feature .bx-home-shade {background:linear-gradient(90deg,color-mix(in srgb,var(--bg) 97%,transparent),color-mix(in srgb,var(--bg) 88%,transparent) 44%,color-mix(in srgb,var(--bg) 50%,transparent) 64%,transparent 86%);}
 #home-wrap .home-broadcast .bx-stage{border-top:0;background:transparent}
 #home-wrap .bx-story-edition{align-content:start;gap:14px;border:0;padding-top:0;background:none}
 #home-wrap .bx-story-edition .bx-kicker{margin:0;font:700 11px/1.4 var(--home-ui-font);letter-spacing:.07em;color:var(--body-text)}
