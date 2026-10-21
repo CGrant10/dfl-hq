@@ -11,6 +11,7 @@ on:
       - 'js/arena/stadium-data*'
       - 'js/arena/stadium-model*'
       - 'js/arena/stadium-motion*'
+      - 'js/arena/stadium-racer-*'
       - 'js/arena/racer-character*'
       - 'js/arena/racer-kit*'
       - 'tools/capture-racer-character-review.py'

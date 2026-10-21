@@ -739,3 +739,17 @@ pose also passes a separate artwork clipping check. No theme options, aliases or
 global navigation change. `pnpm themes`, relevant theme tests and production
 build checks pass. Evidence and physical-device/fullscreen/screen-reader limits:
 [arena-character-presence.md](docs/arena-character-presence.md).
+
+## 1.456.0 — wide Arena viewing and readable race numbers
+
+Reviewed real Light/Dark phone and tablet race views, portrait wide window,
+landscape number key, character portraits and selected/focused states. The
+stadium remains a deliberate dark broadcast surface in either app theme. New
+number chips use ivory ink on dark stadium ink, with a warm gold selected state;
+surrounding app and commissioner controls retain existing theme tokens. Race
+numbers stay in screen pixels, independently of the small field sprites. The
+number key uses full names in portrait, accessible full-name labels, 44px targets
+and stable focus through live uniform changes. Motion-off/reduced-motion remove
+the selection transition. No theme options, aliases or global navigation change.
+Evidence, verification and physical-device limitations:
+[arena-number-key.md](docs/arena-number-key.md).
