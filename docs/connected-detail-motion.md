@@ -19,4 +19,6 @@ The browser scripts exercise production controllers with deterministic read-only
 - `tools/capture-comparison-review.py` (50 checks): Light/Dark at 320/390px, contrast and overflow; picker-to-side geometry; close during selection; same-frame selection/close; correct left-player return while the right side is moving; reduced motion and existing refresh/gesture behavior.
 - `tools/capture-power-review.py` (18 grouped results): Light/Dark at 320/390/768px; real team-photo fallbacks, focus and details; connected team-photo reversal and teardown; continuous ranking expansion, resize/week changes, motion opt-outs and 200% text sizing.
 
+The full Home integration also waits for actual portrait/dialog cleanup within a bounded timeout instead of assuming the former dismissal duration.
+
 Curated captures in `connected-detail-motion/` show interrupted returns and comparison/ranking entry frames. All active effects are paused together for the player-card and comparison midpoints. Physical iOS/Android frame pacing, native keyboards and screen-reader speech remain unverified; browser checks do not establish device-level frame rates.
