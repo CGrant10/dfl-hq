@@ -23,7 +23,9 @@ grant select on public.members,public.arena_events,public.arena_results,public.a
 \ir ../migrations/20261013190256_stadium_arena.sql
 \ir ../migrations/20261016171742_arena_watch_management.sql
 \ir ../migrations/20261016172342_remove_arena_winner_broadcast.sql
+\ir ../migrations/20261020203316_stadium_race_presentation.sql
 \ir stadium_arena.sql
+\ir stadium_presentation.sql
 \ir arena_watch_management.sql
 \ir arena_watch_access.sql
 do $$begin
