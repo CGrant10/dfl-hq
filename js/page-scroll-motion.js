@@ -16,6 +16,9 @@ const pages={
 const clamp=value=>Math.max(0,Math.min(1,value));
 const text=node=>node?.textContent.replace(/\s+/g,' ').trim()||'';
 const setText=(node,value)=>{if(node.textContent!==value)node.textContent=value;};
+const setHidden=(node,value)=>{if(node.hidden!==value)node.hidden=value;};
+const setAttr=(node,key,value)=>{if(node.getAttribute(key)!==value)node.setAttribute(key,value);};
+const setStyle=(node,key,value)=>{if(node.style.getPropertyValue(key)!==value)node.style.setProperty(key,value);};
 const displayed=node=>{
   if(!node?.getClientRects().length||node.closest('[hidden],[inert]'))return false;
   for(let fold=node.closest('details:not([open])');fold;fold=fold.parentElement?.closest('details:not([open])')){
@@ -167,20 +170,20 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
     compact=nextCompact;
     for(const [key,next]of [['left',`${bounds.left}px`],['width',`${bounds.width}px`],['top',`${top}px`]])if(dock.style[key]!==next)dock.style[key]=next;
     for(const [key,next]of [['--dfl-scroll-top',`${top}px`],['--dfl-scroll-height',`${height}px`]])if(root.style.getPropertyValue(key)!==next)root.style.setProperty(key,next);
-    if(heading)heading.style.setProperty('--dfl-title-leave',allowed()&&!hero.contains(document.activeElement)?String(leave):'0');
-    setText(title,nextTitle);setText(section,nextSection);section.hidden=!section.textContent;
-    value.hidden=!bank;if(bank)setText(value,`${bank} SIN`);
+    if(heading)setStyle(heading,'--dfl-title-leave',allowed()&&!hero.contains(document.activeElement)?String(leave):'0');
+    setText(title,nextTitle);setText(section,nextSection);setHidden(section,!section.textContent);
+    setHidden(value,!bank);if(bank)setText(value,`${bank} SIN`);
     const key=JSON.stringify([scoreData,phase]),scoreChanged=key!==scoreKey;
     if(scoreChanged){
       scoreKey=key;scores.replaceChildren();
       for(const team of scoreData){const side=document.createElement('span'),name=document.createElement('small'),points=document.createElement('b');name.textContent=team.name;points.textContent=team.points;side.append(name,points);scores.append(side);}
     }
-    scores.hidden=scoreData.length!==2;dock.classList.toggle('is-matchup',!scores.hidden);scoreAnchor=!scores.hidden?header:null;
+    setHidden(scores,scoreData.length!==2);dock.classList.toggle('is-matchup',!scores.hidden);scoreAnchor=!scores.hidden?header:null;
     const action=scoreAnchor?'Back to the selected matchup scoreboard':`Back to the ${nextTitle} header`;
     const context=scoreAnchor?[phase,...scoreData.map(team=>`${team.name}: ${team.points} points`)]
       :[section.textContent,bank?`${bank} SIN`:''];
-    dock.setAttribute('aria-label',[action,...context].filter(Boolean).join('. '));
-    progress.style.transform=`scaleX(${read})`;
+    setAttr(dock,'aria-label',[action,...context].filter(Boolean).join('. '));
+    setStyle(progress,'transform',`scaleX(${read})`);
     const toggled=show(compact||dock.contains(document.activeElement));
     if(!moved){
       if(labelChanged)cancel?.(section);

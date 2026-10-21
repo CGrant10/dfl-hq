@@ -1,0 +1,62 @@
+[
+  {
+    "changes": {
+      "style": 102
+    },
+    "total": 102,
+    "route": "home",
+    "run": 0,
+    "metrics": {
+      "LayoutCount": 5,
+      "RecalcStyleCount": 42,
+      "LayoutDuration": 1.168,
+      "RecalcStyleDuration": 5.895,
+      "ScriptDuration": 10.392
+    }
+  },
+  {
+    "changes": {
+      "style": 102
+    },
+    "total": 102,
+    "route": "home",
+    "run": 1,
+    "metrics": {
+      "LayoutCount": 4,
+      "RecalcStyleCount": 20,
+      "LayoutDuration": 0.999,
+      "RecalcStyleDuration": 5.899,
+      "ScriptDuration": 10.175
+    }
+  },
+  {
+    "changes": {
+      "style": 65
+    },
+    "total": 65,
+    "route": "trade",
+    "run": 0,
+    "metrics": {
+      "LayoutCount": 1,
+      "RecalcStyleCount": 81,
+      "LayoutDuration": 0.159,
+      "RecalcStyleDuration": 7.808,
+      "ScriptDuration": 12.065
+    }
+  },
+  {
+    "changes": {
+      "style": 60
+    },
+    "total": 60,
+    "route": "trade",
+    "run": 1,
+    "metrics": {
+      "LayoutCount": 0,
+      "RecalcStyleCount": 60,
+      "LayoutDuration": 0.0,
+      "RecalcStyleDuration": 2.309,
+      "ScriptDuration": 9.939
+    }
+  }
+]
