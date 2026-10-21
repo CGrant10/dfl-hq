@@ -58,7 +58,8 @@ describe("editorial Home broadcast", () => {
     expect(html).toContain("Winner &amp; Co");
     expect(html).toContain('href="#/history"');
     const custom={ ...item, image: "https://example.com/winner.webp", background: "image", imageZoom: 2 };
-    expect(renderItem(custom, { editorial: true })).toContain('src="https://example.com/winner.webp"');
+    expect(renderItem(custom, { editorial: true })).toContain('src="assets/dfl-daily-champion.webp"');
+    expect(renderItem(custom, { editorial: true })).not.toContain('example.com/winner.webp');
     expect(renderItem(custom, { editorial: true })).not.toContain('--bx-zoom:2');
     expect(renderItem(custom)).toContain('--bx-zoom:2');
   });

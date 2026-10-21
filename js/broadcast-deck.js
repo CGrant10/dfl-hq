@@ -44,7 +44,6 @@ import { battleResult, dayPoints, outingState, marginLabel } from "./golf-battle
 import { namer, moments, titleGame, fantasyState, latestPlayedWeek } from "./lore.js";
 import { dayMood } from "./marquee.js";
 import { factOfTheDay } from "./funfacts.js";
-import { memberImage } from "./members.js";
 import { artworkSettings, slideBackground, BACKGROUNDS } from "./broadcast-artwork.js";
 /* The 2022 floor lives with the card, which owns the rule. Importing it
    rather than restating it is what stopped these two disagreeing. */
@@ -634,25 +633,14 @@ function newsItem(ctx) {
 
 /* The current champion. Always eligible - league identity does not expire
    because something else is happening today. */
-/* A member's broadcast picture, or nothing. namer() hands back the member
-   id it resolved, which is the only reliable link from a Sleeper user to a
-   DFL member - team names change and accounts get deleted. */
-function pictureOf(ctx, memberId) {
-  if (!memberId) return null;
-  const m = (ctx.members || []).find((x) => String(x.id) === String(memberId));
-  return memberImage(m, "broadcast");
-}
-
 function championItem(ctx) {
   if (!ctx.name) return [];
   const l = ctx.leagues.find((x) => x.champion_user_id || x.champion_roster_id);
   if (!l) return [];
   const who = ctx.name(l.champion_user_id, l.season, l.champion_roster_id);
   const orphan = !who.memberId && who.sub === "account deleted" && /^Roster \d+$/.test(who.label);
-  /* A champion with a broadcast picture gets it behind them. Falls all the
-     way back to no image, in which case the champion treatment draws the
-     crest as it always has. */
-  const art = pictureOf(ctx, who.memberId);
+  // Award art is league artwork, independent of the member photo preference.
+  const art = "assets/dfl-daily-champion.webp";
   return [item({
     kind: "champion", treatment: "champion", temporal: "final", priority: P.CHAMPION,
     kicker: `${l.season} DFL Champion`,
@@ -668,7 +656,7 @@ function pastChampionItems(ctx) {
   const withChamps = ctx.leagues.filter((l) => l.champion_user_id || l.champion_roster_id);
   return withChamps.slice(1, 4).map((l) => {
     const who = ctx.name(l.champion_user_id, l.season, l.champion_roster_id);
-    const art = pictureOf(ctx, who.memberId);
+    const art = "assets/dfl-daily-champion.webp";
     return item({
       kind: "past", treatment: "champion", temporal: "historical", priority: P.HISTORY,
       kicker: `${l.season} Champion`, headline: who.label, subtitle: who.sub || "",
@@ -703,12 +691,10 @@ function chipEaterItem(ctx) {
     .sort((a, b) => Number(b.season) - Number(a.season))[0];
   if (!l) return [];
   const who = ctx.name(l.last_place_user_id, l.season, null);
-  const art = pictureOf(ctx, who.memberId);
+  const art = "assets/dfl-daily-chip-eater.webp";
   return [item({
     kind: "chip", treatment: "champion", temporal: "historical", priority: P.HISTORY + 10,
-    /* The champion treatment's layout, but not its ceremony: variant swaps the
-       trophy for a medal and the gold rule for a plain one. Coming last is
-       worth a slide; it is not worth a gold rule. */
+    /* Shared award layout, with its own last-place illustration. */
     variant: "chip", icon: "i-medal",
     kicker: `${l.season} Chip Eater`,
     headline: who.label,

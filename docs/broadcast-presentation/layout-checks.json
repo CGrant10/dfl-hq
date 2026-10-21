@@ -1,0 +1,378 @@
+{
+  "checks": [
+    {
+      "mode": "light",
+      "width": 320,
+      "kind": "champion",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "kind": "chip",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "kind": "injury",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "kind": "trade-three",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 3
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "kind": "trade-two",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 2
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "kind": "rivalry",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "kind": "champion",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "kind": "chip",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "kind": "injury",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "kind": "trade-three",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 3
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "kind": "trade-two",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 2
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "kind": "rivalry",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "kind": "champion",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "kind": "chip",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "kind": "injury",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "kind": "trade-three",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 3
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "kind": "trade-two",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 2
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "kind": "rivalry",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "kind": "champion",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "kind": "chip",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "kind": "injury",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "kind": "trade-three",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 3
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "kind": "trade-two",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 2
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "kind": "rivalry",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "kind": "champion",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "kind": "chip",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "kind": "injury",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "kind": "trade-three",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 3
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "kind": "trade-two",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 2
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "kind": "rivalry",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "kind": "champion",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "kind": "chip",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "kind": "injury",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "kind": "trade-three",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 3
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "kind": "trade-two",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 2
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "kind": "rivalry",
+      "overflow": false,
+      "within": true,
+      "overlap": false,
+      "parties": 0
+    },
+    "reduced motion renders complete stories immediately",
+    {
+      "mode": "light",
+      "width": 320,
+      "kind": "long-champion",
+      "stableHeight": true,
+      "fullName": "The Bastards of the Very Long Championship Team Name",
+      "wraps": true,
+      "headlineAboveArt": true,
+      "copySeparated": true,
+      "houseArt": true,
+      "overflow": false
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "kind": "long-champion",
+      "stableHeight": true,
+      "fullName": "The Bastards of the Very Long Championship Team Name",
+      "wraps": true,
+      "headlineAboveArt": true,
+      "copySeparated": true,
+      "houseArt": true,
+      "overflow": false
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "kind": "long-champion",
+      "stableHeight": true,
+      "fullName": "The Bastards of the Very Long Championship Team Name",
+      "wraps": true,
+      "headlineAboveArt": true,
+      "copySeparated": true,
+      "houseArt": true,
+      "overflow": false
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "kind": "long-champion",
+      "stableHeight": true,
+      "fullName": "The Bastards of the Very Long Championship Team Name",
+      "wraps": true,
+      "headlineAboveArt": true,
+      "copySeparated": true,
+      "houseArt": true,
+      "overflow": false
+    }
+  ],
+  "errors": []
+}

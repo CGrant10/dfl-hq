@@ -1089,9 +1089,9 @@ with sync_playwright() as p:
                 assert art['imageBox']['left']>=art['left']-1 and art['imageBox']['right']<=art['right']+1 and art['fit']=='contain', f'Art image is cropped: {art}'
                 assert not art['hasSplatter'] and not art['logo'], f'Unexpected award branding: {layout}'
                 if art['award']:
-                    expected_opacity=.8 if art['mode']=='light' else .85
+                    expected_opacity=1
                     assert art['artWidth']/art['stageWidth']>=.35 and abs(art['opacity']-expected_opacity)<.01, f'Award backdrop lost its scale or settled opacity: {layout}'
-                    assert art['masked'] and art['decorative'] and art['copyLayer']>art['artLayer'], f'Award backdrop does not sit beneath readable copy: {layout}'
+                    assert not art['masked'] and art['decorative'] and art['copyLayer']>art['artLayer'], f'Award backdrop does not sit beneath readable copy: {layout}'
                     assert all(b['right']<=art['left']-8 or b['left']>=art['right']+8 for b in art['copyBoxes']), f'Award picture overlaps copy: {layout}'
                     assert page.locator('.bx-award-heading').evaluate('e=>e.getBoundingClientRect().bottom<=e.parentElement.querySelector(".bx-editorial-illustration").getBoundingClientRect().top-8'), f'Award picture overlaps headline: {layout}'
                 else:

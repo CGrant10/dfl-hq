@@ -22,7 +22,7 @@ with sync_playwright() as p:
   const original=reviewDeck,champ=original.find(s=>s.treatment==='champion'&&s.variant!=='chip'),chip=original.find(s=>s.treatment==='champion'&&s.variant==='chip'),injury=original.find(s=>s.treatment==='injuries');
   const packages=[{teamName:'The Very Long Championship Bayou Bombers',players:[{id:'7547',name:'Amon-Ra St. Brown',position:'WR',nflTeam:'DET'},{id:'1466',name:'Travis Kelce',position:'TE',nflTeam:'KC'}]},{teamName:'Klutch Sports Group',players:[{id:'3198',name:'Derrick Henry',position:'RB',nflTeam:'BAL'},{id:'8137',name:'George Pickens',position:'WR',nflTeam:'DAL'},{id:'2449',name:'Stefon Diggs',position:'WR',nflTeam:'WAS'}]},{teamName:'Monday Night Mayhem',players:[{id:'2216',name:'Mike Evans',position:'WR',nflTeam:'SF'},{id:'12527',name:'Ashton Jeanty',position:'RB',nflTeam:'LV'}]}];
   const trade={id:'review-deal',key:'review-deal',kind:'trade',treatment:'stat',kicker:'2026 · WEEK 6',figure:78,href:'#/trade?tx=review',tradeStory:{packages,outcome:{displayGrade:'Value edge'},balanceLabel:'group balance'}};
-  window.artDeck=[{...champ,key:'champ',headline:'The Bayou Bombers'},{...chip,key:'chip',headline:'Monday Night Mayhem'},injury,trade,{...trade,key:'two-team',tradeStory:{...trade.tradeStory,packages:packages.slice(0,2)}},{key:'rivalry',kind:'fact',treatment:'announcement',storyKind:'rivalry',headline:'The rematch',kicker:'DFL RIVALRIES',figure:12,storyNames:['The Bayou Bombers','Klutch Sports Group'],storySeries:'7–5',href:'#/history'}];
+  window.artDeck=[{...champ,key:'champ',headline:'The Bayou Bombers',image:'https://example.invalid/member-profile.jpg'},{...chip,key:'chip',headline:'Monday Night Mayhem'},injury,trade,{...trade,key:'two-team',tradeStory:{...trade.tradeStory,packages:packages.slice(0,2)}},{key:'rivalry',kind:'fact',treatment:'announcement',storyKind:'rivalry',headline:'The rematch',kicker:'DFL RIVALRIES',figure:12,storyNames:['The Bayou Bombers','Klutch Sports Group'],storySeries:'7–5',href:'#/history'}];
   const view=document.querySelector('#view');view.innerHTML='<div id="home-wrap"><div class="home-frontpage"><div class="home-broadcast"></div></div></div>';
   document.querySelector('.home-broadcast').innerHTML=renderStage(artDeck,{editorial:true});
   window.artStage=startStage(document.querySelector('[data-bx-stage]'),artDeck);artStage.suspend('art-review',true);scrollTo(0,0);
@@ -46,6 +46,20 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/f'art-{mode}-{width}-{kind}.png'));checks.append({'mode':mode,'width':width,'kind':kind,**metrics})
  page.emulate_media(reduced_motion='reduce');page.locator('[data-bx-go="3"]').evaluate('e=>e.click()');page.wait_for_timeout(60)
  assert page.locator('.bx-layer').evaluate('e=>e.getAnimations({subtree:true}).filter(a=>a.playState==="running").length')==0
- checks.append('reduced motion renders complete stories immediately');page.evaluate('artStage.stop()');assert not errors,errors
+ checks.append('reduced motion renders complete stories immediately')
+ page.emulate_media(reduced_motion='no-preference')
+ page.evaluate("""async()=>{artStage.stop();const {renderStage,startStage}=await import('./js/broadcast-stage.js');const long={...artDeck[0],key:'long-award',headline:'The Bastards of the Very Long Championship Team Name',subtitle:'Christopher and the defending league champions',image:'https://example.invalid/member-profile.jpg'};window.longDeck=[long,artDeck[1]];const host=document.querySelector('.home-broadcast');host.innerHTML=renderStage(longDeck,{editorial:true});window.artStage=startStage(host.querySelector('[data-bx-stage]'),longDeck);artStage.suspend('art-review',true)}""")
+ for mode in ['light','dark']:
+  for width in [320,390]:
+   page.set_viewport_size({'width':width,'height':844});page.evaluate('mode=>reviewSetTheme(mode)',mode)
+   page.locator('[data-bx-go="0"]').evaluate('e=>e.click()');page.wait_for_timeout(500)
+   stage=page.locator('[data-bx-stage]');height=stage.bounding_box()['height']
+   result=page.evaluate("""()=>{const slide=document.querySelector('.bx-layer>.bx-slide:not(.bx-leaving)'),name=slide.querySelector('.bx-award-heading'),art=slide.querySelector('.bx-editorial-illustration').getBoundingClientRect(),heading=name.getBoundingClientRect(),copy=slide.querySelector('.bx-award-copy').getBoundingClientRect(),image=slide.querySelector('.bx-editorial-portrait');return {fullName:name.textContent,wraps:name.scrollWidth<=name.clientWidth+1,headlineAboveArt:heading.bottom<=art.top-8,copySeparated:copy.right<=art.left-8,houseArt:image.getAttribute('src')==='assets/dfl-daily-champion.webp',overflow:document.documentElement.scrollWidth>innerWidth}}""")
+   assert result['wraps'] and result['headlineAboveArt'] and result['copySeparated'] and result['houseArt'] and not result['overflow'],(mode,width,result)
+   stage.screenshot(path=str(OUT/f'art-{mode}-{width}-long-champion.png'))
+   page.locator('[data-bx-go="1"]').evaluate('e=>e.click()');page.wait_for_timeout(450)
+   assert abs(stage.bounding_box()['height']-height)<1,'Rotation moved the page below the card'
+   checks.append({'mode':mode,'width':width,'kind':'long-champion','stableHeight':True,**result})
+ page.evaluate('artStage.stop()');assert not errors,errors
  browser.close()
 server.shutdown();(OUT/'art-checks.json').write_text(json.dumps({'checks':checks,'errors':errors},indent=2));print(json.dumps({'layouts':len(checks)-1,'errors':errors}))
