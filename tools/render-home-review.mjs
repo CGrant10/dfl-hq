@@ -1,4 +1,3 @@
-import {teamPortrait} from '../js/team-presentation.js';
 import {powerRankingsMarkup} from '../js/league-power-ui.js';
 // Browser review fixture: the production renderers with the selected mock's
 // sample scores. It lives outside the app and never writes to league data.
