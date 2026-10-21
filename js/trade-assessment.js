@@ -27,6 +27,12 @@ export function tradeAssessment(result){
  const netEdge=(num(result.valueToA)-num(result.rosterCostA)-num(result.valueToB))/high*100;
  const clearsBand=result.incomingEvidence&&result.outgoingEvidence?result.incomingEvidence.low-num(result.rosterCostA)>result.outgoingEvidence.high:netEdge>=12;
  const receivesQb=(result.incomingPositionsA||result.incomingPositions?.[0])?.includes('QB');
+ const stealBlockers=[...flags];
+ if(receivesQb)stealBlockers.push('Incoming QB');
+ if(result.comparableStarPremium)stealBlockers.push('Comparable-star premium');
+ if(netEdge<12)stealBlockers.push('Small value edge');
+ if(!clearsBand)stealBlockers.push('Overlapping value ranges');
+ if(fitA<-.25)stealBlockers.push('Your roster loses value');
  // Fair describes the quoted price. Fit and uncertainty have their own
  // signals; neither turns a balanced estimate into an aggressive offer.
  const tier=fairness>=90&&!evidence?.missing?.length?'fair':netEdge>=12&&clearsBand&&supported&&!receivesQb&&!result.comparableStarPremium&&fitA>=-.25?'steal':'aggressive';
@@ -38,5 +44,5 @@ export function tradeAssessment(result){
  else value={tone:fairness>=72?'slight':fairness>=55?'clear':'lopsided',headline:fairness>=72?'Slight edge':fairness>=55?'Clear value edge':'FLEECE',who:edge>0?'a':'b'};
  const lineup=tradeLineupFitLabel(result.weeklyDeltas||[weeklyA,weeklyB]);
  const price=value.headline==='Review needed'?{tone:'even',headline:'Close call',who:null}:value;
- return {fairness,edge,fitA,fitB,weeklyA,weeklyB,tier,value,price,fit:{label:lineup,balanced:fairFit},needsReview,flags,confidence};
+ return {fairness,edge,fitA,fitB,weeklyA,weeklyB,tier,value,price,fit:{label:lineup,balanced:fairFit},needsReview,flags,confidence,stealBlockers};
 }

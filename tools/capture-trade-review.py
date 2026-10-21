@@ -324,7 +324,24 @@ with sync_playwright() as p:
         assert page.locator('[data-tb-remove-anchor="send"]').count()==5
         assert page.locator('[data-tb-max]').input_value()=='8'
         page.reload();page.wait_for_function('window.reviewReady===true')
-        assert page.locator('[data-tb-remove-anchor="send"]').count()==5
+        assert page.locator('[data-tb-remove-anchor="send"]').count()==0
+        assert page.locator('[data-tb-send-count]').input_value()=='any'
+        assert page.locator('[data-tb-receive-count]').input_value()=='any'
+        assert page.locator('[data-tb-goal]').input_value()=='best'
+        assert page.locator('[data-tb-horizon]').input_value()=='season'
+        # A restricted, empty Steal search can broaden without relabeling offers.
+        select('[data-tb-goal]','QB');click('[data-tb-intent="steal"]')
+        page.locator('[data-tb-reset-search]').wait_for()
+        assert page.locator('.tb-intent-options [data-tb-intent="steal"] [data-tb-intent-count]').inner_text()=='(0)'
+        assert page.locator('[data-tb-tier="steal"] .tb-offer').count()==0
+        for photo_theme in ['light','dark']:
+            page.evaluate("async theme=>{const t=await import('/js/theme.js');t.saveMode(theme)}",photo_theme)
+            page.locator('[data-tb-reset-search]').scroll_into_view_if_needed()
+            page.screenshot(path=str(output/f'trade-empty-{photo_theme}-{width}.png'))
+        click('[data-tb-reset-search]')
+        assert page.locator('[data-tb-goal]').input_value()=='best'
+        assert page.locator('[data-tb-send-count]').input_value()=='any'
+        assert page.locator('[data-ta-shop-partner]').input_value()=='all'
         page.evaluate('sessionStorage.clear();localStorage.clear();window.renderReview()')
         click('[data-td-mode="manual"]');pick(0,'1-4');pick(1,'2-6')
         # The share handler must stop on a fresh injury and show the updated ticket.

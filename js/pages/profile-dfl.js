@@ -33,6 +33,7 @@ import { shrinkToDataUri } from "../image-field.js";
 import { PRESETS, describeValue, fmtBytes, MAX_SOURCE_BYTES } from "../image-shrink.js";
 import { identitySettingsCard, profileIdentityDisplay, wireProfileIdentity } from "../profile-identity.js";
 import { icon } from "../icons.js";
+import {refreshMember,getMemberId} from "../members.js";
 import { teamPortrait } from "../team-presentation.js";
 import { loadLore, career } from "../lore.js";
 
@@ -118,16 +119,28 @@ function editCard(m, draft, ctx) {
   const photo = draft.image !== undefined ? draft.image : m.profile_image;
   return `<section class="card profile-head accent is-editing">
     <div class="ph-top">
-      ${avatar(m, photo, true, ctx)}
+      ${avatar({...m,profile_photo_source:draft.source}, photo, true, ctx)}
       ${nameBlock(m, ctx)}
       <button type="button" class="btn ghost small ph-edit" data-dfl-cancel>Cancel</button>
     </div>
 
+    <fieldset class="ph-photo-choice"><legend>Profile photo</legend><div>
+      ${['sleeper','dfl'].map(source=>{
+        const available=source==='dfl'?!!photo:!!(m.sleeper_team_image||m.sleeper_profile_image);
+        const selected=draft.source===source;
+        return `<label class="ph-photo-option${selected?' is-selected':''}${available?'':' is-unavailable'}">
+          <input type="radio" name="profile-photo-source" data-photo-source="${source}" value="${source}"${selected?' checked':''}${available?'':' disabled'}>
+          ${teamPortrait(source==="dfl"?{...m,profile_image:photo,profile_photo_source:source,sleeper_team_image:null,sleeper_profile_image:null}:{...m,profile_image:null,profile_photo_source:source})}<span>${source==='sleeper'?'Sleeper':'DFL upload'}</span>
+        </label>`;
+      }).join('')}
+    </div></fieldset>
+    ${draft.needsPin?`<label class="dfl-field"><span class="u-label">Profile PIN</span><input type="password" inputmode="numeric" autocomplete="off" data-photo-pin maxlength="12" aria-label="Profile PIN"><span role="alert">Enter your profile PIN to save.</span></label>`:''}
     <p class="muted tiny ph-photo-note">
       ${photo ? `Photo shrunk to ${PHOTO_PX}px. ${esc(describeValue(photo))}.` : `Tap the camera to add a photo.`}
-      ${photo ? `<button type="button" class="linkbtn" data-photo-clear>Remove photo</button>` : ""}
+
     </p>
 
+    ${photo ? `<button type="button" class="linkbtn" data-photo-clear>Remove DFL photo</button>` : ""}
     <div class="dfl-field">
       <label class="u-label" for="dfl-bio">About me</label>
       <textarea id="dfl-bio" data-bio maxlength="${BIO_MAX}" rows="4"
@@ -170,7 +183,7 @@ export function wireDflPage(view, member, isMe, refresh, ctx = {}) {
 
   let editing = false;
   let draft = null;
-  const freshDraft = () => ({ bio: String(member.bio || "").trim(), image: undefined });
+  const freshDraft = () => ({ bio: String(member.bio || "").trim(), image: undefined, source:member.profile_photo_source!=="dfl"&&(member.sleeper_team_image||member.sleeper_profile_image)?"sleeper":member.profile_image?"dfl":"sleeper", pin:null });
 
   const mountIdentity = async () => {
     const slot = host.querySelector("[data-profile-identity-editor]");
@@ -198,6 +211,7 @@ export function wireDflPage(view, member, isMe, refresh, ctx = {}) {
 
   host.addEventListener("input", (e) => {
     if (!draft) return;
+    if(e.target.matches("[data-photo-pin]"))draft.pin=e.target.value;
     if (e.target.matches("[data-bio]")) {
       draft.bio = e.target.value;
       const n = host.querySelector("[data-bio-count]");
@@ -206,6 +220,13 @@ export function wireDflPage(view, member, isMe, refresh, ctx = {}) {
   });
 
   host.addEventListener("change", async (e) => {
+    if(e.target.matches("[data-photo-source]")&&draft){
+      draft.source=e.target.value;
+      const photo=draft.image===undefined?member.profile_image:draft.image;
+      host.querySelector('.ph-avatar').outerHTML=avatar({...member,profile_photo_source:draft.source},photo,true,ctx);
+      host.querySelectorAll('.ph-photo-option').forEach(option=>option.classList.toggle('is-selected',option.querySelector('[data-photo-source]').value===draft.source));
+      return;
+    }
     if (!e.target.matches("[data-photo-file]")) return;
     const file = e.target.files?.[0];
     if (!file) return;
@@ -220,6 +241,7 @@ export function wireDflPage(view, member, isMe, refresh, ctx = {}) {
     if (!draft) { editing = true; draft = freshDraft(); }
     try {
       draft.image = await shrinkToDataUri(file, "avatar");
+      draft.source="dfl";
       paint();
       toast(`Photo ready (${describeValue(draft.image)}) — press Save`);
     } catch (err) {
@@ -233,7 +255,7 @@ export function wireDflPage(view, member, isMe, refresh, ctx = {}) {
     /* The camera works in both states, so it is handled before the guard. */
     if (e.target.closest("[data-photo-pick]")) { host.querySelector("[data-photo-file]")?.click(); return; }
     if (!draft) return;
-    if (e.target.closest("[data-photo-clear]")) { draft.image = null; paint(); return; }
+    if (e.target.closest("[data-photo-clear]")) { draft.image = null; draft.source="sleeper"; paint(); return; }
 
     const save = e.target.closest("[data-dfl-save]");
     if (!save) return;
@@ -242,18 +264,31 @@ export function wireDflPage(view, member, isMe, refresh, ctx = {}) {
       /* p_pet is omitted, not sent as null: the RPC coalesces its arguments,
          so leaving it out preserves whatever the column already holds instead
          of this save being the thing that wipes it. */
-      const { data, error } = await db().rpc("dfl_update_profile", {
-        p_bio: draft.bio,
-        p_image: draft.image === undefined || draft.image === null ? null : draft.image,
-        p_clear_image: draft.image === null,
+      if(String(getMemberId())!==String(member.id))throw Error("Your selected member changed. Reopen Profile.");
+      const pendingDraft={...draft};
+      const {verifiedPin,markMemberUnlocked}=await import("../member-lock.js");
+      if(String(getMemberId())!==String(member.id))throw Error("Your selected member changed. Reopen Profile.");
+      const { data, error } = await db().rpc("dfl_save_profile", {
+        p_source:pendingDraft.source,
+        p_pin:pendingDraft.pin||verifiedPin(member.id)||null,
+        p_bio: pendingDraft.bio,
+        p_image: pendingDraft.image === undefined || pendingDraft.image === null ? null : pendingDraft.image,
+        p_clear_image: pendingDraft.image === null,
       });
       if (error) throw error;
+      if(String(getMemberId())!==String(member.id))return;
       if (!Number(data)) throw new Error("Pick your name again from the top bar and retry.");
+      if(pendingDraft.pin)markMemberUnlocked?.(member.id,pendingDraft.pin);
       toast("Profile saved");
       editing = false;
       draft = null;
+      await refreshMember();
+      const analyzer=await import('../team-analyzer-data.js');
+      analyzer.clearAnalyzerDataCache?.();
+      window.dispatchEvent(new Event("dfl:profile-updated"));
       await refresh();
     } catch (err) {
+      if(err.code==="42501"&&draft){draft.needsPin=true;paint();host.querySelector("[data-photo-pin]")?.focus();}
       toast(err.message || "Could not save", true);
       save.disabled = false;
     }

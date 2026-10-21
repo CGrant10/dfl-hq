@@ -1,4 +1,5 @@
 import {playerIdentity} from './player-presentation.js';
+import {tradeAssessment} from './trade-assessment.js';
 import {esc} from './ui.js';
 import {lineupPreviewsFor,restoreTradeProposal} from './trade-workspace.js';
 import {tradePerspective} from './trade-routing.js';
@@ -16,6 +17,13 @@ export function closestTradeOffers(offers, intent, limit = 3) {
 export function tradeOfferEmptyCopy(intent, incomingPositions = [], offers = []) {
  if(intent==='steal'&&incomingPositions.includes('QB'))return 'Incoming QBs are excluded from Steal in this 1-QB league. Try Fair or Aggressive.';
  if(intent==='steal'&&offers.length&&offers.every(offer=>offer.projectionEvidence?.expert?.required&&offer.projectionEvidence.expert.status!=='Fresh'))return 'Steal needs fresh expert rankings. Closest available offers below.';
+ if(intent==='steal'&&offers.length){
+  const counts=new Map();
+  for(const offer of offers)for(const reason of tradeAssessment(offer)?.stealBlockers||[])counts.set(reason,(counts.get(reason)||0)+1);
+  const labels={'Incoming QB':'incoming QBs','Comparable-star premium':'a premium for similar stars','Small value edge':'too little value gained','Overlapping value ranges':'overlapping player values','Your roster loses value':'a weaker roster','Missing projections':'missing projections','Injury risk':'injury uncertainty','Stale inputs':'stale player data','Production fallback':'unverified projections','Expert coverage gap':'missing expert coverage','Rank disagreement':'conflicting rankings','Limited samples':'limited game samples'};
+  const reasons=[...counts].filter(([,n])=>n>=Math.ceil(offers.length/2)).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([reason])=>labels[reason]).filter(Boolean);
+  if(reasons.length)return `No clear Steal: ${reasons.join(' and ')}. Closest offers below.`;
+ }
  if(intent==='steal')return 'No clear Steal for this setup.';
  if(intent==='fair')return 'No Fair match for this setup. Try another team or adjust the package.';
  return 'No usable offers for this setup. Try another team or adjust the package.';

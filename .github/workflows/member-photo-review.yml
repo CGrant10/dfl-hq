@@ -1,0 +1,66 @@
+name: Member photo preference review
+on:
+  pull_request:
+    paths:
+      - 'js/member-photo*'
+      - 'js/members.js'
+      - 'js/current-team-names.js'
+      - 'js/team-presentation.js'
+      - 'js/pages/profile-dfl.js'
+      - 'js/member-wall.js'
+      - 'tools/capture-member-photos.py'
+      - 'supabase/migrations/*member_photo_preference*'
+      - 'supabase/tests/member_photo*'
+      - '.github/workflows/member-photo-review.yml'
+permissions:
+  contents: read
+jobs:
+  photo-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      DFL_SECONDARY_REVIEW_DIR: ${{ github.workspace }}/photo-review-output/secondary
+      DFL_PHOTO_REVIEW_DIR: ${{ github.workspace }}/photo-review-output/photos
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright
+      - name: Use installed Chrome
+        run: |
+          dfl_photo_browser="$(command -v google-chrome)"
+          test -n "$dfl_photo_browser"
+          printf 'DFL_REVIEW_CHROMIUM=%s\n' "$dfl_photo_browser" >> "$GITHUB_ENV"
+      - run: node tools/render-secondary-review.mjs
+      - run: python tools/capture-member-photos.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: member-photo-review
+          path: photo-review-output/
+          retention-days: 7
+  photo-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check profile ownership, PINs and upload preservation
+        env:
+          DFL_PHOTO_TEST_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker cp supabase "$DFL_PHOTO_TEST_CONTAINER:/qa"
+          docker exec "$DFL_PHOTO_TEST_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 -f /qa/tests/member_photo_fixture.sql

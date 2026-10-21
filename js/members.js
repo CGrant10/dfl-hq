@@ -37,6 +37,7 @@ import { db, configured } from "./supabase.js";
 import { setUsername } from "./store.js";
 import {sleeper} from './sleeper.js';
 import {currentTeamMembers} from './current-team-names.js';
+import {memberPhoto} from './member-photo.js';
 
 const KEY = "dfl.memberId";
 
@@ -163,29 +164,12 @@ export async function refreshMember() {
   return restoreMember();
 }
 
-/*
-  WHICH PICTURE OF SOMEBODY TO USE.
-
-  Four columns, one preference order, one place. The broadcast, a profile
-  header and anything else that wants a member's face all ask here, so
-  they cannot drift into disagreeing about what "their picture" means.
-
-    profile_image     the person. The default everywhere.
-    broadcast_image   the one the stage prefers - more personality than a
-                      headshot, which is what a jumbotron wants.
-    lookalike_image   the celebrity double.
-    chaos_image       OPT-IN ONLY.
-
-  chaos is never in a fallback chain and never reached for automatically:
-  a caller has to name it. A championship slide is not the moment to
-  surprise somebody with their worst photograph.
-
-  Every branch ends at profile_image or null, so a member with nothing set
-  behaves exactly as they did before these columns existed.
-*/
+/* Identity portraits follow the member's Sleeper/DFL source preference.
+   Editorial broadcast/lookalike artwork remains an explicit separate choice.
+   Chaos artwork is never used as an automatic fallback. */
 export function memberImage(member, kind = "profile") {
   if (!member) return null;
-  const profile = member.profile_image || null;
+  const profile = memberPhoto(member);
   switch (kind) {
     case "broadcast": return member.broadcast_image || member.lookalike_image || profile;
     case "lookalike": return member.lookalike_image || member.broadcast_image || profile;

@@ -1,4 +1,5 @@
 // Names are presentation. Owner IDs, historical scores and stored receipts stay intact.
+import {sleeperAvatarUrl} from './member-photo.js';
 const clean=value=>String(value??'').trim();
 const key=value=>clean(value).normalize('NFKC').toLocaleLowerCase().replace(/\s+/g,' ');
 export function currentTeamMembers(members=[],users=[],rosters=[]){
@@ -10,7 +11,7 @@ export function currentTeamMembers(members=[],users=[],rosters=[]){
   const u=live.get(String(m.sleeper_user_id)),r=latest.get(String(m.sleeper_user_id));
   const name=clean(u?.metadata?.team_name)||clean(u?.display_name)||clean(r?.team_name)||clean(m.team_name)||clean(m.display_name);
   const aliases=[...new Set([m.team_name,m.display_name,u?.metadata?.team_name,u?.display_name,...rosters.filter(r=>String(r.sleeper_user_id)===String(m.sleeper_user_id)).map(r=>r.team_name)].map(clean).filter(Boolean))];
-  return {...m,team_name:name,team_name_aliases:aliases,team_roster_ids:rosters.filter(r=>String(r.sleeper_user_id)===String(m.sleeper_user_id)&&r.roster_id!=null).map(r=>({season:Number(r.season),roster_id:String(r.roster_id)}))};
+  return {...m,sleeper_team_image:sleeperAvatarUrl(u?.metadata?.avatar),sleeper_profile_image:sleeperAvatarUrl(u?.avatar),team_name:name,team_name_aliases:aliases,team_roster_ids:rosters.filter(r=>String(r.sleeper_user_id)===String(m.sleeper_user_id)&&r.roster_id!=null).map(r=>({season:Number(r.season),roster_id:String(r.roster_id)}))};
  });
 }
 export function currentTeamMember(label,members=[],identity={}){
@@ -32,7 +33,7 @@ export function currentMatchupTitle(title,members=[]){
 }
 export function currentTradeNames(alert,members=[]){
  if(!alert)return alert;
- const teams=(alert.teams||[]).map(t=>{const current=currentTeamMember(t.team_name,members,{...t,season:alert.season});return {...t,...(current?{profile_image:current.profile_image,favorite_team:current.favorite_team}:{}),team_name:current?.team_name||currentTeamLabel(t.team_name,members,{...t,season:alert.season})||t.team_name}});
+ const teams=(alert.teams||[]).map(t=>{const current=currentTeamMember(t.team_name,members,{...t,season:alert.season});return {...t,...(current?{profile_image:current.profile_image,profile_photo_source:current.profile_photo_source,sleeper_team_image:current.sleeper_team_image,sleeper_profile_image:current.sleeper_profile_image,favorite_team:current.favorite_team}:{}),team_name:current?.team_name||currentTeamLabel(t.team_name,members,{...t,season:alert.season})||t.team_name}});
  const winner=teams.find(t=>String(t.roster_id)===String(alert.verdict?.winner_roster_id));
  return {...alert,teams,verdict:alert.verdict?{...alert.verdict,winner_team_name:winner?.team_name||currentTeamLabel(alert.verdict.winner_team_name,members)||alert.verdict.winner_team_name}:alert.verdict};
 }

@@ -7,7 +7,7 @@ vi.mock('./supabase.js',()=>({configured:true,db:()=>({from:table=>{
 }})}));
 vi.mock('./sleeper.js',()=>({sleeper:{users:mocks.users}}));
 vi.mock('./store.js',()=>({setUsername:vi.fn()}));
-import {loadMemberDirectory,clearMemberDirectoryCache,currentMember,selectMember} from './members.js';
+import {loadMemberDirectory,clearMemberDirectoryCache,currentMember,selectMember,memberImage} from './members.js';
 beforeEach(()=>{clearMemberDirectoryCache();mocks.held=null;mocks.reads=[];mocks.users.mockReset();mocks.users.mockResolvedValue([{user_id:'a',metadata:{team_name:'Current team '}}]);vi.stubGlobal('localStorage',{setItem:vi.fn(),getItem:vi.fn()});});
 afterEach(()=>{vi.useRealTimers();vi.unstubAllGlobals();});
 describe('shared current-name directory',()=>{
@@ -31,4 +31,11 @@ it('overlaps name lookup with the pending returning-profile read while keeping o
  expect(mocks.reads.filter(table=>table==='members')).toHaveLength(1);
  resolve({data:mocks.rows,error:null});const [a,b]=await Promise.all([first,second]);
  expect(a).toBe(b);expect(a[0].team_name).toBe('Current team');
+});
+
+it('uses the chosen identity photo as the profile and editorial fallback, never the chaos image',()=>{
+ const m={profile_image:'dfl.jpg',sleeper_team_image:'sleeper.jpg',chaos_image:'private-chaos.jpg'};
+ expect(memberImage(m)).toBe('sleeper.jpg');expect(memberImage({...m,profile_photo_source:'dfl'})).toBe('dfl.jpg');
+ expect(memberImage({...m,broadcast_image:'stage.jpg'},'broadcast')).toBe('stage.jpg');
+ expect(memberImage(m,'broadcast')).toBe('sleeper.jpg');expect(memberImage({chaos_image:'private-chaos.jpg'})).toBeNull();
 });

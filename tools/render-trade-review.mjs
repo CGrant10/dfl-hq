@@ -36,7 +36,7 @@ import {playerIdentity,playerPortrait} from '/js/player-presentation.js';
 import {teamIdentity,teamPortrait} from '/js/team-presentation.js';
 import {recommendationOutcomes,tradeModelHealth,tradeModelHealthMarkup} from '/js/trade-model-health.js';
 import {readViewMemory,writeViewMemory} from '/js/view-memory.js';
-import {tradeDraft,restoreTradeDraft} from '/js/trade-draft.js';
+import {tradeDraft,restoreTradeDraft,resetTradeSearch,tradeSearchRestricted} from '/js/trade-draft.js';
 import {tradePerspective,tradeTransfers} from '/js/trade-routing.js';
 import {evaluateTradeDeal,readTradeProposals,writeTradeProposals,savedTradeProposal,restoreTradeProposal,applyTradeDeal} from '/js/trade-workspace.js';
 import {proposalsMarkup,tradeDataContext,tradeOfferEmptyCopy,closestTradeOffers} from '/js/trade-workspace-ui.js';

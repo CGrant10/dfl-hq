@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-21",
+  "description": "Read-only current-league value/evidence snapshot; owner names and IDs omitted. Before: shipped worker. After: same evaluated snapshot with the compact search pass. Returned matches capped at 132. Counts describe generated offers, not acceptance probabilities or guarantees about future live data.",
+  "teams": [
+    {
+      "team": "team-01",
+      "before": 13,
+      "after": 25
+    },
+    {
+      "team": "team-02",
+      "before": 29,
+      "after": 43
+    },
+    {
+      "team": "team-03",
+      "before": 5,
+      "after": 22
+    },
+    {
+      "team": "team-04",
+      "before": 17,
+      "after": 37
+    },
+    {
+      "team": "team-05",
+      "before": 4,
+      "after": 11
+    },
+    {
+      "team": "team-06",
+      "before": 16,
+      "after": 29
+    },
+    {
+      "team": "team-07",
+      "before": 36,
+      "after": 67
+    },
+    {
+      "team": "team-08",
+      "before": 8,
+      "after": 19
+    },
+    {
+      "team": "team-09",
+      "before": 78,
+      "after": 132
+    },
+    {
+      "team": "team-10",
+      "before": 2,
+      "after": 13
+    },
+    {
+      "team": "team-11",
+      "before": 18,
+      "after": 22
+    },
+    {
+      "team": "team-12",
+      "before": 28,
+      "after": 49
+    }
+  ]
+}

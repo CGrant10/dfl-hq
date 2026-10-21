@@ -1,6 +1,7 @@
 import { esc } from "./ui.js";
 import { accentOf } from "./identity-rules.js";
 import { teamInitials } from "./league-trajectory.js";
+import {memberPhotoCandidates} from './member-photo.js';
 
 export function teamLabel(team) {
   return team?.team_name || team?.identity?.team_name || team?.ownerName
@@ -14,7 +15,7 @@ export function teamOwner(team) {
 export function teamPortrait(team, { className = "" } = {}) {
   const identity = team?.identity || team || {};
   const name = teamLabel(team);
-  const photos=[...new Set([team?.sleeper_team_image,team?.sleeper_profile_image,identity.profile_image].filter(Boolean))];
+  const photos=memberPhotoCandidates(team);
   const photo=photos.shift();
   return `<span class="dfl-team-mark ${esc(className)}" style="--team-accent:${esc(accentOf(identity))}" aria-hidden="true">
     <i>${esc(teamInitials(name || "?"))}</i>
