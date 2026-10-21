@@ -1,11 +1,7 @@
 // Current trading tools follow Sleeper. Historical/profile names stay stored.
 export const DFL_STARTING_SLOTS=['QB','RB','RB','WR','WR','TE','FLEX','K','DEF'];
+import {sleeperAvatarUrl as avatarUrl} from './member-photo.js';
 const clean=value=>String(value??'').trim();
-function avatarUrl(value){
- const raw=clean(value);if(!raw)return null;
- if(/^[a-z0-9_-]{8,128}$/i.test(raw))return `https://sleepercdn.com/avatars/thumbs/${encodeURIComponent(raw)}`;
- try{const url=new URL(raw);return url.protocol==='https:'&&!url.username&&!url.password?url.href:null;}catch{return null;}
-}
 export function currentAnalyzerLeague(stored,live){
  if(!live||String(live.league_id)!==String(stored?.sleeper_league_id)||Number(live.season)!==Number(stored?.season))return stored;
  return {...stored,scoring_settings:live.scoring_settings||stored.scoring_settings,

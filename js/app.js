@@ -1,3 +1,5 @@
+import {memberPhotoCandidates} from './member-photo.js';
+import {teamPortrait} from './team-presentation.js';
 import {mountConnectionRecovery} from './connection-recovery.js';
 import {startAppDiagnostics} from './app-diagnostics.js';
 import { syncTabIndicator } from './nav-highlight.js';
@@ -58,8 +60,8 @@ function paintName(){
   if(button){button.title=whoamiName.textContent;button.setAttribute("aria-label",`Profile for ${whoamiName.textContent}`)}
   let photo=button?.querySelector(".whoami-photo");
   if(button&&!photo){photo=document.createElement("img");photo.className="whoami-photo";photo.alt="";photo.hidden=true;button.insertBefore(photo,whoamiName)}
-  const source=m?.profile_image||"";
-  if(photo){photo.hidden=!source;if(source)photo.src=source;else photo.removeAttribute("src")}
+  const photos=memberPhotoCandidates(m),source=photos.shift();
+  if(photo){photo.hidden=!source;photo.onerror=()=>{const next=photos.shift();if(next)photo.src=next;else{photo.hidden=true;photo.removeAttribute("src")}};if(source)photo.src=source;else photo.removeAttribute("src")}
 }
 /*
   FOCUS, FOR THE TWO THINGS THAT COVER THE PAGE.
@@ -119,7 +121,7 @@ async function openPicker({cancellable=false}={}){
     return;
   }
   const mine=getMemberId();
-  memberList.innerHTML=members.map(m=>`<button type="button" class="memberbtn ${String(m.id)===mine?"on":""}" data-member="${m.id}"><span class="avatar avatar-fallback sm">${esc(initials(m.display_name))}</span><span class="memberbtn-text"><strong>${esc(m.display_name)}</strong>${m.team_name?`<span class="muted tiny">${esc(m.team_name)}</span>`:""}</span></button>`).join("");
+  memberList.innerHTML=members.map(m=>`<button type="button" class="memberbtn ${String(m.id)===mine?"on":""}" data-member="${m.id}">${teamPortrait(m,{className:"avatar sm"})}<span class="memberbtn-text"><strong>${esc(m.display_name)}</strong>${m.team_name?`<span class="muted tiny">${esc(m.team_name)}</span>`:""}</span></button>`).join("");
 }
 
 /*
@@ -156,7 +158,6 @@ function openGolfJoin(){
   releaseJoin=trapFocus(welcomeJoin);
 }
 
-function initials(name){return String(name||"?").trim().slice(0,2).toUpperCase()}
 /*
   The More sheet. Weekly football tools live in the fixed bar; completed-season
   and occasional tools live here. The routes are unchanged, so
@@ -269,6 +270,7 @@ if(!isPublicBroadcast()&&!currentMember()&&!getUsername()&&!golfPass())openPicke
 else if(getUsername())registerUser(getUsername());
 }
 onGolfPassChange(paintName);
+window.addEventListener("dfl:profile-updated",paintName);
 function bootFailure(error) {
   if(error)console.error(error);
   const view=document.getElementById('view'),offline=navigator.onLine===false;

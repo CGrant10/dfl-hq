@@ -17,7 +17,8 @@ import { threadHtml, wireConversations } from "./wall-conversations.js";
 // =====================================================================
 
 import { db, isAdmin } from "./supabase.js";
-import { currentMember } from "./members.js";
+import { currentMember, loadMemberDirectory } from "./members.js";
+import {teamPortrait} from "./team-presentation.js";
 import { esc, toast } from "./ui.js";
 import { imageFieldHtml, setImageFraming, setImageValue, wireImageFields } from "./image-field.js";
 /* The same arithmetic the broadcast stage draws a slide's artwork with, so a
@@ -61,6 +62,7 @@ export async function loadWall(limit = 12) {
     if (!error) {
       const rows=data||[];
       if(rows.length){const counts=await db().from("member_wall_reply_counts").select("post_id,reply_count").in("post_id",rows.map(row=>row.id));const byId=new Map((counts.data||[]).map(row=>[String(row.post_id),row.reply_count]));for(const row of rows)row.reply_count=byId.get(String(row.id))||0;}
+      await hydrateWallMembers(rows);
       return rows;
     }
     last = error;
@@ -68,6 +70,13 @@ export async function loadWall(limit = 12) {
   }
   if (TABLE_GONE.test(last?.message || "")) return null;
   throw last;
+}
+
+export async function hydrateWallMembers(rows) {
+  if(!rows?.length)return rows;
+  const members=await loadMemberDirectory().catch(()=>[]),byId=new Map(members.map(m=>[String(m.id),m]));
+  for(const row of rows)row.members={...row.members,...byId.get(String(row.member_id))};
+  return rows;
 }
 
 export function wallCard(rows, { compact = false, heading = true } = {}) {
@@ -143,7 +152,6 @@ function stampFull(iso) {
   if (Number.isNaN(at.getTime())) return "";
   return at.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
-const initials = (name) => String(name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "?";
 
 function postHtml(r,compact=false) {
   const m = r.members || {};
@@ -157,9 +165,7 @@ function postHtml(r,compact=false) {
   const canEdit = own || isAdmin();
   const canDelete = own || isAdmin();
   const name = m.display_name || "Member";
-  const avatar = m.profile_image
-    ? `<img class="wall-avatar" src="${esc(m.profile_image)}" alt="" loading="lazy" decoding="async">`
-    : `<span class="wall-avatar wall-avatar-fallback" aria-hidden="true">${esc(initials(name))}</span>`;
+  const avatar = teamPortrait({...m,team_name:name},{className:"wall-avatar"});
   const byline = identityByline(m);
   const controls = canEdit || canDelete ? `<div class="wall-manage row-end">
     ${canEdit ? `<button class="btn ghost small" type="button" data-wall-edit="${esc(r.id)}">Edit</button>` : ""}

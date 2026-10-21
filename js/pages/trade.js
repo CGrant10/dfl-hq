@@ -39,7 +39,7 @@ import { teamIdentity, teamPortrait } from "../team-presentation.js";
 import { recommendationOutcomes, tradeModelHealth, tradeModelHealthMarkup } from "../trade-model-health.js";
 import { loadSharedTradeRecommendations, saveTradeRecommendation } from "../trade-accountability.js";
 import { readViewMemory, writeViewMemory } from '../view-memory.js';
-import { tradeDraft, restoreTradeDraft } from '../trade-draft.js';
+import { tradeDraft, restoreTradeDraft, resetTradeSearch, tradeSearchRestricted } from '../trade-draft.js';
 import {tradePerspective,tradeTransfers} from '../trade-routing.js';
 import {evaluateTradeDeal,readTradeProposals,writeTradeProposals,savedTradeProposal,restoreTradeProposal,applyTradeDeal} from '../trade-workspace.js';
 import {proposalsMarkup,tradeDataContext,tradeOfferEmptyCopy,closestTradeOffers} from '../trade-workspace-ui.js';
@@ -224,7 +224,7 @@ function tradeLab(team, teams, pool, shop) {
       <div class="tb-offers-card" aria-busy="${searching}">
         ${searching?'<p class="tb-search-status" role="status">Finding offers…</p><div class="tb-search-placeholder" aria-hidden="true"><i></i><i></i><i></i></div>':failed?'<p class="tb-search-status" role="status">Couldn’t find offers.</p><button type="button" class="btn ghost small" data-tb-retry>Try again</button>':`
         ${tierOffers.length || !closestOffers.length ? `<div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, true, tierOffers.length)}</div>` : ""}
-        ${tierOffers.length ? "" : `<div class="ta-empty" role="status">${tradeOfferEmptyCopy(intent, shop.receiveAnchors.map(id=>pool.get(String(id))?.position),allOffers)}</div>`}
+        ${tierOffers.length ? "" : `<div class="ta-empty" role="status">${esc(tradeOfferEmptyCopy(intent, shop.receiveAnchors.map(id=>pool.get(String(id))?.position),allOffers))}${tradeSearchRestricted(shop)?`<button type="button" class="btn ghost small" data-tb-reset-search>Reset search · all teams</button>`:""}</div>`}
         ${closestOffers.length ? `<div data-tb-closest><p class="tb-search-status">Closest available</p><div class="tb-tiers">${tierMarkup(closestTier,closestOffers,pool,true)}</div><button type="button" class="btn ghost small" data-tb-intent="${closestTier}">See all ${tierCopy[closestTier].title} offers</button></div>` : ""}
         ${closestOffers.length ? "" : `
         <div class="tb-offer-actions">
@@ -269,7 +269,7 @@ function page(data, tradeAlerts = []) {
   if (saved) { selectedId = saved.selectedId; Object.assign(trade, saved.trade); Object.assign(shop, saved.shop); }
   // A new visit shops the whole league. Keep the manual draft separately;
   // an explicit incoming target link can still narrow the search below.
-  Object.assign(shop,{setupOpen:false,partnerId:"all",memberIds:[],anchorPartnerId:"all",receiveAnchors:[],mode:"offers",customOpen:false,intent:"fair",openTiers:new Set(["fair"])});
+  resetTradeSearch(shop);
   if(params.get('room')==='1')shop.mode='room';
   const target = params.get('target'), partner = data.teams.find(t => String(t.id) === params.get('partner'));
   if (target && partner && String(partner.id) !== String(selectedId) && partner.playerIds.map(String).includes(target)) {
@@ -512,6 +512,7 @@ function page(data, tradeAlerts = []) {
         }
         if(event.target.closest('[data-td-unlink-room]')){negotiation.clearEdit();draw();return;}
         if(event.target.closest('[data-tb-shop-need]')){const button=event.target.closest('[data-tb-shop-need]');shop.partnerId='all';shop.memberIds=[];shop.anchorPartnerId='';shop.goal=button.dataset.tbShopNeed;shop.intent='fair';shop.openTiers=new Set(['fair']);refreshOffers();return;}
+        if(event.target.closest('[data-tb-reset-search]')){resetTradeSearch(shop,{intent:shop.intent});refreshOffers();body.querySelector(`[data-tb-intent="${shop.intent}"]`)?.focus({preventScroll:true});return;}
         if(event.target.closest('[data-tb-retry-schedules]')){void loadSchedules();return;}
         if(event.target.closest('[data-tb-retry]')){catalog.retry(shop.offerState?.key,shop.intent);shop.offerState=null;refreshOffers();return;}
         if (event.target.closest("[data-tb-view-offers]")) {

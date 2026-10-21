@@ -761,3 +761,7 @@ Reviewed actual 320/390/768px Light and Dark screenshots of the intentions edito
 ## 1.458.0 — Shared motion and touch feedback
 
 Inspected actual Light/Dark mobile captures at 320/390/768px for native action states, focus and motion-off/reduced-motion behavior, plus Home scoreboard flight/dock captures at phone widths. Fixed the filled native-dialog hover/active foreground using existing `--action-ink`; no new colors or theme entries. Shared press effects preserve layout and tab underline geometry. Existing Arena/route/sheet/swipe checks pass. Captures, the 90-check interaction report, reproducible before/after measurements and physical-device limitations are recorded in `docs/motion-smoothness-validation.md` and `docs/motion-smoothness/`. `pnpm themes` passed.
+
+## 1.459.0 — Member photo choice and honest empty trade searches
+
+Inspected real Profile editor captures in Light/Dark at 320/390/768px, including loaded portrait previews, selected/focused native radio choices and mobile edges. Source cards use existing surface, border, text and accent tokens; no new palette or picker options. Native keyboard focus survives source changes; 44px targets, fallback initials and app/system motion opt-outs are checked. Also inspected Light/Dark 320px empty Steal states, the reset action and honestly labeled closest offer cards. `pnpm themes` passed. Evidence and unverified native-device states: [trade-search-and-member-photos.md](docs/trade-search-and-member-photos.md).

@@ -15,11 +15,12 @@ import {defaultRacerKit} from '../arena/racer-character.js';
 import {mountStadiumOrientation} from '../arena/stadium-orientation.js';
 import {mountStadiumRacerRoster} from '../arena/stadium-racer-roster.js';
 
+import {memberPhoto,memberPhotoCandidates} from '../member-photo.js';
 let active=null;
 export function leave(){active?.stop();active=null;}
 const safePhoto=value=>{if(!String(value||'').trim())return '';try{const u=new URL(value,location.href);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch{return '';}};
 const initials=name=>String(name||'DFL').split(/\s+/).map(p=>p[0]).slice(0,2).join('');
-const portrait=r=>{const photo=safePhoto(r.photo);return `<span class="sr-avatar" data-initials="${esc(initials(r.name))}" style="--racer:${stadiumColor(r,r.index||0)}">${photo?`<img src="${esc(photo)}" alt="" loading="lazy" decoding="async">`:esc(initials(r.name))}</span>`;};
+const portrait=r=>{const photo=safePhoto(r.photo);return `<span class="sr-avatar" data-initials="${esc(initials(r.name))}" style="--racer:${stadiumColor(r,r.index||0)}">${photo?`<img src="${esc(photo)}" data-photo-fallbacks="${esc(JSON.stringify(r.photoFallbacks||[]))}" alt="" loading="lazy" decoding="async">`:esc(initials(r.name))}</span>`;};
 const jersey=r=>`<span class="sr-jersey" aria-label="Racer ${r.raceNumber}" style="--jersey:${stadiumColor(r,r.index)};--jersey-ink:${kitInk(stadiumColor(r,r.index))}">${r.raceNumber}</span>`;
 const seconds=ms=>`${Math.floor(Math.max(0,ms)/60000)}:${String(Math.floor(Math.max(0,ms)/1000)%60).padStart(2,'0')}`;
 const eventDuration=e=>e.race_engine===STADIUM_ENGINE?Number(e.race_duration_ms):Math.max(15000,Math.min(600000,Number(e.length_ticks||1500)*40));
@@ -32,7 +33,7 @@ function wireMyRacer(root,life,onSave,initialKit=()=>null){const button=root.que
 
 export async function render(view){
  leave();const life={closed:false,cleanup:[],stop(){this.closed=true;for(const fn of this.cleanup.splice(0))fn();}};active=life;
- const failedPhoto=e=>{const avatar=e.target.closest?.('.sr-avatar');if(avatar&&e.target.tagName==='IMG')avatar.textContent=avatar.dataset.initials;};
+ const failedPhoto=e=>{const avatar=e.target.closest?.('.sr-avatar');if(avatar&&e.target.tagName==='IMG'){const rest=JSON.parse(e.target.dataset.photoFallbacks||'[]'),next=rest.shift();e.target.dataset.photoFallbacks=JSON.stringify(rest);if(next)e.target.src=next;else avatar.textContent=avatar.dataset.initials;}};
  view.addEventListener('error',failedPhoto,true);life.cleanup.push(()=>view.removeEventListener('error',failedPhoto,true));
  view.innerHTML=loading();
  try{
@@ -51,7 +52,7 @@ function editorMarkup(members,{event=null,selected=[],paused=false}={}){
  <details class="sr-custom-duration" ${[30,60,90,120,180].includes(duration)?'':'open'}><summary>Custom duration</summary><label>Seconds<input name="duration" type="number" min="15" max="600" step="1" required value="${duration}" inputmode="numeric"></label></details>
  <div class="sr-pick-head"><h3>Racers <span data-picked>${picked.size}</span></h3>${paused?'':'<button type="button" data-all>Select all</button>'}</div>
  ${paused?'':`<label class="sr-search"><span class="sr-only">Find a racer</span><input name="search" type="search" placeholder="Find a racer" autocomplete="off"></label>`}
- <div class="sr-member-picks">${members.filter(m=>!paused||picked.has(String(m.id))).map((m,index)=>`<label class="sr-member-pick"><input type="checkbox" name="racer" value="${esc(m.id)}" ${picked.has(String(m.id))?'checked':''} ${paused?'disabled':''}>${portrait({photo:m.profile_image,name:m.display_name,index})}<span>${esc(m.display_name)}<small>${esc(m.team_name||'')}</small></span></label>`).join('')}</div>
+ <div class="sr-member-picks">${members.filter(m=>!paused||picked.has(String(m.id))).map((m,index)=>`<label class="sr-member-pick"><input type="checkbox" name="racer" value="${esc(m.id)}" ${picked.has(String(m.id))?'checked':''} ${paused?'disabled':''}>${portrait({photo:memberPhoto(m),photoFallbacks:memberPhotoCandidates(m).slice(1),name:m.display_name,index})}<span>${esc(m.display_name)}<small>${esc(m.team_name||'')}</small></span></label>`).join('')}</div>
  </div><div class="sr-editor-save"><p class="sr-form-error" role="alert" hidden></p><button class="sr-primary" type="submit">${event?'Save race':'Create race'}</button></div></form>`;
 }
 
@@ -123,7 +124,7 @@ async function room(view,members,id,life){
  const setMotion=()=>{crowd?.motionChanged();root.dataset.motion=motion()?'on':'off';q('[data-motion]').textContent=`Motion ${motion()?'on':'off'}`;q('[data-motion]').setAttribute('aria-pressed',String(motion()));if(!motion())root.getAnimations({subtree:true}).forEach(animation=>animation.cancel());if(!raf)draw(performance.now());};
  const configureRacers=()=>{
   const kits=new Map((snapshot.racer_kits||[]).map(k=>[String(k.member_id),k.kit]));
-  const next=snapshot.participants.map((p,index)=>{const m=memberMap.get(String(p.member_id)),number=p.number??index+1,kit=normalizeKit(kits.get(String(p.member_id))||defaultRacerKit(p.member_id,{jersey:p.color||m?.accent_color,number}),{number});return {id:String(p.member_id),name:m?.display_name||`Racer ${p.number||index+1}`,team:m?.team_name||'',photo:m?.profile_image||'',number:kit.number,raceNumber:index+1,kit,color:kit.jersey,index};});
+  const next=snapshot.participants.map((p,index)=>{const m=memberMap.get(String(p.member_id)),number=p.number??index+1,kit=normalizeKit(kits.get(String(p.member_id))||defaultRacerKit(p.member_id,{jersey:p.color||m?.accent_color,number}),{number});return {id:String(p.member_id),name:m?.display_name||`Racer ${p.number||index+1}`,team:m?.team_name||'',photo:memberPhoto(m)||'',photoFallbacks:memberPhotoCandidates(m).slice(1),number:kit.number,raceNumber:index+1,kit,color:kit.jersey,index};});
   const signature=JSON.stringify(next);if(signature!==JSON.stringify(racers)){
    const sameField=racers.length===next.length&&racers.every((r,i)=>r.id===next[i].id);racers=next;
    if(renderer&&sameField)renderer.updateRacers(racers);else{renderer?.stop();renderer=createStadiumRenderer(q('canvas'),{racers,motion,highlight:()=>highlightId,onLayout:({overview,top,fieldHeight,fieldWidth})=>{stage.dataset.fieldOverview=String(overview);stage.style.setProperty('--sr-field-top',`${top}px`);stage.style.setProperty('--sr-field-height',`${fieldHeight}px`);stage.style.setProperty('--sr-field-width',`${fieldWidth}px`);}});}

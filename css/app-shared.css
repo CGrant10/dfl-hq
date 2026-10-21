@@ -5380,6 +5380,18 @@ body:has(#more:not(.hidden)) #view { visibility:hidden; }
   #more .quicknav-group a { transition:none; transform:none; }
 }
 html[data-ui-motion="off"] #more .quicknav-group a { transition:none; transform:none; }
+.ph-photo-choice { border:0; padding:0; margin:20px 0 12px; min-width:0; }
+.ph-photo-choice legend { font-size:var(--desk-meta,var(--fs-small)); font-weight:700; margin-bottom:10px; }
+.ph-photo-choice>div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.ph-photo-option { display:flex; align-items:center; position:relative; gap:8px; min-height:64px; padding:10px; border:1px solid var(--line); border-radius:12px; background:var(--bg-2); cursor:pointer; transition:border-color .15s,background-color .15s; }
+.ph-photo-option input { position:absolute; opacity:0; width:1px; height:1px; }
+.ph-photo-option .dfl-team-mark { flex:none; width:36px; height:36px; }
+.ph-photo-option>span:last-child { font-size:var(--desk-meta,var(--fs-small)); font-weight:700; }
+.ph-photo-option.is-selected { border-color:var(--accent); background:var(--accent-soft); }
+.ph-photo-option:focus-within { outline:2px solid var(--accent); outline-offset:3px; }
+.ph-photo-option.is-unavailable { opacity:.5; cursor:default; }
+html[data-ui-motion="off"] .ph-photo-option { transition:none; }
+@media(prefers-reduced-motion:reduce) { .ph-photo-option { transition:none; } }
 
 
 /* Source: css/everyday-premium.css */

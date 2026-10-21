@@ -1,6 +1,6 @@
 import { db } from "../supabase.js";
 import { errorBox } from "../ui.js";
-import { loadWall, updateWall, wireWall } from "../member-wall.js";
+import { loadWall, updateWall, wireWall, hydrateWallMembers } from "../member-wall.js";
 import {mountWallLive} from '../wall-live.js';
 let stopCurrent=null;
 export function leave(){stopCurrent?.();stopCurrent=null;}
@@ -19,7 +19,7 @@ export async function render(view) {
       if(postId&&rows&&!rows.some(row=>Number(row.id)===postId)){
         const {data,error}=await db().from("member_wall_posts").select("*,members!member_wall_posts_member_id_fkey(display_name,profile_image)").eq("id",postId).maybeSingle();
         if(error)throw error;
-        if(data){const counts=await db().from("member_wall_reply_counts").select("reply_count").eq("post_id",postId).maybeSingle();data.reply_count=counts.data?.reply_count||0;rows.unshift(data);}
+        if(data){await hydrateWallMembers([data]);const counts=await db().from("member_wall_reply_counts").select("reply_count").eq("post_id",postId).maybeSingle();data.reply_count=counts.data?.reply_count||0;rows.unshift(data);}
       }
       if(!active()||mine!==request)return false;
       updateWall(slot,rows,{heading:false,...options});

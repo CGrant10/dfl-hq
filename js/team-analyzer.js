@@ -737,6 +737,30 @@ function rawPackageValue(ids, pool) {
   return ids.reduce((sum, id) => sum + (Number(pool.get(String(id))?.tradeValue) || 0), 0);
 }
 
+// Sampling all roster combinations spends most of a Steal search on players
+// whose evidence already rules that tier out. Reserve a bounded second pass
+// for compact, supported packages before the broad sampler can discard them.
+function compactStealCandidates(minePlayers, theirPlayers, pool, shapes, sendRequired, receiveRequired, supported, budget=128) {
+  const clean=players=>players.filter(p=>{
+    if(!supported.has(p.id))supported.set(p.id,!tradeAssessment({projectionEvidence:projectionEvidence([p.id],pool)}).needsReview);
+    return supported.get(p.id);
+  });
+  const mine=clean(minePlayers),theirs=clean(theirPlayers).filter(p=>p.position!=='QB');
+  if(sendRequired.some(id=>!mine.some(p=>String(p.id)===id))||receiveRequired.some(id=>!theirs.some(p=>String(p.id)===id)))return [];
+  const candidates=[],evidence=new Map();
+  const band=ids=>{const key=ids.join(',');if(!evidence.has(key))evidence.set(key,packageEvidence(ids,pool));return evidence.get(key);};
+  for(const [sendCount,receiveCount] of shapes){
+    if(sendCount>2||receiveCount>2)continue;
+    const outgoing=tradePackages(mine,sendCount,sendRequired),incoming=tradePackages(theirs,receiveCount,receiveRequired);
+    for(const sendA of outgoing)for(const sendB of incoming){
+      const a=band(sendA),b=band(sendB),edge=(b.value-a.value)/Math.max(b.value,a.value,1);
+      if(edge<.12||edge>.6||b.low<=a.high||comparableStarPremium(sendA,sendB,pool))continue;
+      candidates.push({sendA,sendB,shape:`${sendCount}-${receiveCount}`,edge});
+    }
+  }
+  return candidates.sort((a,b)=>a.edge-b.edge||a.sendA.length+a.sendB.length-b.sendA.length-b.sendB.length).slice(0,budget);
+}
+
 function evaluationCandidates(possibilities, pool, cap = 900) {
   if (possibilities.length <= cap) return possibilities;
   const ordered = possibilities.map(candidate => {
@@ -953,11 +977,12 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     ? teams.filter(team => String(team.id) === String(partnerId) && String(team.id) !== String(mine.id))
     : anchorId !== String(mine.id) && anchorTeam ? [anchorTeam] : teams.filter(team => String(team.id) !== String(mine.id));
   const allowedShapes = tradeShapes(offerPlayerLimit(maxPlayers, sendRequired, receiveRequired), shapes).filter(([send,receive])=>goal!=='consolidate'||send>receive);
-  const possibilities = [];
+  const possibilities = [],compactPossibilities=[],supported=new Map();
   const minePlayers = sortedPlayers(mine.playerIds.filter(id=>intentionPlayerAllowed(mine,id,intentions,sendRequired)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
   for (const other of partners) {
     if (receiveRequired.some(id => !other.playerIds.map(String).includes(id))) continue;
     const theirs = sortedPlayers(other.playerIds.filter(id=>intentionPlayerAllowed(other,id,intentions,receiveRequired)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
+    if(intent==='steal')compactPossibilities.push(...compactStealCandidates(minePlayers,theirs,pool,allowedShapes,sendRequired,receiveRequired,supported).map(candidate=>({other,...candidate})));
     for (const [sendCount, receiveCount] of allowedShapes) {
       const ratios=intent==='steal'?[.65,.8,1]:[.9,1,1.1];
       const receiveTargets=receiveRequired.length?ratios.map(r=>rawPackageValue(receiveRequired,pool)*r):[];
@@ -982,7 +1007,9 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
       managerFit:offerManagerFit([mine,candidate.other],[candidate.sendA,candidate.sendB],[candidate.sendB,candidate.sendA],[result.startingIncomingA,result.startingIncomingB],pool,intentions),
       utility:tradeSuggestionQuality(result),partnerFit:tradePartnerFit(mine,candidate.other,result,pool) };
   };
-  const evaluated = partnerBalancedCandidates(possibilities, pool, intent).map(evaluateCandidate).filter(Boolean);
+  const candidateKey=row=>JSON.stringify([String(row.other.id),[...row.sendA].sort(),[...row.sendB].sort()]);
+  const candidates=new Map([...partnerBalancedCandidates(possibilities,pool,intent),...compactPossibilities].map(row=>[candidateKey(row),row]));
+  const evaluated = [...candidates.values()].map(evaluateCandidate).filter(Boolean);
   const repaired=intent==='fair'?balanceTradeSuggestions(evaluated,{mine,pool,shapes:new Set(allowedShapes.map(s=>s.join('-'))),maxPlayers:offerPlayerLimit(maxPlayers,sendRequired,receiveRequired),sendRequired,receiveRequired,evaluate:evaluateCandidate}):[];
   const refined=refineTradeOffers(evaluated,{mine,pool,intent,shapes:new Set(allowedShapes.map(s=>s.join('-'))),maxPlayers:offerPlayerLimit(maxPlayers,sendRequired,receiveRequired),sendRequired,receiveRequired,evaluate:evaluateCandidate});
   const usable = [...evaluated,...repaired,...refined].filter(result=>isPlausibleTradeSuggestion(result)&&(goal!=='starter'||horizon==='next4'||result.weeklyDeltaA>.1)

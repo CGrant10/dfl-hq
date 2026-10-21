@@ -1,0 +1,38 @@
+[
+  {
+    "theme": "light",
+    "width": 320,
+    "preview": "both sources, cancel, arrow keys, 44px, no overflow"
+  },
+  {
+    "theme": "light",
+    "width": 390,
+    "preview": "both sources, cancel, arrow keys, 44px, no overflow"
+  },
+  {
+    "theme": "light",
+    "width": 768,
+    "preview": "both sources, cancel, arrow keys, 44px, no overflow"
+  },
+  {
+    "theme": "dark",
+    "width": 320,
+    "preview": "both sources, cancel, arrow keys, 44px, no overflow"
+  },
+  {
+    "theme": "dark",
+    "width": 390,
+    "preview": "both sources, cancel, arrow keys, 44px, no overflow"
+  },
+  {
+    "theme": "dark",
+    "width": 768,
+    "preview": "both sources, cancel, arrow keys, 44px, no overflow"
+  },
+  {
+    "save": "source preference, upload preservation, new upload auto-selects, removal, remount, model invalidation, own member only, network retry, PIN retry"
+  },
+  {
+    "fallbacks": "Sleeper team \u2192 owner \u2192 saved upload \u2192 initials; no broken image loops"
+  }
+]
