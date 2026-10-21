@@ -1248,11 +1248,12 @@ with sync_playwright() as p:
             page.locator('[data-position-panel]:not([hidden]) .dfl-player-portrait').first.click()
         else:
             player.click()
-            page.locator('[data-player-card-loading]').wait_for()
+            page.locator('[data-player-card-body][data-content-state="refreshing"]').wait_for()
             page.wait_for_timeout(250)
             pending=page.locator('.dfl-player-card').bounding_box()
             assert page.locator('[data-player-card-body]').get_attribute('aria-busy')=='true', 'Player loading is not announced'
-            assert page.locator('[data-player-card-loading] .gd-thermal-number').count()==0, 'Pending card fabricated a score'
+            assert page.locator('.player-card-hero').is_visible() and page.locator('[data-player-card-loading]').count()==0, 'Reopened player lost its checked content'
+            assert page.locator('.player-card-actions').evaluate('e=>e.inert'), 'Unverified actions enabled during revalidation'
             page.wait_for_function('!!window.reviewCardRelease')
             page.evaluate('window.reviewCardHold=false;window.reviewCardRelease()')
         try:
@@ -1275,13 +1276,14 @@ with sync_playwright() as p:
         assert page.locator('.dfl-connected-portrait').count()==0, 'Dismissal left a portrait overlay'
         assert player.evaluate('e=>e===document.activeElement'), 'Player dismissal lost focus'
     page.evaluate('window.reviewCardDelay=0;window.reviewCardHold=true;delete window.reviewCardRelease')
+    page.evaluate('window.reviewHeldHero=document.querySelector(".player-card-hero")')
     player.click()
-    page.locator('[data-player-card-loading]').wait_for()
+    page.locator('[data-player-card-body][data-content-state="refreshing"]').wait_for()
     page.wait_for_function('!!window.reviewCardRelease')
     page.keyboard.press('Escape')
     page.evaluate('window.reviewCardHold=false;window.reviewCardRelease()')
     page.wait_for_timeout(300)
-    assert page.locator('.dfl-player-card').evaluate('e=>!e.open') and page.locator('.dfl-player-card .player-card-hero').count()==0, 'Late player response replaced a dismissed card'
+    assert page.locator('.dfl-player-card').evaluate('e=>!e.open') and page.evaluate('window.reviewHeldHero===document.querySelector(".player-card-hero")'), 'Late player response replaced a dismissed card'
     assert player.evaluate('e=>e===document.activeElement'), 'Pending card dismissal lost focus'
     page.evaluate('window.reviewCardDelay=75')
     player.click()

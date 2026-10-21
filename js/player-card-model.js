@@ -1,6 +1,14 @@
 import { scorePlayer } from './dfl-scoring.js';
 import { spotlightStats } from './player-spotlight-model.js';
 
+// One short-lived presentation preview, never a source for trade/roster writes.
+export function playerCardPreviewMatches(saved,selection,context,memberId,now=Date.now()) {
+  return !!saved&&saved.memberId===memberId&&now>=saved.at&&now-saved.at<60000
+    &&String(selection.id||'')===saved.model.player.id
+    &&(!context||Number(context.season)===saved.model.season&&Number(context.week)===saved.model.week
+      &&context.points===saved.model.points&&context.state===saved.model.state);
+}
+
 export function resolvePlayerId(players, { id = '', name = '', team = '' } = {}) {
   if (id && players[String(id)]) return String(id);
   const norm = value => String(value || '').trim().toLowerCase();

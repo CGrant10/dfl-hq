@@ -701,3 +701,24 @@ fallback and cleanup pass the isolated production-browser review. Screens and
 279 checks are in `docs/arena-drama/`; scope, model and rollout details are in
 `docs/arena-drama.md`. Physical device audio/frame pacing, native mobile
 fullscreen and comprehensive screen-reader speech remain unverified.
+
+
+## 1.454.0 — compact power rankings and shared detail continuity
+
+Reviewed actual 320/390/768px Light/Dark ranking rows and detail sheets, including
+long names, current Sleeper photo fallbacks, 200% text, visible focus and 44px
+targets. Smaller portraits, record/trend lines and aligned columns replace the
+extra climber banner. Grid expansion, reversal and interrupted week changes
+passed browser checks. Motion off/reduced motion settle immediately; hidden rows
+are inert and removed from the accessibility tree. Ranking details reuse shared
+sheet gestures, backdrop dimming and guarded dismissal. All colors use existing
+Medicine Wheel tokens. No theme options/aliases change.
+
+Reviewed Light/Dark player sheets and the dated league spotlight at phone/tablet
+widths. Retained player content keeps actions inert until the existing loaders
+finish; failures show a clear Retry. The verified Sleeper link uses existing
+control styling. The spotlight uses the existing numeric-story treatment, actual
+scores and one large figure. The opening daily saying and Wall placement remain.
+`pnpm themes` and all theme tests passed; 75 shared-sheet browser checks passed
+with no errors. Evidence and remaining physical-device, native-handoff and
+screen-reader limitations: [mobile-power-polish.md](docs/mobile-power-polish.md).

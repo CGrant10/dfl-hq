@@ -61,7 +61,53 @@ with sync_playwright() as p:
             page.keyboard.press('Escape');dialog.wait_for(state='detached')
             assert page.evaluate('document.activeElement.closest(".is-me")!==null')
             results.append({'theme':theme,'width':width,'rows':4,'detail':'focus, Escape, full name, no overflow','targets':len(rects)})
+    # Exercise the actual CSS tracks, not just the final class/row count.
+    page.set_viewport_size({'width':390,'height':900})
+    card.scroll_into_view_if_needed()
+    folded=card.locator('ol').evaluate('e=>e.getBoundingClientRect().height')
+    page.locator('[data-home-rank-toggle]').evaluate('e=>e.click()')
+    page.wait_for_timeout(90)
+    opening=card.locator('ol').evaluate('e=>e.getBoundingClientRect().height')
+    page.wait_for_timeout(350)
+    full=card.locator('ol').evaluate('e=>e.getBoundingClientRect().height')
+    assert folded+5<opening<full-5,(folded,opening,full)
+    page.locator('[data-home-rank-toggle]').evaluate('e=>e.click()')
+    page.wait_for_timeout(90)
+    closing=card.locator('ol').evaluate('e=>e.getBoundingClientRect().height')
+    assert folded+5<closing<full-5,(folded,closing,full)
+    assert card.locator('.is-rank-collapsed:not([inert])').count()==0
+    # Reverse during collapse: it must continue from the visible height.
+    reversal=card.evaluate('e=>{const list=e.querySelector("ol"),before=list.getBoundingClientRect().height;e.querySelector("[data-home-rank-toggle]").click();return {before,after:list.getBoundingClientRect().height}}')
+    assert abs(reversal['before']-reversal['after'])<2,reversal
+    page.wait_for_timeout(380)
+    assert abs(card.locator('ol').evaluate('e=>e.getBoundingClientRect().height')-full)<2
+    # Resize and change week mid-transition; no stale callback can undo it.
+    page.locator('[data-home-rank-toggle]').evaluate('e=>e.click()')
+    page.wait_for_timeout(50)
+    page.set_viewport_size({'width':320,'height':900})
+    page.locator('[data-power-week="-1"]').evaluate('e=>e.click()')
+    page.wait_for_timeout(380)
+    assert page.locator('[data-home-rank-toggle]').get_attribute('aria-expanded')=='false'
+    assert card.locator('ol').evaluate('e=>!e.style.height')
+    assert card.locator('.is-rank-collapsed').evaluate_all('(rows)=>rows.every(r=>r.inert&&r.getBoundingClientRect().height<1)')
+    page.locator('[data-power-week="1"]').click()
+    results.append({'expansion':'intermediate heights in both directions, continuous reversal, resize and week switch','heights':[folded,opening,full,closing]})
+    # The ranking details use the existing mobile sheet gesture.
+    page.locator('.power-edition .is-me [data-power-team]').click()
+    dialog=page.locator('dialog.power-detail')
+    page.wait_for_timeout(260)
+    box=dialog.locator('header').bounding_box();x=box['x']+20;y=box['y']+16
+    touch=context.new_cdp_session(page)
+    touch.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
+    for step in range(1,5):
+        touch.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x,'y':y+150*step/4}]})
+        page.wait_for_timeout(40)
+    touch.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
+    dialog.wait_for(state='detached')
+    assert page.evaluate('document.activeElement.closest(".is-me")!==null')
+    results.append({'detailSheet':'touch dismissal, removed dialog and focus restored'})
     page.locator('[data-home-rank-toggle]').click()
+    page.wait_for_timeout(380)
     assert page.locator('.power-edition>ol>li:visible [data-power-team]').count()==12
     assert page.locator('[data-home-rank-toggle]').get_attribute('aria-expanded')=='true'
     page.locator('[data-power-week="-1"]').click()
@@ -85,12 +131,16 @@ with sync_playwright() as p:
     assert page.locator('dialog.power-detail').count()==0
     for reduced,preference in [('reduce','on'),('no-preference','off')]:
         page.emulate_media(reduced_motion=reduced)
-        page.evaluate("async pref=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion',pref);localStorage.removeItem('dfl.power.revealed');powerReviewMount()}",preference)
+        page.evaluate("async pref=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion',pref);dispatchEvent(new Event('dfl:route-performance'));localStorage.removeItem('dfl.power.revealed');powerReviewMount()}",preference)
         card.scroll_into_view_if_needed();page.wait_for_timeout(80)
         assert card.evaluate('e=>e.getAnimations({subtree:true}).length')==0
+        page.locator('[data-home-rank-toggle]').evaluate('e=>e.click()')
+        assert card.evaluate('e=>e.getAnimations({subtree:true}).length')==0
+        assert card.locator('.is-rank-collapsed').evaluate_all('(rows)=>rows.every(r=>!r.inert&&r.getBoundingClientRect().height>=44)')
+        page.locator('[data-home-rank-toggle]').evaluate('e=>e.click()')
         results.append({'reduced':reduced,'motion':preference,'animations':0})
     page.emulate_media(reduced_motion='no-preference')
-    page.evaluate("async()=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion','on');localStorage.removeItem('dfl.power.revealed');window.powerMotionStarts=0;powerReviewMount()}")
+    page.evaluate("async()=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion','on');dispatchEvent(new Event('dfl:route-performance'));localStorage.removeItem('dfl.power.revealed');window.powerMotionStarts=0;powerReviewMount()}")
     card.scroll_into_view_if_needed();page.wait_for_timeout(100)
     assert page.evaluate('window.powerMotionStarts')>0
     page.wait_for_timeout(1100)

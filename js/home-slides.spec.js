@@ -1,5 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { currentMatchupWeek, headToHead, matchupPreviewSlide, matchupStory, nextMoveSlide, playoffPictureSlide, tradeAlertSlide, weekSlateSlide } from "./home-slides.js";
+import { currentMatchupWeek, headToHead, matchupPreviewSlide, matchupStory, nextMoveSlide, playoffPictureSlide, tradeAlertSlide, weekSlateSlide,weeklyHeadlineSlide } from "./home-slides.js";
+
+describe('a dated weekly league headline',()=>{
+  const game=(uid,winner,loser)=>({winner:{uid,name:`Team ${uid}`,value:winner},loser:{uid:`${uid}-rival`,name:`Rival ${uid}`,value:loser}});
+  const report={final:true,season:2026,week:5,games:[game('a',120.6,120),game('b',160,100),game('c',130,110)]};
+  const options={season:2026,week:6};
+  it('picks an actual close result with precise scores and the exact week destination',()=>{
+    const slide=weeklyHeadlineSlide(report,options);
+    expect(slide.kicker).toContain('CLOSEST WIN');expect(slide.figure).toBe('0.60');expect(slide.figureLabel).toBe('Winning margin');
+    expect(slide.subtitle).toBe('Team a 120.60 · Rival a 120.00');
+    expect(slide.sides.map(s=>s.score)).toEqual(['120.60','120.00']);
+    expect(slide.href).toBe('#/clubhouse?season=2026&week=5&tab=matchups');expect(slide.temporal).toBe('final');
+  });
+  it('avoids repeating the personal matchup and never mislabels the next closest game',()=>{
+    const slide=weeklyHeadlineSlide(report,{...options,meSleeperId:'a'});
+    expect(slide.kicker).toContain('BIGGEST BEATDOWN');expect(slide.sides[0].name).toBe('Team b');
+    expect(weeklyHeadlineSlide({...report,games:[game('a',121,120),game('b',122,120)]},{...options,meSleeperId:'a'}).kicker).toContain('LEAGUE SPOTLIGHT');
+  });
+  it('withholds incomplete, old-season, stale, future, tied and malformed results',()=>{
+    for(const value of [null,{...report,final:false},{...report,season:2025},{...report,week:3},{...report,week:7},
+      {...report,games:[game('a',120,120)]},{...report,games:[game('a',NaN,120)]},{...report,games:[game('a',110,120)]}])expect(weeklyHeadlineSlide(value,options)).toBeNull();
+    expect(weeklyHeadlineSlide(report)).toBeNull();
+    expect(weeklyHeadlineSlide({...report,games:[game('a',121,120)]},{...options,meSleeperId:'a'})).toBeNull();
+  });
+});
 
 describe("trade alert as a stage slide", () => {
   const alert = {
