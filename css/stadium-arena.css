@@ -325,3 +325,44 @@ body.sr-stadium-expanded #view,body.sr-stadium-expanded .sr-room{transform:none!
  .sr-room .sr-stage:is(.sr-expanded,:fullscreen) .sr-watch-surface{height:auto}
 }
 .sr-kit-preview .sr-kit-character{position:absolute;top:12px;left:14px;font:700 11px Rajdhani,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#f1eee7}
+
+/* A broadcast window with a permanent number key, including immersive viewing.
+   The roster goes under the picture in portrait and beside it in landscape. */
+.sr-watch-body{display:grid;grid-template-columns:minmax(0,1fr) 240px;min-width:0;min-height:0;background:#0b131c}
+.sr-room .sr-stage .sr-watch-body .sr-watch-surface{min-width:0;height:auto;aspect-ratio:16/9}
+.sr-watch-roster{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(44px,auto);align-content:start;gap:0 8px;min-width:0;min-height:0;padding:5px 8px;overflow:auto;overscroll-behavior:contain;scroll-padding:6px;border-left:1px solid #ffffff1c;background:linear-gradient(160deg,#121c26,#0b131c)}
+.stadium-arena .sr-watch-racer{display:flex;align-items:center;gap:7px;min-width:0;min-height:44px;padding:5px 3px;border:0;border-bottom:1px solid #ffffff17;border-radius:0;color:#f1eee7;background:none;text-align:left;transition:background .2s,color .2s}
+.sr-watch-racer-number{display:grid;place-items:center;flex:none;width:25px;min-height:24px;border:1px solid #dccb994d;border-radius:4px;font:700 15px/1 Rajdhani,sans-serif;color:#f1e4c1;background:#080f17}
+.sr-watch-racer-name{min-width:0;font:700 14px/1.15 Rajdhani,sans-serif;overflow-wrap:anywhere}
+.sr-watch-racer-short{display:none}
+.sr-watch-racer-art{display:none!important}
+.stadium-arena .sr-watch-racer[aria-pressed=true]{color:#ffe3a0;background:#d9bd7612}
+.sr-watch-racer[aria-pressed=true] .sr-watch-racer-number{color:#1b1710;background:#e5ca85;border-color:#fff1c6}
+.stadium-arena .sr-watch-racer:focus-visible{outline:2px solid #dbc180;outline-offset:-2px}
+.sr-room .sr-stage:is(.sr-expanded,:fullscreen) .sr-watch-body{flex:1;min-height:0}
+.sr-room .sr-stage:is(.sr-expanded,:fullscreen) .sr-watch-body .sr-watch-surface{height:100%;aspect-ratio:auto}
+.sr-room .sr-stage:is(.sr-expanded,:fullscreen) .sr-watch-body .sr-watch-surface>canvas{height:100%;min-height:0}
+.sr-room .sr-stage .sr-watch-toolbar.sr-stage-score{padding-block:2px}
+.sr-room .sr-race-footer .sr-moment{min-height:44px;padding-block:4px}
+@media(orientation:portrait){
+ .sr-watch-body{display:flex;flex-direction:column}
+ .sr-room .sr-stage .sr-watch-body .sr-watch-surface{flex:none;aspect-ratio:4/3;min-height:224px;height:auto}
+ .sr-watch-roster{border-left:0;border-top:1px solid #ffffff1c;gap:0 14px;padding-inline:12px}
+ .sr-room .sr-stage .sr-watch-roster .sr-watch-racer-art{display:block!important;flex:none;width:42px;height:48px}
+ .sr-watch-roster .sr-watch-racer{gap:6px}
+ .sr-room .sr-stage:is(.sr-expanded,:fullscreen){justify-content:flex-start;overflow:hidden}
+ .sr-room .sr-stage:is(.sr-expanded,:fullscreen) .sr-watch-body .sr-watch-surface{height:auto;max-height:clamp(184px,calc(100dvh - 520px),520px);aspect-ratio:4/3;min-height:184px}
+ .sr-room .sr-stage:is(.sr-expanded,:fullscreen) .sr-watch-roster{flex:1;grid-auto-rows:minmax(44px,1fr);align-content:stretch}
+}
+@media(orientation:landscape) and (max-height:480px){
+ .sr-watch-body{grid-template-columns:minmax(0,1fr) 270px}
+ .sr-watch-roster{grid-template-columns:repeat(3,minmax(0,1fr));gap:0 4px;padding-inline:5px}
+ .sr-watch-racer-name{font-size:13px}
+ .sr-watch-racer-full{display:none}
+ .sr-watch-racer-short{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .sr-watch-racer-number{width:21px;font-size:13px}
+ .stadium-arena .sr-watch-racer{gap:4px}
+}
+.sr-room[data-motion=off] .sr-watch-racer{transition:none}
+@media(prefers-reduced-motion:reduce){.sr-watch-racer{transition:none!important}}
+@media(orientation:portrait) and (max-width:350px){.sr-room .sr-stage .sr-watch-roster .sr-watch-racer-art{width:32px;height:38px}.sr-watch-racer-name{font-size:13px}}

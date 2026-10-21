@@ -3,6 +3,7 @@ import {normalizeKit,footballYardNumber} from './racer-kit-model.js';
 import {runnerCadence} from './stadium-motion.js';
 import {stadiumDepth,stadiumVerticalCamera} from './stadium-scene.js';
 import {stadiumCelebration} from './stadium-director.js';
+import {stadiumRacerLabel} from './stadium-racer-labels.js';
 const palette=['#cf263b','#c8a147','#ece5d9','#36465c','#a73549','#d3b16e','#ae3b23','#4e6484','#d06238','#c16a91','#8a7c5d','#677781'];
 export const stadiumColor=(racer,index)=>/^#[0-9a-f]{6}$/i.test(racer?.color||'')?racer.color:palette[index%palette.length];
 const image=(src,onload)=>{const img=new Image();img.decoding='async';img.onload=onload;img.src=src;return img;};
@@ -39,7 +40,7 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
 
  function draw(frame,{state='running',replay=false,celebration=0}={}){
   if(closed)return;getSize();lastFrame=frame;lastOptions={state,replay,celebration};const enabled=motion();
-  const n=racers.length,top=Math.max(22,Math.min(30,height*.08)),fieldH=Math.max(24,height-top-16),laneH=Math.max(26,fieldH/n),worldH=laneH*n,trackWidth=width,overview=true;
+  const n=racers.length,top=Math.max(18,Math.min(22,height*.08)),fieldH=Math.max(24,height-top-12),laneH=Math.max(26,fieldH/n),worldH=laneH*n,trackWidth=width,overview=true;
   const layout=`${top}:${fieldH}:${width}`;if(layout!==lastLayout){lastLayout=layout;onLayout({overview:true,top,fieldHeight:fieldH,fieldWidth:width});}
   const live=state==='running'||replay,elapsed=Math.max(0,frame?.elapsed||0),u=frame?.u||0,rows=frame?.rows||racers.map((r,index)=>({id:String(r.id),index,progress:0,speed:0,finished:false}));
   const leaders=frame?.ranked||rows,leader=leaders[0],highlighted=String(highlight()??'');
@@ -97,10 +98,20 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
    const crossed=Math.max(0,elapsed-(row.finishMs||Infinity)),bounce=enabled&&row.finished&&crossed<800?Math.sin(crossed/800*Math.PI)*5:0;
    const finishLean=moving&&!row.finished&&row.progress>.92?Math.min(.14,(row.progress-.92)/.055*.14):0;
    ctx.save();runner(r,x,y-bounce,scale,elapsed,moving&&!row.finished,row.index,row.speed,row.finished?Math.max(0,elapsed-row.finishMs):-1,enabled,finishLean,row.progress*(frame?.duration||60000)/110);ctx.restore();
-   if(overview&&n<=16){const font=Math.max(7,Math.min(11,laneH*yScale*.27));ctx.font=`700 ${font}px Rajdhani,sans-serif`;ctx.textAlign='right';ctx.lineWidth=3;ctx.strokeStyle='#0a201be6';const number=String(kits.get(String(r.id)).number),bx=x-36*scale-3,by=y-13*scale;ctx.strokeText(number,bx,by);ctx.fillStyle='#f4e7c4';ctx.fillText(number,bx,by);}
    if(row.id===highlighted){ctx.strokeStyle='#f0d17baa';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y+2,32*scale,5*scale,0,0,Math.PI*2);ctx.stroke();}
    if(row.id===leader?.id&&!frame?.countdown&&u>.03){ctx.fillStyle='#e3c374';ctx.beginPath();ctx.moveTo(x,y-74*scale);ctx.lineTo(x-3,y-74*scale-5);ctx.lineTo(x+3,y-74*scale-5);ctx.fill();}
    if(row.finished&&laneH*yScale>=9){ctx.fillStyle=row.place===1?'#e3c374':'#f4e7c4';ctx.font=`700 ${Math.min(14,Math.max(8,laneH*yScale*.35))}px Rajdhani,sans-serif`;ctx.textAlign='right';ctx.fillText(String(row.place),width-3,yOf(row.index)+3);}
+  }
+  // Draw identities after all bodies, so another runner cannot paint over one.
+  for(const row of rows){
+   const r=racers[row.index],lanePixels=laneH*yScale,selected=row.id===highlighted;
+   if(n>16&&lanePixels<10&&!selected)continue;
+   const x=padding+(row.progress*worldWidth-panX)*pxScale,scale=Math.max(.06,Math.min(1.3,lanePixels/74,(startX-5)/44,(width-finishX-5)/44));
+   const tag=stadiumRacerLabel({x,y:yOf(row.index),laneHeight:lanePixels,width,bodyScale:scale});
+   ctx.save();ctx.fillStyle=selected?'#e5ca85':'#0a151eee';ctx.strokeStyle=selected?'#fff1c6':'#c7beaa70';ctx.lineWidth=1;
+   ctx.beginPath();ctx.roundRect(tag.x,tag.y,tag.width,tag.height,4);ctx.fill();ctx.stroke();
+   ctx.fillStyle=selected?'#1b1710':'#f5f0e7';ctx.font=`700 ${tag.font}px Rajdhani,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+   ctx.fillText(String(r.raceNumber??row.index+1),tag.x+tag.width/2,tag.y+tag.height/2+.5);ctx.restore();
   }
   ctx.globalAlpha=1;
   // The field keeps its lens falloff; the final sprint warms

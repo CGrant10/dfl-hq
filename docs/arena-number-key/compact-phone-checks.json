@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "immersive stage fits the animated app shell",
+    "immersive canvas and scoreboard clear landscape safe areas",
+    "light compact portrait names use at most two lines",
+    "light compact portrait keeps every number key target visible",
+    "dark compact portrait names use at most two lines",
+    "dark compact portrait keeps every number key target visible"
+  ],
+  "errors": []
+}
