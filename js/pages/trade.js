@@ -1,3 +1,4 @@
+import {createTradeIntentions} from '../trade-intentions-ui.js';
 import {tradeAssessment} from '../trade-assessment.js';
 import {sleeperAction} from '../sleeper-links.js';
 import {createTradeNegotiation} from '../trade-negotiation-ui.js';
@@ -77,7 +78,7 @@ function offerPackage(ids,pool,label,routing=null){
 function offerSummary(offer,pool){
  const p=tradePerspective(offer),a=tradeAssessment(p),deltas=offer.windowDeltas||offer.weeklyDeltas||[a.weeklyA,a.weeklyB];
  const window=offer.windowWeeks?.length?`Weeks ${offer.windowWeeks[0]}–${offer.windowWeeks.at(-1)}`:'Rest of season';
- return `<div class="tb-offer-summary" aria-label="Trade balance, lineup impact and risk"><strong class="tb-offer-fit">${esc(tradeLineupFitLabel(deltas))}</strong><dl><div><dt>Price balance</dt><dd>${Math.round(a.fairness)}%</dd></div><div><dt>You · pts/wk</dt><dd class="${deltas[0]<0?'is-down':'is-up'}">${signed(deltas[0])}</dd></div><div><dt>${offer.parties?'Group balance':'Them · pts/wk'}</dt><dd>${offer.parties?offer.fairness+'%':signed(deltas[1])}</dd></div></dl><span class="tb-offer-horizon">${esc(window)} · projected</span>${a.flags.length?`<span class="tb-offer-risk">${esc(a.flags.join(' · '))}</span>`:''}${p.requiredDropsA?.length?`<span class="tb-offer-risk">Drop: ${esc(p.requiredDropsA.map(id=>pool.get(String(id))?.name||id).join(', '))}</span>`:''}${p.openSlotsA?`<span class="tb-offer-risk">${p.openSlotsA} open roster spot${p.openSlotsA===1?'':'s'}</span>`:''}</div>`;
+ return `<div class="tb-offer-summary" aria-label="Trade balance, lineup impact and risk"><strong class="tb-offer-fit">${esc(tradeLineupFitLabel(deltas))}</strong><dl><div><dt>Price balance</dt><dd>${Math.round(a.fairness)}%</dd></div><div><dt>You · pts/wk</dt><dd class="${deltas[0]<0?'is-down':'is-up'}">${signed(deltas[0])}</dd></div><div><dt>${offer.parties?'Group balance':'Them · pts/wk'}</dt><dd>${offer.parties?offer.fairness+'%':signed(deltas[1])}</dd></div></dl><span class="tb-offer-horizon">${esc(window)} · projected</span>${a.flags.length?`<span class="tb-offer-risk">${esc(a.flags.join(' · '))}</span>`:''}${p.requiredDropsA?.length?`<span class="tb-offer-risk">Drop: ${esc(p.requiredDropsA.map(id=>pool.get(String(id))?.name||id).join(', '))}</span>`:''}${offer.managerFit?.notes?.length?`<div class="tb-manager-fit">${offer.managerFit.notes.map(note=>`<span>${esc(note)}</span>`).join('')}</div>`:''}${p.openSlotsA?`<span class="tb-offer-risk">${p.openSlotsA} open roster spot${p.openSlotsA===1?'':'s'}</span>`:''}</div>`;
 }
 
 function offerMarkup(offer, pool) {
@@ -121,7 +122,7 @@ function anchorOptions(players, selected, label) {
   the same page: propose above, judge below.
 */
 function tradeBoardHeader(mode='offers',leagueId=null){
- return `<div class="tb-head-row page-identity"><header class="tb-head"><small>DFLYZER</small><h1>${mode==='room'?'Deal Room':mode==='manual'?'Check a trade':'Trade Board'}</h1></header><div class="td-external-tools">${sleeperAction(leagueId,'trades',{label:'Sleeper'})}<a class="btn ghost small" href="#/trade?receipts=1">Receipts</a></div></div><div class="td-entry-actions" aria-label="Trade tools"><button type="button" data-td-mode="offers" aria-pressed="${mode==='offers'}">Find offers</button><button type="button" data-td-mode="manual" aria-pressed="${mode==='manual'}">Check a trade</button><button type="button" data-td-mode="room" aria-pressed="${mode==='room'}">Deal room</button><button type="button" data-td-compare aria-label="Compare saved deals">Saved deals</button></div>`;
+ return `<div class="tb-head-row page-identity"><header class="tb-head"><small>DFLYZER</small><h1>${mode==='room'?'Deal Room':mode==='manual'?'Check a trade':'Trade Board'}</h1></header><div class="td-external-tools">${sleeperAction(leagueId,'trades',{label:'Sleeper'})}<a class="btn ghost small" href="#/trade?receipts=1">Receipts</a></div></div><div class="td-entry-actions" aria-label="Trade tools"><button type="button" data-td-mode="offers" aria-pressed="${mode==='offers'}">Find offers</button><button type="button" data-td-mode="manual" aria-pressed="${mode==='manual'}">Check a trade</button><button type="button" data-td-mode="room" aria-pressed="${mode==='room'}">Deal room</button><button type="button" data-td-compare aria-label="Compare saved deals">Saved deals</button></div><div data-ti-host></div>`;
 }
 
 function tradeLab(team, teams, pool, shop) {
@@ -164,8 +165,8 @@ function tradeLab(team, teams, pool, shop) {
       shapeKeys.push(`${send}-${receive}`);
     }
   }
-  const cacheKey = [shop.horizon||'season',shop.scheduleStamp||0,shop.goal||"best",team.id, partnerKey, shop.sendAnchors.join(","), shop.receiveAnchors.join(","), maxPlayers, sendCount, receiveCount].map(String).join("|");
-  const query={teamId:team.id,partnerId: allPartners ? undefined : partner?.id,partyIds:multi?parties.map(t=>t.id):null,
+  const cacheKey = [shop.intentionsStamp||0,shop.horizon||'season',shop.scheduleStamp||0,shop.goal||"best",team.id, partnerKey, shop.sendAnchors.join(","), shop.receiveAnchors.join(","), maxPlayers, sendCount, receiveCount].map(String).join("|");
+  const query={intentions:shop.intentions||{},teamId:team.id,partnerId: allPartners ? undefined : partner?.id,partyIds:multi?parties.map(t=>t.id):null,
     goal:shop.goal||"best",horizon:shop.horizon||'season',weekSchedules:shop.weekSchedules||[],maxPlayers,sendAnchorIds:shop.sendAnchors,receiveAnchorIds:shop.receiveAnchors,sendCount,receiveCount,intent,
     limit:allPartners?132:96,shapes:shapeKeys};
   const result=shop.findOffers(cacheKey,query);
@@ -287,7 +288,10 @@ function page(data, tradeAlerts = []) {
       const connection=createTradeConnection();
       let stopped=false;
       const current=()=>!stopped&&view.isConnected;
-      stopOffers=()=>{stopped=true;shop.intentStamp=(shop.intentStamp||0)+1;connection.stop();catalog.stop();negotiation.stop();};
+      stopOffers=()=>{stopped=true;shop.intentStamp=(shop.intentStamp||0)+1;connection.stop();catalog.stop();negotiation.stop();intentions.stop();};
+      const intentions=createTradeIntentions({member:me,getData:()=>data,
+        onChange:context=>{if(!current())return;shop.intentions=context;shop.intentionsStamp=(shop.intentionsStamp||0)+1;shop.visibleCount=OFFER_BATCH_SIZE;if(catalog)paintOffers();},
+        onTarget:id=>{const mine=data.teams.find(t=>String(t.sleeper_user_id)===String(me?.sleeper_user_id));if(mine)selectedId=mine.id;shop.partnerId=id;shop.anchorPartnerId='';shop.receiveAnchors=[];shop.sendAnchors=[];shop.memberIds=[];shop.mode='offers';draw();body.querySelector('[data-tb-offers]')?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}});
       const negotiation=createTradeNegotiation({member:me,getData:()=>data,getDeal:()=>deal,
         onEdit:next=>{if(next){selectedId=next.parties[0].id;applyTradeDeal(trade,next);}shop.mode='manual';shop.customOpen=true;draw();body.querySelector('.td-custom')?.scrollIntoView({block:'start',behavior:'instant'});body.querySelector('.td-working-as select')?.focus({preventScroll:true});},
         onRoom:()=>{shop.mode='room';shop.customOpen=false;draw();body.querySelector('[data-tr-host]')?.scrollIntoView({block:'start',behavior:'instant'});}});
@@ -311,6 +315,13 @@ function page(data, tradeAlerts = []) {
         });
         if(countsOnly)return;
         const next=template.content.querySelector('[data-tb-offers]');
+        if(next.querySelector('.tb-offers-card[aria-busy="true"]')&&old.querySelector('.tb-offer')){
+          old.setAttribute('aria-busy','true');
+          old.querySelectorAll('[data-td-load-offer]').forEach(button=>button.disabled=true);
+          if(!old.querySelector('[data-ti-search-status]')){const status=document.createElement('p');status.className='tb-search-status';status.dataset.tiSearchStatus='';status.setAttribute('role','status');status.textContent='Updating offers…';old.querySelector('.tb-offers-card')?.prepend(status);}
+          return;
+        }
+        next.classList.add('tb-offers-ready');
         old.replaceWith(next);wireOfferTiers(next);
         if(focused)next.focus({preventScroll:true});
       };
@@ -355,6 +366,7 @@ function page(data, tradeAlerts = []) {
         const share = body.querySelector("[data-td-share]");
         const send = body.querySelector('[data-td-negotiate]');
         negotiation.mount(body.querySelector('[data-tr-host]'));
+        intentions.mount(body.querySelector('[data-ti-host]'));
         mountTradePlayerPickers(body, data.pool, data.teams);
         mountTradeDesk(body.querySelector("[data-trade-desk]"), {
           team, teams: data.teams, pool: data.pool, state: trade, lockedIds:[...shop.sendAnchors,...shop.receiveAnchors], onPartnerChange: (focus={}) => {draw();if(focus.memberIndex!=null)body.querySelector(`[data-td-member="${focus.memberIndex}"]`)?.focus();else body.querySelector("[data-td-verdict]")?.scrollIntoView({behavior:"instant",block:"start"});},
@@ -489,7 +501,7 @@ function page(data, tradeAlerts = []) {
             if(deal!==original)throw Error('The package changed. Review it again.');
             if(fresh.state!=='ready'||fresh.projectionSeason!==data.projectionSeason)throw Error('Current rosters are unavailable. Refresh the trade page.');
             const review=recheckTradeOffer(original,data.pool,fresh.teams,fresh.pool);
-            data=fresh;catalog.stop();catalog=newCatalog();shop.offerState=null;
+            data=fresh;shop.intentions=intentions.context();shop.intentionsStamp=(shop.intentionsStamp||0)+1;catalog.stop();catalog=newCatalog();shop.offerState=null;void intentions.refresh();
             if(review.status==='invalid'){draw();throw Error('A player changed teams. Rebuild this offer.');}
             applyTradeDeal(trade,review.deal);draw();
             if(review.status==='changed')throw Error('Player status or value changed. Review the updated offer.');
@@ -563,7 +575,7 @@ function page(data, tradeAlerts = []) {
             if(deal!==original){toast('The package changed. Share the updated ticket.',true);return;}
             if(fresh.state!=='ready'||fresh.projectionSeason!==data.projectionSeason)throw new Error('Current rosters are unavailable. Refresh the trade page.');
             const review=recheckTradeOffer(original,data.pool,fresh.teams,fresh.pool);
-            data=fresh;catalog.stop();catalog=newCatalog();shop.offerState=null;
+            data=fresh;shop.intentions=intentions.context();shop.intentionsStamp=(shop.intentionsStamp||0)+1;catalog.stop();catalog=newCatalog();shop.offerState=null;
             if(review.status==='invalid'){
               const restored=restoreTradeDraft(tradeDraft({selectedId,trade,shop}),fresh.teams,selectedId);
               if(restored){Object.assign(trade,restored.trade);Object.assign(shop,restored.shop);}
@@ -647,7 +659,7 @@ function page(data, tradeAlerts = []) {
           const saved=restoreTradeDraft(tradeDraft({selectedId,trade,shop}),next.teams,selectedId);
           if(!saved || next.projectionSeason!==data.projectionSeason)return;
           catalog.stop();
-          data=next;selectedId=saved.selectedId;Object.assign(trade,saved.trade);Object.assign(shop,saved.shop);
+          data=next;shop.intentions=intentions.context();shop.intentionsStamp=(shop.intentionsStamp||0)+1;selectedId=saved.selectedId;Object.assign(trade,saved.trade);Object.assign(shop,saved.shop);
           catalog=newCatalog();shop.offerState=null;
           if(shop.horizon==='next4'&&shop.weekScheduleKey!==`${data.projectionSeason}:${data.liveWeek}`){shop.weekSchedules=[];void loadSchedules();}else draw();
         }});

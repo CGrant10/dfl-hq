@@ -753,3 +753,7 @@ and stable focus through live uniform changes. Motion-off/reduced-motion remove
 the selection transition. No theme options, aliases or global navigation change.
 Evidence, verification and physical-device limitations:
 [arena-number-key.md](docs/arena-number-key.md).
+
+## 1.457.0 — Trade intentions
+
+Reviewed actual 320/390/768px Light and Dark screenshots of the intentions editor and read-only manager view, including player names, position states, controls, sheet edges and footer. Authored colors use shared surface/text/border/accent/status tokens; no new theme options or retired crest colors. Controls have 44px heights. Checked document/roster overflow, app motion-off and reduced motion, save focus restoration and error recovery. Screenshots: `docs/trade-intentions/`. `pnpm themes` passed. Physical mobile keyboard/native select and screen-reader speech remain unverified; see `docs/trade-intentions-validation.md`.

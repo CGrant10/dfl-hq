@@ -28,7 +28,7 @@ const packageSize=offer=>Array.isArray(offer.sends)?offer.sends.reduce((n,ids)=>
 const riskCount=offer=>['missing','stale','fallback','injuries'].reduce((n,key)=>n+(offer.projectionEvidence?.[key]?.length||0),0);
 export function tradeSuggestionPriority(offer){
  const quality=offer.utility||tradeSuggestionQuality(offer);
- return [n(quality.group),Math.floor(n(quality.score)/10),Math.floor(n(offer.fairness)/10),-riskCount(offer)];
+ return [n(quality.group),Math.floor(n(quality.score)/10),Math.floor(n(offer.fairness)/10),-riskCount(offer),n(offer.managerFit?.score)];
 }
 export function prioritizeTradeSuggestions(offers,limit,choose){
  const bands=new Map();for(const offer of offers){const key=tradeSuggestionPriority(offer).join(':');if(!bands.has(key))bands.set(key,[]);bands.get(key).push(offer)}
@@ -42,7 +42,7 @@ export function compareTradeSuggestions(a,b){
  return qb.group-qa.group
   ||Math.floor(qb.score/10)-Math.floor(qa.score/10)
   ||Math.floor(n(b.fairness)/10)-Math.floor(n(a.fairness)/10)
-  ||riskCount(a)-riskCount(b)||packageSize(a)-packageSize(b)
+  ||riskCount(a)-riskCount(b)||n(b.managerFit?.score)-n(a.managerFit?.score)||packageSize(a)-packageSize(b)
   ||n(b.score)-n(a.score)||n(b.fairness)-n(a.fairness);
 }
 

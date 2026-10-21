@@ -1,0 +1,974 @@
+[
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Own roster appears without expanding the page",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Saved position selected",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Sheet stays inside phone edges",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Controls meet 44px target height",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Smooth sheet entry enabled",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "No horizontal page overflow",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "No horizontal roster overflow",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Rapid chip changes preserve DOM and focus",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Failed save preserves edits",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Double saves prevented",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Team switch disabled while saving",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Successful save keeps exact labels and needs",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Close restores entry focus",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Other managers are read only",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "League view includes explicit keeping label",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Stale device cannot overwrite newer intentions",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Wrong PIN retains editor",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "PIN recovery saves intentions",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Clear resets draft needs",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Clear resets draft labels",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Closing unsaved draft retains saved intentions",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "League intentions hand off to exact team search",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Reduced motion skips sheet animation",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "App motion setting respected",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Early open waits for synced intentions instead of an empty draft",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "Leaving route releases dialog and timers",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "check": "No browser exceptions",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Own roster appears without expanding the page",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Saved position selected",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Sheet stays inside phone edges",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Controls meet 44px target height",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Smooth sheet entry enabled",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "No horizontal page overflow",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "No horizontal roster overflow",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Rapid chip changes preserve DOM and focus",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Failed save preserves edits",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Double saves prevented",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Team switch disabled while saving",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Successful save keeps exact labels and needs",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Close restores entry focus",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Other managers are read only",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "League view includes explicit keeping label",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Stale device cannot overwrite newer intentions",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Wrong PIN retains editor",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "PIN recovery saves intentions",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Clear resets draft needs",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Clear resets draft labels",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Closing unsaved draft retains saved intentions",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "League intentions hand off to exact team search",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Reduced motion skips sheet animation",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "App motion setting respected",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Early open waits for synced intentions instead of an empty draft",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "Leaving route releases dialog and timers",
+    "pass": true
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "check": "No browser exceptions",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Own roster appears without expanding the page",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Saved position selected",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Sheet stays inside phone edges",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Controls meet 44px target height",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Smooth sheet entry enabled",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "No horizontal page overflow",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "No horizontal roster overflow",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Rapid chip changes preserve DOM and focus",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Failed save preserves edits",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Double saves prevented",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Team switch disabled while saving",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Successful save keeps exact labels and needs",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Close restores entry focus",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Other managers are read only",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "League view includes explicit keeping label",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Stale device cannot overwrite newer intentions",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Wrong PIN retains editor",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "PIN recovery saves intentions",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Clear resets draft needs",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Clear resets draft labels",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Closing unsaved draft retains saved intentions",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "League intentions hand off to exact team search",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Reduced motion skips sheet animation",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "App motion setting respected",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Early open waits for synced intentions instead of an empty draft",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "Leaving route releases dialog and timers",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "check": "No browser exceptions",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Own roster appears without expanding the page",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Saved position selected",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Sheet stays inside phone edges",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Controls meet 44px target height",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Smooth sheet entry enabled",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "No horizontal page overflow",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "No horizontal roster overflow",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Rapid chip changes preserve DOM and focus",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Failed save preserves edits",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Double saves prevented",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Team switch disabled while saving",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Successful save keeps exact labels and needs",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Close restores entry focus",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Other managers are read only",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "League view includes explicit keeping label",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Stale device cannot overwrite newer intentions",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Wrong PIN retains editor",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "PIN recovery saves intentions",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Clear resets draft needs",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Clear resets draft labels",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Closing unsaved draft retains saved intentions",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "League intentions hand off to exact team search",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Reduced motion skips sheet animation",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "App motion setting respected",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Early open waits for synced intentions instead of an empty draft",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "Leaving route releases dialog and timers",
+    "pass": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "check": "No browser exceptions",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Own roster appears without expanding the page",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Saved position selected",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Sheet stays inside phone edges",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Controls meet 44px target height",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Smooth sheet entry enabled",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "No horizontal page overflow",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "No horizontal roster overflow",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Rapid chip changes preserve DOM and focus",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Failed save preserves edits",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Double saves prevented",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Team switch disabled while saving",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Successful save keeps exact labels and needs",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Close restores entry focus",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Other managers are read only",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "League view includes explicit keeping label",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Stale device cannot overwrite newer intentions",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Wrong PIN retains editor",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "PIN recovery saves intentions",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Clear resets draft needs",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Clear resets draft labels",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Closing unsaved draft retains saved intentions",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "League intentions hand off to exact team search",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Reduced motion skips sheet animation",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "App motion setting respected",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Early open waits for synced intentions instead of an empty draft",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "Leaving route releases dialog and timers",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "check": "No browser exceptions",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Own roster appears without expanding the page",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Saved position selected",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Sheet stays inside phone edges",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Controls meet 44px target height",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Smooth sheet entry enabled",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "No horizontal page overflow",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "No horizontal roster overflow",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Rapid chip changes preserve DOM and focus",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Failed save preserves edits",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Double saves prevented",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Team switch disabled while saving",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Successful save keeps exact labels and needs",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Close restores entry focus",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Other managers are read only",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "League view includes explicit keeping label",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Stale device cannot overwrite newer intentions",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Wrong PIN retains editor",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "PIN recovery saves intentions",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Clear resets draft needs",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Clear resets draft labels",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Closing unsaved draft retains saved intentions",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "League intentions hand off to exact team search",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Reduced motion skips sheet animation",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "App motion setting respected",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Early open waits for synced intentions instead of an empty draft",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "Leaving route releases dialog and timers",
+    "pass": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "check": "No browser exceptions",
+    "pass": true
+  }
+]
