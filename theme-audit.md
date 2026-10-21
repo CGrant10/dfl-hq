@@ -708,7 +708,9 @@ fullscreen and comprehensive screen-reader speech remain unverified.
 Reviewed actual 320/390/768px Light/Dark ranking rows and detail sheets, including
 long names, current Sleeper photo fallbacks, 200% text, visible focus and 44px
 targets. Smaller portraits, record/trend lines and aligned columns replace the
-extra climber banner. Grid expansion, reversal and interrupted week changes
+extra climber banner. Fairway contrast checks caught the highlighted row’s small
+record/unchanged-movement text falling below 4.5:1; those labels now use the
+stronger body-text token on the highlight wash. Grid expansion, reversal and interrupted week changes
 passed browser checks. Motion off/reduced motion settle immediately; hidden rows
 are inert and removed from the accessibility tree. Ranking details reuse shared
 sheet gestures, backdrop dimming and guarded dismissal. All colors use existing
