@@ -1,0 +1,64 @@
+name: Trade intentions review
+on:
+  pull_request:
+    paths:
+      - 'js/trade-intentions*'
+      - 'js/trade-suggestion-quality*'
+      - 'js/team-analyzer.js'
+      - 'js/pages/trade.js'
+      - 'css/trade-intentions.css'
+      - 'tools/*trade-intentions*'
+      - 'tools/render-trade-review.mjs'
+      - 'supabase/migrations/*trade_manager_intentions*'
+      - 'supabase/tests/trade_intentions*'
+      - '.github/workflows/trade-intentions-review.yml'
+permissions:
+  contents: read
+jobs:
+  intentions-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pip install playwright
+      - name: Use installed Chrome
+        run: |
+          dfl_review_browser="$(command -v google-chrome)"
+          test -n "$dfl_review_browser"
+          printf 'DFL_REVIEW_CHROMIUM=%s\n' "$dfl_review_browser" >> "$GITHUB_ENV"
+      - name: Exercise production Trade controller with isolated services
+        env:
+          DFL_TRADE_REVIEW_DIR: ${{ github.workspace }}/intentions-review-output
+        run: |
+          node tools/render-trade-review.mjs
+          python tools/capture-trade-intentions-review.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trade-intentions-review
+          path: intentions-review-output/
+          retention-days: 7
+  intentions-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check identity, ownership and concurrent revisions
+        env:
+          DFL_INTENTIONS_TEST_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker cp supabase "$DFL_INTENTIONS_TEST_CONTAINER:/qa"
+          docker exec "$DFL_INTENTIONS_TEST_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 -f /qa/tests/trade_intentions_fixture.sql
