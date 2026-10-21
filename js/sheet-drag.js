@@ -6,13 +6,17 @@ export function sheetShouldClose({distance=0,velocity=0,height=0,cancelled=false
 export function enterSheet(dialog,{motion=true}={}) {
   return animateUi(dialog,[{opacity:0,transform:`translateY(${innerWidth<=600?24:10}px)`},{opacity:1,transform:'none'}],{duration:220,motion});
 }
-export function exitSheet(dialog,complete,options={}) {
+export function exitSheet(dialog,complete,{connected=false,...options}={}) {
   const viewport=window.visualViewport;
   const edge=viewport?viewport.offsetTop+viewport.height:innerHeight;
   const current=getComputedStyle(dialog).transform;
   const offset=current==='none'?0:new DOMMatrixReadOnly(current).m42;
-  const transform=innerWidth<=600?`translateY(${Math.max(24,edge-dialog.getBoundingClientRect().top+offset+24)}px)`:'translateY(12px)';
-  exitUi(dialog,complete,{...options,transform,duration:220});
+  // A returning portrait owns the movement; keep its sheet quiet underneath.
+  // A direct pull still follows the finger all the way beyond the viewport.
+  connected=connected&&!dialog.dataset.sheetMoving;
+  if(connected)dialog.dataset.sheetConnectedClose='true';else delete dialog.dataset.sheetConnectedClose;
+  const transform=connected?`translateY(${offset+8}px)`:innerWidth<=600?`translateY(${Math.max(24,edge-dialog.getBoundingClientRect().top+offset+24)}px)`:'translateY(12px)';
+  exitUi(dialog,complete,{...options,transform,duration:connected?280:220});
 }
 
 // Only the fixed header owns the gesture; the body and form stay native.
@@ -23,7 +27,7 @@ export function mountSheetDrag(dialog,{handle,canDismiss=()=>true,dismiss,onStar
   const motion=()=>!reduced.matches&&document.documentElement.dataset.uiMotion!=='off'&&dialog.dataset.motion!=='off';
   const clean=()=>{
     dialog.style.removeProperty('transform');dialog.style.removeProperty('--sheet-dim');
-    delete dialog.dataset.sheetMoving;
+    delete dialog.dataset.sheetMoving;delete dialog.dataset.sheetConnectedClose;
   };
   const release=id=>{if(handle.hasPointerCapture?.(id))handle.releasePointerCapture(id);};
   const reset=()=>{

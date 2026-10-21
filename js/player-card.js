@@ -31,13 +31,13 @@ function setup() {
   document.body.append(dialog); body = dialog.querySelector('[data-player-card-body]');
   mountScoreVfx(dialog);
   const dismiss = (options = {}) => {
-    if (!dialog.dataset.uiClosing && !options.immediate) {
+    if (!dialog.dataset.uiClosing && !options.immediate && !dialog.dataset.sheetMoving) {
       const origin=stopConnection.position?.();stopConnection();
       const source = returnTarget();
       const target = source?.querySelector('.dfl-player-portrait') || source?.closest('.dfl-player')?.querySelector('.dfl-player-portrait');
-      stopConnection = connectPortrait(body.querySelector('.dfl-player-portrait'), target, { motion:dialog.dataset.motion !== 'off', duration:220, hideSource:true, origin });
+      stopConnection = connectPortrait(body.querySelector('.dfl-player-portrait'), target, { motion:dialog.dataset.motion !== 'off', duration:280, hideSource:true, origin, easing:'cubic-bezier(.4,0,.2,1)' });
     }
-    exitSheet(dialog, () => {sheetDrag.reset();dialog.close();}, options);
+    exitSheet(dialog, () => {sheetDrag.reset();dialog.close();}, { ...options, connected:!!stopConnection.position?.() });
   };
   sheetDrag=mountSheetDrag(dialog,{handle:dialog.querySelector('header'),dismiss,onStart:()=>stopConnection()});
   dialog.querySelector('[data-player-card-close]').addEventListener('click', () => dismiss());
