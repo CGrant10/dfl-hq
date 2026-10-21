@@ -27,6 +27,7 @@ with sync_playwright() as p:
         for theme in ['dark','light']:
             context=browser.new_context(viewport={'width':width,'height':844},service_workers='block')
             context.route('**/*',lambda route:route.continue_() if route.request.url.startswith('http://127.0.0.1:') else route.abort())
+            context.route('https://sleepercdn.com/content/nfl/players/thumb/*',lambda route:route.fulfill(status=404,body='Missing player photo') if route.request.url.endswith('/1-3.jpg') else route.fulfill(content_type='image/png',body=(root/'tools/fixtures/player-portrait.png').read_bytes()))
             page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
             page.goto(url);page.wait_for_function('window.reviewReady===true')
             page.evaluate("async theme=>{localStorage.setItem('dfl.mode',theme);const t=await import('/js/theme.js');t.applyTheme();const {installTradeIntentionsReview}=await import('/tools/trade-intentions-review-fixture.mjs');installTradeIntentionsReview()}",theme)
@@ -36,6 +37,14 @@ with sync_playwright() as p:
             page.wait_for_function("document.querySelector('.ti-entry small')?.textContent.includes('Wants WR')")
             page.locator('[data-ti-open]').click();page.wait_for_selector('.ti-dialog[open]');page.wait_for_timeout(260)
             check(page.locator('[data-ti-player]').count()>5,'Own roster appears without expanding the page')
+            page.wait_for_function("()=>[...document.querySelectorAll('.ti-player .dfl-player-portrait img')].slice(0,4).every(i=>i.complete&&i.naturalWidth>0)")
+            def portraits_fit():
+                return page.locator('.ti-player .dfl-player-portrait img').evaluate_all("imgs=>imgs.every(img=>{const a=img.getBoundingClientRect(),b=img.parentElement.getBoundingClientRect();return a.width<=b.width&&a.height<=b.height&&a.left>=b.left&&a.right<=b.right&&a.top>=b.top&&a.bottom<=b.bottom})")
+            check(portraits_fit(),'Loaded photos stay inside their compact frames')
+            check(page.locator('.ti-player .dfl-player-portrait.has-photo i').evaluate_all("nodes=>nodes.every(i=>getComputedStyle(i).display==='none')"),'Loaded photos hide fallback initials')
+            page.wait_for_function("!document.querySelector('.ti-player:first-child .dfl-player-portrait img')")
+            check(page.locator('.ti-player .dfl-player-portrait i').first.evaluate("i=>{const a=i.getBoundingClientRect(),b=i.parentElement.getBoundingClientRect();return getComputedStyle(i).display==='grid'&&a.width<=b.width&&a.height<=b.height}"),'Failed photos keep centered initials inside the frame')
+
             check(page.locator('[data-ti-need=WR]').get_attribute('aria-pressed')=='true','Saved position selected')
             check(page.evaluate("()=>{const d=document.querySelector('.ti-dialog'),r=d.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight}"),'Sheet stays inside phone edges')
             check(page.evaluate("()=>[...document.querySelectorAll('.ti-dialog button,.ti-dialog select')].filter(e=>e.getClientRects().length).every(e=>e.getBoundingClientRect().height>=43.9)"),'Controls meet 44px target height')
@@ -59,6 +68,8 @@ with sync_playwright() as p:
             page.locator('[data-ti-open]').click();page.wait_for_timeout(260)
             page.locator('[data-ti-team]').select_option('2');page.wait_for_timeout(220)
             check(page.locator('[data-ti-player]').count()==0,'Other managers are read only')
+            page.wait_for_function("()=>[...document.querySelectorAll('.ti-player .dfl-player-portrait img')].every(i=>i.complete&&i.naturalWidth>0)")
+            check(portraits_fit(),'Other managers’ loaded portraits stay within frames')
             check(page.locator('.ti-label[data-status=keeping]').count()==1,'League view includes explicit keeping label')
             page.screenshot(path=str(output/f'intentions-league-{width}-{theme}.png'))
             page.locator('[data-ti-team]').select_option('1')
