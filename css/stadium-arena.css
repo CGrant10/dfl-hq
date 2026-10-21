@@ -314,3 +314,14 @@ body.sr-stadium-expanded #view,body.sr-stadium-expanded .sr-room{transform:none!
 @media(prefers-reduced-motion:reduce){.sr-winner-art{animation:none!important}.sr-kit-mini,.sr-kit-parts:before{transition:none}}
 
 @media(min-width:900px){.sr-editor-host{scroll-margin-top:calc(var(--topbar-h,44px) + var(--season-nav-height,49px) + 12px)}}
+
+/* Keep more turf in a portrait room; the immersive spectator view uses the
+   entire available height in either orientation, without rotating the phone. */
+@media(orientation:portrait){
+ .sr-room .sr-room-title{gap:8px;margin-block:8px}
+ .sr-room .sr-room-title h1{font-size:clamp(22px,5.8vw,34px)}
+ .sr-room .sr-room-meta{margin-bottom:8px;gap:10px}
+ .sr-room .sr-stage .sr-watch-surface{height:clamp(360px,calc(100svh - 230px),800px)}
+ .sr-room .sr-stage:is(.sr-expanded,:fullscreen) .sr-watch-surface{height:auto}
+}
+.sr-kit-preview .sr-kit-character{position:absolute;top:12px;left:14px;font:700 11px Rajdhani,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#f1eee7}

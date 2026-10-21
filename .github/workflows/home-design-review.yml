@@ -11,6 +11,9 @@ on:
       - 'js/arena/stadium-data*'
       - 'js/arena/stadium-model*'
       - 'js/arena/stadium-motion*'
+      - 'js/arena/racer-character*'
+      - 'js/arena/racer-kit*'
+      - 'tools/capture-racer-character-review.py'
       - 'js/arena/stadium-renderer*'
       - 'js/arena/stadium-director*'
       - 'js/arena/stadium-scene*'
@@ -224,6 +227,12 @@ jobs:
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           test -n "$DFL_REVIEW_CHROMIUM"
           python tools/capture-stadium-arena.py
+      - name: Check character poses, silhouettes and texture reuse
+        env:
+          DFL_CHARACTER_REVIEW_DIR: arena-review-output/characters
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          python tools/capture-racer-character-review.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -4,7 +4,8 @@ import {currentMember} from '../members.js';
 import {verifiedPin,markMemberUnlocked} from '../member-lock.js';
 import {loadMyRacerKit,saveMyRacerKit} from './stadium-data.js';
 import {normalizeKit,applyKitPreset,KIT_PRESETS,SKIN_TONES,HELMETS} from './racer-kit-model.js';
-import {drawKitRunner,loadRacerArt,onRacerArtReady} from './racer-kit-art.js';
+import {drawCharacterRunner as drawKitRunner,clearCharacterArt} from './racer-character-art.js';
+import {racerCharacter,defaultRacerKit} from './racer-character.js';
 import {enterSheet,exitSheet,mountSheetDrag} from '../sheet-drag.js';
 const quickColors=[['DFL red','#bb2038'],['White','#ffffff'],['Black','#101820'],['Royal blue','#00338d'],['Forest green','#203731'],['Gold','#ffb612'],['Purple','#4f2683'],['Sky blue','#0085ca'],['Orange','#e86b24'],['Silver','#869397'],['Ivory','#eae2cf'],['Burgundy','#5a1414']];
 
@@ -12,11 +13,11 @@ export async function openRacerEditor({onSave=(_saved)=>{},motion=()=>true,initi
  const member=currentMember();if(!member)return()=>{};
  const [record,lockResult]=await Promise.all([loadMyRacerKit(member.id),db().rpc('profile_lock_status',{target_member_id:member.id})]);
  let activeColor='helmet';
- let kit=normalizeKit(record?.kit??initialKit,{number:initialKit?.number??0}),revision=record?.revision||0,closed=false,raf=0,lastDraw=0,saving=false,stopDrag=null;
+ let kit=normalizeKit(record?.kit??initialKit??defaultRacerKit(member.id,{jersey:member.accent_color}),{number:initialKit?.number??0}),revision=record?.revision||0,closed=false,raf=0,lastDraw=0,saving=false,stopDrag=null;
  const restoreFocus=opener||document.activeElement;
  const dialog=document.createElement('dialog');dialog.className='sr-kit-dialog';dialog.dataset.motion=motion()?'on':'off';dialog.setAttribute('aria-labelledby','sr-kit-title');
  dialog.innerHTML=`<form class="sr-kit-panel"><header><div><span class="sr-kicker">${esc(member.display_name)}</span><h2 id="sr-kit-title">My racer</h2></div><canvas class="sr-kit-mini" width="128" height="160" aria-hidden="true"></canvas><button type="button" data-kit-close aria-label="Close racer editor">×</button></header>
- <div class="sr-kit-preview"><canvas aria-label="Your animated football racer"></canvas><span data-kit-name></span><button type="button" data-preview-retry hidden>Retry preview</button></div>
+ <div class="sr-kit-preview"><canvas aria-label="Your animated football racer"></canvas><span data-kit-name></span><b class="sr-kit-character">${racerCharacter(member.id).name}</b></div>
  <fieldset class="sr-kit-groups"><legend class="sr-only">Kit collection</legend>${['DFL','NFL','Pokémon','Anime'].map(group=>`<button type="button" data-kit-group="${group}" aria-pressed="${group===(KIT_PRESETS.find(p=>p.id===kit.preset)?.group||'DFL')}">${group}</button>`).join('')}</fieldset>
  <label>Kit<select name="preset" aria-label="Racer kit preset"></select></label>
  <fieldset class="sr-kit-skin"><legend>Skin tone</legend>${SKIN_TONES.map(([name,color])=>`<button type="button" style="--tone:${color}" data-kit-skin="${color}" aria-label="${name}" aria-pressed="${kit.skin===color}"></button>`).join('')}</fieldset>
@@ -43,17 +44,16 @@ export async function openRacerEditor({onSave=(_saved)=>{},motion=()=>true,initi
  }
  function group(name){groupButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.kitGroup===name)));dialog.querySelector('.sr-kit-groups').style.setProperty('--kit-slot',String(['DFL','NFL','Pokémon','Anime'].indexOf(name)));field('preset').innerHTML=`<option value="custom">Custom kit</option>`+KIT_PRESETS.filter(p=>p.group===name).map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');field('preset').value=KIT_PRESETS.some(p=>p.id===kit.preset&&p.group===name)?kit.preset:'custom';}
  function draw(now,force=false){
-  if(closed||document.hidden)return;if(!force&&motion()&&now-lastDraw<50)return;lastDraw=now;
+  if(closed||document.hidden)return;if(!force&&motion()&&now-lastDraw<32)return;lastDraw=now;
   ctx.clearRect(0,0,420,440);ctx.strokeStyle='#d6c17a20';ctx.lineWidth=2;for(const x of [48,210,372]){ctx.beginPath();ctx.moveTo(x,360);ctx.lineTo(x,425);ctx.stroke();}ctx.fillStyle='#0008';ctx.beginPath();ctx.ellipse(206,411,94,12,0,0,Math.PI*2);ctx.fill();
-  const stride=motion()?Math.floor(now/110)%6:1;drawKitRunner(ctx,kit,{x:107,y:5,width:205,height:410,stride});
-  if(dialog.dataset.compact==='true'){miniContext.clearRect(0,0,128,160);drawKitRunner(miniContext,kit,{x:24,y:0,width:80,height:158,stride});}
+  const cycle=now/660;drawKitRunner(ctx,kit,{x:28,y:12,width:364,height:400,cycle,identity:member.id,moving:motion()});
+  if(dialog.dataset.compact==='true'){miniContext.clearRect(0,0,128,160);drawKitRunner(miniContext,kit,{x:0,y:0,width:128,height:158,cycle,identity:member.id,moving:motion()});}
  }
  function schedulePreview(){if(!raf&&!closed&&!document.hidden&&motion())raf=requestAnimationFrame(animate);}
  function animate(now){raf=0;if(closed)return;draw(now);schedulePreview();}
- const stopArt=onRacerArtReady(()=>{if(!closed)draw(performance.now(),true);});
  const visibility=()=>{cancelAnimationFrame(raf);raf=0;if(!document.hidden&&!closed){draw(performance.now(),true);schedulePreview();}};
  document.addEventListener('visibilitychange',visibility);
- function close(){if(closed)return;closed=true;cancelAnimationFrame(raf);headerSize.disconnect();stopArt();stopDrag?.stop?.();document.removeEventListener('visibilitychange',visibility);dialog.close();dialog.remove();if(restoreFocus?.isConnected)restoreFocus.focus({preventScroll:true});}
+ function close(){if(closed)return;closed=true;cancelAnimationFrame(raf);headerSize.disconnect();clearCharacterArt();stopDrag?.stop?.();document.removeEventListener('visibilitychange',visibility);dialog.close();dialog.remove();if(restoreFocus?.isConnected)restoreFocus.focus({preventScroll:true});}
  const dismiss=()=>{if(!saving)exitSheet(dialog,close,{motion:motion()});};
  dialog.addEventListener('cancel',e=>{e.preventDefault();dismiss();});dialog.querySelector('[data-kit-close]').onclick=dismiss;
  dialog.addEventListener('click',e=>{if(e.target===dialog&&!saving){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();}});
@@ -76,6 +76,5 @@ export async function openRacerEditor({onSave=(_saved)=>{},motion=()=>true,initi
   }catch(err){error.textContent=err.message||'Could not save racer.';error.hidden=false;if(err.code==='42501'){form.querySelector('.sr-kit-pin').hidden=false;queueMicrotask(()=>field('pin').focus());}}
   finally{saving=false;controls.forEach(c=>c.disabled=false);}
  };
- const retry=form.querySelector('[data-preview-retry]');const loadPreview=async()=>{retry.hidden=true;const ready=await loadRacerArt();if(closed)return;retry.hidden=!ready?false:true;draw(performance.now(),true);};retry.onclick=()=>void loadPreview();
- group(KIT_PRESETS.find(p=>p.id===kit.preset)?.group||'DFL');dialog.showModal();syncHeader();dialog.querySelector('[data-kit-close]').focus();enterSheet(dialog,{motion:motion()});stopDrag=mountSheetDrag(dialog,{handle:header,canDismiss:()=>!saving,dismiss:close});sync();void loadPreview();schedulePreview();return close;
+ group(KIT_PRESETS.find(p=>p.id===kit.preset)?.group||'DFL');dialog.showModal();syncHeader();dialog.querySelector('[data-kit-close]').focus();enterSheet(dialog,{motion:motion()});stopDrag=mountSheetDrag(dialog,{handle:header,canDismiss:()=>!saving,dismiss:close});sync();schedulePreview();return close;
 }

@@ -1,4 +1,4 @@
-import {drawKitRunner,onRacerArtReady} from './racer-kit-art.js';
+import {drawCharacterRunner as drawKitRunner,clearCharacterArt} from './racer-character-art.js';
 import {normalizeKit,footballYardNumber} from './racer-kit-model.js';
 import {runnerCadence} from './stadium-motion.js';
 import {stadiumDepth,stadiumVerticalCamera} from './stadium-scene.js';
@@ -10,10 +10,8 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
  const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw Error('The race display could not open.');
  let width=0,height=0,ratio=1,closed=false,lastFrame=null,lastOptions={},sizeDirty=true,lastLayout='',lastLeader='',leadAt=-Infinity,lastElapsed=0;
  const redraw=()=>{if(lastFrame)draw(lastFrame,lastOptions);};
- const stopArt=onRacerArtReady(redraw);
  const stadium=image(new URL('../../assets/stadium-arena/stadium.webp',import.meta.url),redraw);
  const crest=image(new URL('../../icons/dfl-logo-512.webp',import.meta.url),redraw);
- const sprite=image(new URL('../../assets/stadium-arena/runner-cycle.webp',import.meta.url),redraw);
  // A tiny reusable turf grain avoids generating noise on each animation frame.
  const grain=document.createElement('canvas');grain.width=grain.height=96;
  const grainContext=grain.getContext('2d');
@@ -27,22 +25,14 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
  };
  function runner(r,x,y,scale,elapsed,moving,index,speed=1,finishAge=-1,celebrate=false,finishLean=0,travelPhase=null){
   ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
-  const cadence=runnerCadence(elapsed,speed,index,moving,travelPhase),stride=cadence.stride,alpha=ctx.globalAlpha;
+  const cadence=runnerCadence(elapsed,speed,index,moving,travelPhase),alpha=ctx.globalAlpha;
   ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(-2,0,18,3.5,0,0,Math.PI*2);ctx.fill();
   const kit=kits.get(String(r.id));
   if(moving&&scale>.35){for(let i=0;i<4;i++){const age=((cadence.phase/2+i*.25)%1);ctx.globalAlpha=alpha*(1-age)*.16;ctx.fillStyle=i%2?'#d7c7a0':'#80a18a';ctx.beginPath();ctx.ellipse(-12-age*(cadence.burst?25:16),-age*5,1+age*2,.6+age,0,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=alpha;}
   const pose=stadiumCelebration(finishAge,index,celebrate);
-  ctx.save();ctx.translate(0,cadence.bob-pose.lift-30);ctx.rotate(cadence.lean+pose.lean+finishLean);ctx.scale(pose.turn,1);ctx.translate(0,30);
-  if(cadence.burst&&scale>.55){ctx.globalAlpha=alpha*.12;drawKitRunner(ctx,kit,{x:-29,y:-60,width:48,height:66,stride:(stride+5)%6});ctx.globalAlpha=alpha;}
-  if(drawKitRunner(ctx,kit,{x:-22,y:-60,width:48,height:66,stride})){
-   // The recolored shared atlas keeps the original runner detail.
-  }else if(sprite.complete&&sprite.naturalWidth){
-   const cell=sprite.naturalWidth/6;ctx.drawImage(sprite,cell*stride,0,cell,sprite.naturalHeight,-22,-60,48,66);
-  }else{
-   const swing=moving?Math.sin(elapsed/95+index)*9:0;
-   ctx.strokeStyle='#ece5d9';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(0,-23);ctx.lineTo(-7+swing,-10);ctx.lineTo(-11+swing,0);ctx.moveTo(0,-23);ctx.lineTo(7-swing,-10);ctx.lineTo(11-swing,0);ctx.stroke();
-   ctx.fillStyle='#b7243a';ctx.fillRect(-8,-43,16,23);ctx.fillStyle='#2a303b';ctx.beginPath();ctx.arc(2,-51,9,0,Math.PI*2);ctx.fill();
-  }
+  ctx.save();ctx.translate(0,cadence.bob-pose.lift-38);ctx.rotate(cadence.lean+pose.lean+finishLean);ctx.scale(pose.turn,1);ctx.translate(0,38);
+  const touchdown=celebrate&&finishAge>=0&&finishAge<1500;
+  drawKitRunner(ctx,kit,{x:-36,y:-72,width:72,height:78,cycle:touchdown?finishAge/1500:cadence.phase/6,identity:r.id,moving:moving||touchdown,celebrate:touchdown});
   ctx.restore();
   ctx.restore();
  }
@@ -99,7 +89,7 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
   }
   const moving=enabled&&live&&!frame?.countdown&&!frame?.finished;
   for(const row of rows){
-   const r=racers[row.index],y=yOf(row.index)+laneH*yScale*.42,x=padding+(row.progress*worldWidth-panX)*pxScale,color=stadiumColor(r,row.index),scale=Math.max(.06,Math.min(1.08,laneH*yScale/72));
+   const r=racers[row.index],y=yOf(row.index)+laneH*yScale*.47,x=padding+(row.progress*worldWidth-panX)*pxScale,color=stadiumColor(r,row.index),scale=Math.max(.06,Math.min(1.3,laneH*yScale/74,(startX-5)/44,(width-finishX-5)/44));
    if(row.id===highlighted){ctx.fillStyle=color+'18';ctx.fillRect(0,yOf(row.index)-laneH*yScale/2,width,laneH*yScale);}
    if(enabled&&row.id===leader?.id&&elapsed-leadAt<700){ctx.fillStyle=`rgba(235,211,151,${Math.max(0,1-(elapsed-leadAt)/700)*.15})`;ctx.fillRect(0,yOf(row.index)-laneH*yScale/2,width,laneH*yScale);}
    // Screen-space turf kicks stay visible in a wide phone view, without speed lines.
@@ -107,9 +97,9 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
    const crossed=Math.max(0,elapsed-(row.finishMs||Infinity)),bounce=enabled&&row.finished&&crossed<800?Math.sin(crossed/800*Math.PI)*5:0;
    const finishLean=moving&&!row.finished&&row.progress>.92?Math.min(.14,(row.progress-.92)/.055*.14):0;
    ctx.save();runner(r,x,y-bounce,scale,elapsed,moving&&!row.finished,row.index,row.speed,row.finished?Math.max(0,elapsed-row.finishMs):-1,enabled,finishLean,row.progress*(frame?.duration||60000)/110);ctx.restore();
-   if(overview&&n<=16){const font=Math.max(7,Math.min(11,laneH*yScale*.27));ctx.font=`700 ${font}px Rajdhani,sans-serif`;ctx.textAlign='right';ctx.lineWidth=3;ctx.strokeStyle='#0a201be6';const number=String(kits.get(String(r.id)).number),bx=x-22*scale-3,by=y-13*scale;ctx.strokeText(number,bx,by);ctx.fillStyle='#f4e7c4';ctx.fillText(number,bx,by);}
-   if(row.id===highlighted){ctx.strokeStyle='#f0d17baa';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y+2,24*scale,5*scale,0,0,Math.PI*2);ctx.stroke();}
-   if(row.id===leader?.id&&!frame?.countdown&&u>.03){ctx.fillStyle='#e3c374';ctx.beginPath();ctx.moveTo(x,y-66*scale);ctx.lineTo(x-3,y-66*scale-5);ctx.lineTo(x+3,y-66*scale-5);ctx.fill();}
+   if(overview&&n<=16){const font=Math.max(7,Math.min(11,laneH*yScale*.27));ctx.font=`700 ${font}px Rajdhani,sans-serif`;ctx.textAlign='right';ctx.lineWidth=3;ctx.strokeStyle='#0a201be6';const number=String(kits.get(String(r.id)).number),bx=x-36*scale-3,by=y-13*scale;ctx.strokeText(number,bx,by);ctx.fillStyle='#f4e7c4';ctx.fillText(number,bx,by);}
+   if(row.id===highlighted){ctx.strokeStyle='#f0d17baa';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y+2,32*scale,5*scale,0,0,Math.PI*2);ctx.stroke();}
+   if(row.id===leader?.id&&!frame?.countdown&&u>.03){ctx.fillStyle='#e3c374';ctx.beginPath();ctx.moveTo(x,y-74*scale);ctx.lineTo(x-3,y-74*scale-5);ctx.lineTo(x+3,y-74*scale-5);ctx.fill();}
    if(row.finished&&laneH*yScale>=9){ctx.fillStyle=row.place===1?'#e3c374':'#f4e7c4';ctx.font=`700 ${Math.min(14,Math.max(8,laneH*yScale*.35))}px Rajdhani,sans-serif`;ctx.textAlign='right';ctx.fillText(String(row.place),width-3,yOf(row.index)+3);}
   }
   ctx.globalAlpha=1;
@@ -127,5 +117,5 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
    }ctx.globalAlpha=1;
   }
  }
- return {draw,updateRacers(next){racers=next;refreshKits();redraw();},stop(){closed=true;stopArt();resize.disconnect();for(const img of [stadium,crest,sprite])if(img)img.onload=null;}};
+ return {draw,updateRacers(next){racers=next;refreshKits();redraw();},stop(){closed=true;clearCharacterArt();resize.disconnect();for(const img of [stadium,crest])if(img)img.onload=null;}};
 }

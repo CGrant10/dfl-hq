@@ -1,9 +1,9 @@
 import {trapFocus} from '../focus-trap.js';
 
-// Portrait watches the same wide scene inline. Only touch landscape opts into
-// immersive viewing automatically; an explicit close always wins over resize.
+// A touch spectator gets the whole screen in either orientation. Commissioners
+// remain inline. Closing is sticky for this visit, including later rotations.
 export function autoExpandStadium({width,height,touch=false}){
- return touch&&width>height;
+ return touch&&width>0&&height>0;
 }
 export function mountStadiumOrientation(stage,{onChange=()=>{},autoExpand=()=>true}={}){
  let stopped=false,busy=false,initialized=false,releaseFocus=null,dismissed=false,generation=0,lastPortrait=null;
@@ -12,9 +12,6 @@ export function mountStadiumOrientation(stage,{onChange=()=>{},autoExpand=()=>tr
   if(stopped)return;
   const portrait=innerHeight>innerWidth,changed=portrait!==lastPortrait;
   if(!dismissed&&autoExpand()&&(changed||!initialized)&&autoExpandStadium({width:innerWidth,height:innerHeight,touch:matchMedia('(any-pointer:coarse)').matches})&&document.fullscreenElement!==stage)stage.classList.add('sr-expanded');
-  // An automatic landscape expansion returns inline on rotation. Explicit
-  // fullscreen/expanded viewing remains open and letterboxes in portrait.
-  if(portrait&&stage.dataset.expansion!=='manual'&&document.fullscreenElement!==stage)stage.classList.remove('sr-expanded');
   initialized=true;lastPortrait=portrait;stage.dataset.portrait=String(portrait);
   document.body.classList.toggle('sr-stadium-expanded',stage.classList.contains('sr-expanded'));
   if(!expanded()&&releaseFocus){releaseFocus();releaseFocus=null;}

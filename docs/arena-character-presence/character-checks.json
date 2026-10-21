@@ -1,0 +1,138 @@
+{
+  "checks": [
+    {
+      "name": "member 1 has 24 different complete running poses",
+      "pass": true
+    },
+    {
+      "name": "member 1 has an animated touchdown pose",
+      "pass": true
+    },
+    {
+      "name": "member 2 has 24 different complete running poses",
+      "pass": true
+    },
+    {
+      "name": "member 2 has an animated touchdown pose",
+      "pass": true
+    },
+    {
+      "name": "member 3 has 24 different complete running poses",
+      "pass": true
+    },
+    {
+      "name": "member 3 has an animated touchdown pose",
+      "pass": true
+    },
+    {
+      "name": "member 4 has 24 different complete running poses",
+      "pass": true
+    },
+    {
+      "name": "member 4 has an animated touchdown pose",
+      "pass": true
+    },
+    {
+      "name": "member 5 has 24 different complete running poses",
+      "pass": true
+    },
+    {
+      "name": "member 5 has an animated touchdown pose",
+      "pass": true
+    },
+    {
+      "name": "member 6 has 24 different complete running poses",
+      "pass": true
+    },
+    {
+      "name": "member 6 has an animated touchdown pose",
+      "pass": true
+    },
+    {
+      "name": "member 7 has 24 different complete running poses",
+      "pass": true
+    },
+    {
+      "name": "member 7 has an animated touchdown pose",
+      "pass": true
+    },
+    {
+      "name": "member 8 has 24 different complete running poses",
+      "pass": true
+    },
+    {
+      "name": "member 8 has an animated touchdown pose",
+      "pass": true
+    },
+    {
+      "name": "member 9 has 24 different complete running poses",
+      "pass": true
+    },
+    {
+      "name": "member 9 has an animated touchdown pose",
+      "pass": true
+    },
+    {
+      "name": "member 10 has 24 different complete running poses",
+      "pass": true
+    },
+    {
+      "name": "member 10 has an animated touchdown pose",
+      "pass": true
+    },
+    {
+      "name": "member 11 has 24 different complete running poses",
+      "pass": true
+    },
+    {
+      "name": "member 11 has an animated touchdown pose",
+      "pass": true
+    },
+    {
+      "name": "member 12 has 24 different complete running poses",
+      "pass": true
+    },
+    {
+      "name": "member 12 has an animated touchdown pose",
+      "pass": true
+    },
+    {
+      "name": "every build, preset, helmet, limb and celebration stays inside its texture",
+      "pass": true
+    },
+    {
+      "name": "identical uniforms still produce four distinct character silhouettes",
+      "pass": true
+    },
+    {
+      "name": "member 1 remains still with motion off",
+      "pass": true
+    },
+    {
+      "name": "member 2 remains still with motion off",
+      "pass": true
+    },
+    {
+      "name": "member 3 remains still with motion off",
+      "pass": true
+    },
+    {
+      "name": "member 4 remains still with motion off",
+      "pass": true
+    },
+    {
+      "name": "32 racers reuse their textures across animation frames",
+      "pass": true
+    }
+  ],
+  "clipped": [],
+  "poseCount": 5092,
+  "minimumInkHeight": 99,
+  "performance": {
+    "frames": 180,
+    "meanMs": 0.5283333335485724,
+    "p95Ms": 1.3999999985098839,
+    "maxMs": 6.899999998509884
+  },
+  "errors": []
+}
