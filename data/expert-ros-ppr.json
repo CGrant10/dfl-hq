@@ -6,8 +6,8 @@
   "scoring": "ppr",
   "season": 2026,
   "experts": 7,
-  "updatedAt": 1792603698000,
-  "fetchedAt": 1792608244622,
+  "updatedAt": 1792625944000,
+  "fetchedAt": 1792645193477,
   "players": [
     {
       "sourceId": 22968,
@@ -208,37 +208,37 @@
       "stdDev": 6.73
     },
     {
-      "sourceId": 25409,
-      "name": "Malik Nabers",
-      "position": "WR",
-      "team": "NYG",
-      "rank": 19,
-      "positionRank": 10,
-      "minRank": 17,
-      "maxRank": 26,
-      "stdDev": 2.94
-    },
-    {
       "sourceId": 20130,
       "name": "Nico Collins",
       "position": "WR",
       "team": "HOU",
-      "rank": 20,
-      "positionRank": 11,
+      "rank": 19,
+      "positionRank": 10,
       "minRank": 20,
-      "maxRank": 26,
-      "stdDev": 2.19
+      "maxRank": 22,
+      "stdDev": 0.98
     },
     {
       "sourceId": 25324,
       "name": "Chase Brown",
       "position": "RB",
       "team": "CIN",
-      "rank": 21,
+      "rank": 20,
       "positionRank": 10,
       "minRank": 11,
       "maxRank": 28,
       "stdDev": 6.24
+    },
+    {
+      "sourceId": 25409,
+      "name": "Malik Nabers",
+      "position": "WR",
+      "team": "NYG",
+      "rank": 21,
+      "positionRank": 11,
+      "minRank": 17,
+      "maxRank": 31,
+      "stdDev": 4.87
     },
     {
       "sourceId": 17298,
@@ -373,11 +373,22 @@
       "stdDev": 6.86
     },
     {
+      "sourceId": 26024,
+      "name": "Matthew Golden",
+      "position": "WR",
+      "team": "GB",
+      "rank": 34,
+      "positionRank": 16,
+      "minRank": 26,
+      "maxRank": 40,
+      "stdDev": 4.5
+    },
+    {
       "sourceId": 17233,
       "name": "Lamar Jackson",
       "position": "QB",
       "team": "BAL",
-      "rank": 34,
+      "rank": 35,
       "positionRank": 3,
       "minRank": 27,
       "maxRank": 54,
@@ -388,22 +399,11 @@
       "name": "Drake Maye",
       "position": "QB",
       "team": "NE",
-      "rank": 35,
+      "rank": 36,
       "positionRank": 4,
       "minRank": 27,
       "maxRank": 37,
       "stdDev": 4.27
-    },
-    {
-      "sourceId": 26024,
-      "name": "Matthew Golden",
-      "position": "WR",
-      "team": "GB",
-      "rank": 36,
-      "positionRank": 16,
-      "minRank": 31,
-      "maxRank": 40,
-      "stdDev": 3.32
     },
     {
       "sourceId": 22963,
@@ -2844,8 +2844,8 @@
       "rank": 296,
       "positionRank": 109,
       "minRank": 254,
-      "maxRank": 320,
-      "stdDev": 24.2
+      "maxRank": 311,
+      "stdDev": 22.51
     },
     {
       "sourceId": 22930,
@@ -2881,22 +2881,11 @@
       "stdDev": 26.05
     },
     {
-      "sourceId": 23080,
-      "name": "Marvin Mims Jr.",
-      "position": "WR",
-      "team": "DEN",
-      "rank": 300,
-      "positionRank": 112,
-      "minRank": 259,
-      "maxRank": 314,
-      "stdDev": 21.32
-    },
-    {
       "sourceId": 23144,
       "name": "Eli Stowers",
       "position": "TE",
       "team": "PHI",
-      "rank": 301,
+      "rank": 300,
       "positionRank": 44,
       "minRank": 268,
       "maxRank": 305,
@@ -2907,11 +2896,22 @@
       "name": "Roschon Johnson",
       "position": "RB",
       "team": "CHI",
-      "rank": 302,
+      "rank": 301,
       "positionRank": 76,
       "minRank": 259,
       "maxRank": 333,
       "stdDev": 28.1
+    },
+    {
+      "sourceId": 23080,
+      "name": "Marvin Mims Jr.",
+      "position": "WR",
+      "team": "DEN",
+      "rank": 303,
+      "positionRank": 112,
+      "minRank": 259,
+      "maxRank": 320,
+      "stdDev": 22.42
     },
     {
       "sourceId": 25977,
@@ -2995,11 +2995,11 @@
       "name": "Skyler Bell",
       "position": "WR",
       "team": "BUF",
-      "rank": 312,
+      "rank": 313,
       "positionRank": 114,
       "minRank": 282,
-      "maxRank": 343,
-      "stdDev": 22.11
+      "maxRank": 347,
+      "stdDev": 23.52
     },
     {
       "sourceId": 28168,
@@ -3339,8 +3339,8 @@
       "rank": 350,
       "positionRank": 118,
       "minRank": 262,
-      "maxRank": 351,
-      "stdDev": 38.27
+      "maxRank": 354,
+      "stdDev": 39.23
     },
     {
       "sourceId": 26310,
@@ -3515,8 +3515,8 @@
       "rank": 370,
       "positionRank": 122,
       "minRank": 307,
-      "maxRank": 350,
-      "stdDev": 20.27
+      "maxRank": 351,
+      "stdDev": 20.51
     },
     {
       "sourceId": 18226,
@@ -3537,8 +3537,8 @@
       "rank": 372,
       "positionRank": 124,
       "minRank": 309,
-      "maxRank": 353,
-      "stdDev": 20.29
+      "maxRank": 351,
+      "stdDev": 19.57
     },
     {
       "sourceId": 15520,
@@ -3629,11 +3629,22 @@
       "stdDev": 6.5
     },
     {
+      "sourceId": 28125,
+      "name": "CJ Daniels",
+      "position": "WR",
+      "team": "LAR",
+      "rank": 381,
+      "positionRank": 127,
+      "minRank": 329,
+      "maxRank": 343,
+      "stdDev": 7.0
+    },
+    {
       "sourceId": 24334,
       "name": "Ja'Tavion Sanders",
       "position": "TE",
       "team": "CAR",
-      "rank": 381,
+      "rank": 382,
       "positionRank": 59,
       "minRank": 334,
       "maxRank": 340,
@@ -3644,7 +3655,7 @@
       "name": "Tyler Goodson",
       "position": "RB",
       "team": "DAL",
-      "rank": 382,
+      "rank": 383,
       "positionRank": 104,
       "minRank": 303,
       "maxRank": 303,
@@ -3655,7 +3666,7 @@
       "name": "J'Mari Taylor",
       "position": "RB",
       "team": "JAC",
-      "rank": 384,
+      "rank": 385,
       "positionRank": 105,
       "minRank": 320,
       "maxRank": 357,
@@ -3666,22 +3677,11 @@
       "name": "Zavion Thomas",
       "position": "WR",
       "team": "CHI",
-      "rank": 385,
-      "positionRank": 127,
+      "rank": 386,
+      "positionRank": 128,
       "minRank": 328,
       "maxRank": 349,
       "stdDev": 10.5
-    },
-    {
-      "sourceId": 28125,
-      "name": "CJ Daniels",
-      "position": "WR",
-      "team": "LAR",
-      "rank": 386,
-      "positionRank": 128,
-      "minRank": 329,
-      "maxRank": 349,
-      "stdDev": 10.0
     },
     {
       "sourceId": 28427,
@@ -3695,23 +3695,23 @@
       "stdDev": 4.0
     },
     {
-      "sourceId": 26012,
-      "name": "Malik Benson",
-      "position": "WR",
-      "team": "LV",
-      "rank": 388,
-      "positionRank": 129,
-      "minRank": 312,
-      "maxRank": 312,
-      "stdDev": 0.0
-    },
-    {
       "sourceId": 22928,
       "name": "Phil Mafah",
       "position": "RB",
       "team": "NYG",
-      "rank": 389,
+      "rank": 388,
       "positionRank": 106,
+      "minRank": 314,
+      "maxRank": 314,
+      "stdDev": 0.0
+    },
+    {
+      "sourceId": 26012,
+      "name": "Malik Benson",
+      "position": "WR",
+      "team": "LV",
+      "rank": 389,
+      "positionRank": 129,
       "minRank": 314,
       "maxRank": 314,
       "stdDev": 0.0
@@ -3757,8 +3757,8 @@
       "rank": 393,
       "positionRank": 130,
       "minRank": 338,
-      "maxRank": 354,
-      "stdDev": 8.0
+      "maxRank": 352,
+      "stdDev": 7.0
     },
     {
       "sourceId": 24371,
@@ -3844,8 +3844,8 @@
       "team": "MIN",
       "rank": 402,
       "positionRank": 134,
-      "minRank": 347,
-      "maxRank": 347,
+      "minRank": 349,
+      "maxRank": 349,
       "stdDev": 0.0
     },
     {
@@ -3866,8 +3866,8 @@
       "team": "SF",
       "rank": 404,
       "positionRank": 136,
-      "minRank": 352,
-      "maxRank": 352,
+      "minRank": 353,
+      "maxRank": 353,
       "stdDev": 0.0
     },
     {
