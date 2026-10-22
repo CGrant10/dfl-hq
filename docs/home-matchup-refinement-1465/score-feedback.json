@@ -1,0 +1,58 @@
+[
+  {
+    "mode": "light",
+    "width": 320,
+    "separate": true,
+    "contained": true,
+    "gap": 4
+  },
+  {
+    "mode": "light",
+    "width": 390,
+    "separate": true,
+    "contained": true,
+    "gap": 3
+  },
+  {
+    "mode": "light",
+    "width": 430,
+    "separate": true,
+    "contained": true,
+    "gap": 2
+  },
+  {
+    "mode": "light",
+    "width": 1280,
+    "separate": true,
+    "contained": true,
+    "gap": 2
+  },
+  {
+    "mode": "dark",
+    "width": 320,
+    "separate": true,
+    "contained": true,
+    "gap": 4
+  },
+  {
+    "mode": "dark",
+    "width": 390,
+    "separate": true,
+    "contained": true,
+    "gap": 3
+  },
+  {
+    "mode": "dark",
+    "width": 430,
+    "separate": true,
+    "contained": true,
+    "gap": 2
+  },
+  {
+    "mode": "dark",
+    "width": 1280,
+    "separate": true,
+    "contained": true,
+    "gap": 2
+  }
+]

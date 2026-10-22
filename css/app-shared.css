@@ -3410,8 +3410,8 @@ body:has(#view) { padding-top: var(--topbar-h); }
 #home-wrap .home-league-file { border-top: 1px solid var(--home-panel-line); padding-top: 16px; }
 #home-wrap .home-banter { border-top: 1px solid var(--home-panel-line); padding-top: 16px; }
 @media (max-width: 360px) {
-  #home-wrap .gameday-matchup { gap: 16px; }
-  #home-wrap .gameday-matchup > .gameday-faceoff-team { grid-template-columns: 32px minmax(0,1fr); gap: 10px 6px; }
+  #home-wrap .gameday-matchup { gap: 6px 16px; }
+  #home-wrap .gameday-matchup > .gameday-faceoff-team { grid-template-columns: 32px minmax(0,1fr); gap: 4px 6px; }
   #home-wrap .gameday-matchup > .gameday-faceoff-team:nth-of-type(2) { grid-template-columns: minmax(0,1fr) 32px; }
   #home-wrap .gameday-matchup .gameday-faceoff-mark { width: 32px; height: 32px; }
   #home-wrap .gameday-matchup .home-team-name strong { font-size: 15px; }
@@ -3437,7 +3437,7 @@ body:has(#view) { padding-top: var(--topbar-h); }
 #home-wrap .home-matchup-entry {justify-content:flex-end;min-height:44px;margin:0;padding-block:4px;}
 #home-wrap .home-matchup-entry > strong {display:flex;align-items:center;gap:6px;}
 #home-wrap .home-matchup-entry .ico-sm {width:16px;height:16px;}
-.home-score-dock {position:fixed;z-index:110;display:grid;gap:3px;box-sizing:border-box;min-height:64px;padding:6px 16px;border:1px solid var(--line);border-radius:0 0 10px 10px;background:var(--bg-2);color:var(--text);box-shadow:0 5px 14px #00000010;text-align:center;}
+.home-score-dock {position:fixed;z-index:110;display:grid;gap:2px;box-sizing:border-box;min-height:60px;padding:5px 16px;border:1px solid var(--line);border-radius:0 0 10px 10px;background:var(--bg-2);color:var(--text);box-shadow:0 5px 14px #00000010;text-align:center;}
 .home-score-dock[hidden] {display:none;}
 .home-score-caption {font:700 11px/1.2 var(--home-ui-font,var(--font-body));letter-spacing:.06em;text-transform:uppercase;}
 .home-score-pair {display:grid;grid-template-columns:minmax(0,1fr) 12px minmax(0,1fr);grid-template-rows:auto auto;align-items:center;gap:3px 8px;width:min(100%,460px);justify-self:center;}
@@ -6014,14 +6014,14 @@ html[data-ui-motion="off"] .dfl-player-compare *,html[data-ui-motion="off"] .dfl
 /* Source: css/home-premium.css */
 /* Room for the broadcast without shrinking team names or hiding useful scores. */
 #home-wrap{padding-top:16px;--home-section-gap:30px}
-#home-wrap>.home-newspaper-masthead{margin-bottom:10px;padding-bottom:8px;gap:3px 14px}
+#home-wrap>.home-newspaper-masthead{margin-bottom:6px;padding-bottom:6px;gap:3px 14px}
 #home-wrap .home-newspaper-name h1{font-size:clamp(27px,8vw,32px);line-height:1.1}
 #home-wrap .home-frontpage{gap:16px}
-#home-wrap .gameday-matchup{padding-top:6px;gap:16px}
-#home-wrap .gameday-matchup>.gameday-faceoff-team{grid-template-columns:40px minmax(0,1fr);grid-template-rows:minmax(48px,1fr) auto;gap:6px 7px}
+#home-wrap .gameday-matchup{padding-block:4px;gap:6px 16px}
+#home-wrap .gameday-matchup>.gameday-faceoff-team{grid-template-columns:40px minmax(0,1fr);grid-template-rows:minmax(48px,1fr) auto;gap:4px 7px}
 #home-wrap .gameday-matchup>.gameday-faceoff-team:nth-of-type(2){grid-template-columns:minmax(0,1fr) 40px}
 #home-wrap .gameday-matchup .gameday-faceoff-mark{width:40px;height:40px}
-#home-wrap .home-matchup-entry{min-height:28px;padding-block:2px}
+#home-wrap .gameday-matchup>.home-matchup-entry{min-height:24px;margin:0;padding-block:2px}
 #home-wrap .home-matchup-entry>strong{font-size:12px;line-height:1.35}
 #home-wrap .home-week-focus{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-top:4px;padding:0}
 #home-wrap .home-week-focus a{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;min-width:0}

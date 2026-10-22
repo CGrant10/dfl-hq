@@ -804,3 +804,15 @@ legacy mappings and shared navigation are preserved. No new UI colors or theme
 options were added. Both native and forced-fallback motion, reduced motion and
 motion-off are covered. Screens, measurements and device limits:
 [Home score motion](docs/home-score-motion-1464.md).
+
+## 1.465.0 — Compact Home matchup spacing and heading
+
+Inspected actual production-component Light/Dark mobile expanded, compact and
+mid-flight captures at 320/390px; geometry also covers 430px. The heading follows
+personal matchup status while forecasts remain identified. Reduced vertical
+spacing preserves full names, score typography, photo frames and the live-score
+feedback lane. Existing surface, border, text and accent tokens, Medicine Wheel
+defaults, legacy mappings and shared navigation remain unchanged. No palette or
+theme entries were added. Motion-off, reduced motion and both scroll drivers
+pass. `pnpm themes` passed. Screens, checks and native-device limits:
+[Home matchup refinement](docs/home-matchup-refinement-1465.md).

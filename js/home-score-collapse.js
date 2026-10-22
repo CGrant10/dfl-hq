@@ -52,7 +52,8 @@ export function mountHomeScoreCollapse(root){
   const box=source.getBoundingClientRect(),bounds=root.getBoundingClientRect(),top=scrollChromeBottom();
   const span=Math.max(96,box.height-24),sourceStyles=parts.map(part=>getComputedStyle(part.score));
   dock.hidden=false;style(dock,'left',`${bounds.left}px`);style(dock,'width',`${bounds.width}px`);style(dock,'top',`${top}px`);style(dock,'opacity','0');
-  const phase=text(source.querySelector('.home-team-total > small')),week=text(root.querySelector('[data-gameday-week]'));
+  const scoreType=text(source.querySelector('.home-team-total > small')),week=text(root.querySelector('[data-gameday-week]'));
+  const phase=source.classList.contains('is-projected')?'Projected':text(source.closest('.gameday-card')?.querySelector('.home-game-phase'))||(scoreType==='Actual'?'':scoreType);
   set(dock.querySelector('.home-score-caption'),[week,phase].filter(Boolean).join(' · '));
   parts.forEach((part,i)=>{
    set(scores[i],text(part.score));set(names[i],text(part.name));
@@ -60,7 +61,7 @@ export function mountHomeScoreCollapse(root){
    style(scores[i],'fontFamily',sourceStyles[i].fontFamily);style(scores[i],'fontWeight',sourceStyles[i].fontWeight);style(scores[i],'letterSpacing',sourceStyles[i].letterSpacing);
    const clone=part.mark.cloneNode(true);clone.removeAttribute('id');clone.setAttribute('aria-hidden','true');marks[i].replaceChildren(clone);
   });
-  attr(dock,'aria-label',`Back to your matchup. ${phase} scores. ${parts.map((part,i)=>`${text(part.name)}: ${scores[i].textContent}`).join('. ')}`);
+  attr(dock,'aria-label',`Back to your matchup. ${phase?`${phase} scores`:'Scores'}. ${parts.map((part,i)=>`${text(part.name)}: ${scores[i].textContent}`).join('. ')}`);
   const height=dock.offsetHeight;
   if(root.style.getPropertyValue('--dfl-scroll-top')!==`${top}px`)root.style.setProperty('--dfl-scroll-top',`${top}px`);
   if(root.style.getPropertyValue('--dfl-scroll-height')!==`${height}px`)root.style.setProperty('--dfl-scroll-height',`${height}px`);
@@ -119,8 +120,8 @@ export function mountHomeScoreCollapse(root){
  const schedule=()=>{if(!stopped&&!frame)frame=requestAnimationFrame(paint)};
  const invalidate=()=>{dirty=true;schedule()};
  const preferences=()=>{suppress();invalidate()};
- const fields='.home-team-name,.gameday-faceoff-mark,.gd-thermal-value,.home-projected-total,.home-team-total > small,[data-gameday-week]';
- const replacements='[data-home-gameday-slot],.gameday-matchup,.gameday-faceoff-team,.home-team-name,.gameday-faceoff-mark,.home-team-total,.gd-thermal-value,.home-projected-total,[data-gameday-week],dialog';
+ const fields='.home-team-name,.gameday-faceoff-mark,.gd-thermal-value,.home-projected-total,.home-team-total > small,[data-gameday-week],.home-game-phase';
+ const replacements='[data-home-gameday-slot],.gameday-matchup,.gameday-faceoff-team,.home-team-name,.gameday-faceoff-mark,.home-team-total,.gd-thermal-value,.home-projected-total,[data-gameday-week],.home-game-phase,dialog';
  const observer=new MutationObserver(records=>{
   const slot=root.querySelector('[data-home-gameday-slot]');
   const related=node=>node.nodeType===1&&(node===source||node.contains(source)||node.matches(replacements)||node.querySelector(replacements));

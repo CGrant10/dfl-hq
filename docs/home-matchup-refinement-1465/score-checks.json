@@ -1,0 +1,131 @@
+{
+  "checks": [
+    {
+      "driver": "native",
+      "mode": "light",
+      "width": 320,
+      "handoffs": true,
+      "heightResize": true
+    },
+    {
+      "driver": "native",
+      "mode": "light",
+      "width": 390,
+      "handoffs": true,
+      "heightResize": true
+    },
+    {
+      "driver": "native",
+      "mode": "light",
+      "width": 430,
+      "handoffs": true,
+      "heightResize": true
+    },
+    {
+      "driver": "native",
+      "mode": "dark",
+      "width": 320,
+      "handoffs": true,
+      "heightResize": true
+    },
+    {
+      "driver": "native",
+      "mode": "dark",
+      "width": 390,
+      "handoffs": true,
+      "heightResize": true
+    },
+    {
+      "driver": "native",
+      "mode": "dark",
+      "width": 430,
+      "handoffs": true,
+      "heightResize": true
+    },
+    {
+      "driver": "native",
+      "statusHeadings": [
+        "Week 5 \u00b7 Upcoming",
+        "Week 5 \u00b7 Live",
+        "Week 5 \u00b7 In progress"
+      ],
+      "projectedHeading": true,
+      "noActualHeading": true
+    },
+    {
+      "driver": "native",
+      "scrollFrames": 120,
+      "sourceReads": 0,
+      "flightWrites": 0,
+      "stable": true
+    },
+    {
+      "driver": "native",
+      "touchFlingAt4xCpu": true
+    },
+    {
+      "driver": "fallback",
+      "mode": "light",
+      "width": 320,
+      "handoffs": true,
+      "heightResize": true
+    },
+    {
+      "driver": "fallback",
+      "mode": "light",
+      "width": 390,
+      "handoffs": true,
+      "heightResize": true
+    },
+    {
+      "driver": "fallback",
+      "mode": "light",
+      "width": 430,
+      "handoffs": true,
+      "heightResize": true
+    },
+    {
+      "driver": "fallback",
+      "mode": "dark",
+      "width": 320,
+      "handoffs": true,
+      "heightResize": true
+    },
+    {
+      "driver": "fallback",
+      "mode": "dark",
+      "width": 390,
+      "handoffs": true,
+      "heightResize": true
+    },
+    {
+      "driver": "fallback",
+      "mode": "dark",
+      "width": 430,
+      "handoffs": true,
+      "heightResize": true
+    },
+    {
+      "driver": "fallback",
+      "statusHeadings": [
+        "Week 5 \u00b7 Upcoming",
+        "Week 5 \u00b7 Live",
+        "Week 5 \u00b7 In progress"
+      ],
+      "projectedHeading": true,
+      "noActualHeading": true
+    },
+    {
+      "driver": "fallback",
+      "scrollFrames": 120,
+      "sourceReads": 0,
+      "flightWrites": 792,
+      "stable": true
+    },
+    {
+      "driver": "fallback",
+      "touchFlingAt4xCpu": true
+    }
+  ],
+  "errors": []
+}
