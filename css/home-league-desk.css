@@ -110,8 +110,8 @@
 #home-wrap .home-league-file { border-top: 1px solid var(--home-panel-line); padding-top: 16px; }
 #home-wrap .home-banter { border-top: 1px solid var(--home-panel-line); padding-top: 16px; }
 @media (max-width: 360px) {
-  #home-wrap .gameday-matchup { gap: 16px; }
-  #home-wrap .gameday-matchup > .gameday-faceoff-team { grid-template-columns: 32px minmax(0,1fr); gap: 10px 6px; }
+  #home-wrap .gameday-matchup { gap: 6px 16px; }
+  #home-wrap .gameday-matchup > .gameday-faceoff-team { grid-template-columns: 32px minmax(0,1fr); gap: 4px 6px; }
   #home-wrap .gameday-matchup > .gameday-faceoff-team:nth-of-type(2) { grid-template-columns: minmax(0,1fr) 32px; }
   #home-wrap .gameday-matchup .gameday-faceoff-mark { width: 32px; height: 32px; }
   #home-wrap .gameday-matchup .home-team-name strong { font-size: 15px; }
@@ -137,7 +137,7 @@
 #home-wrap .home-matchup-entry {justify-content:flex-end;min-height:44px;margin:0;padding-block:4px;}
 #home-wrap .home-matchup-entry > strong {display:flex;align-items:center;gap:6px;}
 #home-wrap .home-matchup-entry .ico-sm {width:16px;height:16px;}
-.home-score-dock {position:fixed;z-index:110;display:grid;gap:3px;box-sizing:border-box;min-height:64px;padding:6px 16px;border:1px solid var(--line);border-radius:0 0 10px 10px;background:var(--bg-2);color:var(--text);box-shadow:0 5px 14px #00000010;text-align:center;}
+.home-score-dock {position:fixed;z-index:110;display:grid;gap:2px;box-sizing:border-box;min-height:60px;padding:5px 16px;border:1px solid var(--line);border-radius:0 0 10px 10px;background:var(--bg-2);color:var(--text);box-shadow:0 5px 14px #00000010;text-align:center;}
 .home-score-dock[hidden] {display:none;}
 .home-score-caption {font:700 11px/1.2 var(--home-ui-font,var(--font-body));letter-spacing:.06em;text-transform:uppercase;}
 .home-score-pair {display:grid;grid-template-columns:minmax(0,1fr) 12px minmax(0,1fr);grid-template-rows:auto auto;align-items:center;gap:3px 8px;width:min(100%,460px);justify-self:center;}

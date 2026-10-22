@@ -27,8 +27,10 @@ with sync_playwright() as p:
     page.set_viewport_size({'width':width,'height':844});page.evaluate('mode=>reviewSetTheme(mode)',mode);page.evaluate('scrollTo(0,0)');page.wait_for_timeout(100)
     assert page.locator('.home-score-flight').get_attribute('data-scroll-driver')==driver,driver+' path was not exercised'
     limits=page.evaluate("""()=>{const s=document.querySelector('.gameday-matchup').getBoundingClientRect(),top=document.querySelector('.topbar').getBoundingClientRect().bottom;return {start:s.top+scrollY-top-104,span:Math.max(96,s.height-24),height:document.documentElement.scrollHeight}}""")
+    if driver=='native' and width in [320,390]:page.screenshot(path=str(OUT/f'{driver}-{mode}-{width}-expanded.png'))
     for t in [0,.03,.25,.5,.75,.97,1.03,.5,0]:
      page.evaluate('({l,t})=>scrollTo(0,Math.max(0,l.start+l.span*t))',{'l':limits,'t':t});page.wait_for_timeout(75)
+     page.wait_for_function("""()=>{const b=document.querySelector('.gameday-matchup').getBoundingClientRect(),top=document.querySelector('.topbar').getBoundingClientRect().bottom,t=Math.max(0,Math.min(1,(top+104-b.top)/Math.max(96,b.height-24))),p=t*t*t*(t*(t*6-15)+10);return Math.abs(Number(getComputedStyle(document.querySelector('.home-score-dock')).opacity)-p)<.012}""")
      result=page.evaluate("""()=>{const source=document.querySelector('.gameday-matchup'),box=source.getBoundingClientRect(),top=document.querySelector('.topbar').getBoundingClientRect().bottom,t=Math.max(0,Math.min(1,(top+104-box.top)/Math.max(96,box.height-24))),p=t*t*t*(t*(t*6-15)+10),dock=document.querySelector('.home-score-dock'),names=[...document.querySelectorAll('[data-dock-name]')];return {t,p,opacity:Number(getComputedStyle(dock).opacity),overflow:document.documentElement.scrollWidth>innerWidth,completeNames:names.every(n=>n.textContent&&n.scrollWidth<=n.clientWidth+1),sameFont:[...source.querySelectorAll('.home-projected-total,.gd-thermal-value')].every((n,i)=>getComputedStyle(n).fontFamily===getComputedStyle(document.querySelectorAll('[data-dock-score]')[i]).fontFamily),separated:[...document.querySelectorAll('.home-score-moving-name')].every((n,i)=>{if(Number(getComputedStyle(n).opacity)<.6)return true;const a=n.getBoundingClientRect(),b=document.querySelectorAll('.home-score-moving[data-motion-kind=mark]')[i].getBoundingClientRect();return i===0?b.right<=a.left+1:a.right<=b.left+1}),copies:[...document.querySelectorAll('.home-score-moving')].length,hiddenCopies:[...document.querySelectorAll('.home-score-moving')].every(n=>Number(getComputedStyle(n).opacity)<.001)}}""")
      assert abs(result['opacity']-result['p'])<.012 and not result['overflow'] and result['completeNames'] and result['sameFont'] and result['separated'],(driver,mode,width,t,result)
      if result['t'] in [0,1]:assert result['hiddenCopies'],(driver,mode,width,t,'copies flashed at endpoint')
@@ -44,6 +46,33 @@ with sync_playwright() as p:
     # Preserve the original document flow at every handoff.
     assert page.evaluate('document.documentElement.scrollHeight')==limits['height']
     checks.append({'driver':driver,'mode':mode,'width':width,'handoffs':True,'heightResize':True})
+  # The heading follows this matchup's status, including status-only refreshes.
+  # A projected total must remain clearly identified even before kickoff.
+  page.evaluate('scrollTo(0,0)');page.wait_for_function("[...document.querySelectorAll('.gameday-faceoff-team')].every(n=>Number(getComputedStyle(n).opacity)===1)")
+  heading=page.evaluate("""async()=>{
+   const {homeGameDayMatchup,homeGameDayPhase}=await import('./js/home-presentation.js');
+   const content=document.querySelector('[data-gameday-content]'),phase=document.querySelector('.home-game-phase'),original=content.innerHTML,label=phase.textContent;
+   const settle=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+   const sides=['a','b'].map((uid,i)=>({uid,roster:String(i+1),name:i?'The Bayou Bombers':'Klutch Sports Group',score:0,known:true,live:0,starters:[{state:'upcoming'}]}));
+   const model={season:2026,week:5,live:true,games:[{id:1,isMine:true,sides}]};
+   const labels=[];
+   for(const [live,expected] of [[0,'Upcoming'],[1,'Live'],[0,'In progress']]){
+    sides[0].live=live;if(expected==='In progress')sides[0].starters[0].state='final';
+    if(!labels.length)content.innerHTML=homeGameDayMatchup(model);
+    phase.textContent=homeGameDayPhase(model).label;await settle();
+    const caption=document.querySelector('.home-score-caption').textContent;
+    if(caption!==`Week 5 · ${expected}`)throw Error(`Wrong status heading: ${caption}`);labels.push(caption);
+   }
+   sides[0].starters[0].state='upcoming';phase.textContent='Upcoming';
+   const weekly={season:2026,week:5,teams:sides.map(team=>({sleeper_user_id:team.uid,projection:121.5,lineupIsSet:true}))};
+   content.innerHTML=homeGameDayMatchup(model,weekly);await settle();
+   if(document.querySelector('.home-score-caption').textContent!=='Week 5 · Projected')throw Error('Forecast lost its label');
+   // Minimal legacy hosts can omit the status node: never expose Actual there.
+   content.innerHTML=homeGameDayMatchup(model);phase.textContent='';await settle();
+   if(document.querySelector('.home-score-caption').textContent!=='Week 5')throw Error('Generic score label leaked into heading');
+   content.innerHTML=original;phase.textContent=label;await settle();return labels;
+  }""")
+  checks.append({'driver':driver,'statusHeadings':heading,'projectedHeading':True,'noActualHeading':True})
   # Instrument only after setup. Native drawing must not write flight transforms;
   # neither path may measure source geometry during a reversing scroll.
   page.evaluate("""()=>{window.sourceReads=0;window.flightWrites=0;const read=Element.prototype.getBoundingClientRect;Element.prototype.getBoundingClientRect=function(){if(this.matches('.gameday-matchup'))sourceReads++;return read.call(this)};window.flightObserver=new MutationObserver(rs=>flightWrites+=rs.filter(r=>r.attributeName==='style').length);flightObserver.observe(document.querySelector('.home-score-flight'),{subtree:true,attributes:true})}""")
