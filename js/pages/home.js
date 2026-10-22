@@ -52,7 +52,8 @@ import { buildHomeWeekOutlook, HOME_OUTLOOK_POSITIONS } from "../home-week-outlo
 import { buildNextMove } from "../next-move.js";
 import { teamPortrait } from "../team-presentation.js";
 import { startAssembly } from "../scroll-assembly.js";
-import { currentMatchupWeek, nextMoveSlide, playoffPictureSlide, tradeAlertSlide,weeklyHeadlineSlide } from "../home-slides.js";
+import { currentMatchupWeek, nextMoveSlide, playoffPictureSlide, tradeAlertSlide } from "../home-slides.js";
+import {homeLeagueStory} from '../home-lead-story.js';
 import { buildLeagueStakes } from "../league-stakes.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity } from "../player-presentation.js";
@@ -757,7 +758,7 @@ export async function render(view) {
 
     /* What the dashboard carried that nothing else does: the completed-trade
        verdict and the auto-scout. Both go to the stage as slides. */
-    const extras = [weeklyHeadlineSlide(completedReport,{season:analysis?.projectionSeason,week:analysis?.liveWeek,meSleeperId:myMember?.sleeper_user_id}),playoffPictureSlide(pulse?.stakes, myMember?.sleeper_user_id), tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
+    const extras = [homeLeagueStory(completedReport,{history:got?.error?[]:got?.matchups||[],season:analysis?.projectionSeason,week:analysis?.liveWeek,meSleeperId:myMember?.sleeper_user_id}),playoffPictureSlide(pulse?.stakes, myMember?.sleeper_user_id), tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
     if (extras.length) {
       liveSlides = extras;
     }

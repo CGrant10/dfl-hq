@@ -366,3 +366,54 @@ body.sr-stadium-expanded #view,body.sr-stadium-expanded .sr-room{transform:none!
 .sr-room[data-motion=off] .sr-watch-racer{transition:none}
 @media(prefers-reduced-motion:reduce){.sr-watch-racer{transition:none!important}}
 @media(orientation:portrait) and (max-width:350px){.sr-room .sr-stage .sr-watch-roster .sr-watch-racer-art{width:32px;height:38px}.sr-watch-racer-name{font-size:13px}}
+
+/* The official finish is a single result surface, shared by live and archived
+   races. Rank, lane number and jersey number retain their separate meanings. */
+.stadium-arena .sr-final{margin-top:20px;padding:18px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg-2);color:var(--text);scroll-margin-top:calc(var(--topbar-h,44px) + 12px)}
+.sr-final .sr-finish-heading{text-align:left;margin-bottom:12px}
+.sr-final .sr-finish-heading h2{margin:6px 0 10px;font:700 clamp(25px,7vw,34px)/1.08 Rajdhani,var(--font-body);letter-spacing:0;max-width:18ch}
+.sr-final .sr-finish-margin{display:flex;align-items:baseline;gap:8px;margin:0;color:var(--body-text);font:600 12px/1.4 var(--font-body)}
+.sr-final .sr-finish-margin strong{font:700 17px/1.2 Rajdhani,var(--font-body);color:var(--text);font-variant-numeric:tabular-nums}
+.sr-final .sr-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;gap:6px;margin:0 0 22px;padding:0;border:0;background:none}
+.sr-final .sr-podium-place{display:flex;flex-direction:column;min-width:0;gap:0;padding:0;border:0;background:none;position:relative;text-align:center;align-items:stretch}
+.sr-final .sr-podium-place[data-place="1"]{order:2}
+.sr-final .sr-podium-place[data-place="2"]{order:1;padding-top:28px}
+.sr-final .sr-podium-place[data-place="3"]{order:3;padding-top:38px}
+.sr-final .sr-podium-art{position:relative;height:130px;display:flex;justify-content:center;align-items:end;isolation:isolate}
+.sr-final .sr-podium-place[data-place="1"] .sr-podium-art{height:158px}
+.sr-final .sr-podium-art canvas{position:relative;z-index:1;width:112px;height:122px;max-width:none;flex-shrink:0;filter:none}
+.sr-final .sr-podium-place[data-place="1"] canvas{width:140px;height:153px}
+.sr-final .sr-podium-watermark{position:absolute;bottom:0;left:0;right:0;color:color-mix(in srgb,var(--text) 7%,transparent);font:400 128px/1 Anton,sans-serif;pointer-events:none}
+.sr-final .sr-podium-place[data-place="1"] .sr-podium-watermark{font-size:154px;color:color-mix(in srgb,var(--accent) 14%,transparent)}
+.sr-final .sr-podium-identity{position:relative;z-index:2;display:grid;justify-items:center;gap:5px;min-width:0;border-top:2px solid var(--line);padding:10px 2px 0}
+.sr-final .sr-podium-place[data-place="1"] .sr-podium-identity{border-color:var(--accent)}
+.sr-final .sr-podium-identity>b{font:700 10px/1.3 var(--font-body);color:var(--body-text);letter-spacing:.04em}
+.sr-final .sr-podium-place[data-place="1"] .sr-podium-identity>b{color:var(--accent)}
+.sr-final .sr-podium-identity>strong{font:700 15px/1.15 Rajdhani,var(--font-body);overflow-wrap:anywhere;min-width:0;color:var(--text)}
+.sr-final :is(.sr-podium-identity,.sr-finish-name) a{color:inherit;text-decoration:none}
+.sr-final .sr-podium-identity a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;max-width:100%}
+.sr-final .sr-podium-identity a:hover,.sr-final .sr-finish-name a:hover{text-decoration:underline;text-underline-offset:3px}
+.sr-final .sr-podium-time{font:600 12px/1.2 var(--font-body);color:var(--body-text);font-variant-numeric:tabular-nums}
+.sr-final .sr-jersey{margin:0;min-width:22px;height:22px;font-size:11px}
+.sr-final .sr-podium[data-podium-count="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+.sr-final .sr-podium[data-podium-count="2"] .sr-podium-place{order:initial}
+.sr-final .sr-podium[data-podium-count="1"]{grid-template-columns:minmax(0,210px);justify-content:center}
+.sr-final .sr-finish-classification{margin:0;padding:0;border:0}
+.sr-final .sr-finish-classification>header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 0 10px;border-bottom:1px solid var(--line)}
+.sr-final .sr-finish-classification h3{margin:0;color:var(--text);font:700 18px/1.2 Rajdhani,var(--font-body)}
+.sr-final .sr-finish-classification>header>span{font:600 9px/1.4 var(--font-body);color:var(--body-text);letter-spacing:.04em}
+.sr-final .sr-finish-order{list-style:none;padding:0;margin:0}
+.sr-final .sr-finish-order>li{display:grid;grid-template-columns:18px 34px minmax(0,1fr) auto;align-items:center;gap:7px;min-height:66px;padding:8px 0;border-bottom:1px solid var(--line);position:relative}
+.sr-final .sr-finish-order>li:last-child{border-bottom:0}
+.sr-final .sr-finish-place{color:var(--body-text);font:700 16px/1 Rajdhani,var(--font-body);font-variant-numeric:tabular-nums}
+.sr-final .sr-finish-order canvas{width:34px;height:39px;grid-column:2;grid-row:1}
+.sr-final .sr-finish-order .sr-jersey{position:absolute;bottom:5px;left:43px;min-width:16px;height:16px;font-size:9px}
+.sr-final .sr-finish-name{display:grid;gap:3px;min-width:0;overflow-wrap:anywhere;text-align:left}
+.sr-final .sr-finish-name>a,.sr-final .sr-finish-name>span{font:700 15px/1.2 Rajdhani,var(--font-body);color:var(--text)}
+.sr-final .sr-finish-name>a{display:flex;align-items:center;min-height:44px}
+.sr-final .sr-finish-name>small{font:500 11px/1.25 var(--font-body);color:var(--body-text)}
+.sr-final .sr-finish-time{display:grid;gap:4px;justify-items:end;color:var(--text);font-variant-numeric:tabular-nums}
+.sr-final .sr-finish-time>strong{font:700 13px/1.2 var(--font-body)}
+.sr-final .sr-finish-time>small{font:500 10px/1.2 var(--font-body);color:var(--body-text)}
+.stadium-arena .sr-board[hidden],.stadium-arena .sr-board-head[hidden],.stadium-arena .sr-final[hidden]{display:none}
+@media(min-width:600px){.stadium-arena .sr-final{padding:24px}.sr-final .sr-podium{max-width:640px;margin-inline:auto;gap:24px}.sr-final .sr-podium-art{height:168px}.sr-final .sr-podium-place[data-place="1"] .sr-podium-art{height:196px}.sr-final .sr-podium-art canvas{width:140px;height:153px}.sr-final .sr-podium-place[data-place="1"] canvas{width:168px;height:183px}.sr-final .sr-podium-identity>strong{font-size:18px}.sr-final .sr-finish-order>li{grid-template-columns:28px 42px minmax(0,1fr) auto;gap:12px}.sr-final .sr-finish-order canvas{width:42px;height:48px}.sr-final .sr-finish-order .sr-jersey{left:65px}.sr-final .sr-finish-name{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center}.sr-final .sr-finish-name>a{font-size:17px}}

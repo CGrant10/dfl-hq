@@ -270,7 +270,7 @@ describe("the initial app shell", () => {
     const sections = fs.readFileSync("js/sections.js", "utf8");
     const results = fs.readFileSync("js/pages/arena-results.js", "utf8");
     expect(sections).toContain("arena/sprite-themes.js");
-    expect(results).toContain("arena/sprite-themes.js");
+    expect(results).toContain("arena/finish-presentation.js");
     expect(sections).not.toMatch(/from ["'][^"']*arena\/sprites\.js["']/);
     expect(results).not.toMatch(/from ["'][^"']*arena\/sprites\.js["']/);
   });

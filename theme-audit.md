@@ -816,3 +816,16 @@ defaults, legacy mappings and shared navigation remain unchanged. No palette or
 theme entries were added. Motion-off, reduced motion and both scroll drivers
 pass. `pnpm themes` passed. Screens, checks and native-device limits:
 [Home matchup refinement](docs/home-matchup-refinement-1465.md).
+
+## 1.466.0 — Arena finish and factual Home stories
+
+Inspected actual production-component Light/Dark phone finishes at 320/390px,
+plus supporting Home losing-streak, rivalry and season-high slides. Layout and
+overflow checks also cover 430/768px, long names and 2/12/32 racers. The result
+surface and story subject marker use shared surface/text/body/border/accent
+tokens. Saved uniform colors remain member/NFL identity colors; lane badges use
+the existing contrast helper. Complete names, 44px profile links, navigation
+clearance, motion-off/reduced-motion and teardown are covered. Medicine Wheel
+defaults and legacy aliases are unchanged; no theme entries were added.
+Screens, automated evidence and native-device limitations:
+[Arena finish and league stories](docs/arena-finish-league-stories-1466.md).

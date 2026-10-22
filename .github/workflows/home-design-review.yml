@@ -9,6 +9,7 @@ on:
       - 'js/pages/arena-stadium.js'
       - 'js/arena/stadium-orientation*'
       - 'js/arena/stadium-data*'
+      - 'js/arena/finish-*'
       - 'js/arena/stadium-model*'
       - 'js/arena/stadium-motion*'
       - 'js/arena/stadium-racer-*'
@@ -92,6 +93,8 @@ on:
       - 'js/broadcast-stage.js'
       - 'js/broadcast-deck*'
       - 'js/home-slides*'
+      - 'js/home-lead-story*'
+      - 'tools/capture-finish-stories.py'
       - 'js/home-injury-panel.js'
       - 'js/injury-report-model*'
       - 'css/home-injury-panel.css'
@@ -162,6 +165,10 @@ jobs:
         run: python tools/capture-home-week-review.py
       - name: Check final matchup presentation
         run: python tools/capture-finish-review.py
+      - name: Check official Arena finish and factual Home stories
+        env:
+          DFL_FINISH_REVIEW_DIR: ${{ github.workspace }}/home-review-output/finish-stories
+        run: python tools/capture-finish-stories.py
       - name: Check story-specific broadcast compositions
         run: python tools/capture-broadcast-art-direction.py
       - name: Check award artwork spacing
