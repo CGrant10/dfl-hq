@@ -5,11 +5,12 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildLeaguePowerRankings } from '../js/league-trajectory.js';
 import { homeBroadcastDeck, homeThermalBoard, homeGameDayMatchup, homeLeagueFile, homeLeagueTools, homeNewspaperMasthead, homeSectionLinks } from '../js/home-presentation.js';
+import {homeLeagueStory} from '../js/home-lead-story.js';
 import { homeInjuryPanelMarkup } from '../js/home-injury-panel.js';
 import { renderStage } from '../js/broadcast-stage.js';
 import { homeRivalryStory } from '../js/home-clubhouse.js';
 import { primarySeasonNavMarkup } from '../js/season-nav.js';
-import { matchupPreviewSlide, tradeAlertSlide, nextMoveSlide, playoffPictureSlide,weeklyHeadlineSlide } from '../js/home-slides.js';
+import { matchupPreviewSlide, tradeAlertSlide, nextMoveSlide, playoffPictureSlide } from '../js/home-slides.js';
 import { disclosure } from '../js/page-disclosure.js';
 import { MEDICINE_GROUND, teamPalette } from '../js/team-theme.js';
 import { activityLine } from '../js/activity.js';
@@ -126,7 +127,7 @@ const deck = homeBroadcastDeck([
   { id: 'fixture:image', treatment: 'announcement', kicker: 'League highlight', headline: 'Under the lights.', body: 'Follow the matchup stories from kickoff to the final whistle.', background: 'image', image: 'assets/home-broadcast-stadium.webp', href: '#/clubhouse', temporal: 'live' },
   { id:'fixture:archive-record',kind:'record',storyKind:'nailbiter',treatment:'stat',figure:0.04000001,headline:'Won by 0.04',subtitle:'Klutch Sports Group — azhee28 102.00 – 101.96 Waddle Waddle — Brandooooo24 · 2025 Week 3',href:'#/history',temporal:'historical' },
   { id: 'fixture:injury', treatment: 'injuries', available: true, page: 1, pages: 3, total: 6, players: [{ sleeperId: '7564', name: 'Ja’Marr Chase', position: 'WR', nflTeam: 'CIN', owner: 'Klutch Sports Group', tag: 'Questionable', availability: 'Game-time decision', tone: 'questionable' }, { sleeperId: '1466', name: 'Travis Kelce', position: 'TE', nflTeam: 'KC', owner: 'Dream Enders', tag: 'Out', availability: 'Will not play', tone: 'out' }], temporal: 'none' },
-  weeklyHeadlineSlide({final:true,season:2026,week:5,games:[{winner:{uid:'rival-a',name:'The Bayou Bombers',value:130.60},loser:{uid:'rival-b',name:'The Bastards of the Very Long Championship Team Name',value:130}}]},{season:2026,week:6}),
+  homeLeagueStory({final:true,season:2026,week:5,games:[{winner:{uid:'rival-a',name:'The Bayou Bombers',value:130.60},loser:{uid:'rival-b',name:'The Bastards of the Very Long Championship Team Name',value:130}}]},{season:2026,week:6,history:[3,4].map(week=>({season:2026,week,user1:'rival-a',user2:'rival-b',score1:120,score2:110}))}),
 ], { week: 5, now: new Date('2026-10-05T12:00:00Z') });
 let html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');

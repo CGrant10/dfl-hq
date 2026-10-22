@@ -1,4 +1,3 @@
-import {animateUi} from '../ui-motion.js';
 import {mountStadiumCrowd} from '../arena/stadium-crowd.js';
 import {db} from '../supabase.js';
 import {esc,toast,loading,errorBox} from '../ui.js';
@@ -14,6 +13,8 @@ import {drawCharacterRunner as drawKitRunner} from '../arena/racer-character-art
 import {defaultRacerKit} from '../arena/racer-character.js';
 import {mountStadiumOrientation} from '../arena/stadium-orientation.js';
 import {mountStadiumRacerRoster} from '../arena/stadium-racer-roster.js';
+import {officialFinish} from '../arena/finish-model.js';
+import {mountFinishPresentation} from '../arena/finish-presentation.js';
 
 import {memberPhoto,memberPhotoCandidates} from '../member-photo.js';
 let active=null;
@@ -103,7 +104,7 @@ async function room(view,members,id,life){
  const sent=performance.now();snapshot=await loadStadiumRace(id);clock.sync(snapshot.server_ms,sent);if(life.closed)return;
  // Only untouched legacy setup can be upgraded. Its historical/live renderer stays intact.
  if(snapshot.event.race_engine!==STADIUM_ENGINE&&!(snapshot.event.bc_state==='idle'&&snapshot.event.status!=='complete'&&!snapshot.results.length)){
-  const legacy=(snapshot.event.bc_state==='finished'||snapshot.event.status==='complete')?await import('./arena-results.js'):await import('./broadcast.js');if(life.closed)return;life.cleanup.push(()=>legacy.leave?.());await legacy.render(view);return;
+  const legacy=(snapshot.event.bc_state==='finished'||snapshot.event.status==='complete')?await import('./arena-results.js'):await import('./broadcast.js');if(life.closed)return;life.cleanup.push(()=>legacy.leave?.());await legacy.render(view,{snapshot,members});return;
  }
  const memberMap=new Map(members.map(m=>[String(m.id),m]));
  const root=document.createElement('section');root.className='stadium-arena sr-room';
@@ -111,10 +112,11 @@ async function room(view,members,id,life){
  <div class="sr-room-meta"><span data-racer-count></span><span data-duration-label></span><span data-presence hidden></span><span class="sr-connection" role="status" hidden></span></div>
  <div class="sr-stage"><div class="sr-watch-toolbar sr-stage-score"><div class="sr-watch-clock"><span data-clock>0:00</span></div><div class="sr-watch-identity"><span data-highlight-number aria-hidden="true"></span><div aria-hidden="true"><strong data-highlight-name></strong><small data-field-spot></small></div><select data-racer-highlight aria-label="Highlight racer"></select></div><button type="button" data-expand aria-label="Expand race"><span aria-hidden="true">⛶</span><b data-expand-label>Watch</b></button></div><div class="sr-watch-body"><div class="sr-watch-surface"><canvas role="img" aria-label="Live football stadium race"></canvas><div class="sr-stage-overlay" aria-live="polite"><div class="sr-start-lights" aria-hidden="true"><i></i><i></i><i></i></div><strong data-overlay></strong><span data-overlay-name></span></div></div><div class="sr-watch-roster" role="group" aria-label="Racer numbers"></div></div><div class="sr-race-footer"><canvas class="sr-winner-art" width="128" height="160" aria-hidden="true" hidden></canvas><div class="sr-moment" aria-live="polite"><span data-moment-title></span><strong data-moment-name></strong></div><details class="sr-crowd-menu" data-stadium-crowd></details></div><div class="sr-finish-tools" hidden><button type="button" data-show-podium>Podium</button><button type="button" data-replay>Replay race</button><button type="button" data-photo-finish hidden>Photo finish</button><button type="button" data-stop-replay hidden>Back to result</button></div><div class="sr-controls" aria-label="Commissioner race controls"></div></div>
  <div class="sr-tools">${currentMember()?'<button type="button" data-my-racer>My racer</button>':''}<button type="button" data-motion aria-pressed="true">Motion on</button><button type="button" data-share>Copy watch link</button></div>
- <div class="sr-editor-host" hidden></div><div class="sr-final" hidden aria-live="polite"></div>
+ <div class="sr-editor-host" hidden></div><section class="sr-final" hidden aria-label="Official race results"></section>
  <div class="sr-board-head"><h2 data-board-title>Starting grid</h2><span data-board-status></span></div><section class="sr-staging" data-stadium-staging hidden></section><ol class="sr-board" aria-label="Race positions"></ol></section>`;
  view.replaceChildren(root);
  const q=s=>root.querySelector(s),stage=q('.sr-stage'),board=q('.sr-board'),host=q('.sr-editor-host');
+ let finish=null,finishView=null;life.cleanup.push(()=>finishView?.stop());
  const roster=mountStadiumRacerRoster(q('.sr-watch-roster'),{onHighlight:id=>{highlightId=id;lastDOM=0;draw(performance.now(),{forceStage:true});}});life.cleanup.push(()=>roster.stop());
  const stageWatch=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{stageVisible=entries[0].isIntersecting;if(stageVisible)draw(performance.now());},{rootMargin:'100px'}):null;
  stageWatch?.observe(stage);life.cleanup.push(()=>stageWatch?.disconnect());
@@ -124,7 +126,7 @@ async function room(view,members,id,life){
  const setMotion=()=>{crowd?.motionChanged();root.dataset.motion=motion()?'on':'off';q('[data-motion]').textContent=`Motion ${motion()?'on':'off'}`;q('[data-motion]').setAttribute('aria-pressed',String(motion()));if(!motion())root.getAnimations({subtree:true}).forEach(animation=>animation.cancel());if(!raf)draw(performance.now());};
  const configureRacers=()=>{
   const kits=new Map((snapshot.racer_kits||[]).map(k=>[String(k.member_id),k.kit]));
-  const next=snapshot.participants.map((p,index)=>{const m=memberMap.get(String(p.member_id)),number=p.number??index+1,kit=normalizeKit(kits.get(String(p.member_id))||defaultRacerKit(p.member_id,{jersey:p.color||m?.accent_color,number}),{number});return {id:String(p.member_id),name:m?.display_name||`Racer ${p.number||index+1}`,team:m?.team_name||'',photo:memberPhoto(m)||'',photoFallbacks:memberPhotoCandidates(m).slice(1),number:kit.number,raceNumber:index+1,kit,color:kit.jersey,index};});
+  const next=snapshot.participants.map((p,index)=>{const m=memberMap.get(String(p.member_id)),number=p.number??index+1,kit=normalizeKit(kits.get(String(p.member_id))||defaultRacerKit(p.member_id,{jersey:p.color||m?.accent_color,number}),{number});return {id:String(p.member_id),name:m?.display_name||`Racer ${p.number||index+1}`,team:m?.team_name||'',profile:!!m,photo:memberPhoto(m)||'',photoFallbacks:memberPhotoCandidates(m).slice(1),number:kit.number,raceNumber:index+1,kit,color:kit.jersey,index};});
   const signature=JSON.stringify(next);if(signature!==JSON.stringify(racers)){
    const sameField=racers.length===next.length&&racers.every((r,i)=>r.id===next[i].id);racers=next;
    if(renderer&&sameField)renderer.updateRacers(racers);else{renderer?.stop();renderer=createStadiumRenderer(q('canvas'),{racers,motion,highlight:()=>highlightId,onLayout:({overview,top,fieldHeight,fieldWidth})=>{stage.dataset.fieldOverview=String(overview);stage.style.setProperty('--sr-field-top',`${top}px`);stage.style.setProperty('--sr-field-height',`${fieldHeight}px`);stage.style.setProperty('--sr-field-width',`${fieldWidth}px`);}});}
@@ -162,16 +164,16 @@ async function room(view,members,id,life){
   };}
  };
  const paintFinal=()=>{
-  const final=q('.sr-final');if(snapshot.event.bc_state!=='finished'||snapshot.results.length!==racers.length){final.hidden=true;return;}
-  const key=JSON.stringify([snapshot.results,racers.map(r=>r.kit)]);if(final.dataset.result===key){final.hidden=false;return;}final.dataset.result=key;final.hidden=false;
-  const podium=[...snapshot.results].sort((a,b)=>a.place-b.place).slice(0,3).map(result=>{const r=racers.find(p=>p.id===String(result.member_id));return `<div class="sr-podium-place" data-place="${result.place}"><canvas width="128" height="160" data-podium-racer="${esc(r.id)}" aria-hidden="true"></canvas><b>${result.place===1?'WINNER':`#${result.place}`}</b><strong>${esc(r.name)}</strong>${jersey(r)}</div>`;}).join('');
-  const margin=finishMargin(snapshot.results);final.innerHTML=`<span class="sr-kicker">OFFICIAL ORDER</span><h2>That’s the fucking order.</h2><div class="sr-finish-margin">${margin!==null?`${margin<=200?'PHOTO FINISH · ':''}${(margin/1000).toFixed(2)}s margin`:''}</div><div class="sr-podium">${podium}</div>`;
+  const final=q('.sr-final');finish=officialFinish(snapshot.event,snapshot.results,racers);
+  if(!finish){finishView?.stop();finishView=null;final.hidden=true;delete final.dataset.result;return;}
+  const key=JSON.stringify(finish);if(final.dataset.result===key){final.hidden=false;return;}
+  finishView?.stop();final.dataset.result=key;final.hidden=false;finishView=mountFinishPresentation(final,finish,{motion});
   paintRacerArt();
  };
  function paintRacerArt(){
   const winner=snapshot.results.find(result=>result.place===1),winnerRacer=racers.find(r=>r.id===String(winner?.member_id));
-  for(const canvas of root.querySelectorAll('[data-podium-racer],.sr-winner-art')){
-   const r=canvas.classList.contains('sr-winner-art')?winnerRacer:racers.find(r=>r.id===canvas.dataset.podiumRacer);if(!r)continue;
+  for(const canvas of root.querySelectorAll('.sr-winner-art')){
+   const r=winnerRacer;if(!r)continue;
    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,128,160);drawKitRunner(ctx,r.kit,{x:0,y:0,width:128,height:158,identity:r.id,moving:false});
   }
  }
@@ -223,8 +225,11 @@ async function room(view,members,id,life){
   const selected=racers.find(r=>r.id===highlightId);if(selected&&q('[data-racer-highlight]').value!==highlightId){q('[data-racer-highlight]').value=highlightId;q('[data-highlight-number]').innerHTML=jersey(selected);setText(q('[data-highlight-name]'),selected.name);}
   if(frame.u>.94&&!frame.finished&&!leader?.finished&&frame.ranked[1]&&leader.progress-frame.ranked[1].progress<.008){moment.key='tight-finish';moment.title='TOO TIGHT TO CALL';moment.name='GET TO THE FUCKING LINE';}
   if(frame.finished&&e.bc_state!=='finished'&&!replaying){moment.title='FINISHING';moment.name='LOCKING THE ORDER';}
-  const official=!replaying&&e.bc_state==='finished'&&snapshot.results.length===racers.length,showWinner=official&&snapshot.results.some(result=>result.place===1);
-  q('[data-show-podium]').hidden=e.bc_state!=='finished'||snapshot.results.length!==racers.length;
+  const official=!replaying&&!!finish,showWinner=official;
+  q('.sr-final').hidden=!official;
+  if(official&&board.contains(document.activeElement)){q('.sr-final').tabIndex=-1;q('.sr-final').focus({preventScroll:true});}
+  board.hidden=official;q('.sr-board-head').hidden=official;
+  q('[data-show-podium]').hidden=!finish;
   q('.sr-winner-art').hidden=!showWinner;stage.dataset.officialWinner=String(showWinner);
   if(showWinner){const winner=racers.find(r=>r.id===String(snapshot.results.find(result=>result.place===1).member_id));moment={key:'official-winner',title:'OFFICIAL WINNER',name:winner.name};}
   if(lastKey!==moment.key){if(lastKey&&moment.cue&&!idle&&!paused&&!frame.countdown)crowd?.cue(moment.cue);if(idle||paused)crowd?.quiet();lastKey=moment.key;q('[data-moment-title]').textContent=moment.title;q('[data-moment-name]').textContent=moment.name;if(motion())q('.sr-moment').animate([{opacity:.4,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{duration:220,easing:'ease-out'});}
@@ -243,7 +248,7 @@ async function room(view,members,id,life){
  q('[data-motion]').onclick=()=>{setReduceRaceMotion(!getReduceRaceMotion());setMotion();};
  q('[data-share]').onclick=async()=>{try{const url=new URL(location.href);url.hash=`#/arena?id=${id}`;await navigator.clipboard.writeText(url.href);toast('Watch link copied.');}catch{toast('Could not copy the watch link.');}};
  const beginReplay=photo=>{if(snapshot.event.bc_state!=='finished'||!race)return;const sorted=[...snapshot.results].sort((a,b)=>a.place-b.place);if(photo&&(sorted.length!==racers.length||finishMargin(sorted)===null||finishMargin(sorted)>250))return;replayFrom=photo?Math.max(0,Number(sorted[0].finish_ms)-1600):0;replayUntil=photo?Math.min(race.duration,Number(sorted[1].finish_ms)+800):race.duration;replayRate=photo?.25:1;replayKind=photo?'photo':'full';replayAt=performance.now()+(photo?0:3000);replayFinished=false;finishAt=null;lastKey='';lastCue='';q('[data-stop-replay]').hidden=false;stage.scrollIntoView({behavior:motion()?'smooth':'auto',block:'center'});lastDOM=0;draw(performance.now(),{forceStage:true});schedule();};
- q('[data-show-podium]').onclick=async()=>{if(snapshot.event.bc_state!=='finished'||snapshot.results.length!==racers.length)return;replayAt=null;finishAt=null;q('[data-stop-replay]').hidden=true;lastDOM=0;draw(performance.now());await orientation.exit();if(life.closed||!root.isConnected)return;const result=q('.sr-final');result.scrollIntoView({behavior:motion()?'smooth':'auto',block:'start'});result.setAttribute('tabindex','-1');result.focus({preventScroll:true});result.querySelectorAll('.sr-podium-place').forEach((card,i)=>animateUi(card,[{opacity:0,transform:'translateY(14px)'},{opacity:1,transform:'none'}],{duration:420,delay:200+i*120,motion:motion()}));};
+ q('[data-show-podium]').onclick=async()=>{if(!finish)return;replayAt=null;finishAt=null;q('[data-stop-replay]').hidden=true;lastDOM=0;draw(performance.now());await orientation.exit();if(life.closed||!root.isConnected)return;const result=q('.sr-final');result.scrollIntoView({behavior:motion()?'smooth':'auto',block:'start'});result.setAttribute('tabindex','-1');result.focus({preventScroll:true});finishView?.reveal();};
  q('[data-replay]').onclick=()=>beginReplay(false);q('[data-photo-finish]').onclick=()=>beginReplay(true);q('[data-stop-replay]').onclick=()=>{replayAt=null;finishAt=null;lastDOM=0;q('[data-stop-replay]').hidden=true;draw(performance.now());};
  q('[data-expand]').onclick=()=>void orientation.expand();
  const onKey=e=>{if(e.key==='Escape')void orientation.exit();};window.addEventListener('keydown',onKey);

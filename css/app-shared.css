@@ -5877,6 +5877,9 @@ html[data-readability="comfortable"] #view :is(h1,h2,h3){overflow-wrap:anywhere;
 #home-wrap .bx-result-scores strong{font:600 15px/1.35 var(--home-ui-font);overflow-wrap:anywhere;color:var(--text)}
 #home-wrap .bx-result-scores b{font:700 17px/1.35 var(--home-ui-font);font-variant-numeric:tabular-nums;color:var(--text)}
 #home-wrap .bx-league-result>.bx-story-action{display:flex;justify-content:space-between;width:100%}
+#home-wrap .bx-result-scores>[data-story-subject]{border-left:2px solid var(--accent);padding-left:8px}
+#home-wrap .bx-result-scores strong>span{display:block}
+#home-wrap .bx-result-scores strong>small{display:block;margin-top:3px;font:600 10px/1.3 var(--home-ui-font);color:var(--accent);letter-spacing:.03em}
 #home-wrap .bx-number-story .bx-when{justify-self:start}
 #home-wrap .bx-season-story{display:grid;align-content:start;gap:20px}
 #home-wrap .bx-season-lockup{display:flex;align-items:end;gap:18px;width:100%;padding:12px 0;background:none;border:0}
