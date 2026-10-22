@@ -183,3 +183,8 @@
 .is-score-compact .gd-watch-dashboard .gd-watch-score-team .gd-thermal-number { font-size:1.5rem; }
 .gameday-watch:is([data-motion="off"],.is-score-measuring) .gd-watch-dashboard * { transition:none; }
 @media(prefers-reduced-motion:reduce) { .gameday-watch .gd-watch-dashboard * { transition:none!important; } }
+
+/* A thin team-colored advantage underline; the figures never shift. */
+.gd-advantage-team { position:relative; }
+.gd-advantage-marker { position:absolute; left:25%; bottom:0; width:50%; height:2px; border-radius:2px; background:color-mix(in srgb,var(--gd-lead-color) 65%,var(--text)); pointer-events:none; }
+.gd-advantage-marker[hidden] { display:none; }

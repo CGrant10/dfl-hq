@@ -1,0 +1,58 @@
+[
+  {
+    "width": 320,
+    "theme": "dark",
+    "rosterAddRemove": true,
+    "compactChip": true,
+    "rapidSelection": true,
+    "threeTeamRecipient": true,
+    "reducedMotion": true,
+    "appMotionOff": true,
+    "pickerFlight": true,
+    "focusReturn": true,
+    "teardown": true,
+    "errors": []
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "rosterAddRemove": true,
+    "compactChip": true,
+    "rapidSelection": true,
+    "threeTeamRecipient": true,
+    "reducedMotion": true,
+    "appMotionOff": true,
+    "pickerFlight": true,
+    "focusReturn": true,
+    "teardown": true,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "rosterAddRemove": true,
+    "compactChip": true,
+    "rapidSelection": true,
+    "threeTeamRecipient": true,
+    "reducedMotion": true,
+    "appMotionOff": true,
+    "pickerFlight": true,
+    "focusReturn": true,
+    "teardown": true,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "rosterAddRemove": true,
+    "compactChip": true,
+    "rapidSelection": true,
+    "threeTeamRecipient": true,
+    "reducedMotion": true,
+    "appMotionOff": true,
+    "pickerFlight": true,
+    "focusReturn": true,
+    "teardown": true,
+    "errors": []
+  }
+]

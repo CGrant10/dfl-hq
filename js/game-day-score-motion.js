@@ -1,4 +1,4 @@
-import { animateGameDayMoments } from './game-day-moment-effects.js';
+import { animateGameDayMoments,syncLeadMarkers } from './game-day-moment-effects.js';
 const numeric = value => value != null && Number.isFinite(Number(value)) ? Number(value) : null;
 export function scoreChange(before, after) {
  const from=numeric(before),to=numeric(after);
@@ -14,9 +14,10 @@ export function recentScoreRefresh(previous,next,maxAgeMs=120000){
 }
 // Animate only successful refreshes, never initial loads or tab changes.
 export function animateScoreChanges(root,{previous,model,motion,gameId=null,feedback=false}){
+ syncLeadMarkers(root,model,gameId);
  if(!recentScoreRefresh(previous,model.snapshot))return()=>{};
  const animations=[],badges=[],hosts=[],timers=[];
- const animated=motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const animated=motion&&!root.closest('[data-motion="off"]')&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
  if(!animated&&!feedback)return()=>{};
  const stopMoments=animated?animateGameDayMoments(root,{previous,model,gameId}):()=>{};
  for(const host of root.querySelectorAll('[data-gameday-score-key],[data-gameday-total-key]')){

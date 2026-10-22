@@ -829,3 +829,15 @@ clearance, motion-off/reduced-motion and teardown are covered. Medicine Wheel
 defaults and legacy aliases are unchanged; no theme entries were added.
 Screens, automated evidence and native-device limitations:
 [Arena finish and league stories](docs/arena-finish-league-stories-1466.md).
+
+## 1.467.0 — Connected trades, receipts and live lead marker
+
+Inspected production-component player selection, receipts and the actual Home
+lead marker on mobile in real Medicine Wheel Light/Dark. Compact selected rows
+use existing surface/text/border tokens; the 2px leader line mixes member identity
+color with the shared text token. No palette entries or retired crest accents
+were added. Complete player/team names, normal 44px controls, focus restoration,
+shared navigation clearance, preference changes, reduced motion and interruption
+are covered. Existing theme aliases and defaults are unchanged. `pnpm themes`
+passed. Screens, browser evidence and device limits:
+[Trade and live motion](docs/trade-live-motion-1467.md).

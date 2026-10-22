@@ -3,6 +3,20 @@ import { accentOf } from './identity-rules.js';
 const number = value => value != null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
 const claimedModels=new WeakSet();
 
+// The advantage remains useful with motion off. Absolute positioning keeps
+// the scores, team names and scroll anchors the same size.
+export function syncLeadMarkers(root,model,gameId=null){
+ const game=(model.games||[]).find(game=>gameId?game.id===gameId:game.isMine);
+ for(const surface of root.querySelectorAll('[data-gameday-team]')){
+  const team=game?.sides.find(team=>String(team.roster)===surface.dataset.gamedayTeam);
+  if(!team){const marker=surface.querySelector(':scope > .gd-advantage-marker');if(marker)marker.hidden=true;continue;}
+  let marker=surface.querySelector(':scope > .gd-advantage-marker');
+  if(!marker){marker=document.createElement('span');marker.className='gd-advantage-marker';marker.setAttribute('aria-hidden','true');surface.append(marker)}
+  surface.classList.add('gd-advantage-team');marker.style.setProperty('--gd-lead-color',accentOf(team.identity));
+  marker.hidden=!!surface.closest('.is-projected')||game.leader==null||String(team.roster)!==String(game.leader);
+ }
+}
+
 export function primaryScoreMoment(candidates){
   return [...candidates].sort((a,b)=>(b.moment.kind==='milestone')-(a.moment.kind==='milestone')||(b.moment.points||0)-(a.moment.points||0)||(b.delta||0)-(a.delta||0))[0]||null;
 }
@@ -93,14 +107,20 @@ export function animateGameDayMoments(root, { previous, model, gameId = null }) 
   const game = (model.games || []).find(game => gameId ? game.id === gameId : game.isMine);
   const leaderNow=number(game?.sides.find(team=>team.roster===game.leader)?.score),leaderBefore=number(previous.totals?.[game?.leader]);
   if (game?.leader && Object.hasOwn(previous.leaders || {}, game.id)
-    && previous.leaders[game.id] !== game.leader && game.sides.some(team => team.live > 0)
+    && previous.leaders[game.id] != null && previous.leaders[game.id] !== game.leader && game.sides.some(team => team.live > 0)
     && leaderNow!==null&&leaderBefore!==null&&leaderNow>leaderBefore) {
     const surface = root.querySelector(`[data-gameday-team="${CSS.escape(game.leader)}"]`);
     if (visible(surface, root)) {
       claimedModels.add(model);
-      const team = game.sides.find(team => team.roster === game.leader);
-      sting(surface, surface.querySelector('.home-team-progress') || surface.querySelector(':scope > small'),
-        'New lead', accentOf(team?.identity));
+      const marker=surface.querySelector(':scope > .gd-advantage-marker');
+      const old=root.querySelector(`[data-gameday-team="${CSS.escape(String(previous.leaders[game.id]))}"]`);
+      if(marker&&visible(old,root)){
+        const from=old.getBoundingClientRect(),to=surface.getBoundingClientRect();
+        play(marker,[
+          {transform:`translate(${from.left+from.width/2-to.left-to.width/2}px,${from.bottom-to.bottom}px)`,backgroundColor:getComputedStyle(old.querySelector('.gd-advantage-marker')||old).backgroundColor},
+          {transform:'translate(0,0)',backgroundColor:getComputedStyle(marker).backgroundColor},
+        ],{duration:420,easing:'cubic-bezier(.2,.75,.25,1)'});
+      }
     }
   }
 
@@ -126,9 +146,14 @@ export function animateGameDayMoments(root, { previous, model, gameId = null }) 
     animations.forEach(animation => { animation.onfinish = null; animation.cancel(); });
     restorations.forEach(restore => restore()); nodes.forEach(node => node.remove());
     reduced.removeEventListener('change', onReduce); document.removeEventListener('visibilitychange', onVisibility);
+    window.removeEventListener('dfl:ui-motion-change',stop);window.removeEventListener('resize',stop);
   };
   const onReduce = () => { if (reduced.matches) stop(); };
   const onVisibility = () => { if (document.visibilityState !== 'visible') stop(); };
-  if (animations.length) { reduced.addEventListener('change', onReduce); document.addEventListener('visibilitychange', onVisibility); }
+  if (animations.length) {
+    reduced.addEventListener('change', onReduce); document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('dfl:ui-motion-change',stop);window.addEventListener('resize',stop);
+    if(!active)Promise.allSettled(animations.map(animation=>animation.finished)).then(stop);
+  }
   return stop;
 }

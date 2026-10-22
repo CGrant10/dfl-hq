@@ -1,5 +1,6 @@
 import {mountMatchupRouteMotion,renderWithMatchupMotion} from './matchup-route-motion.js';
 import {mountArchiveRouteMotion,renderWithArchiveMotion} from './archive-route-motion.js';
+import {mountTradeReceiptMotion,renderWithTradeReceiptMotion} from './trade-receipt-motion.js';
 // =====================================================================
 // router.js - hash based routing (#/home, #/rules, ...)
 // Hash routing is used because GitHub Pages cannot rewrite URLs.
@@ -289,7 +290,8 @@ const setRouteCanvas = color => {
 */
 export async function renderRoute(options={}){
  const visit=(routeHistory||=createRouteHistory()).visit();
- return renderWithMatchupMotion(()=>renderWithArchiveMotion(()=>renderRoutePage({...options,visit}),document.getElementById('view'),location.hash,{back:visit.kind==='back',visitId:visit.id}),document.getElementById('view'),location.hash);
+ const previous=document.getElementById('view'),hash=location.hash,context={back:visit.kind==='back',visitId:visit.id};
+ return renderWithMatchupMotion(()=>renderWithArchiveMotion(()=>renderWithTradeReceiptMotion(()=>renderRoutePage({...options,visit}),previous,hash,context),previous,hash,context),previous,hash);
 }
 async function renderRoutePage({ retry = false, visit } = {}) {
   const routeStarted = performance.now();
@@ -413,7 +415,7 @@ async function renderRoutePage({ retry = false, visit } = {}) {
   window.scrollTo({top:restoreMemory?.y??(legacyRestore?Number(view.dataset.restoreScrollY)||0:0),behavior:'instant'});
   const focusPost=view.querySelector("[data-wall-focus],[data-route-focus]");
   if(focusPost&&!restoreMemory){focusPost.scrollIntoView({block:"start"});(focusPost.querySelector("summary")||focusPost).focus({preventScroll:true});}
-  else if (!document.documentElement.dataset.archiveReturning) stopRestore = restoreView(view, restoreMemory||routeMemory, { active: isCurrent,restoreScroll:!!restoreMemory });
+  else if (!document.documentElement.dataset.archiveReturning) stopRestore = restoreView(view, restoreMemory||routeMemory, { active: isCurrent,restoreScroll:!!restoreMemory&&!document.documentElement.dataset.receiptReturning });
   if (retry && !view.dataset.routeFailed) { const title=view.querySelector('h1,.page-title');if(title){title.tabIndex=-1;title.focus({preventScroll:true})} }
   mountedHash = expectedHash; mountedMember = getMemberId();mountedVisit=visit.id;
   stopPageMotion = mountPageMotion(view);
@@ -440,6 +442,7 @@ let lastAnimated = null;
 export function startRouter() {
   mountMatchupRouteMotion();
   mountArchiveRouteMotion();
+  mountTradeReceiptMotion();
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   window.addEventListener('pagehide', () => { const view=document.getElementById('view'); if(view&&mountedHash&&!view.dataset.routeFailed&&!view.classList.contains('is-route-loading'))writeViewMemory(mountedMember,`route:${mountedHash}`,captureView(view)); });
   ensureSportsbookNav();

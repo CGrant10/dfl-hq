@@ -104,7 +104,7 @@ function anchorChips(ids, pool, side) {
   if (!ids.length) return `<span class="tb-anchor-empty">Any player</span>`;
   return ids.map(id => {
     const player = pool.get(String(id)) || {name:String(id)};
-    return `<button type="button" aria-label="Remove ${esc(player.name)}" data-tb-remove-anchor="${side}" data-player-id="${esc(id)}">${playerPortrait(player)}<span>${esc(player.name)}</span><i aria-hidden="true">×</i></button>`;
+    return `<button type="button" aria-label="Remove ${esc(player.name)}" data-tb-remove-anchor="${side}" data-trade-player="${esc(id)}" data-player-id="${esc(id)}">${playerPortrait(player)}<span>${esc(player.name)}</span><i aria-hidden="true">×</i></button>`;
   }).join("");
 }
 
@@ -284,11 +284,11 @@ function page(data, tradeAlerts = []) {
     wire(view) {
       stopOffers?.();
       const body = view.querySelector("[data-td-body]");
-      let catalog,activeOfferKey=null;
+      let catalog,activeOfferKey=null,stopDesk=()=>{},stopPickers=()=>{};
       const connection=createTradeConnection();
       let stopped=false;
       const current=()=>!stopped&&view.isConnected;
-      stopOffers=()=>{stopped=true;shop.intentStamp=(shop.intentStamp||0)+1;connection.stop();catalog.stop();negotiation.stop();intentions.stop();};
+      stopOffers=()=>{stopped=true;shop.intentStamp=(shop.intentStamp||0)+1;connection.stop();stopDesk();stopPickers();catalog.stop();negotiation.stop();intentions.stop();};
       const intentions=createTradeIntentions({member:me,getData:()=>data,
         onChange:context=>{if(!current())return;shop.intentions=context;shop.intentionsStamp=(shop.intentionsStamp||0)+1;shop.visibleCount=OFFER_BATCH_SIZE;if(catalog)paintOffers();},
         onTarget:id=>{const mine=data.teams.find(t=>String(t.sleeper_user_id)===String(me?.sleeper_user_id));if(mine)selectedId=mine.id;shop.partnerId=id;shop.anchorPartnerId='';shop.receiveAnchors=[];shop.sendAnchors=[];shop.memberIds=[];shop.mode='offers';draw();body.querySelector('[data-tb-offers]')?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}});
@@ -341,7 +341,7 @@ function page(data, tradeAlerts = []) {
 
       let sharing = false;
       const draw = () => {
-        if (!current()) return;connection.cancel();
+        if (!current()) return;connection.cancel();stopDesk();stopPickers();
         if(shop.mode!=='offers'){shop.offerState=null;catalog.cancel();}
         // Native toggle events can arrive after an immediate control redraw.
         // Read the current DOM first so an open disclosure never snaps closed.
@@ -367,8 +367,8 @@ function page(data, tradeAlerts = []) {
         const send = body.querySelector('[data-td-negotiate]');
         negotiation.mount(body.querySelector('[data-tr-host]'));
         intentions.mount(body.querySelector('[data-ti-host]'));
-        mountTradePlayerPickers(body, data.pool, data.teams);
-        mountTradeDesk(body.querySelector("[data-trade-desk]"), {
+        stopPickers=mountTradePlayerPickers(body, data.pool, data.teams);
+        stopDesk=mountTradeDesk(body.querySelector("[data-trade-desk]"), {
           team, teams: data.teams, pool: data.pool, state: trade, lockedIds:[...shop.sendAnchors,...shop.receiveAnchors], onPartnerChange: (focus={}) => {draw();if(focus.memberIndex!=null)body.querySelector(`[data-td-member="${focus.memberIndex}"]`)?.focus();else body.querySelector("[data-td-verdict]")?.scrollIntoView({behavior:"instant",block:"start"});},
           onDeal: current => {
             deal = current;
@@ -379,7 +379,7 @@ function page(data, tradeAlerts = []) {
             if (share) share.disabled = !current || sharing;
             if (send) send.disabled = !current || sharing;
           },
-        });
+        })||(()=>{});
         body.querySelector(".td-custom")?.addEventListener("toggle", event => {
           const open = event.currentTarget.open;
           if (open && !shop.customOpen) { shop.customOpen = true;shop.mode="manual"; draw(); return; }

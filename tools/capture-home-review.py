@@ -215,7 +215,7 @@ def check_game_day_scope(page):
         sleeper:{league:async()=>({roster_positions:['QB','RB']}),rosters:async()=>[1,2].map(n=>({roster_id:n,players:[String(n)],reserve:[],taxi:[]}))},loadLore:async()=>({matchups:[]}),
         reconcileLeagueResults:()=>({standings:[]}),loadLatestLeagueResults:async()=>null,
         matchupReceiptData:()=>null,shareMatchupReceipt:async()=>{},
-        loadGameDayMoments:async()=>({items:[]}),animateScoreChanges:()=>noop,mountScoreVfx:()=>({stop:noop}),
+        syncLeadMarkers:(await import('./js/game-day-moment-effects.js')).syncLeadMarkers,loadGameDayMoments:async()=>({items:[]}),animateScoreChanges:()=>noop,mountScoreVfx:()=>({stop:noop}),
         mountPlayerSpotlight:()=>({update:noop,setMotion:noop,stop:noop}),
         mountGameDayWatch:()=>({open:()=>opens++,update:noop,updateFreshness:noop,redraw:noop,setMotion:noop,wantsMoments:()=>false,stop:noop}),
       };
@@ -395,7 +395,9 @@ def check_game_day_moments(page):
       const before=measure();let stop=animateScoreChanges(root,{previous,model,motion:true,feedback:true});
       const after=measure(),labels=[...root.querySelectorAll('.gd-moment-caption')].map(e=>e.textContent);
       if(JSON.stringify(before)!==JSON.stringify(after))throw Error('Moment animation moved score glyphs');
-      if(root.querySelectorAll('.gd-moment-clip').length!==1||labels[0]!=='New lead')throw Error('Missing prioritized lead sting: '+JSON.stringify(labels));
+      if(root.querySelectorAll('.gd-moment-clip').length||!root.querySelector('.gd-advantage-marker:not([hidden])')?.getAnimations().length)throw Error('Missing prioritized lead marker');
+      const marker=root.querySelector('.gd-advantage-marker:not([hidden])'),frames=marker.getAnimations()[0].effect.getKeyframes();
+      if(marker.getBoundingClientRect().height!==2||!frames[0].transform.startsWith('translate(')||!new DOMMatrixReadOnly(frames.at(-1).transform).isIdentity)throw Error('Lead marker must travel without changing layout: '+JSON.stringify({height:marker.getBoundingClientRect().height,frames}));
       window.momentFixture={root,model,previous,stop,measure,before,original,animateScoreChanges};
       return {glyphGeometryStable:true,leadChange:true,milestones:true,scoreSurge:true,labels};
     }""")
@@ -407,10 +409,12 @@ def check_game_day_moments(page):
       check([...f.root.querySelectorAll('.gd-moment-caption')].every(e=>e.scrollWidth<=e.clientWidth+1),'Moment caption is clipped');
       check(document.documentElement.scrollWidth<=innerWidth,'Moment effect overflows the viewport');
       f.stop();check(!f.root.querySelector('.gd-moment-clip,.gd-moment-caption'),'Moment cleanup left decorations');
-      const run=(model={...f.model},previous=f.previous,motion=true)=>{const stop=f.animateScoreChanges(f.root,{previous,model,motion,feedback:true});const count=f.root.querySelectorAll('.gd-moment-clip').length;stop();return count};
+      const run=(model={...f.model},previous=f.previous,motion=true)=>{const stop=f.animateScoreChanges(f.root,{previous,model,motion,feedback:true});const count=f.root.querySelectorAll('.gd-moment-clip').length+[...f.root.querySelectorAll('.gd-advantage-marker')].reduce((n,e)=>n+e.getAnimations().length,0);stop();return count};
       check(run(f.model)===0,'Same update replayed across surfaces');
       check(run({...f.model},{...f.previous,leaders:{'1':'1'}})===1,'Player moment missing without a lead change');
       check(run(f.model,null)===0,'Initial load manufactured a moment');
+      check(run({...f.model,snapshot:{...f.model.snapshot,checkedAt:300000}},{...f.previous,checkedAt:1})===0,'Stale sync replayed a lead change');
+      check(run({...f.model,games:f.model.games.map(g=>({...g,leader:null}))},{...f.previous,points:f.model.snapshot.points})===0&&!f.root.querySelector('.gd-advantage-marker:not([hidden])'),'Tied teams kept an advantage');
       check(run({...f.model,completed:true})===0,'Final stat correction celebrated a moment');
       check(run(f.model,f.previous,false)===0,'Motion off played a moment');
       check(run(f.model,{...f.previous,leaders:{'1':'1'},points:f.model.snapshot.points})===0,'Unchanged refresh replayed a moment');

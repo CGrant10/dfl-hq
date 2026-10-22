@@ -1,3 +1,4 @@
+import {syncLeadMarkers} from './game-day-moment-effects.js';
 import {mountMatchupFinish} from './matchup-finish.js';
 import {matchupReceiptData,shareMatchupReceipt} from './game-day-matchup-share.js';
 import {buildGameDay} from './game-day-model.js';
@@ -47,6 +48,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
    const total=card.querySelector(`[data-score-${side}] [data-matchup-score-value]`),value=game.sides[i].score==null?'—':Number(game.sides[i].score).toFixed(2);if(total&&total.textContent!==value)total.textContent=value;
    const surface=card.querySelector(`[data-score-${side}]`)?.closest('.clubhouse-game-side');if(surface){surface.dataset.lead=String(lead?.side===side);const badge=surface.querySelector('.clubhouse-score-lead');if(badge){badge.textContent=lead?.side===side?lead.label:'';badge.setAttribute('aria-hidden',String(lead?.side!==side))}surface.dataset.gamedayTeam=game.sides[i].roster;surface.querySelector('.clubhouse-remaining')?.classList.add('home-team-progress')}
   }
+  syncLeadMarkers(card,model,selected);
   const lines=new Map(game.sides.flatMap(t=>[...t.lineup,...t.bench]).map(p=>[`${p.roster}:${p.id}`,clubhousePlayerStatLine(p,stats,model)]));
   const lineup=card.querySelector('[data-clubhouse-lineup]');if(lineup)patchGameDay(lineup,last?matchupLineupHtml(game,{statLines:lines,completed:model.completed}):'<p class="clubhouse-stat-status">Checking the starting lineups…</p>');
   const teamStats=card.querySelector('[data-clubhouse-team-stats]');if(teamStats)patchGameDay(teamStats,last?clubhouseTeamStatsHtml(game,model.completed):'');

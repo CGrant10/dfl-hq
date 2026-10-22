@@ -1,4 +1,5 @@
 import { esc } from './ui.js';
+import {createTradeConnection} from './trade-connected-motion.js';
 import { playerIdentity } from './player-presentation.js';
 import { fitDialogToViewport } from './dialog-viewport.js';
 import { animateUi, cancelUiExit, cancelUiMotion, exitUi } from './ui-motion.js';
@@ -16,6 +17,7 @@ export function focusTradePicker(select) {
 }
 
 let dialog, active, position = 'all';
+const connection=createTradeConnection();
 function setup() {
   if (dialog) return;
   dialog = document.createElement('dialog');
@@ -23,7 +25,7 @@ function setup() {
   dialog.setAttribute('aria-labelledby', 'trade-picker-title');
   dialog.innerHTML = '<header><div><small data-picker-context></small><h2 id="trade-picker-title" tabindex="-1" autofocus>Add a player</h2></div><button type="button" class="linkbtn" data-picker-close>Close</button></header><div class="trade-picker-search"><label class="sr-only" for="trade-picker-search">Search players or teams</label><input id="trade-picker-search" type="search" placeholder="Search players or teams…" autocomplete="off"><div class="trade-picker-positions" aria-label="Filter by position"></div><p role="status" data-picker-count></p></div><div class="trade-picker-list" data-picker-list></div>';
   document.body.append(dialog);
-  const dismiss = (options = {}) => exitUi(dialog, () => dialog.close(), options);
+  const dismiss = (options = {}) => {connection.cancel();exitUi(dialog, () => dialog.close(), options)};
   dialog.querySelector('[data-picker-close]').onclick = () => dismiss();
   dialog.addEventListener('cancel', event => { event.preventDefault(); dismiss(); });
   // A populated search input consumes Escape to clear itself in Chromium.
@@ -40,9 +42,12 @@ function setup() {
     // Only offer the current select's available options. A redraw invalidates
     // an open sheet instead of applying a choice to a different roster.
     if (!select.isConnected || ![...select.options].some(option => option.value === id && !option.disabled)) { dismiss({ immediate:true }); return; }
-    dialog.close();
+    const origins=connection.capture(choice);
+    cancelUiExit(dialog);cancelUiMotion(dialog);
+    active=null;dialog.close();
     select.value = id;
     select.dispatchEvent(new Event('change', { bubbles:true }));
+    connection.play(origins,root.querySelector('.tb-anchor-chips [data-trade-player="'+CSS.escape(id)+'"]')?.parentElement);
     focusTradePicker(root.querySelector(selector) || root.querySelector('[data-tb-add-anchor="receive"]'));
   });
   dialog.querySelector('input').addEventListener('input', () => draw());
@@ -52,7 +57,7 @@ function setup() {
     if (active) focusTradePicker(active.select.isConnected ? active.select : active.root.querySelector(active.selector));
     active = null;
   });
-  window.addEventListener('hashchange', () => { if (dialog.open) dismiss({ immediate:true }); });
+  window.addEventListener('hashchange', () => { connection.cancel();if (dialog.open) dismiss({ immediate:true }); });
 }
 function draw() {
   if (!active) return;
@@ -65,12 +70,12 @@ function draw() {
     const value = Number(p.tradeValue);
     const tradeValue = p.tradeValue != null && Number.isFinite(value) ? Math.round(value) : '—';
     const label = ['Add '+p.name, p.position, p.nflTeam || p.team, owner, p.injuryStatus, hasProjection ? `Projected ${projection.toFixed(1)} points per game` : 'Projection unavailable', 'Trade value '+tradeValue].filter(Boolean).join(', ');
-    return `<button type="button" class="trade-picker-player" data-picker-player="${esc(p.id)}" aria-label="${esc(label)}"><span class="trade-picker-identity">${playerIdentity({ ...p, injuryStatus:'' })}${p.injuryStatus ? `<small class="trade-picker-injury">${esc(p.injuryStatus)}</small>` : ''}${owner ? `<small class="trade-picker-owner">${esc(owner)}</small>` : ''}</span><span class="trade-picker-stat"><b>${hasProjection ? projection.toFixed(1) : '—'}</b><small>Proj / game</small><span>Value ${tradeValue}</span></span></button>`;
+    return `<button type="button" class="trade-picker-player" data-trade-player="${esc(p.id)}" data-picker-player="${esc(p.id)}" aria-label="${esc(label)}"><span class="trade-picker-identity">${playerIdentity({ ...p, injuryStatus:'' })}${p.injuryStatus ? `<small class="trade-picker-injury">${esc(p.injuryStatus)}</small>` : ''}${owner ? `<small class="trade-picker-owner">${esc(owner)}</small>` : ''}</span><span class="trade-picker-stat"><b>${hasProjection ? projection.toFixed(1) : '—'}</b><small>Proj / game</small><span>Value ${tradeValue}</span></span></button>`;
   }).join('') : '<p class="trade-picker-empty">No matching players. Try another name or position.</p>';
   dialog.querySelector('[data-picker-list]').scrollTop = 0;
 }
 function open(select, root, pool, teams) {
-  setup(); cancelUiExit(dialog); cancelUiMotion(dialog);
+  setup(); connection.cancel();cancelUiExit(dialog); cancelUiMotion(dialog);
   const rows = [...select.options].filter(option => option.value && !option.disabled).map(option => {
     const player = pool.get(String(option.value));
     const owner = teams.find(team => (team.playerIds || []).some(id => String(id) === option.value));
@@ -101,4 +106,8 @@ export function mountTradePlayerPickers(root, pool, teams) {
     button.addEventListener('click', () => open(select, root, pool, teams));
     select.before(button); select.hidden = true;
   }
+  return ()=>{
+    connection.cancel();
+    if(active?.root===root){active=null;cancelUiExit(dialog);cancelUiMotion(dialog);if(dialog.open)dialog.close();}
+  };
 }
