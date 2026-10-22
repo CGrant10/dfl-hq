@@ -201,6 +201,10 @@ jobs:
         run: python tools/capture-scroll-review.py
         env:
           DFL_SCROLL_REVIEW_DIR: home-review-output/scroll
+      - name: Check native and fallback Home score motion
+        env:
+          DFL_SCORE_REVIEW_DIR: ${{ github.workspace }}/home-review-output/score-motion
+        run: python tools/capture-home-score-review.py
       - name: Check touch feedback and interrupted tab transitions
         env:
           DFL_MOTION_REVIEW_DIR: home-review-output/motion-quality

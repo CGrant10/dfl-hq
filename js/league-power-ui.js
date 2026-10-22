@@ -79,12 +79,17 @@ export function mountPowerRankings(root,view,members=[]){
   const current=dialog,source=opener.querySelector('.dfl-team-mark'),target=current.querySelector('.power-detail-face');
   let stopConnection=()=>{};
   dismiss=(options={})=>{
+   // Page teardown must remove the top-layer surface synchronously; the
+   // browser queues the native close event and can deliver it after navigation.
+   if(options.immediate){stopConnection();cancelUiExit(current);cancelUiMotion(current);if(current.open)current.close();cleanup();return;}
    if(!current.open)return;
    if(!current.dataset.uiClosing){const origin=stopConnection.position?.();stopConnection();if(!options.immediate&&!current.dataset.sheetMoving)stopConnection=connectArtwork(target,source,{origin,hideSource:true,duration:280});}
    exitSheet(current,()=>{drag.reset();current.close();},{...options,connected:!!stopConnection.position?.()});
   };
   const drag=mountSheetDrag(current,{handle:current.querySelector('header'),dismiss,onStart:()=>stopConnection()});
-  current.addEventListener('close',()=>{stopConnection();drag.stop();cancelUiExit(current);cancelUiMotion(current);current.remove();if(dialog===current)dialog=null;if(!stopped&&opener.isConnected)opener.focus({preventScroll:true});},{once:true});
+  let cleaned=false;
+  const cleanup=()=>{if(cleaned)return;cleaned=true;stopConnection();drag.stop();cancelUiExit(current);cancelUiMotion(current);current.remove();if(dialog===current)dialog=null;if(!stopped&&opener.isConnected)opener.focus({preventScroll:true});};
+  current.addEventListener('close',cleanup,{once:true});
   current.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();current.querySelector('[data-power-close]').focus({preventScroll:true});}});
   current.addEventListener('cancel',e=>{e.preventDefault();dismiss();});
   current.querySelector('[data-power-close]').onclick=()=>dismiss();current.addEventListener('click',e=>{if(e.target===current){const r=current.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dismiss();}});

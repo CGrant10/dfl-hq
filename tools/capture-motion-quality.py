@@ -77,8 +77,9 @@ with sync_playwright() as p:
  page.goto(f'http://127.0.0.1:{scope["server"].server_port}/');page.wait_for_function('window.ready');page.evaluate('document.fonts.ready')
  for route in ['home','trade']:
   page.evaluate('r=>fixture(r)',route);page.wait_for_timeout(300)
-  page.evaluate('scrollTo(0,450)');page.wait_for_timeout(500)
-  sample=page.evaluate('''async()=>{let changes={};const observer=new MutationObserver(rs=>{for(const r of rs)changes[r.attributeName]=(changes[r.attributeName]||0)+1});observer.observe(document.querySelector('#view'),{subtree:true,attributes:true});for(let i=0;i<60;i++){scrollTo(0,420+(i%30)*3);await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame)}observer.disconnect();return changes}''')
+  settled=page.evaluate("()=>{const matchup=document.querySelector('.gameday-matchup');return matchup?matchup.getBoundingClientRect().bottom+scrollY+100:450}")
+  page.evaluate('y=>scrollTo(0,y)',settled);page.wait_for_timeout(500)
+  sample=page.evaluate('''async settled=>{let changes={};const observer=new MutationObserver(rs=>{for(const r of rs)changes[r.attributeName]=(changes[r.attributeName]||0)+1});observer.observe(document.querySelector('#view'),{subtree:true,attributes:true});for(let i=0;i<60;i++){scrollTo(0,settled+(i%30)*3);await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame)}observer.disconnect();return changes}''',settled)
   measurements.append({'route':route,'scrollFrames':60,'attributeChanges':sample})
   check(f'{route}: scroll frames do not rewrite unchanged accessible labels',sample.get('aria-label',0)==0 and sample.get('aria-hidden',0)==0)
   check(f'{route}: scroll frames do not rewrite unchanged visibility',sample.get('hidden',0)==0)

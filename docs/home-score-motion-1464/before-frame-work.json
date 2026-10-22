@@ -1,0 +1,20 @@
+{
+  "layouts": 4,
+  "styleUpdates": 467,
+  "layoutMs": 1.053,
+  "samples": {
+    "rects": {
+      "gameday-matchup": 119,
+      "view has-home-score-dock": 121,
+      "home-score-dock": 9
+    },
+    "mutations": 1271,
+    "counts": {
+      "inert": 111,
+      "data-depth-active": 119,
+      "style": 1028,
+      "childList": 11,
+      "aria-hidden": 2
+    }
+  }
+}

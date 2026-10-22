@@ -792,3 +792,15 @@ Medicine Wheel defaults and legacy aliases are unchanged.
 Screens, checks and physical-device limits: [mobile refinement](docs/mobile-refinement-1463.md).
 `pnpm check` passes with 2,020 tests; fixtures cover reduced motion, current
 scores/names and unrelated Home animations without restarting score flights.
+
+
+## 1.464.0 — Home head-to-head scroll motion
+
+Inspected actual full-Home Light/Dark mobile screenshots at 320/390px, with
+loaded avatar stand-ins; geometry also passes at 430px. The right avatar keeps
+its outside position, complete names remain readable and score typography stays
+consistent through the handoff. Existing palette tokens, Medicine Wheel defaults,
+legacy mappings and shared navigation are preserved. No new UI colors or theme
+options were added. Both native and forced-fallback motion, reduced motion and
+motion-off are covered. Screens, measurements and device limits:
+[Home score motion](docs/home-score-motion-1464.md).
