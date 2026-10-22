@@ -1662,7 +1662,8 @@
   --home-program-ink: var(--text);
   --home-program-muted: var(--muted);
   gap: 0;
-  overflow: hidden;
+  /* Keep decorative bleed clipped while the document owns scroll timelines. */
+  overflow: clip;
   border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
   border-radius: var(--r-lg);
   color: var(--text);

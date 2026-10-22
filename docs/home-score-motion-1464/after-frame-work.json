@@ -1,0 +1,17 @@
+{
+  "layouts": 0,
+  "styleUpdates": 359,
+  "layoutMs": 0.0,
+  "samples": {
+    "rects": {
+      "home-score-dock": 9
+    },
+    "mutations": 241,
+    "counts": {
+      "data-depth-active": 119,
+      "style": 118,
+      "inert": 2,
+      "aria-hidden": 2
+    }
+  }
+}
