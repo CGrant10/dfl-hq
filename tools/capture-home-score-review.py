@@ -63,7 +63,7 @@ with sync_playwright() as p:
   cdp.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});page.wait_for_timeout(500)
   assert page.evaluate('scrollY>30&&touchScoreNodes.length===6&&touchScoreNodes.every(n=>n.isConnected)'),driver+' touch gesture restarted or blocked score motion'
   cdp.send('Emulation.setCPUThrottlingRate',{'rate':1});checks.append({'driver':driver,'touchFlingAt4xCpu':True})
-  page.evaluate("window.testScoreDialog=document.createElement('dialog');testScoreDialog.textContent='Isolated modal';document.querySelector('#view').append(testScoreDialog);testScoreDialog.showModal()")
+  page.evaluate("window.testScoreDialog=document.createElement('dialog');testScoreDialog.textContent='Isolated modal';document.body.append(testScoreDialog);testScoreDialog.showModal()")
   page.wait_for_function('document.querySelector(".home-score-dock").hidden')
   assert page.locator('.home-score-moving').count()==0,'Modal left moving copies above its backdrop'
   page.evaluate('testScoreDialog.close();testScoreDialog.remove()');page.wait_for_function('document.querySelectorAll(".home-score-moving").length===6')

@@ -33,7 +33,7 @@ export function mountHomeScoreCollapse(root){
  const write=(node,key,value)=>{remember(node,key);style(node,key,value)};
  const clear=()=>{for(const effect of effects)effect.cancel();effects=[];for(const[node,values]of original)for(const[key,value]of Object.entries(values))node.style[key]=value;original.clear();layer.replaceChildren();flights=[];geometry=[];native=false;delete layer.dataset.scrollDriver;};
  const blocked=()=>document.hidden||root.inert||root.closest('[hidden]')||source?.closest('[hidden]')||document.querySelector('dialog[open]');
- const suppress=()=>{clear();dock.hidden=true;dock.inert=true;attr(dock,'aria-hidden','true')};
+ const suppress=()=>{dirty=true;clear();dock.hidden=true;dock.inert=true;attr(dock,'aria-hidden','true')};
  const animate=(node,frames,timeline,rangeEnd)=>{
   const effect=node.animate(frames,{timeline,rangeStart:'exit-crossing 0%',rangeEnd:`exit-crossing ${rangeEnd}%`,fill:'both',duration:'auto',easing:'linear'});effects.push(effect);
  };
@@ -134,6 +134,10 @@ export function mountHomeScoreCollapse(root){
   }))invalidate();
  });
  observer.observe(root,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['src','data-phase','data-route','inert','hidden','open','class']});
+ // Detail sheets can live directly under body and remove themselves before
+ // their queued toggle event reaches document. Observe that removal as well.
+ const modals=new MutationObserver(records=>{if(records.some(record=>[...record.addedNodes,...record.removedNodes].some(node=>node.nodeType===1&&(node.matches('dialog')||node.querySelector('dialog')))))invalidate()});
+ modals.observe(document.body,{childList:true});
  const resize=new ResizeObserver(entries=>{
   let changed=false;
   for(const entry of entries){const {width,height}=entry.contentRect,next=entry.target===root?`${width}`:`${width}:${height}`;if(sizes.get(entry.target)!==next){sizes.set(entry.target,next);changed=true}}
@@ -145,5 +149,5 @@ export function mountHomeScoreCollapse(root){
  const toggle=event=>{if(event.target instanceof HTMLDialogElement)invalidate()};
  dock.addEventListener('click',()=>{source?.focus({preventScroll:true});source?.scrollIntoView({block:'center',behavior:motion()?'smooth':'instant'})});
  window.addEventListener('scroll',schedule,{passive:true});window.addEventListener('dfl:scroll-chrome',invalidate);window.addEventListener('resize',viewport);window.addEventListener('dfl:ui-motion-change',preferences);window.addEventListener('pageshow',invalidate);window.addEventListener('pagehide',suppress);document.addEventListener('visibilitychange',visibility);document.addEventListener('toggle',toggle,true);reduced.addEventListener('change',preferences);root.addEventListener('animationend',entrance);document.fonts?.addEventListener('loadingdone',invalidate);document.fonts?.ready.then(invalidate);schedule();
- return()=>{stopped=true;cancelAnimationFrame(frame);observer.disconnect();resize.disconnect();clear();dock.remove();layer.remove();root.classList.remove('has-home-score-dock');window.removeEventListener('scroll',schedule);window.removeEventListener('dfl:scroll-chrome',invalidate);window.removeEventListener('resize',viewport);window.removeEventListener('dfl:ui-motion-change',preferences);window.removeEventListener('pageshow',invalidate);window.removeEventListener('pagehide',suppress);document.removeEventListener('visibilitychange',visibility);document.removeEventListener('toggle',toggle,true);reduced.removeEventListener('change',preferences);root.removeEventListener('animationend',entrance);document.fonts?.removeEventListener('loadingdone',invalidate)};
+ return()=>{stopped=true;cancelAnimationFrame(frame);observer.disconnect();modals.disconnect();resize.disconnect();clear();dock.remove();layer.remove();root.classList.remove('has-home-score-dock');window.removeEventListener('scroll',schedule);window.removeEventListener('dfl:scroll-chrome',invalidate);window.removeEventListener('resize',viewport);window.removeEventListener('dfl:ui-motion-change',preferences);window.removeEventListener('pageshow',invalidate);window.removeEventListener('pagehide',suppress);document.removeEventListener('visibilitychange',visibility);document.removeEventListener('toggle',toggle,true);reduced.removeEventListener('change',preferences);root.removeEventListener('animationend',entrance);document.fonts?.removeEventListener('loadingdone',invalidate)};
 }
