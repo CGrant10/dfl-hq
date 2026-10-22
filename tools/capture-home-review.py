@@ -1252,6 +1252,9 @@ with sync_playwright() as p:
             page.locator('[data-position-panel]:not([hidden]) .dfl-player-portrait').first.click()
         else:
             player.click()
+        frames=page.wait_for_function("()=>{const e=document.querySelector('.dfl-connected-portrait:popover-open'),a=e?.getAnimations()[0];if(!a)return false;a.pause();a.currentTime=110;return a.effect.getKeyframes()}",timeout=10000).json_value()
+        assert page.locator('.dfl-player-card').evaluate('e=>e.dataset.playerCardStage==="portrait"&&getComputedStyle(e).opacity==="0"'), 'Player panel appeared before its portrait arrived'
+        if delay == 900:
             page.locator('[data-player-card-body][data-content-state="refreshing"]').wait_for()
             page.wait_for_timeout(250)
             pending=page.locator('.dfl-player-card').bounding_box()
@@ -1260,19 +1263,13 @@ with sync_playwright() as p:
             assert page.locator('.player-card-actions').evaluate('e=>e.inert'), 'Unverified actions enabled during revalidation'
             page.wait_for_function('!!window.reviewCardRelease')
             page.evaluate('window.reviewCardHold=false;window.reviewCardRelease()')
-        try:
-            frames = page.wait_for_function("()=>{const e=document.querySelector('.dfl-connected-portrait:popover-open'),a=e?.getAnimations()[0];if(!a)return false;a.pause();return a.effect.getKeyframes()}", timeout=10000).json_value()
-        except Exception:
-            print('Connected detail diagnostic:', {'errors':errors,'state':page.evaluate("()=>({visible:document.visibilityState,motion:document.documentElement.dataset.uiMotion,source:document.querySelector('[data-position-panel]:not([hidden]) .dfl-player-portrait')?.getBoundingClientRect().toJSON(),target:document.querySelector('.player-card-hero .dfl-player-portrait')?.getBoundingClientRect().toJSON(),dialogOpen:document.querySelector('.dfl-player-card')?.open})")}, flush=True)
-            raise
         assert 'scale(' in frames[0]['transform'] and frames[0]['transform'] != frames[-1]['transform'], 'Portrait does not travel from the source'
+        page.locator('.dfl-connected-portrait').evaluate('e=>e.getAnimations()[0].play()')
+        page.wait_for_function("!document.querySelector('.dfl-connected-portrait')&&!document.querySelector('[data-player-card-body]').hasAttribute('aria-busy')&&getComputedStyle(document.querySelector('.player-card-hero .dfl-player-portrait')).visibility==='visible'",timeout=5000)
         if delay==900:
             ready=page.locator('.dfl-player-card').bounding_box()
             assert all(abs(pending[k]-ready[k])<1 for k in ['x','y','width','height']), f'Player sheet jumped on completion: {pending} -> {ready}'
-            assert page.locator('[data-player-card-body]').get_attribute('aria-busy') is None, 'Ready player card remains busy'
             stable_sheets.append({'pending':pending,'ready':ready})
-        page.locator('.dfl-connected-portrait').evaluate('e=>e.getAnimations()[0].play()')
-        page.wait_for_function("!document.querySelector('.dfl-connected-portrait')&&getComputedStyle(document.querySelector('.player-card-hero .dfl-player-portrait')).visibility==='visible'",timeout=2000)
         page.keyboard.press('Escape')
         page.wait_for_timeout(30)
         assert page.locator('.dfl-connected-portrait').count()==1, 'Dismissal did not return the portrait to its row'

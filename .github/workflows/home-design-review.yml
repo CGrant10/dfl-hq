@@ -81,6 +81,7 @@ on:
       - 'js/route-motion.js'
       - 'tools/*route-review*'
       - 'js/player-card*'
+      - 'tools/capture-player-card-motion.py'
       - 'js/player-compare*'
       - 'js/daily-broadcast*'
       - 'css/broadcast-premium.css'
@@ -180,6 +181,7 @@ jobs:
           DFL_SHEET_REVIEW_DIR: ${{ github.workspace }}/home-review-output/sheets
         run: |
           node tools/render-sheet-review.mjs
+          python tools/capture-player-card-motion.py
           python tools/capture-sheet-review.py
           python tools/capture-sportsbook-slip-review.py
       - name: Check player comparisons

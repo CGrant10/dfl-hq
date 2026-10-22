@@ -92,14 +92,15 @@ export function mountSheetDrag(dialog,{handle,canDismiss=()=>true,dismiss,onStar
   const viewportChange=()=>{finish(null,true);};
   handle.addEventListener('pointerdown',down);handle.addEventListener('pointermove',move);handle.addEventListener('pointerup',up);
   handle.addEventListener('pointercancel',cancel);handle.addEventListener('lostpointercapture',lost);handle.addEventListener('click',click,true);
-  dialog.addEventListener('close',reset);document.addEventListener('visibilitychange',interrupt);window.addEventListener('dfl:ui-motion-change',interrupt);
+  const closed=()=>{if(!dialog.open)reset()};
+  dialog.addEventListener('close',closed);document.addEventListener('visibilitychange',interrupt);window.addEventListener('dfl:ui-motion-change',interrupt);
   window.addEventListener('pagehide',reset);
   window.addEventListener('resize',viewportChange);viewport?.addEventListener('resize',viewportChange);reduced.addEventListener('change',interrupt);
   return {reset,stop(){
     stopped=true;reset();delete dialog.dataset.sheetReady;delete handle.dataset.sheetHandle;
     handle.removeEventListener('pointerdown',down);handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',up);
     handle.removeEventListener('pointercancel',cancel);handle.removeEventListener('lostpointercapture',lost);handle.removeEventListener('click',click,true);
-    dialog.removeEventListener('close',reset);document.removeEventListener('visibilitychange',interrupt);window.removeEventListener('dfl:ui-motion-change',interrupt);
+    dialog.removeEventListener('close',closed);document.removeEventListener('visibilitychange',interrupt);window.removeEventListener('dfl:ui-motion-change',interrupt);
     window.removeEventListener('pagehide',reset);
     window.removeEventListener('resize',viewportChange);viewport?.removeEventListener('resize',viewportChange);reduced.removeEventListener('change',interrupt);
   }};

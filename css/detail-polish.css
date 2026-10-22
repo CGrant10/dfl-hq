@@ -114,3 +114,8 @@ html[data-ui-motion="off"] .sb-slip .sb-slip-submit { transition:none; transform
 :is(.dfl-player-card,.dfl-player-compare,.power-detail)[data-sheet-connected-close][data-ui-closing]::backdrop { animation:ui-backdrop-out 280ms ease forwards; }
 html[data-ui-motion="off"] .power-detail::backdrop { animation:none!important; }
 @media(prefers-reduced-motion:reduce) { .power-detail::backdrop { animation:none!important; } }
+
+/* Keep the panel out of the first beat; the photo owns that movement. */
+.dfl-player-card[data-player-card-stage="portrait"] { opacity:0; pointer-events:none; }
+.dfl-player-card[data-player-card-stage="portrait"]::backdrop { opacity:0; animation:none; }
+.dfl-player-card[data-player-card-stage="card"]::backdrop { animation:ui-backdrop-in 240ms ease-out; }

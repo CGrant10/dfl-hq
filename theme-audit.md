@@ -841,3 +841,13 @@ shared navigation clearance, preference changes, reduced motion and interruption
 are covered. Existing theme aliases and defaults are unchanged. `pnpm themes`
 passed. Screens, browser evidence and device limits:
 [Trade and live motion](docs/trade-live-motion-1467.md).
+
+## 1.468.0 — Portrait-first player-card opening
+
+Inspected loaded-photo mobile Light/Dark captures of the photo-only movement,
+expanding panel and final player card at 320/390px. The change uses existing
+surface, border, text, identity and backdrop colors. Source controls and card
+geometry stay stable; focus, dismissal, interruption, reduced motion and motion-off
+are covered. No palette entries or retired accents were added. `pnpm themes`
+passed. Screens, checks and native-device limits:
+[Portrait-first player cards](docs/player-card-motion-1468.md).
