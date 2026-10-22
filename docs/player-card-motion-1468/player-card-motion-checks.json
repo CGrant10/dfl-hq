@@ -1,0 +1,20 @@
+[
+  "light/320 loaded portrait moves before the panel with held data",
+  "light/320 panel expands after arrival while the portrait stays fixed",
+  "light/320 complete card has no leftover mask or hidden portrait",
+  "dark/320 loaded portrait moves before the panel with held data",
+  "dark/320 panel expands after arrival while the portrait stays fixed",
+  "dark/320 complete card has no leftover mask or hidden portrait",
+  "light/390 loaded portrait moves before the panel with held data",
+  "light/390 panel expands after arrival while the portrait stays fixed",
+  "light/390 complete card has no leftover mask or hidden portrait",
+  "dark/390 loaded portrait moves before the panel with held data",
+  "dark/390 panel expands after arrival while the portrait stays fixed",
+  "dark/390 complete card has no leftover mask or hidden portrait",
+  "early dismissal cannot reveal or reopen the panel",
+  "resize settles into a usable static card",
+  "a queued close event cannot cancel a fresh opening",
+  "reopening scrolled stats still moves the photo before the card",
+  "off immediately shows the card without a portrait flight",
+  "reduce immediately shows the card without a portrait flight"
+]

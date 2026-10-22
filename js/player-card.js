@@ -7,7 +7,8 @@ import { mountScoreVfx } from './score-vfx.js';
 import { loadPlayerCard } from './player-card-data.js';
 import { animateUi, cancelUiMotion, cancelUiExit, exitUi } from './ui-motion.js';
 import { connectPortrait } from './connected-portrait.js';
-import {mountSheetDrag,enterSheet,exitSheet} from './sheet-drag.js';
+import {enterPlayerCard} from './player-card-motion.js';
+import {mountSheetDrag,exitSheet} from './sheet-drag.js';
 import { fitDialogToViewport } from './dialog-viewport.js';
 import { playerFormHtml } from './player-form.js';
 import { team } from './nfl-teams.js';
@@ -17,6 +18,7 @@ import {sleeperAction} from './sleeper-links.js';
 
 let dialog, body, request = 0, opener, returnContainer, activeContext = null, sheetDrag, stopConnection = () => {};
 let preview=null;
+let stopEntrance=(_options={})=>{};
 function returnTarget() {
   const selector = opener?.dataset.playerCard ? `[data-player-card="${CSS.escape(opener.dataset.playerCard)}"]` : opener?.dataset.gamedayPlayer ? `[data-gameday-player="${CSS.escape(opener.dataset.gamedayPlayer)}"][data-player-roster="${CSS.escape(opener.dataset.playerRoster)}"]` : null;
   const replacement = selector && returnContainer?.isConnected ? returnContainer.querySelector(selector) : null;
@@ -32,19 +34,22 @@ function setup() {
   mountScoreVfx(dialog);
   const dismiss = (options = {}) => {
     if (!dialog.dataset.uiClosing && !options.immediate && !dialog.dataset.sheetMoving) {
-      const origin=stopConnection.position?.();stopConnection();
+      const origin=stopConnection.position?.();stopEntrance({closing:true});stopConnection();
       const source = returnTarget();
       const target = source?.querySelector('.dfl-player-portrait') || source?.closest('.dfl-player')?.querySelector('.dfl-player-portrait');
-      stopConnection = connectPortrait(body.querySelector('.dfl-player-portrait'), target, { motion:dialog.dataset.motion !== 'off', duration:280, hideSource:true, origin, easing:'cubic-bezier(.4,0,.2,1)' });
+      if(dialog.dataset.playerCardStage!=='portrait'||origin)stopConnection = connectPortrait(body.querySelector('.dfl-player-portrait'), target, { motion:dialog.dataset.motion !== 'off', duration:280, hideSource:true, origin, easing:'cubic-bezier(.4,0,.2,1)' });
     }
+    if(options.immediate)stopEntrance({closing:true});
     exitSheet(dialog, () => {sheetDrag.reset();dialog.close();}, { ...options, connected:!!stopConnection.position?.() });
   };
-  sheetDrag=mountSheetDrag(dialog,{handle:dialog.querySelector('header'),dismiss,onStart:()=>stopConnection()});
+  sheetDrag=mountSheetDrag(dialog,{handle:dialog.querySelector('header'),dismiss,onStart:()=>{stopEntrance();stopConnection()}});
   dialog.querySelector('[data-player-card-close]').addEventListener('click', () => dismiss());
   dialog.addEventListener('click', e => { if (e.target === dialog) dismiss(); });
   dialog.addEventListener('cancel', e => { e.preventDefault(); dismiss(); });
   dialog.addEventListener('close', () => {
-    stopConnection(); cancelUiExit(dialog); cancelUiMotion(dialog);
+    if(dialog.open)return;
+    stopEntrance();stopConnection(); cancelUiExit(dialog); cancelUiMotion(dialog);
+    delete dialog.dataset.playerCardStage;dialog.style.removeProperty('clip-path');dialog.style.removeProperty('opacity');
     request++; activeContext = null; body.removeAttribute('aria-busy');
     returnTarget()?.focus({ preventScroll: true });
   });
@@ -62,7 +67,7 @@ function render(model) {
   body.querySelector('.gameday-spotlight-score > span').dataset.scoreStamp=JSON.stringify([model.points,playerScoreTemperature({...p,points:model.points,state:model.state,afterHalftime:model.afterHalftime})]);
 }
 export async function openPlayerCard(selection, { context = null, motion = true, source = document.activeElement } = {}) {
-  setup(); stopConnection(); cancelUiExit(dialog); sheetDrag.reset(); cancelUiMotion(body); const token = ++request; opener = source; returnContainer = source?.closest('dialog') || source?.closest('#view'); activeContext = context;
+  setup(); stopEntrance();stopConnection(); cancelUiExit(dialog); sheetDrag.reset(); cancelUiMotion(body);dialog.style.removeProperty('clip-path');dialog.style.removeProperty('opacity');delete dialog.dataset.playerCardStage; const token = ++request; opener = source; returnContainer = source?.closest('dialog') || source?.closest('#view'); activeContext = context;
   const memberId=currentMember()?.id??null,hasPreview=playerCardPreviewMatches(preview,selection,context,memberId)&&!!body.querySelector('.player-card-hero');
   const finish=()=>{if(hasPreview){body.dataset.contentState='ready';body.removeAttribute('aria-busy');}else finishLoadingContent(body);};
   dialog.dataset.motion = motion ? 'on' : 'off';
@@ -71,17 +76,24 @@ export async function openPlayerCard(selection, { context = null, motion = true,
   if(hasPreview)body.querySelector('.player-card-actions').inert=true;
   else body.innerHTML = playerCardPlaceholder(context?.name || selection.name || source?.textContent?.trim());
   let entranceDone = Promise.resolve();
+  const sourcePortrait=source?.matches?.('.dfl-player-portrait')?source:source?.querySelector('.dfl-player-portrait')||source?.closest('.dfl-player')?.querySelector('.dfl-player-portrait');
+  const identity=body.querySelector('.loading-player-identity');
+  if(identity&&sourcePortrait){
+    const portrait=sourcePortrait.cloneNode(true);portrait.removeAttribute('style');portrait.querySelector('img')?.removeAttribute('style');
+    for(const name of ['--player-primary','--player-secondary'])portrait.style.setProperty(name,getComputedStyle(sourcePortrait).getPropertyValue(name));
+    identity.className='player-card-hero';identity.dataset.playerCardSeed='';identity.firstElementChild.replaceWith(portrait);identity.lastElementChild.className='dfl-player-copy';
+  }
   if (!dialog.open) {
+    dialog.dataset.playerCardStage='portrait';
     dialog.showModal();
     fitDialogToViewport(dialog);
-    const entrance = enterSheet(dialog,{motion});
-    // Capture finished now: the shared controller releases a completed effect,
-    // and reading .finished later would create a new pending idle promise.
-    entranceDone = entrance?.finished.catch(() => {}) || entranceDone;
+    const entrance=enterPlayerCard(dialog,source,{motion});
+    stopEntrance=entrance.stop;stopConnection=entrance.connection;entranceDone=entrance.arrived;
   }
   dialog.querySelector('h2').focus({ preventScroll: true });
   try {
     const model = await loadPlayerCard(selection, context);
+    await entranceDone;
     if (token !== request || !dialog.open || dialog.dataset.uiClosing || (currentMember()?.id??null)!==memberId) return;
     const scroll=body.scrollTop,unchanged=hasPreview&&JSON.stringify(preview?.model)===JSON.stringify(model);
     if(!unchanged){render(model);mountWatchButton(body.querySelector('[data-player-watch]'),model.player.id);body.scrollTop=scroll;}
@@ -89,11 +101,8 @@ export async function openPlayerCard(selection, { context = null, motion = true,
     preview={model,memberId,at:Date.now()};
     finish();
     if(!hasPreview)animateUi(body.querySelector('.player-form-chart'), [{ opacity:0, transform:'translateY(4px)' }, { opacity:1, transform:'translateY(0)' }], { duration:240, motion:dialog.dataset.motion !== 'off' });
-    // Wait for the sheet to settle so the portrait lands at its final position.
-    await entranceDone;
-    if (token === request && dialog.open && !dialog.dataset.uiClosing && !dialog.dataset.sheetMoving) stopConnection = connectPortrait(source, body.querySelector('.dfl-player-portrait'), { motion:dialog.dataset.motion !== 'off' });
   }
-  catch (error) { if (token === request && dialog.open && !dialog.dataset.uiClosing && (currentMember()?.id??null)===memberId) {
+  catch (error) { await entranceDone;if (token === request && dialog.open && !dialog.dataset.uiClosing && (currentMember()?.id??null)===memberId) {
     const retry=`<div data-player-card-refresh-error><p role="status">${hasPreview?'Refresh unavailable. Showing the last checked stats.':esc(error.message || 'Player data unavailable.')}</p><button type="button" class="linkbtn" data-player-card-retry>Retry</button></div>`;
     if(hasPreview)body.insertAdjacentHTML('afterbegin',retry);else body.innerHTML=retry;
     finish();body.querySelector('[data-player-card-retry]').onclick = () => void openPlayerCard(selection, { context, motion:dialog.dataset.motion !== 'off', source });
@@ -112,5 +121,5 @@ export function updatePlayerCard(context, motion = true) {
   if (status) status.textContent = `${{ live:'Live', final:'Final', upcoming:'Yet to play', unknown:'Status pending' }[context.state] || 'Recorded stats'} · Week ${context.week}`;
 }
 export function closePlayerCard(context) {
-  if (dialog?.open && activeContext && String(activeContext.id) === String(context?.id)) { stopConnection(); exitUi(dialog, () => {sheetDrag.reset();dialog.close();}, { immediate:true }); }
+  if (dialog?.open && activeContext && String(activeContext.id) === String(context?.id)) { stopEntrance({closing:true});stopConnection(); exitUi(dialog, () => {sheetDrag.reset();dialog.close();}, { immediate:true }); }
 }
