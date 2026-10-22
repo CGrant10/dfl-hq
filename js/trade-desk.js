@@ -33,6 +33,7 @@ import {evaluateTradeDeal,findTradeCounteroffers,applyTradeDeal} from './trade-w
 import {reconcileTradeDestinations,tradePerspective,tradeRoutingIssue} from './trade-routing.js';
 import {lineupComparisonMarkup,counterofferMarkup} from './trade-workspace-ui.js';
 import {playerPortrait} from './player-presentation.js';
+import {createTradeConnection} from './trade-connected-motion.js';
 import { esc } from "./ui.js";
 import {tradeConfidence,confidenceMarkup} from './trade-confidence.js';
 import {expertSourceMarkup} from './expert-rankings-model.js';
@@ -110,7 +111,7 @@ export function recommendationCaption(result, team, recommendation = recommendat
 function playerRow(player, side, checked) {
   const search = `${player.name} ${player.position} ${player.nflTeam}`.toLowerCase();
   const signal = analyzerPlayerSignal(player);
-  return `<label class="td-player ${checked ? "is-picked" : ""}" data-td-player-row data-search="${esc(search)}">
+  return `<label class="td-player ${checked ? "is-picked" : ""}" data-td-player-row data-trade-player="${esc(player.id)}" data-search="${esc(search)}">
     <input type="checkbox" data-td-pick="${side}" value="${esc(player.id)}" ${checked ? "checked" : ""}>
     ${playerPortrait(player)}
     <span class="td-player-copy">
@@ -125,7 +126,7 @@ function selectedPlayersMarkup(picked, pool, side,parties=[],destinations={}) {
   if (!picked.size) return `<span class="td-selected-empty">No players added yet.</span>`;
   return [...picked].map(id => {
     const player = pool.get(String(id));
-    return `<div class="td-selected-player"><button type="button" data-td-remove-pick="${esc(side)}" data-player-id="${esc(id)}" aria-label="Remove ${esc(player?.name || id)}"><span>${esc(player?.name || id)}</span><i aria-hidden="true">×</i></button>${parties.length>2||!destinations[id]?`<label class="td-recipient"><span>Send to</span><select data-td-destination="${esc(id)}" aria-label="Who receives ${esc(player?.name||id)}" aria-invalid="${!destinations[id]}"><option value="" ${!destinations[id]?'selected':''}>Choose recipient</option>${parties.filter((_,index)=>index!==Number(side)).map(t=>`<option value="${esc(t.id)}" ${String(t.id)===String(destinations[id])?'selected':''}>${esc(teamName(t))}</option>`).join('')}</select></label>`:''}</div>`;
+    return `<div class="td-selected-player" data-trade-player="${esc(id)}"><button type="button" data-td-remove-pick="${esc(side)}" data-player-id="${esc(id)}" aria-label="Remove ${esc(player?.name || id)}">${player?playerPortrait(player):''}<span class="td-selected-name">${esc(player?.name || id)}</span><i aria-hidden="true">×</i></button>${parties.length>2||!destinations[id]?`<label class="td-recipient"><span>Send to</span><select data-td-destination="${esc(id)}" aria-label="Who receives ${esc(player?.name||id)}" aria-invalid="${!destinations[id]}"><option value="" ${!destinations[id]?'selected':''}>Choose recipient</option>${parties.filter((_,index)=>index!==Number(side)).map(t=>`<option value="${esc(t.id)}" ${String(t.id)===String(destinations[id])?'selected':''}>${esc(teamName(t))}</option>`).join('')}</select></label>`:''}</div>`;
   }).join("");
 }
 
@@ -523,7 +524,7 @@ export function tradeDeskMarkup(team, teams, pool, state) {
  */
 export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange, onDeal,lockedIds=[] }) {
   if (!root) return;
-  const verdictHost = root.querySelector("[data-td-verdict]");
+  const verdictHost = root.querySelector("[data-td-verdict]"),connection=createTradeConnection();
   let currentDeal=null,counters=[],revision=0;
   root.querySelector(".td-builder")?.addEventListener("toggle", event => {
     state.editing = event.currentTarget.open;
@@ -580,7 +581,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
 
   root.addEventListener("change", event => {
     const destination=event.target.closest('[data-td-destination]');
-    if(destination){state.destinations[destination.dataset.tdDestination]=destination.value;destination.setAttribute('aria-invalid',String(!destination.value));update();return;}
+    if(destination){const origins=connection.capture(destination.closest('.td-selected-player'));state.destinations[destination.dataset.tdDestination]=destination.value;destination.setAttribute('aria-invalid',String(!destination.value));update();connection.play(origins,verdictHost);return;}
     const box = event.target.closest("[data-td-pick]");
     if (box) {
       const set = state.sends[Number(box.dataset.tdPick)];
@@ -589,10 +590,12 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
         root.querySelector("[data-td-limit]")?.classList.add("is-full");
         return;
       }
+      const origins=connection.capture(box.checked?box.closest('.td-player'):root.querySelector(`[data-td-selected="${box.dataset.tdPick}"] [data-trade-player="${CSS.escape(box.value)}"]`));
       if (box.checked) set.add(box.value); else set.delete(box.value);
       box.closest(".td-player")?.classList.toggle("is-picked", box.checked);
       syncSelectionUi();
       update();
+      connection.play(origins,box.checked?root.querySelector(`[data-td-selected="${box.dataset.tdPick}"]`):box.closest('.td-player'));
       return;
     }
     if (event.target.matches("[data-td-member]")) {
@@ -627,6 +630,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     const removePick = event.target.closest("[data-td-remove-pick]");
     if (removePick) {
       const side = Number(removePick.dataset.tdRemovePick), id = String(removePick.dataset.playerId);
+      const origins=connection.capture(removePick.closest('.td-selected-player'));
       state.sends[side]?.delete(id);
       root.querySelectorAll(`[data-td-pick="${side}"]`).forEach(box => {
         if (String(box.value) !== id) return;
@@ -635,6 +639,8 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
       });
       syncSelectionUi();
       update();
+      const box=root.querySelector(`[data-td-pick="${side}"][value="${CSS.escape(id)}"]`);
+      (box?.getClientRects().length?box:root.querySelector(`[data-td-roster="${side}"] > summary`))?.focus({preventScroll:true});connection.play(origins,box?.closest('.td-player'));
       return;
     }
     if (event.target.closest("[data-td-add-member]")) {
@@ -650,6 +656,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
       return;
     }
     if (!event.target.closest("[data-td-clear]")) return;
+    connection.cancel();
     state.sends.forEach(set => set.clear());
     root.querySelectorAll("[data-td-pick]").forEach(box => {
       box.checked = false;
@@ -662,4 +669,5 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
   syncSelectionUi();
   for(const input of root.querySelectorAll("[data-td-filter]")) input.dispatchEvent(new Event("input",{bubbles:true}));
   update();
+  return ()=>connection.stop();
 }

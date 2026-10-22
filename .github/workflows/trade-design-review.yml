@@ -6,6 +6,10 @@ on:
       - 'js/connected-artwork.js'
       - 'tools/fixtures/dfl-trade-benchmark.json'
       - 'tools/capture-trade-motion.py'
+      - 'tools/capture-trade-pick-motion.py'
+      - 'tools/capture-trade-receipt-motion.py'
+      - 'js/trade-receipt-motion.js'
+      - 'js/router.js'
       - 'js/waiver-*'
       - 'js/roster-coach-*'
       - 'css/weekly-outlook.css'
@@ -67,6 +71,12 @@ jobs:
       - run: python tools/capture-trade-review.py
       - name: Check connected offer transitions
         run: python tools/capture-trade-motion.py
+      - name: Check player selection motion and interruptions
+        run: python tools/capture-trade-pick-motion.py
+      - name: Check connected receipts and Back restoration
+        env:
+          DFL_RECEIPT_MOTION_REVIEW_DIR: ${{ github.workspace }}/trade-review-output/receipt-motion
+        run: python tools/capture-trade-receipt-motion.py
       - run: python tools/capture-wall-review.py
       - run: node tools/render-secondary-review.mjs
       - run: python tools/capture-secondary-review.py

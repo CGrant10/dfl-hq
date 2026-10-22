@@ -27,6 +27,8 @@
 #view[data-route="trade"] .td-selected-player button { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px; width:100%; padding:8px 10px; background:transparent; color:var(--text); border:0; font:700 14px var(--font-body); text-align:left; cursor:pointer; }
 #view[data-route="trade"] .td-selected-player button span { overflow-wrap:anywhere; }
 #view[data-route="trade"] .td-selected-player button i { font-size:20px; font-style:normal; color:var(--muted); }
+#view[data-route="trade"] .td-selected-player .dfl-player-portrait { width:28px; height:28px; flex:0 0 28px; }
+#view[data-route="trade"] .td-selected-player .td-selected-name { flex:1; min-width:0; }
 #view[data-route="trade"] .td-recipient { display:grid; gap:4px; padding:0 8px 8px; }
 #view[data-route="trade"] .td-recipient > span { font-size:11px; color:var(--muted); }
 #view[data-route="trade"] .td-roster > summary { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px; min-height:44px; color:var(--accent); font-size:14px; font-weight:700; cursor:pointer; }
@@ -274,3 +276,11 @@
 #view[data-route="trade"] .tb-offer :is(button,a):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #view[data-route="trade"] .tb-multi-flow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 @media(min-width:700px){#view[data-route="trade"] .tb-tier>div{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}#view[data-route="trade"] .tb-multi-offer{grid-column:1/-1}#view[data-route="trade"] .tb-multi-flow{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* Only the selected trade surface connects to the receipt, not the shell. */
+html[data-receipt-transition] { view-transition-name:none; }
+html[data-receipt-transition]::view-transition-old(root),html[data-receipt-transition]::view-transition-new(root) { animation:none; }
+::view-transition-group(dfl-trade-receipt) { animation-duration:300ms; animation-timing-function:cubic-bezier(.2,.75,.25,1); }
+::view-transition-old(dfl-trade-receipt),::view-transition-new(dfl-trade-receipt) { height:100%; mix-blend-mode:normal; }
+html[data-receipt-transition] #view,html[data-receipt-transition] #view > *,html[data-receipt-transition] #view .dfl-pulse-surface { animation:none!important; opacity:1!important; transform:none!important; }
+@media(prefers-reduced-motion:reduce){::view-transition-group(dfl-trade-receipt){animation-duration:0s;}}
