@@ -84,6 +84,14 @@ on:
       - 'tools/capture-player-card-motion.py'
       - 'js/player-compare*'
       - 'js/moment-recap*'
+      - 'js/record-chases*'
+      - 'js/team-art*'
+      - 'js/lore.js'
+      - 'js/pages/profile-dfl.js'
+      - 'css/team-art.css'
+      - 'css/record-chases.css'
+      - 'assets/team-art/**'
+      - 'tools/capture-record-art-review.py'
       - 'js/game-day-moments-model.js'
       - 'tools/capture-recap-review.py'
       - 'js/daily-broadcast*'
@@ -195,6 +203,10 @@ jobs:
         env:
           DFL_RECAP_REVIEW_DIR: ${{ github.workspace }}/home-review-output/recap
         run: python tools/capture-recap-review.py
+      - name: Check live record chases and original team art
+        env:
+          DFL_RECORD_REVIEW_DIR: ${{ github.workspace }}/home-review-output/records
+        run: python tools/capture-record-art-review.py
       - name: Check continuous tab glides
         env:
           DFL_TAB_REVIEW_DIR: ${{ github.workspace }}/home-review-output/tabs

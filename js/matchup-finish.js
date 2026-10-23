@@ -1,3 +1,4 @@
+import {teamIllustration} from './team-art.js';
 import {esc,toast} from './ui.js';
 import {patchGameDay} from './game-day-dom.js';
 import {matchupFinish,finishSeenKey} from './matchup-finish-model.js';
@@ -7,7 +8,7 @@ function seen(key){if(memory.has(key))return true;try{return JSON.parse(localSto
 function remember(key){memory.add(key);if(memory.size>80)memory.delete(memory.values().next().value);try{const stored=JSON.parse(localStorage.getItem(storageKey)||'[]');localStorage.setItem(storageKey,JSON.stringify([...new Set([...(Array.isArray(stored)?stored:[]),key])].slice(-80)))}catch{}}
 export function matchupFinishHtml(result){
  if(!result)return '';
- return `<section class="matchup-finish" aria-label="Final matchup receipt" data-finish-kind="${result.kind}"><span class="matchup-finish-rule" aria-hidden="true"></span><div class="matchup-finish-verdict"><strong>${esc(result.label)}</strong><span><b>${result.margin.toFixed(2)}</b><small>${result.kind==='tie'?'point gap':'point'+(result.margin===1?'':'s')}</small></span></div><p class="matchup-finish-roast">${esc(result.roast)}</p><div class="matchup-finish-actions"><button type="button" class="linkbtn" data-finish-replay>Replay finish</button><button type="button" class="linkbtn" data-finish-share>Share final</button></div><span class="sr-only" role="status" data-finish-announcement></span></section>`;
+ return `<section class="matchup-finish" aria-label="Final matchup receipt" data-finish-kind="${result.kind}"><span class="matchup-finish-rule" aria-hidden="true"></span><div class="matchup-finish-verdict"><strong>${esc(result.label)}</strong><span><b>${result.margin.toFixed(2)}</b><small>${result.kind==='tie'?'point gap':'point'+(result.margin===1?'':'s')}</small></span></div>${result.winner!==null?teamIllustration(result.sides[result.winner],{className:'matchup-finish-illustration'}):''}<p class="matchup-finish-roast">${esc(result.roast)}</p><div class="matchup-finish-actions"><button type="button" class="linkbtn" data-finish-replay>Replay finish</button><button type="button" class="linkbtn" data-finish-share>Share final</button></div><span class="sr-only" role="status" data-finish-announcement></span></section>`;
 }
 
 // A single finite reveal, shared by Watch and Clubhouse. Scores stay truthful

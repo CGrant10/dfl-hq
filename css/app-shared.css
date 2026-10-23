@@ -6246,3 +6246,34 @@ html:has(.power-detail[open]){overflow:hidden}
 @media(max-width:350px){#home-wrap .power-edition .power-row-clip>button{grid-template-columns:20px 30px minmax(0,1fr) 35px 30px;gap:6px}#home-wrap .power-edition .home-rank-face{width:30px;height:30px}#home-wrap .power-edition .home-rank-head{grid-template-columns:20px minmax(0,1fr) 35px 30px;gap:6px}#home-wrap .power-edition .power-row-clip>button>em{font-size:17px}}
 
 @media(min-width:700px){.power-detail>header>.dfl-sheet-grip{display:none}}
+
+
+/* Source: css/team-art.css */
+.dfl-team-art{display:block;flex:none;width:160px;aspect-ratio:362/326;background-image:url('../assets/team-art/dfl-team-art-1470.webp');background-repeat:no-repeat;background-size:400% auto;background-position:var(--team-art-x) var(--team-art-y);pointer-events:none}
+.gd-entrance-crest:has(.dfl-team-art){position:relative;isolation:isolate;width:100%;max-width:180px;min-width:0;padding:0}
+.gd-entrance-crest>.dfl-team-art{width:100%}
+.gd-entrance-crest:has(.dfl-team-art)>.dfl-team-mark{position:absolute;right:0;bottom:0;width:36px!important;height:36px!important;border:2px solid var(--bg-2);border-radius:10px}
+.gd-entrance-team:has(.dfl-team-art){gap:10px}
+#view .profile-head:has(>.profile-team-illustration){position:relative;isolation:isolate;overflow:hidden}
+#view .profile-team-illustration{position:absolute;right:12px;bottom:8px;width:144px;opacity:.14;z-index:-1}
+#view .profile-head:has(>.profile-team-illustration)>.ph-top{position:relative}
+.matchup-finish-illustration{float:right;width:112px;margin:0 0 4px 12px}
+.matchup-finish:has(>.matchup-finish-illustration) .matchup-finish-roast{min-height:72px}
+.matchup-finish-actions{clear:both}
+@media(max-width:360px){.matchup-finish-illustration{width:88px;margin-left:8px}}
+
+
+/* Source: css/record-chases.css */
+.dfl-record-watch{margin:12px 0 18px;padding:12px 0;border-block:1px solid var(--line);color:var(--text)}
+.dfl-record-watch>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px}
+.dfl-record-watch h3{margin:0;font:700 15px/1.3 var(--font-display)}.dfl-record-watch>header>span{font-size:11px;color:var(--muted)}
+.dfl-record-watch>article{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:7px 10px;min-width:0;padding:10px 0}
+.record-identity{display:flex;align-items:center;gap:8px;min-width:0}.record-identity>.dfl-team-mark{width:32px;height:32px;flex:none;border-radius:9px}.record-identity>div{display:grid;gap:3px;min-width:0}.record-identity strong{font:700 15px/1.15 var(--font-display);overflow-wrap:anywhere}.record-identity small{font-size:11px;line-height:1.4;color:var(--muted)}
+.record-distance{display:grid;gap:2px;text-align:right;flex:none}.record-distance>b{font:700 23px/1 var(--font-display);font-variant-numeric:tabular-nums}.record-distance>small{font-size:11px;line-height:1.3;color:var(--muted)}
+.record-progress{display:block;grid-column:1/-1;height:3px;overflow:hidden;border-radius:2px;background:var(--line)}.record-progress>i{display:block;width:100%;height:100%;background:var(--accent-fill);transform:scaleX(var(--record-progress));transform-origin:left;transition:transform 300ms cubic-bezier(.2,.75,.25,1)}
+.dfl-record-watch [data-record-state="cleared"] .record-identity small{color:var(--accent)}
+.gameday-watch #watch-panel-matchup>.dfl-record-watch{margin-inline:16px}
+html[data-readability="comfortable"] .record-identity small,html[data-readability="comfortable"] .record-distance>small{font-size:13px}
+html[data-ui-motion="off"] .record-progress>i,[data-motion="off"] .record-progress>i{transition:none!important}
+@media(prefers-reduced-motion:reduce){.record-progress>i{transition:none!important}}
+@media(forced-colors:active){.record-progress{border:1px solid CanvasText}.record-progress>i{background:Highlight}}

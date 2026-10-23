@@ -20,7 +20,7 @@ def changed_files():
     candidates+=['index.html','version.txt','sw.js','css/app-shared.css','js/bundle/'+VERSION+'/app.js',
         'js/game-day.js','js/lineup-alert-model.js','js/game-day-score-motion.js','js/matchup-banter.js']
     return sorted(set(path for path in candidates if (ROOT/path).is_file() and
-        (path in ['index.html','version.txt','sw.js'] or path.startswith(('css/','js/')) and not path.endswith('.spec.js'))))
+        (path in ['index.html','version.txt','sw.js'] or path.startswith(('css/','js/','assets/team-art/')) and not path.endswith('.spec.js'))))
 
 def main():
     files=changed_files()

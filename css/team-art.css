@@ -1,0 +1,12 @@
+.dfl-team-art{display:block;flex:none;width:160px;aspect-ratio:362/326;background-image:url('../assets/team-art/dfl-team-art-1470.webp');background-repeat:no-repeat;background-size:400% auto;background-position:var(--team-art-x) var(--team-art-y);pointer-events:none}
+.gd-entrance-crest:has(.dfl-team-art){position:relative;isolation:isolate;width:100%;max-width:180px;min-width:0;padding:0}
+.gd-entrance-crest>.dfl-team-art{width:100%}
+.gd-entrance-crest:has(.dfl-team-art)>.dfl-team-mark{position:absolute;right:0;bottom:0;width:36px!important;height:36px!important;border:2px solid var(--bg-2);border-radius:10px}
+.gd-entrance-team:has(.dfl-team-art){gap:10px}
+#view .profile-head:has(>.profile-team-illustration){position:relative;isolation:isolate;overflow:hidden}
+#view .profile-team-illustration{position:absolute;right:12px;bottom:8px;width:144px;opacity:.14;z-index:-1}
+#view .profile-head:has(>.profile-team-illustration)>.ph-top{position:relative}
+.matchup-finish-illustration{float:right;width:112px;margin:0 0 4px 12px}
+.matchup-finish:has(>.matchup-finish-illustration) .matchup-finish-roast{min-height:72px}
+.matchup-finish-actions{clear:both}
+@media(max-width:360px){.matchup-finish-illustration{width:88px;margin-left:8px}}

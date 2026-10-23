@@ -1,1 +1,0 @@
-import{t as e}from"./golf-gps-course-map-DFCTjiKH.js";var t=/(square\s*butte|center\s*(nd)?|center square butte|red\s*trail|new\s*salem|rolla\s*(country|municipal)?|rolla.*golf)/i;e({key:`imported`,label:`Imported golf course`,courseRe:{test:e=>!!String(e||``).trim()&&!t.test(e)},storageKey:`dfl.golfGps.imported.greens.v1`});

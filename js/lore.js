@@ -150,7 +150,7 @@ export async function loadLore({ force = false } = {}) {
       db().from("sleeper_users").select("sleeper_user_id,display_name,team_name,hidden"),
       loadMemberDirectory().then(data => ({ data, error: null }), error => ({ data: [], error })),
       db().from("sleeper_matchups")
-          .select("season,week,roster1,user1,score1,roster2,user2,score2,winner_roster_id")
+          .select("season,week,roster1,user1,score1,roster2,user2,score2,winner_roster_id",{count:'exact'})
           .order("season", { ascending: true }).order("week", { ascending: true }),
       db().from("history").select("id,year,category,winner,notes").order("year", { ascending: false }),
       db().from("arena_events").select("id,name,theme,status,event_date"),
@@ -173,6 +173,7 @@ export async function loadLore({ force = false } = {}) {
     users:     (users.data || []).filter((u) => u.hidden !== true),
     members:   members.data   || [],
     matchups:  matchups.data  || [],
+    archiveComplete: !matchups.error&&Number.isInteger(matchups.count)&&matchups.count===(matchups.data||[]).length,
     manual:    (manual.data||[]).map(row=>({...row,winner:currentTeamLabel(row.winner,members.data||[])||row.winner})),
     arenaEvents:  arenaEvents.data  || [],
     arenaResults: arenaResults.data || [],

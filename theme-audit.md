@@ -862,3 +862,15 @@ bounds, disabled actions, reduced motion and motion-off checks passed. Compariso
 captures cover portrait-first entry and panel expansion in both palettes.
 See [validation and actual captures](docs/mobile-recap-1469.md). Physical
 iPhone/Safari frame pacing remains unverified.
+
+## 1.470.0 — Live record chases and league artwork
+
+Inspected actual Light/Dark mobile captures at 320/390px for record rows,
+matchup introductions, winner receipts and profile headers, plus all 12 artwork
+cells. Record text, progress, borders and controls use shared Medicine Wheel
+tokens. Original artwork uses the league's crimson, charcoal, ivory and gold;
+chosen member/Sleeper portraits remain separate. Names, loaded portraits,
+contrast, score/art/roast spacing, repeated live updates, reduced motion and
+motion-off passed browser checks. No redundant themes or retired accents were
+added. `pnpm themes` passed. Screens and native-device limitations:
+[record and artwork validation](docs/record-art-1470.md).
