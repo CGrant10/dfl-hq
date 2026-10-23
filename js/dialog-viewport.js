@@ -17,7 +17,7 @@ export function fitDialogToViewport(dialog) {
   window.addEventListener('dfl:route-performance', update, { signal: controller.signal });
   window.addEventListener('pageshow', update, { signal: controller.signal });
   window.addEventListener('resize', update, { signal: controller.signal });
-  dialog.addEventListener('close', () => controller.abort(), { once:true, signal:controller.signal });
+  dialog.addEventListener('close', () => {if(!dialog.open)controller.abort()}, { signal:controller.signal });
   update();
   return stop;
 }

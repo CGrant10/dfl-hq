@@ -11,3 +11,12 @@ it('has no invented recap for missing, invalid or other-matchup observations',()
 it('keeps observation wording and safely renders league names in its live frame',()=>{
  const frame=momentRecapFrames([{...moment(8),text:'<Club> +8 points since the previous sync'}])[0];const html=momentRecapFrame(frame);expect(html).toContain('&lt;Club&gt;');expect(html).toContain('since the previous sync');expect(html).toContain('Observed');expect(html).not.toContain('touchdown');
 });
+it('puts recorded player totals and the saved before/after swing in the foreground',()=>{
+ const frame={...moment(1),title:'Scoring surge',player:{id:'a',name:'<Player>',position:'WR',nflTeam:'CIN'},team:{team_name:'<Club>'},recap:{points:24.83,delta:8.12,before:16.71}};
+ const html=momentRecapFrame(frame);expect(html).toContain('+8.12');expect(html).toContain('16.71');expect(html).toContain('24.83');expect(html).toContain('&lt;Player&gt;');expect(html).toContain('&lt;Club&gt;');expect(html).toContain('Since previous sync');
+ expect(momentRecapFrame({...frame,recap:undefined})).not.toContain('moment-recap-score-path');
+});
+it('shows both recorded team scores and preserves full current names in a lead change',()=>{
+ const html=momentRecapFrame({...moment(1),kind:'lead',title:'Lead change',team:{team_name:'Current <Leader>'},recap:{sides:[{team_name:'Current <Leader>',points:105.12,leading:true},{team_name:'Other team',points:102.13,leading:false}]}});
+ expect(html).toContain('105.12');expect(html).toContain('102.13');expect(html).toContain('Current &lt;Leader&gt;');expect(html).toContain('is-leading');expect(html).not.toContain('touchdown');
+});

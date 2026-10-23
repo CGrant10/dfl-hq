@@ -83,6 +83,9 @@ on:
       - 'js/player-card*'
       - 'tools/capture-player-card-motion.py'
       - 'js/player-compare*'
+      - 'js/moment-recap*'
+      - 'js/game-day-moments-model.js'
+      - 'tools/capture-recap-review.py'
       - 'js/daily-broadcast*'
       - 'css/broadcast-premium.css'
       - 'css/player-compare.css'
@@ -188,6 +191,10 @@ jobs:
         env:
           DFL_COMPARE_REVIEW_DIR: ${{ github.workspace }}/home-review-output/comparison
         run: python tools/capture-comparison-review.py
+      - name: Check mobile GameDay recap
+        env:
+          DFL_RECAP_REVIEW_DIR: ${{ github.workspace }}/home-review-output/recap
+        run: python tools/capture-recap-review.py
       - name: Check continuous tab glides
         env:
           DFL_TAB_REVIEW_DIR: ${{ github.workspace }}/home-review-output/tabs

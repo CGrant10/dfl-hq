@@ -708,12 +708,13 @@ def check_watch_score_strip(page):
         page.locator('[data-moments-recap]').click()
         recap=page.locator('.gd-moment-recap[open]')
         assert recap.locator('h2').evaluate('e=>e===document.activeElement')
-        assert recap.locator('.moment-recap-frame > small').text_content()=='Lead change'
+        assert recap.locator('.moment-recap-frame:visible > small').text_content()=='Lead change'
         recap.locator('[data-recap-next]').click()
         assert 'since the previous sync' in recap.inner_text()
         page.evaluate('watchStripFixture.watch.redraw()')
         assert recap.is_visible() and 'since the previous sync' in recap.inner_text()
         page.keyboard.press('Escape')
+        page.wait_for_function('!document.querySelector(".gd-moment-recap[open]")')
         assert page.locator('.gameday-watch[open]').count()==1
         assert page.locator('[data-moments-recap]').evaluate('e=>e===document.activeElement')
         result['momentRecap']={'manualControls':True,'savedObservations':True,'refreshPreservesFrame':True,'focusReturned':True}

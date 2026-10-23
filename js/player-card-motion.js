@@ -4,7 +4,7 @@ import {enterSheet} from './sheet-drag.js';
 
 // The photo arrives first. The panel then opens around the stationary photo;
 // fetching details never controls the start of either movement.
-export function enterPlayerCard(dialog,source,{motion=true}={}){
+export function enterPlayerCard(dialog,source,{motion=true,target='.dfl-player-portrait'}={}){
  let resolveArrival,resolveFinished,frame=0,stopped=false,hiddenPortrait=null,visibility='';
  const arrived=new Promise(resolve=>resolveArrival=resolve),finished=new Promise(resolve=>resolveFinished=resolve);
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -26,19 +26,19 @@ export function enterPlayerCard(dialog,source,{motion=true}={}){
  function interrupt(){stop()}
  const reveal=()=>{
   frame=0;if(stopped||!dialog.open)return stop();
-  const portrait=dialog.querySelector('.dfl-player-portrait'),box=dialog.getBoundingClientRect(),photo=portrait?.getBoundingClientRect();
+  const portrait=dialog.querySelector(target),box=dialog.getBoundingClientRect(),photo=portrait?.getBoundingClientRect();
   if(!photo||!connection.position?.())return stop();
   hiddenPortrait=portrait;visibility=portrait.style.visibility;portrait.style.visibility='hidden';
   // Capture an explicitly hidden seed's final state, not its temporary flight state.
   if(visibility==='hidden')visibility='';
   dialog.dataset.playerCardStage='card';
   const inset=`inset(${Math.max(0,photo.top-box.top)}px ${Math.max(0,box.right-photo.right)}px ${Math.max(0,box.bottom-photo.bottom)}px ${Math.max(0,photo.left-box.left)}px round ${getComputedStyle(portrait).borderRadius})`;
-  const animation=animateUi(dialog,[{clipPath:inset},{clipPath:'inset(0px 0px 0px 0px round 16px)'}],{duration:240,motion});
+  const animation=animateUi(dialog,[{clipPath:inset},{clipPath:`inset(0px 0px 0px 0px round ${getComputedStyle(dialog).borderRadius})`}],{duration:240,motion});
   if(animation)animation.finished.then(()=>stop(),()=>stop());else stop();
  };
  const start=()=>{
   frame=0;if(stopped||!dialog.open)return stop();
-  actualConnection=connectPortrait(source,dialog.querySelector('.dfl-player-portrait'),{motion,hideSource:true,hold:true});
+  actualConnection=connectPortrait(source,dialog.querySelector(target),{motion,hideSource:true,hold:true});
   if(!connection.position?.()){
    delete dialog.dataset.playerCardStage;resolveArrival();
    const animation=enterSheet(dialog,{motion});
