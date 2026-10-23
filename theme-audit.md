@@ -851,3 +851,14 @@ geometry stay stable; focus, dismissal, interruption, reduced motion and motion-
 are covered. No palette entries or retired accents were added. `pnpm themes`
 passed. Screens, checks and native-device limits:
 [Portrait-first player cards](docs/player-card-motion-1468.md).
+# 1.469.0 — mobile recap and comparison motion
+
+Reviewed production recap captures in default Medicine Wheel Light/Dark at
+320/390px, including loaded portraits, both team identities, score paths, native
+sheet controls, short viewport scrolling, comfortable text and failed photos.
+Text, surfaces, controls and borders use shared tokens; explicit player/team
+identity colors remain in portrait washes and lead markers. Browser contrast,
+bounds, disabled actions, reduced motion and motion-off checks passed. Comparison
+captures cover portrait-first entry and panel expansion in both palettes.
+See [validation and actual captures](docs/mobile-recap-1469.md). Physical
+iPhone/Safari frame pacing remains unverified.

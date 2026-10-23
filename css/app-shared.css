@@ -5807,21 +5807,41 @@ dialog.dfl-player-card { height:min(720px,calc(100dvh - 24px),var(--dialog-viewp
 #view .player-watchlist>summary small{font-size:11px;color:var(--muted)}
 #view .player-watchlist-body{padding-top:12px}
 #view .analyzer-followups{margin-top:20px}
-.gd-moment-recap{width:min(420px,calc(100% - 24px));max-height:calc(100dvh - 32px);padding:18px;border:1px solid var(--line);border-radius:18px;background:var(--bg-2);color:var(--text);overflow:auto;overscroll-behavior:contain}
-.gd-moment-recap::backdrop{background:color-mix(in srgb,var(--bg) 85%,transparent)}
-.gd-moment-recap>header{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.gd-moment-recap h2{font-size:18px;margin:0}.gd-moment-recap [data-recap-close]{min-height:44px}
-.moment-recap-progress{display:flex;gap:4px;margin:14px 0}.moment-recap-progress i{flex:1;height:3px;border-radius:2px;background:var(--line)}.moment-recap-progress i.is-seen{background:var(--accent)}
-.moment-recap-frame{display:flex;min-height:330px;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px 12px;text-align:center;border-block:1px solid var(--line);background:radial-gradient(ellipse at 50% 30%,color-mix(in srgb,var(--accent-fill) 12%,transparent),transparent 70%)}
-.moment-recap-art{height:112px;display:flex;align-items:center;justify-content:center}
-.gd-moment-recap .dfl-player-portrait,.gd-moment-recap .dfl-team-mark{width:100px;height:112px;border-radius:16px}
+.gd-moment-recap{width:min(440px,calc(100vw - 24px));height:min(720px,calc(100dvh - 24px),var(--dialog-viewport-height,100dvh));max-width:calc(100vw - 24px);max-height:var(--dialog-viewport-height,calc(100dvh - 24px));top:var(--dialog-viewport-top,0px);bottom:var(--dialog-viewport-bottom,0px);padding:0;border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--text);overflow:hidden;overscroll-behavior:contain}
+.gd-moment-recap[open]{display:flex;flex-direction:column}.gd-moment-recap[data-sheet-ready]{animation:none!important}
+.gd-moment-recap::backdrop{background:rgb(0 0 0 / .48);opacity:var(--sheet-dim,1)}
+.gd-moment-recap[data-ui-closing]::backdrop{animation:ui-backdrop-out 220ms ease forwards}.gd-moment-recap[data-ui-closing]{pointer-events:none}
+.gd-moment-recap>header{position:relative;display:flex;justify-content:space-between;align-items:center;gap:12px;flex:none;padding:18px 16px 8px;border-bottom:1px solid var(--line);background:var(--bg-2);touch-action:none;user-select:none}
+.gd-moment-recap .dfl-sheet-grip{position:absolute;top:7px;left:calc(50% - 18px);width:36px;height:4px;border-radius:4px;background:var(--muted);opacity:.7}
+.gd-moment-recap h2{font:700 18px/1.25 var(--font-display);margin:0}.gd-moment-recap [data-recap-close]{min-height:44px;min-width:44px}
+.moment-recap-progress{display:flex;gap:4px;padding:0 16px;flex:none}.moment-recap-progress button{display:grid;place-items:center;flex:1;min-width:0;min-height:36px;padding:0;border:0;background:transparent;color:var(--accent);cursor:pointer}.moment-recap-progress i{display:block;width:100%;height:3px;border-radius:2px;background:var(--line)}.moment-recap-progress .is-seen i{background:var(--accent)}.moment-recap-progress [aria-pressed="true"] i{height:5px}
+.moment-recap-deck{position:relative;flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y pinch-zoom}
+.moment-recap-frame{position:relative;display:flex;min-height:100%;box-sizing:border-box;flex-direction:column;justify-content:center;align-items:stretch;gap:12px;padding:16px 20px 20px;text-align:left;background:var(--bg)}
+.moment-recap-frame[hidden]{display:none!important}
+.moment-recap-frame:before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 12% 20%,color-mix(in srgb,var(--recap-team,var(--accent-fill)) 11%,transparent),transparent 65%)}
+.moment-recap-frame>*{position:relative;min-width:0}
+.moment-recap-art{display:flex;align-items:center;justify-content:flex-start;flex:none}
+.gd-moment-recap .dfl-player-portrait{position:relative;display:block;flex:none;width:clamp(112px,36vw,156px);height:clamp(132px,42vw,180px);overflow:hidden;border:1px solid var(--line);border-radius:12px;background:linear-gradient(145deg,color-mix(in srgb,var(--player-primary,var(--accent-fill)) 18%,var(--bg-2)),var(--bg-2))}
+.gd-moment-recap .dfl-player-portrait>i{position:absolute;inset:0;display:grid;place-items:center;font:700 36px/1 var(--font-display);font-style:normal;color:var(--text)}.gd-moment-recap .dfl-player-portrait.has-photo>i{display:none}
+.gd-moment-recap .dfl-player-portrait>img{position:relative;display:block;width:100%;height:100%;object-fit:cover;object-position:center top}.gd-moment-recap .dfl-player-portrait.is-team>img{object-fit:contain;padding:10px;box-sizing:border-box}
+.gd-moment-recap .dfl-team-mark{width:64px;height:64px;border-radius:14px;flex:none}
 .moment-recap-frame>small{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--accent);text-transform:uppercase}
-.moment-recap-frame h3{margin:0;font:700 clamp(20px,6vw,28px)/1.25 var(--font-body);overflow-wrap:anywhere}
-.moment-recap-frame time{font-size:11px;color:var(--muted)}.recap-finish{font:700 56px/1 var(--font-display);color:var(--accent)}
-.moment-recap-count{text-align:center;font-size:12px;color:var(--muted);margin:14px 0}
-.gd-moment-recap>footer{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.gd-moment-recap>footer button{min-height:44px;min-width:0}
+.moment-recap-frame h3{margin:0;font:700 clamp(24px,6.5vw,30px)/1.1 var(--font-display);overflow-wrap:anywhere}
+.moment-recap-spotlight{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:14px}
+.moment-recap-stat{display:grid;gap:6px}.moment-recap-stat>strong{font:700 clamp(36px,11vw,52px)/1 var(--font-display);font-variant-numeric:tabular-nums;letter-spacing:-.035em;color:var(--text)}.moment-recap-stat>span{font-size:12px;line-height:1.3;color:var(--muted)}
+.moment-recap-owner{margin:-4px 0 0;font-size:13px;line-height:1.4;color:var(--body-text);overflow-wrap:anywhere}
+.moment-recap-score-path{display:flex;align-items:center;gap:20px;padding:10px 0;border-block:1px solid var(--line)}.moment-recap-score-path>span{display:grid;gap:2px}.moment-recap-score-path small{font-size:11px;color:var(--muted)}.moment-recap-score-path b{font:700 24px/1.1 var(--font-display);font-variant-numeric:tabular-nums}.moment-recap-score-path>i{font-style:normal;color:var(--muted)}
+.moment-recap-faceoff{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.moment-recap-faceoff>section{display:grid;grid-template-rows:64px 1fr auto;justify-items:start;gap:10px;min-width:0;padding:10px 0;border-bottom:3px solid var(--line)}.moment-recap-faceoff>.is-leading{border-color:var(--recap-team,var(--accent-fill))}.moment-recap-faceoff strong{font:700 17px/1.2 var(--font-display);overflow-wrap:anywhere}.moment-recap-faceoff b{font:700 clamp(30px,9vw,40px)/1 var(--font-display);font-variant-numeric:tabular-nums}
+.moment-recap-chirp{margin:0;font:600 15px/1.4 var(--font-body);color:var(--body-text)}
+.moment-recap-frame time{font-size:11px;line-height:1.4;color:var(--muted)}.recap-finish{font:700 80px/1 var(--font-display);color:var(--accent)}
+.moment-recap-count{text-align:center;font-size:12px;color:var(--muted);margin:8px 0;flex:none}
+.gd-moment-recap>footer{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;flex:none;padding:0 16px max(12px,env(safe-area-inset-bottom))}.gd-moment-recap>footer button{min-height:44px;min-width:0}
+.gd-moment-recap [data-recap-play]{background:var(--accent-fill);color:var(--on-accent);border-color:var(--accent-fill)}
 .gd-play-recap{min-height:44px;margin-bottom:12px}
-@media(max-height:600px){.moment-recap-frame{min-height:220px;padding:12px}.moment-recap-art{height:64px}.gd-moment-recap .dfl-player-portrait,.gd-moment-recap .dfl-team-mark{width:60px;height:64px}}
+@media(max-width:600px){.gd-moment-recap{margin:auto 12px 12px}}
+@media(max-height:600px){.moment-recap-frame{justify-content:flex-start;padding:12px 16px;gap:10px}.gd-moment-recap .dfl-player-portrait{width:88px;height:104px}.moment-recap-stat>strong{font-size:36px}}
+html[data-ui-motion="off"] .gd-moment-recap,html[data-ui-motion="off"] .gd-moment-recap::backdrop{animation:none!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){.gd-moment-recap,.gd-moment-recap::backdrop{animation:none!important;transition:none!important}}
 #view.view[data-page-system][data-route][data-route="trade"] .tb-setup>.tb-setup-summary::after{display:none}
 #view.view[data-page-system][data-route][data-route="analyzer"] [data-ta-body]{margin-inline:0;min-width:0;max-width:100%}
 #view .tb-setup-summary strong i{display:inline-flex;vertical-align:middle}
@@ -6029,6 +6049,9 @@ html[data-ui-motion="off"] #home-wrap .bx-slide *,html[data-ui-motion="off"] #ho
 .dfl-player-compare [hidden] {display:none!important;}
 .dfl-player-compare :is(button,input,select):focus-visible {outline:2px solid var(--accent);outline-offset:2px;}
 .dfl-player-compare[data-ui-closing] {pointer-events:none;}
+.dfl-player-compare[data-player-card-stage="portrait"]{opacity:0;pointer-events:none}
+.dfl-player-compare[data-player-card-stage="portrait"]::backdrop{opacity:0;animation:none}
+.dfl-player-compare[data-player-card-stage="card"]::backdrop{animation:ui-backdrop-in 240ms ease-out}
 html[data-ui-motion="off"] .dfl-player-compare *,html[data-ui-motion="off"] .dfl-player-compare,html[data-ui-motion="off"] .dfl-player-compare::backdrop {animation:none!important;transition:none!important;}
 @media(max-width:600px){.dfl-player-compare{margin: auto 12px 12px;width:calc(100vw - 24px);}}
 @media(prefers-reduced-motion:reduce){.dfl-player-compare *,.dfl-player-compare,.dfl-player-compare::backdrop {animation:none!important;transition:none!important;}}

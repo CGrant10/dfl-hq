@@ -2,12 +2,14 @@ import {esc} from './ui.js';
 import {playerPortrait} from './player-presentation.js';
 import {loadPlayerComparison} from './player-compare-data.js';
 import {comparisonCandidates,comparisonPlayer} from './player-compare-model.js';
-import {enterSheet,exitSheet,mountSheetDrag} from './sheet-drag.js';
+import {exitSheet,mountSheetDrag} from './sheet-drag.js';
+import {enterPlayerCard} from './player-card-motion.js';
 import {fitDialogToViewport} from './dialog-viewport.js';
 import {animateUi,cancelUiMotion,cancelUiExit} from './ui-motion.js';
 import {connectPortrait} from './connected-portrait.js';
 let dialog,body,drag,data,left='',right='',originId='',tab='week',picking=false,opener,portraitSource,request=0,stopConnection=()=>{},lastLoaded=0,session=0,pickFrame=0,connectionSide='left',detailRevision=0;
-function stopPortrait(){cancelAnimationFrame(pickFrame);pickFrame=0;stopConnection();const heads=body?.querySelector('[data-compare-heads]');if(heads)cancelUiMotion(heads);}
+let stopEntrance=(_options={})=>{},entranceDone=Promise.resolve();
+function stopPortrait(options={}){stopEntrance(options);cancelAnimationFrame(pickFrame);pickFrame=0;stopConnection();const heads=body?.querySelector('[data-compare-heads]');if(heads)cancelUiMotion(heads);}
 const fmt=(n,d=1)=>n!=null&&Number.isFinite(Number(n))?Number(n).toFixed(d):'—';
 const current=token=>token===request&&dialog.open&&!dialog.dataset.uiClosing;
 function headers(){
@@ -55,8 +57,8 @@ function pick(side='right'){
 }
 function close({immediate=false}={}){
  if(!dialog.open||dialog.dataset.uiClosing&&!immediate)return;
- const origin=connectionSide==='left'?stopConnection.position?.():null;stopPortrait();
- if(!immediate&&!dialog.dataset.sheetMoving&&left===originId){const target=portraitSource?.isConnected?portraitSource:null;stopConnection=connectPortrait(body.querySelector('[data-compare-side="left"] .dfl-player-portrait'),target,{origin,hideSource:true,duration:280,easing:'cubic-bezier(.4,0,.2,1)'});}
+ const origin=connectionSide==='left'?stopConnection.position?.():null;stopPortrait({closing:true});
+ if(!immediate&&!dialog.dataset.sheetMoving&&left===originId&&(dialog.dataset.playerCardStage!=='portrait'||origin)){const target=portraitSource?.isConnected?portraitSource:null;stopConnection=connectPortrait(body.querySelector('[data-compare-side="left"] .dfl-player-portrait'),target,{origin,hideSource:true,duration:280,easing:'cubic-bezier(.4,0,.2,1)'});}
  exitSheet(dialog,()=>{drag.reset();dialog.close()},{immediate,connected:!!stopConnection.position?.()});
 }
 function setup(){
@@ -65,7 +67,7 @@ function setup(){
  document.body.append(dialog);body=dialog.querySelector('.pc-compare-body');
  drag=mountSheetDrag(dialog,{handle:dialog.querySelector('header'),dismiss:()=>close(),onStart:()=>stopPortrait()});
  dialog.addEventListener('cancel',event=>{event.preventDefault();close()});
- dialog.addEventListener('close',()=>{session++;request++;stopPortrait();cancelUiExit(dialog);cancelUiMotion(dialog);if(opener?.isConnected)opener.focus({preventScroll:true})});
+ dialog.addEventListener('close',()=>{if(dialog.open)return;session++;request++;stopPortrait();cancelUiExit(dialog);cancelUiMotion(dialog);delete dialog.dataset.playerCardStage;dialog.style.removeProperty('clip-path');dialog.style.removeProperty('opacity');if(opener?.isConnected)opener.focus({preventScroll:true})});
  window.addEventListener('hashchange',()=>{if(dialog.open)close({immediate:true})});
  dialog.addEventListener('click',event=>{
   const target=event.target;if(target===dialog||target.closest('[data-compare-close]')){close();return}
@@ -86,19 +88,20 @@ function setup(){
  body.addEventListener('keydown',event=>{const button=event.target.closest('[data-compare-tab]');if(!button||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?'week':event.key==='End'?'trade':tab==='week'?'trade':'week';body.querySelector(`[data-compare-tab="${next}"]`).click();body.querySelector(`[data-compare-tab="${next}"]`).focus()});
 }
 async function load(refresh=false){
- const token=++request,status=body.querySelector('[data-compare-status]'),refreshButton=dialog.querySelector('[data-compare-refresh]');refreshButton.disabled=true;status.textContent=data?'Updating…':'Loading players…';
- try{const next=await loadPlayerComparison({refresh});if(!current(token))return;data=next;lastLoaded=Date.now();stopPortrait();headers();body.querySelector('[data-compare-search]').disabled=false;status.textContent='';
+ const token=++request,settled=entranceDone,status=body.querySelector('[data-compare-status]'),refreshButton=dialog.querySelector('[data-compare-refresh]');refreshButton.disabled=true;status.textContent=data?'Updating…':'Loading players…';
+ try{const next=await loadPlayerComparison({refresh});await settled;if(!current(token))return;data=next;lastLoaded=Date.now();stopPortrait();headers();body.querySelector('[data-compare-search]').disabled=false;status.textContent='';
   if(!data.players.has(left)||right&&!data.players.has(right)){status.textContent='Player unavailable.';return}
   if(picking){if(body.dataset.positionReady!=='1'){body.querySelector('[data-compare-position]').value=data.players.get(left)?.position||'';body.dataset.positionReady='1'}results()}else metrics();
- }catch{if(current(token))status.innerHTML='Couldn’t load comparison. <button type="button" class="linkbtn" data-compare-retry>Retry</button>'}
+ }catch{await settled;if(current(token))status.innerHTML='Couldn’t load comparison. <button type="button" class="linkbtn" data-compare-retry>Retry</button>'}
  finally{if(current(token))refreshButton.disabled=false}
 }
 export async function openPlayerComparison(id,{otherId='',source=document.activeElement}={}){
- setup();const epoch=++session,revision=++detailRevision;stopPortrait();connectionSide='left';cancelUiExit(dialog);drag.reset();opener=source;portraitSource=source?.closest('.dfl-player-card')?.querySelector('.player-card-hero .dfl-player-portrait')||source?.closest('.dfl-player')?.querySelector('.dfl-player-portrait');left=String(id);originId=left;right=String(otherId);if(right===left)right='';tab='week';picking=!right;request++;
+ setup();++session;++detailRevision;stopPortrait();connectionSide='left';cancelUiExit(dialog);drag.reset();dialog.style.removeProperty('clip-path');dialog.style.removeProperty('opacity');delete dialog.dataset.playerCardStage;opener=source;portraitSource=source?.closest('.dfl-player-card')?.querySelector('.player-card-hero .dfl-player-portrait')||source?.closest('.dfl-player')?.querySelector('.dfl-player-portrait');left=String(id);originId=left;right=String(otherId);if(right===left)right='';tab='week';picking=!right;request++;
  body.innerHTML=`<div class="pc-compare-heads" data-compare-heads><section data-compare-side="left"></section><section data-compare-side="right"></section></div><div class="pc-compare-tabs" data-compare-tabs role="tablist" aria-label="Comparison view" hidden><i aria-hidden="true"></i><button type="button" role="tab" aria-selected="true" data-compare-tab="week" aria-controls="player-compare-metrics">This week</button><button type="button" role="tab" aria-selected="false" data-compare-tab="trade" aria-controls="player-compare-metrics">Trade outlook</button></div><section data-compare-picker${picking?'':' hidden'}><div class="pc-compare-search"><label><span class="sr-only">Find a comparison player</span><input type="search" data-compare-search placeholder="Search players" disabled></label><label><span class="sr-only">Filter position</span><select data-compare-position>${[['','All positions'],...['QB','RB','WR','TE','K','DEF'].map(p=>[p,p])].map(([value,label])=>`<option value="${value}">${label}</option>`).join('')}</select></label></div><div data-compare-results></div></section><section id="player-compare-metrics" role="tabpanel" data-compare-metrics${picking?' hidden':''}></section><p class="pc-compare-status" role="status" data-compare-status></p>`;
- body.dataset.pickingSide='right';body.dataset.positionReady='0';body.scrollTop=0;dialog.querySelector('[data-compare-refresh]').disabled=false;if(!dialog.open)dialog.showModal();fitDialogToViewport(dialog);dialog.querySelector('h2').focus({preventScroll:true});
- const entrance=enterSheet(dialog),settled=entrance?.finished.catch(()=>{})||Promise.resolve();
- const pending=Date.now()-lastLoaded<30000&&data?Promise.resolve().then(()=>{headers();body.querySelector('[data-compare-search]').disabled=false;if(picking){body.querySelector('[data-compare-position]').value=data.players.get(left)?.position||'';body.dataset.positionReady='1';results()}else metrics()}):load();
- await Promise.all([settled,pending]);if(epoch!==session||revision!==detailRevision||!dialog.open||dialog.dataset.uiClosing||dialog.dataset.sheetMoving)return;
- stopConnection=connectPortrait(portraitSource,body.querySelector('[data-compare-side="left"] .dfl-player-portrait'));
+ const cached=Date.now()-lastLoaded<30000&&data;
+ if(cached){headers();body.querySelector('[data-compare-search]').disabled=false;if(picking){body.querySelector('[data-compare-position]').value=data.players.get(left)?.position||'';body.dataset.positionReady='1';results()}else metrics()}
+ else if(portraitSource){const portrait=portraitSource.cloneNode(true);portrait.removeAttribute('style');portrait.querySelector('img')?.removeAttribute('style');for(const name of ['--player-primary','--player-secondary'])portrait.style.setProperty(name,getComputedStyle(portraitSource).getPropertyValue(name));body.querySelector('[data-compare-side="left"]').append(portrait)}
+ body.dataset.pickingSide='right';body.dataset.positionReady=cached?'1':'0';body.scrollTop=0;dialog.querySelector('[data-compare-refresh]').disabled=false;dialog.dataset.playerCardStage='portrait';if(!dialog.open)dialog.showModal();fitDialogToViewport(dialog);dialog.querySelector('h2').focus({preventScroll:true});
+ const entrance=enterPlayerCard(dialog,portraitSource,{target:'[data-compare-side="left"] .dfl-player-portrait'});stopEntrance=entrance.stop;stopConnection=entrance.connection;entranceDone=entrance.finished;
+ if(!cached)await load();
 }

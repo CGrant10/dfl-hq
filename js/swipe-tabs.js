@@ -25,7 +25,7 @@ function previewOf(node, scene) {
   scene.parent.append(copy);return copy;
 }
 
-export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.querySelectorAll('[role="tab"]')], getPanel = null, getPanelForButton = null, accepts = (_target) => true, exclude = 'a,button,input,select,textarea,summary,[contenteditable]', selected = button => button.getAttribute('aria-selected') === 'true' } = {}) {
+export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.querySelectorAll('[role="tab"]')], getPanel = null, getPanelForButton = null, accepts = (_target) => true, exclude = 'a,button,input,select,textarea,summary,[contenteditable]', selected = button => button.getAttribute('aria-selected') === 'true', activate = button => button.click() } = {}) {
   if (!surface) return () => {};
   const paneFor=getPanelForButton||((button)=>{
     const id=button?.getAttribute('aria-controls');
@@ -58,7 +58,7 @@ export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.quer
   };
   const neighborFor=offset=>{
     const list=getButtons(),index=list.findIndex(selected),step=offset<0?1:-1;
-    const node=paneFor(list[index+step]);return node&&node!==scene?.node?node:null;
+    const button=list[index+step],node=button?paneFor(button):null;return node&&node!==scene?.node?node:null;
   };
   const paint=()=>{
     frame=0;if(!scene||!scene.node.isConnected){clean();return;}
@@ -83,12 +83,12 @@ export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.quer
     const current=scene,from=current.painted,node=current.node,list=getButtons(),index=list.findIndex(selected),button=list[index+step];
     if(step&&button){
       const incoming=paneFor(button);
-      if(!incoming||incoming===node){clean();button.click();return;}
+      if(!incoming||incoming===node){clean();activate(button);return;}
       const outgoing=previewOf(node,current);current.copies.set(node,outgoing);
       outgoing.style.transform=translate(from);
       for(const [source,copy] of current.copies)if(source!==node){copy.remove();current.copies.delete(source);}
       current.styles.set(incoming,savedStyle(incoming));incoming.dataset.uiSwipeSettling='true';
-      committing=true;try{button.click();}finally{committing=false;}
+      committing=true;try{activate(button);}finally{committing=false;}
       if(!incoming.isConnected||panel()!==incoming){clean();return;}
       cancelUiMotion(incoming);
       const naturalHeight=incoming.getBoundingClientRect().height;
@@ -153,7 +153,7 @@ export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.quer
         if(!scene.node.isConnected||panel()!==scene.node){clean();return;}
         if(frame){cancelAnimationFrame(frame);frame=0;} // settle from the last painted frame
         settle(valid?tabGlideStep(scene.painted,dx,origin):0);
-      }else if(valid){const list=getButtons(),index=list.findIndex(selected);list[index+(dx<0?1:-1)]?.click();}
+      }else if(valid){const list=getButtons(),index=list.findIndex(selected),button=list[index+(dx<0?1:-1)];if(button)activate(button);}
     },
   });
   const interrupt=()=>{interrupted=true;swipe.cancel();clean();interrupted=false;};

@@ -17,4 +17,14 @@ describe('saved sync moments',()=>{
  const row=(id,kind,data)=>({id,kind,data,league_id:'league',season:2026,week:4,matchup_id:1,roster_id:1,player_id:'hot',captured_at:'2026-10-04T19:00:00Z'});
  it('renders historical observations, owner and real delta without claiming a touchdown',()=>{const rows=[row(1,'big',{points:25}),row(2,'surge',{delta:8}),row(3,'lead',{scores:{1:50,2:49}})];const result=savedMoments(rows,model);expect(result.map(r=>r.kind)).toEqual(['lead','surge','big']);expect(result[1].text).toContain('+8.00 fantasy points since the previous sync');expect(result[2].text).toContain('25.00 points · Team 1');expect(result.some(r=>r.text.includes('touchdown'))).toBe(false)});
  it('scopes by league/week and discards malformed unknown events',()=>{const valid=row(1,'big',{points:20});expect(savedMoments([valid,{...valid,id:2,week:5},{...valid,id:3,league_id:'other'},row(4,'surge',{delta:null}),row(5,'lead',{scores:{1:50}}),{...valid,id:6,captured_at:'bad'}],model)).toHaveLength(1)});
+ it('keeps historical scores distinct from current live totals and derives a surge baseline only from its recorded total and delta',()=>{
+  const result=savedMoments([row(1,'surge',{points:24.83,delta:8.12}),row(2,'lead',{scores:{1:95.1,2:92.3}})],model);
+  expect(result[0].recap.sides.map(t=>t.points)).toEqual([95.1,92.3]);expect(result[0].recap.sides.map(t=>t.team_name)).toEqual(['Team 1','Team 2']);
+  expect(result[1].recap).toEqual({points:24.83,delta:8.12,before:16.71});
+  const legacy=savedMoments([row(3,'surge',{delta:8})],model)[0];expect(legacy.recap).toEqual({points:null,delta:8,before:null});
+ });
+ it('rejects a lead attributed to the trailing team, a tie, empty scores and a roster from another matchup',()=>{
+  const other={...model,games:[...model.games,{id:'2',sides:[side('3',[]),side('4',[])]}]};
+  expect(savedMoments([row(1,'lead',{scores:{1:90,2:95}}),row(2,'lead',{scores:{1:95,2:95}}),row(3,'lead',{scores:{1:95,2:''}}),{...row(4,'big',{points:25}),matchup_id:2}],other)).toEqual([]);
+ });
 });
