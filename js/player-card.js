@@ -83,10 +83,17 @@ export async function openPlayerCard(selection, { context = null, motion = true,
     for(const name of ['--player-primary','--player-secondary'])portrait.style.setProperty(name,getComputedStyle(sourcePortrait).getPropertyValue(name));
     identity.className='player-card-hero';identity.dataset.playerCardSeed='';identity.firstElementChild.replaceWith(portrait);identity.lastElementChild.className='dfl-player-copy';
   }
-  if (!dialog.open) {
+  const opening=!dialog.open;
+  if (opening) {
     dialog.dataset.playerCardStage='portrait';
     dialog.showModal();
     fitDialogToViewport(dialog);
+  }
+  // A hidden scroll container can ignore its reset. Reset both surfaces after
+  // showModal, before measuring the portrait, even when reusing a warm preview.
+  dialog.scrollTo({top:0,left:0,behavior:'instant'});
+  body.scrollTo({top:0,left:0,behavior:'instant'});
+  if (opening) {
     const entrance=enterPlayerCard(dialog,source,{motion});
     stopEntrance=entrance.stop;stopConnection=entrance.connection;entranceDone=entrance.arrived;
   }

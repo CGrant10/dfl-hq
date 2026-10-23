@@ -874,3 +874,14 @@ contrast, score/art/roast spacing, repeated live updates, reduced motion and
 motion-off passed browser checks. No redundant themes or retired accents were
 added. `pnpm themes` passed. Screens and native-device limitations:
 [record and artwork validation](docs/record-art-1470.md).
+
+## 1.471.0 — Player-card reset and score effects during scrolling
+
+Inspected actual Light/Dark mobile player cards and hot/cold GPU captures at
+320/390px, including clipped scores and the production Watch compact/expanded
+controller. Existing Medicine Wheel surfaces, borders, text and focus controls
+are preserved. Hot/cold semantic inks and shaders retain their colors; the
+change clips and fades their paint with the source and hides stale frames during
+scrolling. Motion-off and reduced motion keep static readable digits. `pnpm themes`
+passed. Physical Safari compositor behavior remains unverified. See
+[validation and captures](docs/player-scroll-1471.md).

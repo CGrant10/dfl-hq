@@ -1,14 +1,15 @@
 import {vertexShader,fragmentShader} from './score-vfx-shaders.js';
 
 // One GPU surface per card/dialog, shared across visible score emitters.
-// No timers, layout reads, or texture uploads in the animation loop.
+// No layout reads or texture uploads in the animation loop. Effects rest while
+// scrolling so compositor movement cannot strand a score's previous silhouette.
 export function mountScoreVfx(root){
  const canvas=document.createElement('canvas');canvas.className='gd-vfx-canvas';canvas.setAttribute('aria-hidden','true');root.append(canvas);
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
- let gl=null,program=null,buffer=null,locations={},targets=[],visible=new Set(),masks=new Map(),raf=0,layoutFrame=0,lastFrame=0,stopped=false,lost=false,dirty=true,rootVisible=false;
- const enabled=()=>!stopped&&!lost&&rootVisible&&!reduced.matches&&root.dataset.motion!=='off'&&document.visibilityState==='visible'&&(!root.matches('dialog')||root.open);
- const clear=()=>{if(gl&&!lost)gl.clear(gl.COLOR_BUFFER_BIT)};
- const pause=()=>{cancelAnimationFrame(raf);raf=0;lastFrame=0;clear();canvas.dataset.running='false'};
+ let gl=null,program=null,buffer=null,locations={},targets=[],visible=new Set(),masks=new Map(),raf=0,layoutFrame=0,lastFrame=0,stopped=false,lost=false,dirty=true,rootVisible=false,scrolling=false,scrollTimer=0;
+ const enabled=()=>!stopped&&!lost&&!scrolling&&rootVisible&&!reduced.matches&&root.dataset.motion!=='off'&&document.visibilityState==='visible'&&(!root.matches('dialog')||root.open);
+ const clear=()=>{if(gl&&!lost){gl.disable(gl.SCISSOR_TEST);gl.clear(gl.COLOR_BUFFER_BIT)}};
+ const pause=()=>{cancelAnimationFrame(raf);raf=0;lastFrame=0;canvas.style.visibility='hidden';clear();canvas.dataset.running='false'};
  const release=()=>{if(gl&&!lost){for(const {target} of masks.values())gl.deleteTexture(target.texture)}masks.clear();targets=[]};
  const init=()=>{
   try{
@@ -19,7 +20,7 @@ export function mountScoreVfx(root){
    if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error('Score VFX program failed');
    gl.useProgram(program);buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
    const position=gl.getAttribLocation(program,'a_position');gl.enableVertexAttribArray(position);gl.vertexAttribPointer(position,2,gl.FLOAT,false,0,0);
-   for(const name of ['mask','size','glyph','time','cold','light','medicine'])locations[name]=gl.getUniformLocation(program,`u_${name}`);
+   for(const name of ['mask','size','glyph','time','cold','light','medicine','opacity'])locations[name]=gl.getUniformLocation(program,`u_${name}`);
    gl.uniform1i(locations.mask,0);gl.enable(gl.BLEND);gl.blendFuncSeparate(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA,gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.clearColor(0,0,0,0);
    canvas.dataset.renderer='webgl';return true;
   }catch{canvas.dataset.renderer='unavailable';return false}
@@ -31,11 +32,11 @@ export function mountScoreVfx(root){
    gl.uniform1f(locations.time,(time%120000)/1000);
    for(const target of targets){
     if(!visible.has(target.element))continue;
-    const {x,y,width,height,scale,glyph,texture,cold,light,medicine}=target;
-    gl.viewport(x,y,width,height);gl.scissor(x,y,width,height);gl.bindTexture(gl.TEXTURE_2D,texture);
-    gl.uniform2f(locations.size,width/scale,height/scale);gl.uniform4f(locations.glyph,...glyph);gl.uniform1f(locations.cold,cold?1:0);gl.uniform1f(locations.light,light?1:0);gl.uniform1f(locations.medicine,medicine?1:0);gl.drawArrays(gl.TRIANGLES,0,6);
+    const {x,y,width,height,scale,glyph,texture,cold,light,medicine,clip,opacity}=target;
+    gl.viewport(x,y,width,height);gl.scissor(...clip);gl.bindTexture(gl.TEXTURE_2D,texture);
+    gl.uniform2f(locations.size,width/scale,height/scale);gl.uniform4f(locations.glyph,...glyph);gl.uniform1f(locations.cold,cold?1:0);gl.uniform1f(locations.light,light?1:0);gl.uniform1f(locations.medicine,medicine?1:0);gl.uniform1f(locations.opacity,opacity);gl.drawArrays(gl.TRIANGLES,0,6);
    }
-   gl.disable(gl.SCISSOR_TEST);if(canvas.dataset.running!=='true')canvas.dataset.running='true';
+   gl.disable(gl.SCISSOR_TEST);canvas.style.visibility='';if(canvas.dataset.running!=='true')canvas.dataset.running='true';
   }
   raf=requestAnimationFrame(render);
  };
@@ -67,13 +68,30 @@ export function mountScoreVfx(root){
    if(pinnedBottom&&!element.closest('.gd-watch-dashboard')&&rect.top<pinnedBottom)continue;
    if(root.matches('dialog')&&(rect.bottom<box.top-30||rect.top>box.bottom+30))continue;
    const style=getComputedStyle(value),padX=10,padTop=element.closest('.gameday-player-score')?14:Math.min(26,rect.height),padBottom=10,width=Math.ceil(rect.width+padX*2),height=Math.ceil(rect.height+padTop+padBottom);
+   // A dialog can contain its own scrollport. Clip to that port rather than
+   // painting a hidden score over the stationary header. Honor faded sources
+   // during Home's scoreboard handoff too.
+   const bounds={left:box.left+root.clientLeft,top:box.top+root.clientTop,right:box.left+root.clientLeft+root.clientWidth,bottom:box.top+root.clientTop+root.clientHeight};
+   let opacity=1;
+   for(let node=value;node&&node!==root;node=node.parentElement){
+    const appearance=getComputedStyle(node);opacity*=Number(appearance.opacity);
+    if(appearance.visibility!=='visible'||appearance.display==='none'){opacity=0;break}
+    const clipsX=/^(auto|scroll|hidden|clip)$/.test(appearance.overflowX),clipsY=/^(auto|scroll|hidden|clip)$/.test(appearance.overflowY);
+    if(clipsX||clipsY){const port=node.getBoundingClientRect();if(clipsX){bounds.left=Math.max(bounds.left,port.left+node.clientLeft);bounds.right=Math.min(bounds.right,port.left+node.clientLeft+node.clientWidth)}if(clipsY){bounds.top=Math.max(bounds.top,port.top+node.clientTop);bounds.bottom=Math.min(bounds.bottom,port.top+node.clientTop+node.clientHeight)}}
+   }
+   if(opacity<=.001)continue;
+   const x=Math.round((rect.left-box.left-root.clientLeft-padX)*scale),y=canvas.height-Math.round((rect.top-box.top-root.clientTop+rect.height+padBottom)*scale);
+   const left=Math.max(0,x,Math.ceil((bounds.left-box.left-root.clientLeft)*scale)),bottom=Math.max(0,y,Math.ceil(canvas.height-(bounds.bottom-box.top-root.clientTop)*scale));
+   const right=Math.min(canvas.width,x+Math.ceil(width*scale),Math.floor((bounds.right-box.left-root.clientLeft)*scale)),top=Math.min(canvas.height,y+Math.ceil(height*scale),Math.floor(canvas.height-(bounds.top-box.top-root.clientTop)*scale));
+   if(right<=left||top<=bottom)continue;
+   const placement={x,y,clip:[left,bottom,right-left,top-bottom],opacity,cold:element.dataset.scoreTemperature==='cold',light,medicine};
    // Disclosures and scroll change geometry, not glyphs. Reuse the GPU mask
    // until the score, type metrics or device scale actually changes.
    const font=style.font||`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
    const maskKey=JSON.stringify([value.textContent,font,style.letterSpacing,style.webkitTextStrokeWidth,rect.width,rect.height,padTop,scale]);
    const cached=masks.get(element);
    if(cached?.key===maskKey){
-    const target={...cached.target,x:Math.round((rect.left-box.left-root.clientLeft-padX)*scale),y:canvas.height-Math.round((rect.top-box.top-root.clientTop+rect.height+padBottom)*scale),cold:element.dataset.scoreTemperature==='cold',light,medicine};
+    const target={...cached.target,...placement};
     targets.push(target);intersection.observe(element);continue;
    }
    if(cached){gl.deleteTexture(cached.target.texture);masks.delete(element)}
@@ -97,7 +115,7 @@ export function mountScoreVfx(root){
     for(let y=0;y<mask.height;y++){const index=(y*mask.width+x)*4;pixels[index]=Math.round(intensity*255);pixels[index+1]=Math.round(top/mask.height*255);pixels[index+2]=Math.round(bottom/mask.height*255)}
    }
    const texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,mask.width,mask.height,0,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
-   const target={element,texture,x:Math.round((rect.left-box.left-root.clientLeft-padX)*scale),y:canvas.height-Math.round((rect.top-box.top-root.clientTop+rect.height+padBottom)*scale),width:mask.width,height:mask.height,scale,glyph:[padX,padTop,rect.width,rect.height],cold:element.dataset.scoreTemperature==='cold',light,medicine};
+   const target={element,texture,...placement,width:mask.width,height:mask.height,scale,glyph:[padX,padTop,rect.width,rect.height]};
    masks.set(element,{key:maskKey,target});targets.push(target);
    intersection.observe(element);
   }
@@ -113,7 +131,15 @@ export function mountScoreVfx(root){
  const contextRestored=()=>{lost=false;gl=null;schedule()};
  canvas.addEventListener('webglcontextlost',contextLost);canvas.addEventListener('webglcontextrestored',contextRestored);
  const motionChange=()=>{dirty=true;sync()};
- document.addEventListener('visibilitychange',sync);root.addEventListener('close',sync);root.addEventListener('toggle',schedule);root.addEventListener('scroll',schedule,{passive:true});reduced.addEventListener('change',motionChange);
+ const onScroll=event=>{
+  const source=event.target;
+  if(stopped||!rootVisible||!root.isConnected||source instanceof Element&&!root.contains(source)&&!source.contains(root))return;
+  if(!scrolling){scrolling=true;pause()}
+  dirty=true;clearTimeout(scrollTimer);
+  // Allow the sticky scoreboard's 220 ms compact transition to settle as well.
+  scrollTimer=setTimeout(()=>{scrollTimer=0;scrolling=false;schedule()},240);
+ };
+ document.addEventListener('visibilitychange',sync);root.addEventListener('close',sync);root.addEventListener('toggle',schedule);document.addEventListener('scroll',onScroll,{passive:true,capture:true});window.visualViewport?.addEventListener('scroll',onScroll,{passive:true});reduced.addEventListener('change',motionChange);
  schedule();document.fonts?.ready.then(()=>{if(!stopped)schedule()});
- return{refresh:schedule,stop(){stopped=true;pause();cancelAnimationFrame(layoutFrame);mutations.disconnect();resize.disconnect();theme.disconnect();intersection.disconnect();rootIntersection.disconnect();document.removeEventListener('visibilitychange',sync);root.removeEventListener('close',sync);root.removeEventListener('toggle',schedule);root.removeEventListener('scroll',schedule);reduced.removeEventListener('change',motionChange);release();canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('webglcontextrestored',contextRestored);if(gl&&!lost){gl.deleteBuffer(buffer);gl.deleteProgram(program);gl.getExtension('WEBGL_lose_context')?.loseContext()}canvas.remove()}};
+ return{refresh:schedule,stop(){stopped=true;clearTimeout(scrollTimer);pause();cancelAnimationFrame(layoutFrame);mutations.disconnect();resize.disconnect();theme.disconnect();intersection.disconnect();rootIntersection.disconnect();document.removeEventListener('visibilitychange',sync);root.removeEventListener('close',sync);root.removeEventListener('toggle',schedule);document.removeEventListener('scroll',onScroll,true);window.visualViewport?.removeEventListener('scroll',onScroll);reduced.removeEventListener('change',motionChange);release();canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('webglcontextrestored',contextRestored);if(gl&&!lost){gl.deleteBuffer(buffer);gl.deleteProgram(program);gl.getExtension('WEBGL_lose_context')?.loseContext()}canvas.remove()}};
 }

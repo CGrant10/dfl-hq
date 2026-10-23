@@ -82,6 +82,7 @@ on:
       - 'tools/*route-review*'
       - 'js/player-card*'
       - 'tools/capture-player-card-motion.py'
+      - 'tools/capture-score-scroll-review.py'
       - 'js/player-compare*'
       - 'js/moment-recap*'
       - 'js/record-chases*'
@@ -195,6 +196,10 @@ jobs:
           python tools/capture-player-card-motion.py
           python tools/capture-sheet-review.py
           python tools/capture-sportsbook-slip-review.py
+      - name: Check score effects while scrolling
+        env:
+          DFL_SCORE_SCROLL_REVIEW_DIR: ${{ github.workspace }}/home-review-output/score-scroll
+        run: python tools/capture-score-scroll-review.py
       - name: Check player comparisons
         env:
           DFL_COMPARE_REVIEW_DIR: ${{ github.workspace }}/home-review-output/comparison
