@@ -1,3 +1,4 @@
+import {teamIllustration} from '../team-art.js';
 // =====================================================================
 // profile-dfl.js - THE top card. One card, everything about the person.
 // ---------------------------------------------------------------------
@@ -101,6 +102,7 @@ function nameBlock(m, ctx) {
 function viewCard(m, isMe, ctx) {
   const bio = String(m.bio || "").trim();
   return `<section class="card profile-head accent">
+    ${teamIllustration(m,{className:'profile-team-illustration'})}
     <div class="ph-top">
       ${avatar(m, m.profile_image, isMe, ctx)}
       ${nameBlock(m, ctx)}
