@@ -17,6 +17,7 @@ uniform float u_time;
 uniform float u_cold;
 uniform float u_light;
 uniform float u_medicine;
+uniform float u_opacity;
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);}
 float fbm(vec2 p){return noise(p)*.57+noise(p*2.03+7.1)*.28+noise(p*4.01-3.7)*.15;}
@@ -127,5 +128,5 @@ void main(){
  }
  color=mix(color,color*.75,u_light*.45);
  float fade=smoothstep(0.,7.,p.x)*smoothstep(0.,7.,u_size.x-p.x)*smoothstep(0.,6.,p.y)*smoothstep(0.,6.,u_size.y-p.y);
- gl_FragColor=vec4(color,clamp(alpha*fade,0.,.92));
+ gl_FragColor=vec4(color,clamp(alpha*fade,0.,.92)*u_opacity);
 }`;
