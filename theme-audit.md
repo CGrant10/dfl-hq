@@ -885,3 +885,13 @@ change clips and fades their paint with the source and hides stale frames during
 scrolling. Motion-off and reduced motion keep static readable digits. `pnpm themes`
 passed. Physical Safari compositor behavior remains unverified. See
 [validation and captures](docs/player-scroll-1471.md).
+
+## 1.472.0 — Continuous effects and portrait-first arrival
+
+Reviewed actual Light/Dark mobile score, Watch and player-card captures at
+320/390px. Fire/ice semantic colors are unchanged and stay clipped to their
+source. The short player-header trace uses `var(--accent)` with no new palette
+colors. Motion-off and reduced motion suppress the new entrance effects. Default
+card position, focus controls and return behavior passed browser checks.
+`pnpm themes` passed. Physical Safari pacing remains unverified. See
+[continuous effects and arrival validation](docs/continuous-effects-1472.md).

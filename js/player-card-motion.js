@@ -33,12 +33,12 @@ export function enterPlayerCard(dialog,source,{motion=true,target='.dfl-player-p
   if(visibility==='hidden')visibility='';
   dialog.dataset.playerCardStage='card';
   const inset=`inset(${Math.max(0,photo.top-box.top)}px ${Math.max(0,box.right-photo.right)}px ${Math.max(0,box.bottom-photo.bottom)}px ${Math.max(0,photo.left-box.left)}px round ${getComputedStyle(portrait).borderRadius})`;
-  const animation=animateUi(dialog,[{clipPath:inset},{clipPath:`inset(0px 0px 0px 0px round ${getComputedStyle(dialog).borderRadius})`}],{duration:240,motion});
+  const animation=animateUi(dialog,[{clipPath:inset},{clipPath:`inset(0px 0px 0px 0px round ${getComputedStyle(dialog).borderRadius})`}],{duration:280,easing:'cubic-bezier(.16,1,.3,1)',motion});
   if(animation)animation.finished.then(()=>stop(),()=>stop());else stop();
  };
  const start=()=>{
   frame=0;if(stopped||!dialog.open)return stop();
-  actualConnection=connectPortrait(source,dialog.querySelector(target),{motion,hideSource:true,hold:true});
+  actualConnection=connectPortrait(source,dialog.querySelector(target),{motion,hideSource:true,hold:true,duration:320,lift:8,easing:'cubic-bezier(.2,.8,.2,1)'});
   if(!connection.position?.()){
    delete dialog.dataset.playerCardStage;resolveArrival();
    const animation=enterSheet(dialog,{motion});
