@@ -34,7 +34,7 @@ describe('Trade negotiation terms and permissions',()=>{
   expect(negotiationChanges(before,after)).toEqual([{id:'b',kind:'removed',from:'1',to:'3'},{id:'a',kind:'rerouted',from:'1',to:'3'},{id:'e',kind:'added',from:'1',to:'2'}]);
  });
  it('opens only a real Sleeper league URL and never claims to submit a trade',()=>{
-  expect(negotiationSleeperUrl({league_id:'123456'})).toBe('https://sleeper.com/leagues/123456');
+  expect(negotiationSleeperUrl({league_id:'123456'})).toBe('https://sleeperbot.app.link/esEa7TDlJN');
   expect(negotiationSleeperUrl({league_id:'javascript:alert(1)'})).toBeNull();
  });
 });

@@ -7,7 +7,7 @@ const select=(coach=base,extra={})=>rosterNextAction({coach,outlook,now,meSleepe
 describe('a purposeful Home next move',()=>{
  it('chooses a meaningful WR gain ahead of a higher-scoring routine kicker stream',()=>{
   const result=select({...base,plan:{...base.plan,offers:[offer('Kicker','K',12),offer('Receiver','WR',4)]}});
-  expect(result).toMatchObject({kind:'waiver',text:'Add Receiver · drop Depth · +4.0 projected',url:'https://sleeper.com/leagues/1337852874733936640/players'});
+  expect(result).toMatchObject({kind:'waiver',text:'Add Receiver · drop Depth · +4.0 projected',url:'https://sleeperbot.app.link/esEa7TDlJN'});
  });
  it('holds depth when only routine streamers or marginal gains remain',()=>{
   expect(select({...base,plan:{...base.plan,offers:[offer('Kicker','K',8),offer('Def','DEF',9),offer('Backup QB','QB',2),offer('WR','WR',1.5)]}}).kind).toBe('hold');
@@ -18,7 +18,7 @@ describe('a purposeful Home next move',()=>{
  });
  it('makes room for a returning IR receiver instead of cutting him for a kicker',()=>{
   const result=select({...base,plan:{...base.plan,offers:[offer('Kicker','K',10)],returns:[{player:{name:'Returning WR'},gain:5,needsSpace:true}]}});
-  expect(result).toMatchObject({kind:'ir',text:'Make room for Returning WR · IR return',url:'https://sleeper.com/leagues/1337852874733936640/team'});
+  expect(result).toMatchObject({kind:'ir',text:'Make room for Returning WR · IR return',url:'https://sleeperbot.app.link/esEa7TDlJN'});
  });
  it('offers activation without claiming a roster cut when there is space',()=>{
   expect(select({...base,plan:{...base.plan,returns:[{player:{name:'Returning WR'},needsSpace:false}]}}).text).toBe('Activate Returning WR from IR');

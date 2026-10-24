@@ -46,12 +46,12 @@ with sync_playwright() as p:
     assert page.locator('a.sleeper-action').evaluate_all('es=>es.every(e=>e.getBoundingClientRect().height>=44)'),(case,'Touch targets')
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(case,'Overflow')
     assert page.locator('a.sleeper-action').evaluate_all('es=>es.every(e=>e.getBoundingClientRect().left>=8&&e.getBoundingClientRect().right<=innerWidth-8)'),(case,'Screen edge padding')
-    expected=link.get_attribute('href');assert expected.startswith('https://sleeper.com/leagues/1286077564572037120/')
+    expected=link.get_attribute('href');assert expected=='https://sleeperbot.app.link/esEa7TDlJN' and link.inner_text().strip()=='Open Sleeper'
     page.screenshot(path=str(OUT/f'{case}-{width}-{theme}.png'))
     with page.expect_popup() as popup_info:link.click()
     popup=popup_info.value;popup.wait_for_load_state();assert popup.url==expected,(popup.url,expected);popup.close()
     assert page.locator('#view').get_attribute('data-route')=={'lineup':'analyzer','warning':'home','clubhouse':'clubhouse','trade':'trade'}[case]
-    checks.append(f'{width}-{theme}-{case}: correct tab, popup, 44px target, padding, no overflow, DFL view preserved')
+    checks.append(f'{width}-{theme}-{case}: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved')
    assert not errors,errors
    browser_context.close()
  browser.close()

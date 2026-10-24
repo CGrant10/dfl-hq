@@ -27,8 +27,9 @@ export function playerCardView({ id, players = {}, rosters = [], members = [], s
   const recent = weeks.map(bundle => {
     const row = (bundle.data || []).find(r => String(r.player_id) === String(id) && Number(r.season) === Number(season) && Number(r.week) === Number(bundle.week) && r.season_type === 'regular');
     const points = scoring && row?.stats && Object.keys(row.stats).length ? scorePlayer(row.stats, scoring) : null;
-    return { week: bundle.week, points, stale: !!bundle.stale };
+    return { week: bundle.week, points, stale: !!bundle.stale, opponent:row?.opponent||null, gameTeam:row?.team||player.nflTeam, rawStats:row?.stats||{}, stats:spotlightStats(player,bundle.data||[],{season,week:bundle.week}) };
   }).sort((a, b) => a.week - b.week);
+  if(typeof context?.points==='number'&&Number.isFinite(context.points)){const current=recent.find(r=>Number(r.week)===Number(week));if(current)current.points=context.points;}
   const stats = spotlightStats(player, weeks.find(w => w.week === week)?.data || [], { season, week });
   const report = injuries?.items?.find(p => String(p.sleeperId) === String(id));
   return { player, owner, myRosterId, ownerLabel: owner?.name || (rostersKnown ? 'Free agent in DFL' : 'Roster status unavailable'), season, week, recent, stats, points: context?.points ?? recent.find(r => r.week === week)?.points ?? null, state: context?.state || '', afterHalftime: !!context?.afterHalftime, injury: report ? { tag: report.tag, availability: report.availability, body: report.body } : { tag: raw.i || 'No tag', availability: raw.i ? 'Latest Sleeper tag' : 'No injury tag in Sleeper', body: '' } };

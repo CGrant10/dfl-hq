@@ -137,7 +137,7 @@ with sync_playwright() as p:
  page.keyboard.press('Escape');page.wait_for_function('!document.querySelector("dialog[open]")')
  # A revisit keeps the same identity/stats while fresh data is pending.
  sheet=open_sheet('Player')
- check('player card has a verified Sleeper league action',sheet.locator('[data-sleeper-section="waivers"]').get_attribute('href')=='https://sleeper.com/leagues/1286077564572037120/players')
+ check('player card has a verified Sleeper league action',sheet.locator('[data-sleeper-section="waivers"]').get_attribute('href')=='https://sleeperbot.app.link/esEa7TDlJN')
  page.evaluate('window.cardHero=document.querySelector(".player-card-hero")')
  page.keyboard.press('Escape');page.wait_for_function('!document.querySelector("dialog[open]")')
  page.evaluate('window.cardHold=true;window.releaseCard=null;void window.openReviewPlayer()');page.wait_for_function('!!window.releaseCard')

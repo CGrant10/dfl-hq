@@ -7,9 +7,11 @@ import { buildInjuryReport } from './injury-report-model.js';
 import { playerCardView, resolvePlayerId } from './player-card-model.js';
 
 export async function loadPlayerCard(selection, context = null) {
+  const leagueRead=db().from('sleeper_leagues').select('season,sleeper_league_id,scoring_settings');
+  const requestedSeason=Number(context?.season),scopedLeague=Number.isInteger(requestedSeason)&&requestedSeason>0?leagueRead.eq('season',requestedSeason):leagueRead;
   const [players, state, league, rosters, members, injury] = await Promise.all([
     loadPlayers(), loadLeagueState(),
-    db().from('sleeper_leagues').select('season,sleeper_league_id,scoring_settings').order('season', { ascending: false }).limit(1),
+    scopedLeague.order('season', { ascending: false }).limit(1),
     db().from('sleeper_rosters').select('season,roster_id,sleeper_user_id,players,team_name,display_name').order('season', { ascending: false }),
     loadMemberDirectory().catch(() => []), loadNflInjuries().catch(() => null),
   ]);

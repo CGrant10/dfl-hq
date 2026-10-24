@@ -19,7 +19,7 @@ export function playerFormChart(recent = []) {
   return { points, segments, baseline: y(0), available: values.length > 0 };
 }
 
-export function playerFormHtml(model) {
+export function playerFormHtml(model,{interactive=false}={}) {
   const chart = playerFormChart(model.recent);
   const plot = chart.available ? `<svg class="player-form-chart" viewBox="0 0 300 84" preserveAspectRatio="none" aria-hidden="true" focusable="false">
     <line class="player-form-zero" x1="0" x2="300" y1="${chart.baseline}" y2="${chart.baseline}" />
@@ -28,5 +28,6 @@ export function playerFormHtml(model) {
     ${chart.points.filter(p => p.y !== null).map(p => `<circle class="player-form-dot${p.stale ? ' is-stale' : ''}" cx="${p.x}" cy="${p.y}" r="4" />`).join('')}
   </svg>` : '<p class="player-form-empty">Weekly scores unavailable.</p>';
   const state = { live: 'Live', final: 'Final', upcoming: 'Yet to play', unknown: 'Pending' }[model.state];
-  return `<section class="player-card-recent" aria-label="Recent fantasy points"><div class="player-form-heading"><h3>Recent form</h3><small>${esc(model.season)} · Fantasy points</small></div>${plot}<dl style="--form-count:${Math.max(1, chart.points.length)}">${chart.points.map(p => `<div><dt>Week ${esc(p.week)}</dt><dd>${p.points === null ? '—' : p.points.toFixed(2)}${p.stale && p.points !== null ? '<small>Last available</small>' : Number(p.week) === Number(model.week) && state ? `<small data-player-form-current-state>${esc(state)}</small>` : ''}</dd></div>`).join('')}</dl></section>`;
+  const weeks=interactive?`<div class="player-game-week-list" role="group" aria-label="Recent games">${chart.points.map(p=>`<button type="button" data-player-game-week="${p.week}" aria-pressed="false" aria-label="Week ${p.week}, ${p.points===null?'score unavailable':p.points.toFixed(2)+' points'}"><span>Week ${p.week}</span><strong>${p.points===null?'—':p.points.toFixed(2)}</strong><small>${p.stale?'Last available':Number(p.week)===Number(model.week)?esc(state||'Recorded'):''}</small></button>`).join('')}</div>`:`<dl style="--form-count:${Math.max(1,chart.points.length)}">${chart.points.map(p=>`<div><dt>Week ${esc(p.week)}</dt><dd>${p.points===null?'—':p.points.toFixed(2)}${p.stale&&p.points!==null?'<small>Last available</small>':Number(p.week)===Number(model.week)&&state?`<small data-player-form-current-state>${esc(state)}</small>`:''}</dd></div>`).join('')}</dl>`;
+  return `<section class="player-card-recent" aria-label="Recent fantasy points"><div class="player-form-heading"><h3>Recent form</h3><small>${esc(model.season)} · Fantasy points</small></div>${interactive&&chart.points.length?`<div class="player-game-scrub" role="slider" tabindex="0" aria-label="Select player game" aria-valuemin="1" aria-valuemax="${chart.points.length}" aria-valuenow="${chart.points.length}">${plot}</div>`:plot}${weeks}</section>`;
 }

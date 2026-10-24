@@ -103,6 +103,10 @@ on:
       - 'js/view-memory.js'
       - 'js/analyzer-live-refresh*'
       - 'js/player-form*'
+      - 'js/player-game*'
+      - 'js/sleeper-links.js'
+      - 'css/player-game-explorer.css'
+      - 'tools/capture-player-games-review.py'
       - 'js/broadcast-stage.js'
       - 'js/broadcast-deck*'
       - 'js/home-slides*'
@@ -152,7 +156,7 @@ permissions:
 jobs:
   browser-review:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       DFL_REVIEW_DIR: ${{ github.workspace }}/home-review-output
     steps:
@@ -200,6 +204,11 @@ jobs:
         env:
           DFL_SCORE_SCROLL_REVIEW_DIR: ${{ github.workspace }}/home-review-output/score-scroll
         run: python tools/capture-score-scroll-review.py
+      - name: Check interactive player games and performance sharing
+        env:
+          DFL_PLAYER_GAMES_REVIEW_DIR: ${{ github.workspace }}/home-review-output/player-games
+          DFL_SHEET_REVIEW_DIR: ${{ github.workspace }}/home-review-output/sheets
+        run: python tools/capture-player-games-review.py
       - name: Check player comparisons
         env:
           DFL_COMPARE_REVIEW_DIR: ${{ github.workspace }}/home-review-output/comparison
