@@ -659,7 +659,7 @@ def check_watch_score_strip(page):
       window.watchStripFixture={root,watch,dialog,get model(){return model},setMotion(value){motion=value;watch.setMotion()},setPhase(state){model.games[0].sides.forEach(t=>{t.live=state==='live'?9:0;t.known=state!=='unknown';t.starters.forEach(p=>p.state=state);t.lineup.forEach(p=>p.state=state)});watch.update()},final(){model.completed=true;watch.update()},stop(){watch.stop();root.remove()}};
     }""",source)
     page.wait_for_timeout(250)
-    assert page.locator('.gameday-watch a[data-sleeper-section="matchups"]').get_attribute('href')=='https://sleeper.com/leagues/1286077564572037120/matchup'
+    assert page.locator('.gameday-watch a[data-sleeper-section="matchups"]').get_attribute('href')=='https://sleeperbot.app.link/esEa7TDlJN'
     result={'layouts':[]}
     try:
         for width in [320,390,768,1000]:

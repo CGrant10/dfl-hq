@@ -15,9 +15,11 @@ import { team } from './nfl-teams.js';
 import { playerCardPlaceholder, finishLoadingContent } from './loading-presentation.js';
 import {playerCardPreviewMatches} from './player-card-model.js';
 import {sleeperAction} from './sleeper-links.js';
+import {mountPlayerGameExplorer,playerGameDetailsHtml} from './player-game-explorer.js';
+import {playerGame} from './player-game-model.js';
 
 let dialog, body, request = 0, opener, returnContainer, activeContext = null, sheetDrag, stopConnection = () => {};
-let preview=null;
+let preview=null,gameExplorer=null;
 let stopEntrance=(_options={})=>{};
 function returnTarget() {
   const selector = opener?.dataset.playerCard ? `[data-player-card="${CSS.escape(opener.dataset.playerCard)}"]` : opener?.dataset.gamedayPlayer ? `[data-gameday-player="${CSS.escape(opener.dataset.gamedayPlayer)}"][data-player-roster="${CSS.escape(opener.dataset.playerRoster)}"]` : null;
@@ -50,10 +52,14 @@ function setup() {
     if(dialog.open)return;
     stopEntrance();stopConnection(); cancelUiExit(dialog); cancelUiMotion(dialog);
     delete dialog.dataset.playerCardStage;dialog.style.removeProperty('clip-path');dialog.style.removeProperty('opacity');
-    request++; activeContext = null; body.removeAttribute('aria-busy');
+    gameExplorer?.stop();gameExplorer=null;request++; activeContext = null; body.removeAttribute('aria-busy');
     returnTarget()?.focus({ preventScroll: true });
   });
   window.addEventListener('hashchange', () => { if (dialog.open) dismiss({ immediate:true }); });
+}
+function wireGameExplorer(model){
+  const initialWeek=gameExplorer?.selectedWeek;gameExplorer?.stop();const generation=request;
+  gameExplorer=mountPlayerGameExplorer(body,model,{initialWeek,getMotion:()=>dialog.dataset.motion!=='off',onShare:async spec=>{try{const {openSharePreview}=await import('./share-editorial.js');if(dialog.open&&!dialog.dataset.uiClosing&&request===generation)openSharePreview(spec,{filename:`dfl-${model.player.id}-week-${spec.context.split(' ').at(-1)}.png`,title:`${model.player.name} · Player performance`,text:`${model.player.name} · ${spec.context} · ${spec.results[0].value} points · ${spec.status}`})}catch{body.querySelector('[data-player-game-announcement]')?.replaceChildren(document.createTextNode('Could not open the share preview. Try again.'))}}});
 }
 function render(model) {
   const p = model.player, me = currentMember();
@@ -63,17 +69,18 @@ function render(model) {
   const availability = /out|ir|pup|doubt|^(o|d)$/i.test(model.injury.tag) ? "out" : /question|^q$/i.test(model.injury.tag) ? "questionable" : "neutral";
   const club = team(p.nflTeam);
   const heroStyle = club ? ` style="--player-primary:${esc(club.primary)};--player-secondary:${esc(club.secondary)}"` : '';
-  body.innerHTML = `<section class="player-card-hero"${heroStyle} aria-label="Player identity">${playerIdentity({ ...p, injuryStatus: '' })}<div class="player-card-owner"><small>DFL ROSTER</small>${model.owner?.memberId ? `<a href="#/profile?id=${esc(model.owner.memberId)}">${esc(model.ownerLabel)}</a>` : `<strong>${esc(model.ownerLabel)}</strong>`}</div></section><div class="player-card-availability" data-availability="${availability}"><b>${esc(model.injury.tag)}</b><span>${esc([model.injury.availability, model.injury.body].filter(Boolean).join(' · '))}</span></div><div class="gameday-spotlight-score"><span>${thermalScore(model.points, playerScoreTemperature({ ...p, points: model.points, state: model.state, afterHalftime: model.afterHalftime }), { tag: 'strong' })}<small>Fantasy points</small></span><span>${esc(state)} · Week ${model.week}</span></div>${playerFormHtml(model)}${model.stats.items.length ? `<section class="player-card-game-stats" aria-label="Game stats"><h3>Week ${model.week} box score</h3><dl class="gameday-stat-grid">${model.stats.items.map(s => `<div><dt>${esc(s.label)}</dt><dd>${esc(s.value)}</dd></div>`).join('')}</dl></section>` : '<p class="player-card-empty">Game stats unavailable.</p>'}<nav class="player-card-actions" aria-label="Player actions"><button type="button" class="linkbtn" data-player-compare="${esc(p.id)}">Compare player</button><button type="button" class="linkbtn" data-player-watch aria-pressed="false">Watch player</button>${props ? `<a class="linkbtn" href="#/sportsbook?player=${encodeURIComponent(p.name)}">Player props</a>` : ''}${trade ? `<a class="linkbtn" href="#/trade?team=${encodeURIComponent(model.myRosterId)}&target=${encodeURIComponent(p.id)}&partner=${encodeURIComponent(model.owner.id)}">Explore a trade</a>` : ''}<a class="linkbtn" href="#/analyzer">Team analyzer</a>${sleeperAction(model.leagueId,model.owner?'roster':'waivers',{className:'linkbtn'})}</nav>${model.stats.updatedAt ? `<time class="gameday-stat-time" datetime="${esc(new Date(model.stats.updatedAt).toISOString())}">Stats · ${esc(new Date(model.stats.updatedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }))}</time>` : ''}`;
-  body.querySelector('.gameday-spotlight-score > span').dataset.scoreStamp=JSON.stringify([model.points,playerScoreTemperature({...p,points:model.points,state:model.state,afterHalftime:model.afterHalftime})]);
+  body.innerHTML = `<section class="player-card-hero"${heroStyle} aria-label="Player identity">${playerIdentity({ ...p, injuryStatus: '' })}<div class="player-card-owner"><small>DFL ROSTER</small>${model.owner?.memberId ? `<a href="#/profile?id=${esc(model.owner.memberId)}">${esc(model.ownerLabel)}</a>` : `<strong>${esc(model.ownerLabel)}</strong>`}</div></section><div class="player-card-availability" data-availability="${availability}"><b>${esc(model.injury.tag)}</b><span>${esc([model.injury.availability, model.injury.body].filter(Boolean).join(' · '))}</span></div><div class="gameday-spotlight-score"><span>${thermalScore(model.points, playerScoreTemperature({ ...p, points: model.points, state: model.state, afterHalftime: model.afterHalftime }), { tag: 'strong' })}<small>Fantasy points</small></span><span>${esc(state)} · Week ${model.week}</span></div><div data-player-game-chart>${playerFormHtml(model,{interactive:true})}</div><section class="player-card-game-stats" data-player-game-details aria-label="Selected game stats">${playerGameDetailsHtml(playerGame(model))}</section><nav class="player-card-actions" aria-label="Player actions"><button type="button" class="linkbtn" data-player-compare="${esc(p.id)}">Compare player</button><button type="button" class="linkbtn" data-player-watch aria-pressed="false">Watch player</button>${props ? `<a class="linkbtn" href="#/sportsbook?player=${encodeURIComponent(p.name)}">Player props</a>` : ''}${trade ? `<a class="linkbtn" href="#/trade?team=${encodeURIComponent(model.myRosterId)}&target=${encodeURIComponent(p.id)}&partner=${encodeURIComponent(model.owner.id)}">Explore a trade</a>` : ''}<a class="linkbtn" href="#/analyzer">Team analyzer</a>${sleeperAction(model.leagueId,model.owner?'roster':'waivers',{className:'linkbtn'})}</nav>${model.stats.updatedAt ? `<time class="gameday-stat-time" datetime="${esc(new Date(model.stats.updatedAt).toISOString())}">Stats · ${esc(new Date(model.stats.updatedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }))}</time>` : ''}`;
+  wireGameExplorer(model);
+
 }
 export async function openPlayerCard(selection, { context = null, motion = true, source = document.activeElement } = {}) {
-  setup(); stopEntrance();stopConnection(); cancelUiExit(dialog); sheetDrag.reset(); cancelUiMotion(body);dialog.style.removeProperty('clip-path');dialog.style.removeProperty('opacity');delete dialog.dataset.playerCardStage; const token = ++request; opener = source; returnContainer = source?.closest('dialog') || source?.closest('#view'); activeContext = context;
+  setup(); gameExplorer?.stop();gameExplorer=null; stopEntrance();stopConnection(); cancelUiExit(dialog); sheetDrag.reset(); cancelUiMotion(body);dialog.style.removeProperty('clip-path');dialog.style.removeProperty('opacity');delete dialog.dataset.playerCardStage; const token = ++request; opener = source; returnContainer = source?.closest('dialog') || source?.closest('#view'); activeContext = context;
   const memberId=currentMember()?.id??null,hasPreview=playerCardPreviewMatches(preview,selection,context,memberId)&&!!body.querySelector('.player-card-hero');
   const finish=()=>{if(hasPreview){body.dataset.contentState='ready';body.removeAttribute('aria-busy');}else finishLoadingContent(body);};
   dialog.dataset.motion = motion ? 'on' : 'off';
   body.dataset.contentState = hasPreview?'refreshing':'loading'; body.setAttribute('aria-busy', 'true'); body.scrollTop = 0;
   body.querySelector('[data-player-card-refresh-error]')?.remove();
-  if(hasPreview)body.querySelector('.player-card-actions').inert=true;
+  if(hasPreview){body.querySelector('.player-card-actions').inert=true;wireGameExplorer(preview.model);}
   else body.innerHTML = playerCardPlaceholder(context?.name || selection.name || source?.textContent?.trim());
   let entranceDone = Promise.resolve();
   const sourcePortrait=source?.matches?.('.dfl-player-portrait')?source:source?.querySelector('.dfl-player-portrait')||source?.closest('.dfl-player')?.querySelector('.dfl-player-portrait');
@@ -119,6 +126,7 @@ export function updatePlayerCard(context, motion = true) {
   if (!dialog?.open || !activeContext || String(activeContext.id) !== String(context?.id)) return;
   if(activeContext.points!==context.points||activeContext.week!==context.week||activeContext.state!==context.state)preview=null;
   activeContext = context; dialog.dataset.motion = motion ? 'on' : 'off';
+  if(gameExplorer){gameExplorer.update(context);return;}
   const score = body.querySelector('.gameday-spotlight-score > span');
   const scoreStamp=JSON.stringify([context.points,playerScoreTemperature(context)]);
   if (score&&score.dataset.scoreStamp!==scoreStamp) {score.innerHTML = `${thermalScore(context.points, playerScoreTemperature(context), { tag: 'strong' })}<small>Fantasy points</small>`;score.dataset.scoreStamp=scoreStamp;}

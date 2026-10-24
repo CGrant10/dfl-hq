@@ -895,3 +895,14 @@ colors. Motion-off and reduced motion suppress the new entrance effects. Default
 card position, focus controls and return behavior passed browser checks.
 `pnpm themes` passed. Physical Safari pacing remains unverified. See
 [continuous effects and arrival validation](docs/continuous-effects-1472.md).
+
+## 1.473.0 — Interactive player games and generic Sleeper launch
+
+Inspected actual Light/Dark mobile player cards and the existing performance
+share preview at 320/390px. Week selection, chart focus, stat rows, disclosure
+controls and share actions use existing text/surface/line/accent tokens. Checked
+44 px controls, selected states, keyboard input, native vertical scrolling,
+motion-off/reduced motion and narrow-screen bounds. Existing image share colors
+and layout are retained. Sleeper launch controls passed both themes at
+320/390/768px. `pnpm themes` passed. Native-device limits and captures:
+[player-game and Sleeper validation](docs/player-games-1473.md).

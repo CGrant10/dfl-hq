@@ -75,7 +75,7 @@ with sync_playwright() as p:
             page.wait_for_function('!document.querySelector("[data-tr-action=refresh]")?.disabled')
             check(page.evaluate('window.reviewRooms.find(r=>r.id===2).status')=='pending','Stale response cannot overwrite latest version')
             click('[data-tr-action="back"]');click('[data-tr-action="closed"]');open_room(4)
-            check(page.locator('a[href="https://sleeper.com/leagues/123456"]').count()==1,'Agreed terms offer Sleeper handoff')
+            check(page.locator('a[href="https://sleeperbot.app.link/esEa7TDlJN"]').count()==1,'Agreed terms offer Sleeper handoff')
             check('Complete the trade in Sleeper' in page.locator('.tr-handoff').inner_text(),'Agreement clearly separate from execution')
             page.screenshot(path=str(output/f'agreed-{width}-{theme}.png'))
             click('[data-tr-action="back"]');click('[data-tr-action="active"]');open_room(3)
