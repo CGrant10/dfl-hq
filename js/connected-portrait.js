@@ -4,7 +4,7 @@ const inViewport = rect => rect.width > 0 && rect.height > 0 && rect.top >= 44 &
 
 // A short-lived top-layer portrait connects a visible source to its detail.
 // It never takes focus, intercepts a tap, or remains after cancellation.
-export function connectPortrait(source, target, { motion = true, duration = 280, hideSource = false, origin = null, easing, hold = false } = {}) {
+export function connectPortrait(source, target, { motion = true, duration = 280, hideSource = false, origin = null, easing, hold = false, lift = 0 } = {}) {
   const portrait = source?.matches?.('.dfl-player-portrait') ? source : source?.querySelector('.dfl-player-portrait') || source?.closest('.dfl-player')?.querySelector('.dfl-player-portrait');
   if (!portrait?.isConnected || !target?.isConnected || !HTMLElement.prototype.showPopover) return () => {};
   const from = origin || portrait.getBoundingClientRect(), to = target.getBoundingClientRect();
@@ -28,6 +28,7 @@ export function connectPortrait(source, target, { motion = true, duration = 280,
   document.body.append(overlay); overlay.showPopover();
   const animation = animateUi(overlay, [
     { transform:`translate(${from.left - to.left}px,${from.top - to.top}px) scale(${from.width / to.width},${from.height / to.height})`, borderRadius:originStyle.borderRadius },
+    ...(lift?[{offset:.62,transform:`translate(${(from.left-to.left)*.16}px,${(from.top-to.top)*.16-lift}px) scale(${1+(from.width/to.width-1)*.16},${1+(from.height/to.height-1)*.16})`,borderRadius:style.borderRadius}]:[]),
     { transform:'translate(0,0) scale(1,1)', borderRadius:style.borderRadius },
   ], { duration, motion, ...(easing ? { easing } : {}) });
   const visibility = target.style.visibility;

@@ -17,7 +17,7 @@ window.setTheme=saveMode;window.fixture={};
 const glp=WebGLRenderingContext.prototype,draw=glp.drawArrays,upload=glp.texImage2D,clear=glp.clear;
 glp.texImage2D=function(...a){fixture.uploads=(fixture.uploads||0)+1;return upload.apply(this,a)};
 glp.clear=function(...a){fixture.clears=(fixture.clears||0)+1;fixture.clearClipped=this.isEnabled(this.SCISSOR_TEST);return clear.apply(this,a)};
-glp.drawArrays=function(...a){draw.apply(this,a);fixture.draws=(fixture.draws||0)+1;fixture.scissor=[...this.getParameter(this.SCISSOR_BOX)];fixture.viewport=[...this.getParameter(this.VIEWPORT)];fixture.opacity=this.getUniform(this.getParameter(this.CURRENT_PROGRAM),this.getUniformLocation(this.getParameter(this.CURRENT_PROGRAM),'u_opacity'));if(fixture.probe){const p=new Uint8Array(this.drawingBufferWidth*this.drawingBufferHeight*4);this.readPixels(0,0,this.drawingBufferWidth,this.drawingBufferHeight,this.RGBA,this.UNSIGNED_BYTE,p);fixture.painted=0;fixture.outside=0;const [x,y,w,h]=fixture.scissor;for(let j=0;j<this.drawingBufferHeight;j++)for(let i=0;i<this.drawingBufferWidth;i++)if(p[(j*this.drawingBufferWidth+i)*4+3]>0){fixture.painted++;if(i<x||i>=x+w||j<y||j>=y+h)fixture.outside++}fixture.probe=false}};
+glp.drawArrays=function(...a){draw.apply(this,a);fixture.draws=(fixture.draws||0)+1;fixture.scissor=[...this.getParameter(this.SCISSOR_BOX)];fixture.viewport=[...this.getParameter(this.VIEWPORT)];fixture.glyph=[...this.getUniform(this.getParameter(this.CURRENT_PROGRAM),this.getUniformLocation(this.getParameter(this.CURRENT_PROGRAM),'u_glyph'))];fixture.size=[...this.getUniform(this.getParameter(this.CURRENT_PROGRAM),this.getUniformLocation(this.getParameter(this.CURRENT_PROGRAM),'u_size'))];fixture.opacity=this.getUniform(this.getParameter(this.CURRENT_PROGRAM),this.getUniformLocation(this.getParameter(this.CURRENT_PROGRAM),'u_opacity'));if(fixture.probe){const p=new Uint8Array(this.drawingBufferWidth*this.drawingBufferHeight*4);this.readPixels(0,0,this.drawingBufferWidth,this.drawingBufferHeight,this.RGBA,this.UNSIGNED_BYTE,p);fixture.painted=0;fixture.outside=0;const [x,y,w,h]=fixture.scissor;for(let j=0;j<this.drawingBufferHeight;j++)for(let i=0;i<this.drawingBufferWidth;i++)if(p[(j*this.drawingBufferWidth+i)*4+3]>0){fixture.painted++;if(i<x||i>=x+w||j<y||j>=y+h)fixture.outside++}fixture.probe=false}};
 window.setupScore=(kind='hot',nested=true)=>{
  fixture.collapse?.stop();fixture.fx?.stop();fixture.root?.remove();window.scrollTo({top:0,behavior:'instant'});
  const root=document.createElement(nested?'dialog':'section');root.className=nested?'gameday-spotlight dfl-player-card':'score-scroll-page';root.style.cssText=nested?'height:500px':'position:relative;min-height:1400px;padding:24px';
@@ -50,9 +50,11 @@ with sync_playwright() as p:
     page.evaluate('fixture.probe=true');page.wait_for_function('fixture.probe===false')
     check(name+' actually paints nonempty GPU effects',page.evaluate('fixture.painted>0&&fixture.outside===0'))
     page.evaluate('fixture.beforeUploads=fixture.uploads;fixture.port.scrollTop=100');page.wait_for_timeout(60)
-    check(name+' nested scrolling clears old effects immediately',page.evaluate('fixture.root.querySelector("canvas").dataset.running==="false"&&getComputedStyle(fixture.root.querySelector("canvas")).visibility==="hidden"&&!fixture.clearClipped'))
+    check(name+' nested scrolling keeps effects visible',page.evaluate('fixture.root.querySelector("canvas").dataset.running==="true"&&getComputedStyle(fixture.root.querySelector("canvas")).visibility!=="hidden"&&!fixture.clearClipped'))
     page.wait_for_function('fixture.root.querySelector("canvas").dataset.running==="true"')
     check(name+' settling reuses glyph masks',page.evaluate('fixture.uploads===fixture.beforeUploads'))
+    check(name+' repeated scroll frames keep painted effects attached',page.evaluate('''async()=>{const f=fixture;let good=true;for(let i=0;i<14;i++){f.port.scrollTop=50+i%7*7;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const c=f.root.querySelector('canvas'),v=f.root.querySelector('.gd-thermal-value').getBoundingClientRect(),b=c.getBoundingClientRect(),s=c.width/f.root.clientWidth,[x,y,w,h]=f.viewport,g=f.glyph,z=f.size;good&&=c.dataset.running==='true'&&getComputedStyle(c).visibility!=='hidden'&&Math.abs(b.left+(x+g[0]/z[0]*w)/s-v.left)<1.5&&Math.abs(b.top+(c.height-y-h+g[1]/z[1]*h)/s-v.top)<1.5;}return good&&f.uploads===f.beforeUploads}'''))
+
     # Leave the score partly clipped by the inner port. The GPU must not draw it
     # on the stationary header or outside the body's actual clipping rectangle.
     page.evaluate('fixture.port.scrollTop+=document.querySelector(".gd-thermal-value").getBoundingClientRect().top-fixture.port.getBoundingClientRect().top+12');page.wait_for_timeout(320)
@@ -71,7 +73,8 @@ with sync_playwright() as p:
    page.set_viewport_size({'width':width,'height':844});page.evaluate('setupWatch()');page.wait_for_function('fixture.root.querySelector("canvas").dataset.running==="true"')
    for top in [420,0]:
     page.evaluate('top=>fixture.root.scrollTo({top,behavior:"instant"})',top);page.wait_for_timeout(60)
-    check(f'{theme}/{width} Watch {top} clears during sticky movement',page.evaluate('fixture.root.querySelector("canvas").dataset.running==="false"'))
+    check(f'{theme}/{width} Watch {top} keeps effects during sticky movement',page.evaluate('fixture.root.querySelector("canvas").dataset.running==="true"'))
+    check(f'{theme}/{width} Watch {top} stays aligned throughout the size transition',page.evaluate('''async()=>{let good=true;for(let i=0;i<10;i++){await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const c=fixture.root.querySelector('canvas'),b=c.getBoundingClientRect(),v=[...fixture.root.querySelectorAll('.gd-thermal-value')].at(-1).getBoundingClientRect(),s=c.width/fixture.root.clientWidth,[x,y,w,h]=fixture.viewport,g=fixture.glyph,z=fixture.size;good&&=c.dataset.running==='true'&&Math.abs(b.left+(x+g[0]/z[0]*w)/s-v.left)<2&&Math.abs(b.top+(c.height-y-h+g[1]/z[1]*h)/s-v.top)<2;}return good}'''))
     page.wait_for_function('fixture.root.querySelector("canvas").dataset.running==="true"')
     check(f'{theme}/{width} Watch {top} redraws on the actual compact or expanded score',page.evaluate('''()=>{const c=fixture.root.querySelector('canvas'),b=c.getBoundingClientRect(),v=[...fixture.root.querySelectorAll('.gd-thermal-value')].at(-1).getBoundingClientRect(),s=c.width/fixture.root.clientWidth,[x,y,w,h]=fixture.viewport;return Math.abs(b.left+x/s+10-v.left)<1.5&&Math.abs(b.top+(c.height-y-h)/s+Math.min(26,v.height)-v.top)<1.5}'''))
    page.locator('.gameday-watch').screenshot(path=str(OUT/f'{theme}-{width}-watch-expanded.png'))
@@ -80,7 +83,7 @@ with sync_playwright() as p:
  page.evaluate('document.querySelector("#unrelated").scrollTop=20');page.wait_for_timeout(60)
  check('unrelated scrollports do not interrupt the score',page.evaluate('fixture.root.querySelector("canvas").dataset.running==="true"'))
  page.evaluate('window.scrollTo({top:80,behavior:"instant"})');page.wait_for_timeout(60)
- check('document scrolling also clears the shared effects',page.evaluate('fixture.root.querySelector("canvas").dataset.running==="false"'))
+ check('document scrolling keeps the shared effects visible',page.evaluate('fixture.root.querySelector("canvas").dataset.running==="true"'))
  page.wait_for_function('fixture.root.querySelector("canvas").dataset.running==="true"')
  page.evaluate('document.querySelector("#score-host").style.opacity="0";fixture.fx.refresh()');page.wait_for_timeout(100)
  check('a faded Home handoff source leaves no duplicate silhouette',page.evaluate('fixture.root.querySelector("canvas").dataset.running==="false"'))
@@ -91,6 +94,8 @@ with sync_playwright() as p:
  page.evaluate('fixture.root.dataset.motion="on"');page.wait_for_function('fixture.root.querySelector("canvas").dataset.running==="true"');page.emulate_media(reduced_motion='reduce');page.wait_for_timeout(100)
  check('reduced motion keeps real static digits without a canvas ghost',page.evaluate('fixture.root.querySelector("canvas").dataset.running==="false"&&document.querySelector(".gd-thermal-value").textContent==="29.00"'))
  page.emulate_media(reduced_motion='no-preference');page.wait_for_function('fixture.root.querySelector("canvas").dataset.running==="true"')
+ page.evaluate('document.querySelector("#score-host").replaceChildren();fixture.fx.refresh()');page.wait_for_timeout(100)
+ check('removing every score immediately clears and stops the shared surface',page.evaluate('fixture.root.querySelector("canvas").dataset.running==="false"&&getComputedStyle(fixture.root.querySelector("canvas")).visibility==="hidden"'))
  page.evaluate('window.scrollTo({top:0,behavior:"instant"});fixture.fx.stop()');page.wait_for_timeout(350)
  check('teardown cancels the pending scroll restart',page.locator('.gd-vfx-canvas').count()==0)
  check('no browser errors',not errors);browser.close();server.shutdown()

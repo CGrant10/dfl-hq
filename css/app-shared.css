@@ -4680,6 +4680,11 @@ a.sleeper-action svg {flex:0 0 14px;}
   overflow:hidden; border-radius:14px;
 }
 .dfl-player-card[open] { display:flex; flex-direction:column; }
+.dfl-player-card .player-card-hero { position:relative; }
+.dfl-player-card[data-player-card-stage="card"] .player-card-hero::after { content:""; position:absolute; inset:0; border:1px solid var(--accent); border-radius:inherit; pointer-events:none; animation:player-card-arrival 280ms cubic-bezier(.16,1,.3,1) both; }
+@keyframes player-card-arrival { 0%{opacity:0;clip-path:inset(0 100% 0 0)} 55%{opacity:.8} 100%{opacity:0;clip-path:inset(0)} }
+.dfl-player-card[data-motion="off"] .player-card-hero::after,html[data-ui-motion="off"] .dfl-player-card .player-card-hero::after { animation:none;content:none; }
+@media(prefers-reduced-motion:reduce){.dfl-player-card .player-card-hero::after{animation:none!important;content:none!important}}
 .dfl-player-card > header { flex:none; padding:10px 16px; margin:0; background:var(--bg-2); }
 .dfl-player-card > header h2 { font:700 1.125rem/1.3 var(--font-display); letter-spacing:.035em; }
 .dfl-player-card [data-player-card-close] { min-width:44px; }

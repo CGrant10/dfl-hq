@@ -1,13 +1,13 @@
 import {vertexShader,fragmentShader} from './score-vfx-shaders.js';
 
 // One GPU surface per card/dialog, shared across visible score emitters.
-// No layout reads or texture uploads in the animation loop. Effects rest while
-// scrolling so compositor movement cannot strand a score's previous silhouette.
+// Glyph textures stay cached. Moving score geometry is sampled once per frame
+// while scrolling/compacting, so the fire and ice travel with the actual digits.
 export function mountScoreVfx(root){
  const canvas=document.createElement('canvas');canvas.className='gd-vfx-canvas';canvas.setAttribute('aria-hidden','true');root.append(canvas);
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let gl=null,program=null,buffer=null,locations={},targets=[],visible=new Set(),masks=new Map(),raf=0,layoutFrame=0,lastFrame=0,stopped=false,lost=false,dirty=true,rootVisible=false,scrolling=false,scrollTimer=0;
- const enabled=()=>!stopped&&!lost&&!scrolling&&rootVisible&&!reduced.matches&&root.dataset.motion!=='off'&&document.visibilityState==='visible'&&(!root.matches('dialog')||root.open);
+ const enabled=()=>!stopped&&!lost&&rootVisible&&!reduced.matches&&root.dataset.motion!=='off'&&document.visibilityState==='visible'&&(!root.matches('dialog')||root.open);
  const clear=()=>{if(gl&&!lost){gl.disable(gl.SCISSOR_TEST);gl.clear(gl.COLOR_BUFFER_BIT)}};
  const pause=()=>{cancelAnimationFrame(raf);raf=0;lastFrame=0;canvas.style.visibility='hidden';clear();canvas.dataset.running='false'};
  const release=()=>{if(gl&&!lost){for(const {target} of masks.values())gl.deleteTexture(target.texture)}masks.clear();targets=[]};
@@ -27,13 +27,14 @@ export function mountScoreVfx(root){
  };
  const render=time=>{
   raf=0;if(!enabled()){pause();return}
+  if(layoutFrame){raf=requestAnimationFrame(render);return}
   if(time-lastFrame>=1000/30-1){
    lastFrame=time-((time-lastFrame)%(1000/30));gl.disable(gl.SCISSOR_TEST);clear();gl.enable(gl.SCISSOR_TEST);
    gl.uniform1f(locations.time,(time%120000)/1000);
    for(const target of targets){
     if(!visible.has(target.element))continue;
-    const {x,y,width,height,scale,glyph,texture,cold,light,medicine,clip,opacity}=target;
-    gl.viewport(x,y,width,height);gl.scissor(...clip);gl.bindTexture(gl.TEXTURE_2D,texture);
+    const {x,y,width,height,viewWidth=width,viewHeight=height,scale,glyph,texture,cold,light,medicine,clip,opacity}=target;
+    gl.viewport(x,y,viewWidth,viewHeight);gl.scissor(...clip);gl.bindTexture(gl.TEXTURE_2D,texture);
     gl.uniform2f(locations.size,width/scale,height/scale);gl.uniform4f(locations.glyph,...glyph);gl.uniform1f(locations.cold,cold?1:0);gl.uniform1f(locations.light,light?1:0);gl.uniform1f(locations.medicine,medicine?1:0);gl.uniform1f(locations.opacity,opacity);gl.drawArrays(gl.TRIANGLES,0,6);
    }
    gl.disable(gl.SCISSOR_TEST);canvas.style.visibility='';if(canvas.dataset.running!=='true')canvas.dataset.running='true';
@@ -43,18 +44,19 @@ export function mountScoreVfx(root){
  const resume=()=>{if(enabled()&&targets.some(t=>visible.has(t.element))){if(!raf)raf=requestAnimationFrame(render)}else pause()};
  const intersection=new IntersectionObserver(entries=>{for(const e of entries){if(e.isIntersecting)visible.add(e.target);else visible.delete(e.target)}resume()});
  const rebuild=()=>{
-  layoutFrame=0;if(stopped)return;dirty=true;pause();if(!enabled())return;
+  layoutFrame=0;if(stopped)return;dirty=true;if(!enabled()){pause();return}
   const emitters=[...root.querySelectorAll('[data-score-temperature="hot"], [data-score-temperature="cold"]')].filter(element=>element.closest('dialog')===(root.matches('dialog')?root:null));
-  if(!emitters.length){release();intersection.disconnect();visible.clear();dirty=false;return}
+  if(!emitters.length){pause();release();intersection.disconnect();visible.clear();dirty=false;return}
   if(!gl&&!init())return;
   const existing=new Set(emitters);
   for(const [element,{target}] of masks)if(!existing.has(element)){gl.deleteTexture(target.texture);masks.delete(element)}
-  targets=[];intersection.disconnect();visible.clear();
-  const box=root.getBoundingClientRect();if(box.width<=0||box.height<=0)return;
+  targets=[];intersection.disconnect();for(const element of visible)if(!existing.has(element))visible.delete(element);
+  const box=root.getBoundingClientRect();if(box.width<=0||box.height<=0){pause();return}
   // Match phone density while bounding the shared surface for long scoreboards.
   const pixelBudgetScale=Math.sqrt(6000000/Math.max(1,root.clientWidth*root.clientHeight));
   const scale=Math.min(devicePixelRatio||1,3,pixelBudgetScale,Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE),gl.getParameter(gl.MAX_RENDERBUFFER_SIZE))/Math.max(box.width,box.height));
-  canvas.width=Math.ceil(root.clientWidth*scale);canvas.height=Math.ceil(root.clientHeight*scale);
+  const surfaceWidth=Math.ceil(root.clientWidth*scale),surfaceHeight=Math.ceil(root.clientHeight*scale);
+  if(canvas.width!==surfaceWidth)canvas.width=surfaceWidth;if(canvas.height!==surfaceHeight)canvas.height=surfaceHeight;
   // Keep the GPU surface inside the padding box, including scrollable dialogs.
   canvas.style.width=`${root.clientWidth}px`;canvas.style.height=`${root.clientHeight}px`;canvas.style.left=`${root.scrollLeft}px`;canvas.style.top=`${root.scrollTop}px`;
   const style=getComputedStyle(root);
@@ -68,6 +70,13 @@ export function mountScoreVfx(root){
    if(pinnedBottom&&!element.closest('.gd-watch-dashboard')&&rect.top<pinnedBottom)continue;
    if(root.matches('dialog')&&(rect.bottom<box.top-30||rect.top>box.bottom+30))continue;
    const style=getComputedStyle(value),padX=10,padTop=element.closest('.gameday-player-score')?14:Math.min(26,rect.height),padBottom=10,width=Math.ceil(rect.width+padX*2),height=Math.ceil(rect.height+padTop+padBottom);
+   const font=style.font||`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+   const maskKey=JSON.stringify([value.textContent,font,style.letterSpacing,style.webkitTextStrokeWidth,rect.width,rect.height,padTop,scale]);
+   const shapeKey=JSON.stringify([value.textContent,style.fontFamily,style.fontWeight,style.fontStyle,style.letterSpacing,style.webkitTextStrokeWidth,scale]);
+   const cached=masks.get(element),reuse=cached&&(cached.key===maskKey||scrolling&&cached.shapeKey===shapeKey);
+   const ratioX=reuse?rect.width/cached.target.glyph[2]:1,ratioY=reuse?rect.height/cached.target.glyph[3]:1;
+   const drawPadX=reuse?cached.target.glyph[0]*ratioX:padX,drawPadBottom=reuse?(cached.target.height/cached.target.scale-cached.target.glyph[1]-cached.target.glyph[3])*ratioY:padBottom;
+   const viewWidth=reuse?Math.ceil(cached.target.width*ratioX):Math.ceil(width*scale),viewHeight=reuse?Math.ceil(cached.target.height*ratioY):Math.ceil(height*scale);
    // A dialog can contain its own scrollport. Clip to that port rather than
    // painting a hidden score over the stationary header. Honor faded sources
    // during Home's scoreboard handoff too.
@@ -80,17 +89,14 @@ export function mountScoreVfx(root){
     if(clipsX||clipsY){const port=node.getBoundingClientRect();if(clipsX){bounds.left=Math.max(bounds.left,port.left+node.clientLeft);bounds.right=Math.min(bounds.right,port.left+node.clientLeft+node.clientWidth)}if(clipsY){bounds.top=Math.max(bounds.top,port.top+node.clientTop);bounds.bottom=Math.min(bounds.bottom,port.top+node.clientTop+node.clientHeight)}}
    }
    if(opacity<=.001)continue;
-   const x=Math.round((rect.left-box.left-root.clientLeft-padX)*scale),y=canvas.height-Math.round((rect.top-box.top-root.clientTop+rect.height+padBottom)*scale);
+   const x=Math.round((rect.left-box.left-root.clientLeft-drawPadX)*scale),y=canvas.height-Math.round((rect.top-box.top-root.clientTop+rect.height+drawPadBottom)*scale);
    const left=Math.max(0,x,Math.ceil((bounds.left-box.left-root.clientLeft)*scale)),bottom=Math.max(0,y,Math.ceil(canvas.height-(bounds.bottom-box.top-root.clientTop)*scale));
-   const right=Math.min(canvas.width,x+Math.ceil(width*scale),Math.floor((bounds.right-box.left-root.clientLeft)*scale)),top=Math.min(canvas.height,y+Math.ceil(height*scale),Math.floor(canvas.height-(bounds.top-box.top-root.clientTop)*scale));
+   const right=Math.min(canvas.width,x+viewWidth,Math.floor((bounds.right-box.left-root.clientLeft)*scale)),top=Math.min(canvas.height,y+viewHeight,Math.floor(canvas.height-(bounds.top-box.top-root.clientTop)*scale));
    if(right<=left||top<=bottom)continue;
-   const placement={x,y,clip:[left,bottom,right-left,top-bottom],opacity,cold:element.dataset.scoreTemperature==='cold',light,medicine};
+   const placement={x,y,viewWidth,viewHeight,clip:[left,bottom,right-left,top-bottom],opacity,cold:element.dataset.scoreTemperature==='cold',light,medicine};
    // Disclosures and scroll change geometry, not glyphs. Reuse the GPU mask
    // until the score, type metrics or device scale actually changes.
-   const font=style.font||`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-   const maskKey=JSON.stringify([value.textContent,font,style.letterSpacing,style.webkitTextStrokeWidth,rect.width,rect.height,padTop,scale]);
-   const cached=masks.get(element);
-   if(cached?.key===maskKey){
+   if(reuse){
     const target={...cached.target,...placement};
     targets.push(target);intersection.observe(element);continue;
    }
@@ -116,10 +122,14 @@ export function mountScoreVfx(root){
    }
    const texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,mask.width,mask.height,0,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
    const target={element,texture,...placement,width:mask.width,height:mask.height,scale,glyph:[padX,padTop,rect.width,rect.height]};
-   masks.set(element,{key:maskKey,target});targets.push(target);
+   masks.set(element,{key:maskKey,shapeKey,target});targets.push(target);
    intersection.observe(element);
   }
-  dirty=false;resume();
+  dirty=false;
+  // Replace the old frame before this browser paint, without blanking the
+  // canvas or waiting for another IntersectionObserver delivery.
+  if(targets.some(t=>visible.has(t.element))){cancelAnimationFrame(raf);raf=0;lastFrame=0;render(performance.now())}else resume();
+  if(scrolling)schedule();
  };
  const schedule=()=>{if(!layoutFrame&&!stopped)layoutFrame=requestAnimationFrame(rebuild)};
  const sync=()=>{if(!enabled())pause();else if(dirty)schedule();else resume()};
@@ -134,8 +144,7 @@ export function mountScoreVfx(root){
  const onScroll=event=>{
   const source=event.target;
   if(stopped||!rootVisible||!root.isConnected||source instanceof Element&&!root.contains(source)&&!source.contains(root))return;
-  if(!scrolling){scrolling=true;pause()}
-  dirty=true;clearTimeout(scrollTimer);
+  scrolling=true;dirty=true;clearTimeout(scrollTimer);schedule();
   // Allow the sticky scoreboard's 220 ms compact transition to settle as well.
   scrollTimer=setTimeout(()=>{scrollTimer=0;scrolling=false;schedule()},240);
  };
