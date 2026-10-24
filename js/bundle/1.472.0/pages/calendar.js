@@ -1,4 +1,4 @@
-import{F as e,Fr as t,Hn as n,I as r,Lr as i,M as a,Mr as o,N as s,P as c,Rn as l,Ut as u,Vr as d,j as f,jr as p,kr as m,zr as h}from"../app-core-BNd3TRYi.js";var g=`events`;async function _(e){e.innerHTML=`
+import{F as e,Fr as t,Hn as n,I as r,Lr as i,M as a,Mr as o,N as s,P as c,Rn as l,Ut as u,Vr as d,j as f,jr as p,kr as m,zr as h}from"../app-core-sCSuUPhL.js";var g=`events`;async function _(e){e.innerHTML=`
     <header class="utility-head"><small>LEAGUE SCHEDULE</small><h1>Calendar</h1></header>
     <div class="tabs" id="cal-tabs">
       <button data-tab="events" class="${g===`events`?`on`:``}">Events</button>

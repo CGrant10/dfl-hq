@@ -77,6 +77,7 @@
   "a partially faded source also fades its effects",
   "motion-off cancels and hides the effects",
   "reduced motion keeps real static digits without a canvas ghost",
+  "removing every score immediately clears and stops the shared surface",
   "teardown cancels the pending scroll restart",
   "no browser errors"
 ]

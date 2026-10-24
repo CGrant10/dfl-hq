@@ -25,7 +25,7 @@ supported; the return animation is unchanged.
 
 - `pnpm check`: 2,062 tests in 250 files, theme/type/name/release checks and
   production builds passed. Bundle remains 79 modules, 3 startup and 4 Home.
-- 80 real GPU browser checks in Light/Dark at 320/390px and 2× density cover
+- 81 real GPU browser checks in Light/Dark at 320/390px and 2× density cover
   nonempty paint, continuous nested/document scrolling, 14 forward/reverse moving
   frames per hot/cold case, exact alignment, unchanged glyph upload counts,
   clipping, source opacity and cleanup. The production Watch collapse controller

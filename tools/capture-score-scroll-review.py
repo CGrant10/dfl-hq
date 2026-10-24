@@ -94,6 +94,8 @@ with sync_playwright() as p:
  page.evaluate('fixture.root.dataset.motion="on"');page.wait_for_function('fixture.root.querySelector("canvas").dataset.running==="true"');page.emulate_media(reduced_motion='reduce');page.wait_for_timeout(100)
  check('reduced motion keeps real static digits without a canvas ghost',page.evaluate('fixture.root.querySelector("canvas").dataset.running==="false"&&document.querySelector(".gd-thermal-value").textContent==="29.00"'))
  page.emulate_media(reduced_motion='no-preference');page.wait_for_function('fixture.root.querySelector("canvas").dataset.running==="true"')
+ page.evaluate('document.querySelector("#score-host").replaceChildren();fixture.fx.refresh()');page.wait_for_timeout(100)
+ check('removing every score immediately clears and stops the shared surface',page.evaluate('fixture.root.querySelector("canvas").dataset.running==="false"&&getComputedStyle(fixture.root.querySelector("canvas")).visibility==="hidden"'))
  page.evaluate('window.scrollTo({top:0,behavior:"instant"});fixture.fx.stop()');page.wait_for_timeout(350)
  check('teardown cancels the pending scroll restart',page.locator('.gd-vfx-canvas').count()==0)
  check('no browser errors',not errors);browser.close();server.shutdown()

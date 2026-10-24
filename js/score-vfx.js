@@ -46,12 +46,12 @@ export function mountScoreVfx(root){
  const rebuild=()=>{
   layoutFrame=0;if(stopped)return;dirty=true;if(!enabled()){pause();return}
   const emitters=[...root.querySelectorAll('[data-score-temperature="hot"], [data-score-temperature="cold"]')].filter(element=>element.closest('dialog')===(root.matches('dialog')?root:null));
-  if(!emitters.length){release();intersection.disconnect();visible.clear();dirty=false;return}
+  if(!emitters.length){pause();release();intersection.disconnect();visible.clear();dirty=false;return}
   if(!gl&&!init())return;
   const existing=new Set(emitters);
   for(const [element,{target}] of masks)if(!existing.has(element)){gl.deleteTexture(target.texture);masks.delete(element)}
   targets=[];intersection.disconnect();for(const element of visible)if(!existing.has(element))visible.delete(element);
-  const box=root.getBoundingClientRect();if(box.width<=0||box.height<=0)return;
+  const box=root.getBoundingClientRect();if(box.width<=0||box.height<=0){pause();return}
   // Match phone density while bounding the shared surface for long scoreboards.
   const pixelBudgetScale=Math.sqrt(6000000/Math.max(1,root.clientWidth*root.clientHeight));
   const scale=Math.min(devicePixelRatio||1,3,pixelBudgetScale,Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE),gl.getParameter(gl.MAX_RENDERBUFFER_SIZE))/Math.max(box.width,box.height));
