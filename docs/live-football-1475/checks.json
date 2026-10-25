@@ -272,6 +272,14 @@
     "pass": true
   },
   {
+    "check": "Home preview counts additional red-zone games",
+    "pass": true
+  },
+  {
+    "check": "expanded Home preview includes every relevant starter game",
+    "pass": true
+  },
+  {
     "check": "native GameDay modal keeps its celebration visible in the top layer",
     "pass": true
   },

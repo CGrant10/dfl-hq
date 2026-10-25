@@ -6,7 +6,8 @@ has possession inside the opponent's 20, with explicit provider red-zone status,
 valid down/distance and a consistent field position. It does not claim the player
 is currently on the field. The expanded panel includes a miniature field, clock,
 down/distance, latest play and checked time. Keyed live updates retain the field
-marker, focus and expansion state. The marker moves without rebuilding its DOM.
+marker, focus and expansion state. Home counts additional games and expands
+the compact preview to the full relevant list; full matchup views do not cap it. The marker moves without rebuilding its DOM.
 
 Starter rows gain a small red-zone indicator. Verified touchdowns and big plays
 can lift the player's portrait, briefly accent the row and show one readable
@@ -63,7 +64,7 @@ are respected. No existing opt-outs are overwritten.
 
 - `pnpm check`: 2,114 unit tests, release/theme/name/type checks and production
   bundles; 83 application modules, with unchanged three startup/four Home counts.
-- 71 production-component browser checks, Light/Dark at 320/390px: offensive
+- 73 production-component browser checks, Light/Dark at 320/390px: offensive
   possession, field context, expansion reversals, stable marker DOM, real
   touchdown/big-play presentation, quarterback/opponent attribution, duplicate
   suppression, stale/baseline handling, native-modal visibility, reduced
