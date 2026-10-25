@@ -1,0 +1,540 @@
+{
+  "instantCatchup": true,
+  "hiddenPanelPaused": true,
+  "tabCatchup": true,
+  "initialLoad": true,
+  "actualGain": true,
+  "scoreCorrection": true,
+  "reducedMotion": true,
+  "liveSummary": true,
+  "busyState": true,
+  "failurePreservesScores": true,
+  "retryRecovery": true,
+  "cleanup": true,
+  "quietConversation": true,
+  "safeReply": true,
+  "previewRecovery": true,
+  "conversationStart": {
+    "profileRequired": true,
+    "busyState": true,
+    "accessibleFailure": true,
+    "retry": true
+  },
+  "responsiveCards": [
+    {
+      "mode": "light",
+      "width": 320,
+      "aligned": true,
+      "namesFit": true,
+      "summaryFits": true,
+      "contained": true,
+      "scoresBelowNames": true,
+      "buttons": [
+        {
+          "height": 44,
+          "width": 120
+        },
+        {
+          "height": 44,
+          "width": 85
+        },
+        {
+          "height": 44,
+          "width": 85
+        }
+      ],
+      "overflow": false,
+      "players": [
+        {
+          "name": "David Montgomery",
+          "lines": [
+            "David",
+            "Montgomery"
+          ],
+          "size": 14,
+          "fits": true
+        },
+        {
+          "name": "Amon-Ra St. Brown",
+          "lines": [
+            "Amon-Ra St.",
+            "Brown"
+          ],
+          "size": 14,
+          "fits": true
+        }
+      ]
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "aligned": true,
+      "namesFit": true,
+      "summaryFits": true,
+      "contained": true,
+      "scoresBelowNames": true,
+      "buttons": [
+        {
+          "height": 44,
+          "width": 120
+        },
+        {
+          "height": 44,
+          "width": 118
+        },
+        {
+          "height": 44,
+          "width": 118
+        }
+      ],
+      "overflow": false,
+      "players": [
+        {
+          "name": "David Montgomery",
+          "lines": [
+            "David Montgomery"
+          ],
+          "size": 14,
+          "fits": true
+        },
+        {
+          "name": "Amon-Ra St. Brown",
+          "lines": [
+            "Amon-Ra St.",
+            "Brown"
+          ],
+          "size": 14,
+          "fits": true
+        }
+      ]
+    },
+    {
+      "mode": "light",
+      "width": 1280,
+      "aligned": true,
+      "namesFit": true,
+      "summaryFits": true,
+      "contained": true,
+      "scoresBelowNames": true,
+      "buttons": [
+        {
+          "height": 44,
+          "width": 120
+        },
+        {
+          "height": 44,
+          "width": 367
+        },
+        {
+          "height": 44,
+          "width": 367
+        }
+      ],
+      "overflow": false,
+      "players": [
+        {
+          "name": "David Montgomery",
+          "lines": [
+            "David Montgomery"
+          ],
+          "size": 14,
+          "fits": true
+        },
+        {
+          "name": "Amon-Ra St. Brown",
+          "lines": [
+            "Amon-Ra St. Brown"
+          ],
+          "size": 14,
+          "fits": true
+        }
+      ]
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "aligned": true,
+      "namesFit": true,
+      "summaryFits": true,
+      "contained": true,
+      "scoresBelowNames": true,
+      "buttons": [
+        {
+          "height": 44,
+          "width": 120
+        },
+        {
+          "height": 44,
+          "width": 85
+        },
+        {
+          "height": 44,
+          "width": 85
+        }
+      ],
+      "overflow": false,
+      "players": [
+        {
+          "name": "David Montgomery",
+          "lines": [
+            "David",
+            "Montgomery"
+          ],
+          "size": 14,
+          "fits": true
+        },
+        {
+          "name": "Amon-Ra St. Brown",
+          "lines": [
+            "Amon-Ra St.",
+            "Brown"
+          ],
+          "size": 14,
+          "fits": true
+        }
+      ]
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "aligned": true,
+      "namesFit": true,
+      "summaryFits": true,
+      "contained": true,
+      "scoresBelowNames": true,
+      "buttons": [
+        {
+          "height": 44,
+          "width": 120
+        },
+        {
+          "height": 44,
+          "width": 118
+        },
+        {
+          "height": 44,
+          "width": 118
+        }
+      ],
+      "overflow": false,
+      "players": [
+        {
+          "name": "David Montgomery",
+          "lines": [
+            "David Montgomery"
+          ],
+          "size": 14,
+          "fits": true
+        },
+        {
+          "name": "Amon-Ra St. Brown",
+          "lines": [
+            "Amon-Ra St.",
+            "Brown"
+          ],
+          "size": 14,
+          "fits": true
+        }
+      ]
+    },
+    {
+      "mode": "dark",
+      "width": 1280,
+      "aligned": true,
+      "namesFit": true,
+      "summaryFits": true,
+      "contained": true,
+      "scoresBelowNames": true,
+      "buttons": [
+        {
+          "height": 44,
+          "width": 120
+        },
+        {
+          "height": 44,
+          "width": 367
+        },
+        {
+          "height": 44,
+          "width": 367
+        }
+      ],
+      "overflow": false,
+      "players": [
+        {
+          "name": "David Montgomery",
+          "lines": [
+            "David Montgomery"
+          ],
+          "size": 14,
+          "fits": true
+        },
+        {
+          "name": "Amon-Ra St. Brown",
+          "lines": [
+            "Amon-Ra St. Brown"
+          ],
+          "size": 14,
+          "fits": true
+        }
+      ]
+    },
+    {
+      "mode": "medicine",
+      "width": 320,
+      "aligned": true,
+      "namesFit": true,
+      "summaryFits": true,
+      "contained": true,
+      "scoresBelowNames": true,
+      "buttons": [
+        {
+          "height": 44,
+          "width": 120
+        },
+        {
+          "height": 44,
+          "width": 85
+        },
+        {
+          "height": 44,
+          "width": 85
+        }
+      ],
+      "overflow": false,
+      "players": [
+        {
+          "name": "David Montgomery",
+          "lines": [
+            "David",
+            "Montgomery"
+          ],
+          "size": 14,
+          "fits": true
+        },
+        {
+          "name": "Amon-Ra St. Brown",
+          "lines": [
+            "Amon-Ra St.",
+            "Brown"
+          ],
+          "size": 14,
+          "fits": true
+        }
+      ]
+    },
+    {
+      "mode": "medicine",
+      "width": 390,
+      "aligned": true,
+      "namesFit": true,
+      "summaryFits": true,
+      "contained": true,
+      "scoresBelowNames": true,
+      "buttons": [
+        {
+          "height": 44,
+          "width": 120
+        },
+        {
+          "height": 44,
+          "width": 118
+        },
+        {
+          "height": 44,
+          "width": 118
+        }
+      ],
+      "overflow": false,
+      "players": [
+        {
+          "name": "David Montgomery",
+          "lines": [
+            "David Montgomery"
+          ],
+          "size": 14,
+          "fits": true
+        },
+        {
+          "name": "Amon-Ra St. Brown",
+          "lines": [
+            "Amon-Ra St.",
+            "Brown"
+          ],
+          "size": 14,
+          "fits": true
+        }
+      ]
+    },
+    {
+      "mode": "medicine",
+      "width": 1280,
+      "aligned": true,
+      "namesFit": true,
+      "summaryFits": true,
+      "contained": true,
+      "scoresBelowNames": true,
+      "buttons": [
+        {
+          "height": 44,
+          "width": 120
+        },
+        {
+          "height": 44,
+          "width": 367
+        },
+        {
+          "height": 44,
+          "width": 367
+        }
+      ],
+      "overflow": false,
+      "players": [
+        {
+          "name": "David Montgomery",
+          "lines": [
+            "David Montgomery"
+          ],
+          "size": 14,
+          "fits": true
+        },
+        {
+          "name": "Amon-Ra St. Brown",
+          "lines": [
+            "Amon-Ra St. Brown"
+          ],
+          "size": 14,
+          "fits": true
+        }
+      ]
+    }
+  ],
+  "conversationLayouts": [
+    {
+      "mode": "light",
+      "width": 320,
+      "quiet": {
+        "height": 57,
+        "border": "0px",
+        "buttonHeight": 44
+      },
+      "active": {
+        "height": 207,
+        "bodyFits": true,
+        "buttonFits": true
+      }
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "quiet": {
+        "height": 57,
+        "border": "0px",
+        "buttonHeight": 44
+      },
+      "active": {
+        "height": 186,
+        "bodyFits": true,
+        "buttonFits": true
+      }
+    },
+    {
+      "mode": "light",
+      "width": 1280,
+      "quiet": {
+        "height": 57,
+        "border": "0px",
+        "buttonHeight": 44
+      },
+      "active": {
+        "height": 146,
+        "bodyFits": true,
+        "buttonFits": true
+      }
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "quiet": {
+        "height": 57,
+        "border": "0px",
+        "buttonHeight": 44
+      },
+      "active": {
+        "height": 207,
+        "bodyFits": true,
+        "buttonFits": true
+      }
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "quiet": {
+        "height": 57,
+        "border": "0px",
+        "buttonHeight": 44
+      },
+      "active": {
+        "height": 186,
+        "bodyFits": true,
+        "buttonFits": true
+      }
+    },
+    {
+      "mode": "dark",
+      "width": 1280,
+      "quiet": {
+        "height": 57,
+        "border": "0px",
+        "buttonHeight": 44
+      },
+      "active": {
+        "height": 146,
+        "bodyFits": true,
+        "buttonFits": true
+      }
+    },
+    {
+      "mode": "medicine",
+      "width": 320,
+      "quiet": {
+        "height": 57,
+        "border": "0px",
+        "buttonHeight": 44
+      },
+      "active": {
+        "height": 207,
+        "bodyFits": true,
+        "buttonFits": true
+      }
+    },
+    {
+      "mode": "medicine",
+      "width": 390,
+      "quiet": {
+        "height": 57,
+        "border": "0px",
+        "buttonHeight": 44
+      },
+      "active": {
+        "height": 186,
+        "bodyFits": true,
+        "buttonFits": true
+      }
+    },
+    {
+      "mode": "medicine",
+      "width": 1280,
+      "quiet": {
+        "height": 57,
+        "border": "0px",
+        "buttonHeight": 44
+      },
+      "active": {
+        "height": 146,
+        "bodyFits": true,
+        "buttonFits": true
+      }
+    }
+  ]
+}

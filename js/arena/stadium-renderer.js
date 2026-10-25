@@ -7,7 +7,7 @@ import {stadiumRacerLabel} from './stadium-racer-labels.js';
 const palette=['#cf263b','#c8a147','#ece5d9','#36465c','#a73549','#d3b16e','#ae3b23','#4e6484','#d06238','#c16a91','#8a7c5d','#677781'];
 export const stadiumColor=(racer,index)=>/^#[0-9a-f]{6}$/i.test(racer?.color||'')?racer.color:palette[index%palette.length];
 const image=(src,onload)=>{const img=new Image();img.decoding='async';img.onload=onload;img.src=src;return img;};
-export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=()=>null,onLayout=(_layout)=>{}}={}){
+export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=()=>null,onLayout=(_layout)=>{},outputSize=null}={}){
  const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw Error('The race display could not open.');
  let width=0,height=0,ratio=1,closed=false,lastFrame=null,lastOptions={},sizeDirty=true,lastLayout='',lastLeader='',leadAt=-Infinity,lastElapsed=0;
  const redraw=()=>{if(lastFrame)draw(lastFrame,lastOptions);};
@@ -19,9 +19,9 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
  if(grainContext){let noise=0xdf1;const point=()=>{noise^=noise<<13;noise^=noise>>>17;noise^=noise<<5;return (noise>>>0)%96;};for(let i=0;i<200;i++){grainContext.fillStyle=i%2?'#f3ebd506':'#00000009';grainContext.fillRect(point(),point(),1,2);}}
  const turfGrain=ctx.createPattern(grain,'repeat');
  const kits=new Map();const refreshKits=()=>{kits.clear();racers.forEach((r,index)=>kits.set(String(r.id),normalizeKit(r.kit,{number:r.number??index+1})));};refreshKits();
- const resize=new ResizeObserver(()=>{sizeDirty=true;redraw();});resize.observe(canvas);
+ const resize=new ResizeObserver(()=>{sizeDirty=true;redraw();});if(!outputSize)resize.observe(canvas);
  const getSize=()=>{
-  if(!sizeDirty)return;const box=canvas.getBoundingClientRect();width=Math.max(1,box.width);height=Math.max(1,box.height);ratio=Math.min(2,window.devicePixelRatio||1);
+  if(!sizeDirty)return;const box=outputSize||canvas.getBoundingClientRect();width=Math.max(1,box.width);height=Math.max(1,box.height);ratio=outputSize?1:Math.min(2,window.devicePixelRatio||1);
   canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);sizeDirty=false;
  };
  function runner(r,x,y,scale,elapsed,moving,index,speed=1,finishAge=-1,celebrate=false,finishLean=0,travelPhase=null){
@@ -128,5 +128,5 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,highlight=(
    }ctx.globalAlpha=1;
   }
  }
- return {draw,updateRacers(next){racers=next;refreshKits();redraw();},stop(){closed=true;clearCharacterArt();resize.disconnect();for(const img of [stadium,crest])if(img)img.onload=null;}};
+ return {ready:Promise.allSettled([stadium.decode(),crest.decode()]),draw,updateRacers(next){racers=next;refreshKits();redraw();},stop(){closed=true;if(!outputSize)clearCharacterArt();resize.disconnect();for(const img of [stadium,crest])if(img)img.onload=null;}};
 }

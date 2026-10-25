@@ -81,6 +81,11 @@ on:
       - 'js/route-motion.js'
       - 'tools/*route-review*'
       - 'js/player-card*'
+      - 'js/player-quick*'
+      - 'js/player-presentation.js'
+      - 'css/premium-actions.css'
+      - 'js/arena/replay-share*'
+      - 'tools/capture-premium-actions.py'
       - 'tools/capture-player-card-motion.py'
       - 'tools/capture-score-scroll-review.py'
       - 'js/player-compare*'
@@ -209,6 +214,10 @@ jobs:
           DFL_PLAYER_GAMES_REVIEW_DIR: ${{ github.workspace }}/home-review-output/player-games
           DFL_SHEET_REVIEW_DIR: ${{ github.workspace }}/home-review-output/sheets
         run: python tools/capture-player-games-review.py
+      - name: Check player quick actions and real Arena replay export
+        env:
+          DFL_PREMIUM_REVIEW_DIR: ${{ github.workspace }}/home-review-output/premium-actions
+        run: python tools/capture-premium-actions.py
       - name: Check player comparisons
         env:
           DFL_COMPARE_REVIEW_DIR: ${{ github.workspace }}/home-review-output/comparison

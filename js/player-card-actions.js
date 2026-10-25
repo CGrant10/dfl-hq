@@ -1,4 +1,6 @@
+import {mountPlayerQuickActions} from './player-quick-actions.js';
 export function mountPlayerCards() {
+  mountPlayerQuickActions();
   document.addEventListener('click', event => {
     const compare=event.target.closest('[data-player-compare]');
     if(compare){event.preventDefault();void import('./player-compare.js').then(({openPlayerComparison})=>openPlayerComparison(compare.dataset.playerCompare,{otherId:compare.dataset.compareWith||'',source:compare}));return;}

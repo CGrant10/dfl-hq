@@ -1,0 +1,242 @@
+[
+  {
+    "check": "light/320 compact matchup keeps readable names and 44px card targets",
+    "pass": true
+  },
+  {
+    "check": "light/320 no per-row data load before opening",
+    "pass": true
+  },
+  {
+    "check": "light/320 scrolling a portrait does not open a menu",
+    "pass": true
+  },
+  {
+    "check": "light/320 hold opens a compact menu without opening the card",
+    "pass": true
+  },
+  {
+    "check": "light/320 correct trade target and official generic Sleeper link",
+    "pass": true
+  },
+  {
+    "check": "light/320 all actions fit and have 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "light/320 View player uses the original source exactly once",
+    "pass": true
+  },
+  {
+    "check": "light/320 explicit keyboard button returns focus",
+    "pass": true
+  },
+  {
+    "check": "light/320 previously unstyled buttons get immediate touch feedback",
+    "pass": true
+  },
+  {
+    "check": "light/320 cancellation releases without submitting",
+    "pass": true
+  },
+  {
+    "check": "light/320 finish image has a full-size, exportable canvas",
+    "pass": true
+  },
+  {
+    "check": "light/320 preview stays within mobile bounds",
+    "pass": true
+  },
+  {
+    "check": "light/320 closing restores focus and removes the preview",
+    "pass": true
+  },
+  {
+    "check": "light/390 compact matchup keeps readable names and 44px card targets",
+    "pass": true
+  },
+  {
+    "check": "light/390 no per-row data load before opening",
+    "pass": true
+  },
+  {
+    "check": "light/390 scrolling a portrait does not open a menu",
+    "pass": true
+  },
+  {
+    "check": "light/390 hold opens a compact menu without opening the card",
+    "pass": true
+  },
+  {
+    "check": "light/390 correct trade target and official generic Sleeper link",
+    "pass": true
+  },
+  {
+    "check": "light/390 all actions fit and have 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "light/390 View player uses the original source exactly once",
+    "pass": true
+  },
+  {
+    "check": "light/390 explicit keyboard button returns focus",
+    "pass": true
+  },
+  {
+    "check": "light/390 previously unstyled buttons get immediate touch feedback",
+    "pass": true
+  },
+  {
+    "check": "light/390 cancellation releases without submitting",
+    "pass": true
+  },
+  {
+    "check": "light/390 finish image has a full-size, exportable canvas",
+    "pass": true
+  },
+  {
+    "check": "light/390 preview stays within mobile bounds",
+    "pass": true
+  },
+  {
+    "check": "light/390 closing restores focus and removes the preview",
+    "pass": true
+  },
+  {
+    "check": "dark/320 compact matchup keeps readable names and 44px card targets",
+    "pass": true
+  },
+  {
+    "check": "dark/320 no per-row data load before opening",
+    "pass": true
+  },
+  {
+    "check": "dark/320 scrolling a portrait does not open a menu",
+    "pass": true
+  },
+  {
+    "check": "dark/320 hold opens a compact menu without opening the card",
+    "pass": true
+  },
+  {
+    "check": "dark/320 correct trade target and official generic Sleeper link",
+    "pass": true
+  },
+  {
+    "check": "dark/320 all actions fit and have 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "dark/320 View player uses the original source exactly once",
+    "pass": true
+  },
+  {
+    "check": "dark/320 explicit keyboard button returns focus",
+    "pass": true
+  },
+  {
+    "check": "dark/320 previously unstyled buttons get immediate touch feedback",
+    "pass": true
+  },
+  {
+    "check": "dark/320 cancellation releases without submitting",
+    "pass": true
+  },
+  {
+    "check": "dark/320 finish image has a full-size, exportable canvas",
+    "pass": true
+  },
+  {
+    "check": "dark/320 preview stays within mobile bounds",
+    "pass": true
+  },
+  {
+    "check": "dark/320 closing restores focus and removes the preview",
+    "pass": true
+  },
+  {
+    "check": "dark/390 compact matchup keeps readable names and 44px card targets",
+    "pass": true
+  },
+  {
+    "check": "dark/390 no per-row data load before opening",
+    "pass": true
+  },
+  {
+    "check": "dark/390 scrolling a portrait does not open a menu",
+    "pass": true
+  },
+  {
+    "check": "dark/390 hold opens a compact menu without opening the card",
+    "pass": true
+  },
+  {
+    "check": "dark/390 correct trade target and official generic Sleeper link",
+    "pass": true
+  },
+  {
+    "check": "dark/390 all actions fit and have 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "dark/390 View player uses the original source exactly once",
+    "pass": true
+  },
+  {
+    "check": "dark/390 explicit keyboard button returns focus",
+    "pass": true
+  },
+  {
+    "check": "dark/390 previously unstyled buttons get immediate touch feedback",
+    "pass": true
+  },
+  {
+    "check": "dark/390 cancellation releases without submitting",
+    "pass": true
+  },
+  {
+    "check": "dark/390 finish image has a full-size, exportable canvas",
+    "pass": true
+  },
+  {
+    "check": "dark/390 preview stays within mobile bounds",
+    "pass": true
+  },
+  {
+    "check": "actual PNG downloads with the correct filename",
+    "pass": true
+  },
+  {
+    "check": "real recorder produces a playable clip",
+    "pass": true
+  },
+  {
+    "check": "actual clip download has video data",
+    "pass": true
+  },
+  {
+    "check": "dark/390 closing restores focus and removes the preview",
+    "pass": true
+  },
+  {
+    "check": "canceling recording stops capture tracks",
+    "pass": true
+  },
+  {
+    "check": "32 racers produce a complete export without narrowing the field",
+    "pass": true
+  },
+  {
+    "check": "unsupported video keeps image and result sharing",
+    "pass": true
+  },
+  {
+    "check": "motion off keeps a static preview",
+    "pass": true
+  },
+  {
+    "check": "no browser errors or database writes",
+    "pass": true
+  }
+]
