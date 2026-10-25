@@ -3,7 +3,7 @@ export const NOTIFICATION_CATEGORIES = Object.freeze([
   ["wall", "The Wall", "Replies and mentions · optional on this phone"],
   ["trades", "Trades", "Completed deals and breaking trade alerts"],
   ["matchups", "Matchups", "Live scores, injury backups and kickoff reminders"],
-  ["matchup_moments", "Matchup moments", "Late close games and your final score"],
+  ["matchup_moments", "Matchup moments", "Your starters’ touchdowns and big plays, close games and finals"],
   ["weekly", "Weekly reports", "Tuesday recap and next-week outlook"],
   ["sportsbook", "Sportsbook", "Settled tickets, wins and losses"],
   ["waivers", "Waivers", "Useful pickups, roster movement and watched players"],

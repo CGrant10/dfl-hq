@@ -1,0 +1,286 @@
+[
+  {
+    "check": "light/320 baseline never celebrates an old touchdown",
+    "pass": true
+  },
+  {
+    "check": "light/320 only offensive starters get red-zone badges",
+    "pass": true
+  },
+  {
+    "check": "light/320 explicitly describes the team offense",
+    "pass": true
+  },
+  {
+    "check": "light/320 live detail expands to field position, clock and the latest play",
+    "pass": true
+  },
+  {
+    "check": "light/320 phone panel and every action fit the screen",
+    "pass": true
+  },
+  {
+    "check": "light/320 rapid expansion reversal settles visibly",
+    "pass": true
+  },
+  {
+    "check": "light/320 live refresh preserves the field marker and expanded details",
+    "pass": true
+  },
+  {
+    "check": "light/320 verified touchdown celebrates one connection",
+    "pass": true
+  },
+  {
+    "check": "light/320 toast and portrait stay inside their bounds",
+    "pass": true
+  },
+  {
+    "check": "light/320 repeated polling does not replay the event",
+    "pass": true
+  },
+  {
+    "check": "light/320 big plays show actual yardage",
+    "pass": true
+  },
+  {
+    "check": "light/320 quarterback label is TD PASS without invented fantasy points",
+    "pass": true
+  },
+  {
+    "check": "light/320 an opponent receiver never changes your QB passing label",
+    "pass": true
+  },
+  {
+    "check": "light/320 possession changes move the indicator to the correct side",
+    "pass": true
+  },
+  {
+    "check": "light/320 stale feed removes red-zone claims",
+    "pass": true
+  },
+  {
+    "check": "light/320 reopening and cleanup cannot replay a past event",
+    "pass": true
+  },
+  {
+    "check": "light/320 teardown clears badges, panels and event timers",
+    "pass": true
+  },
+  {
+    "check": "light/390 baseline never celebrates an old touchdown",
+    "pass": true
+  },
+  {
+    "check": "light/390 only offensive starters get red-zone badges",
+    "pass": true
+  },
+  {
+    "check": "light/390 explicitly describes the team offense",
+    "pass": true
+  },
+  {
+    "check": "light/390 live detail expands to field position, clock and the latest play",
+    "pass": true
+  },
+  {
+    "check": "light/390 phone panel and every action fit the screen",
+    "pass": true
+  },
+  {
+    "check": "light/390 rapid expansion reversal settles visibly",
+    "pass": true
+  },
+  {
+    "check": "light/390 live refresh preserves the field marker and expanded details",
+    "pass": true
+  },
+  {
+    "check": "light/390 verified touchdown celebrates one connection",
+    "pass": true
+  },
+  {
+    "check": "light/390 toast and portrait stay inside their bounds",
+    "pass": true
+  },
+  {
+    "check": "light/390 repeated polling does not replay the event",
+    "pass": true
+  },
+  {
+    "check": "light/390 big plays show actual yardage",
+    "pass": true
+  },
+  {
+    "check": "light/390 quarterback label is TD PASS without invented fantasy points",
+    "pass": true
+  },
+  {
+    "check": "light/390 an opponent receiver never changes your QB passing label",
+    "pass": true
+  },
+  {
+    "check": "light/390 possession changes move the indicator to the correct side",
+    "pass": true
+  },
+  {
+    "check": "light/390 stale feed removes red-zone claims",
+    "pass": true
+  },
+  {
+    "check": "light/390 reopening and cleanup cannot replay a past event",
+    "pass": true
+  },
+  {
+    "check": "light/390 teardown clears badges, panels and event timers",
+    "pass": true
+  },
+  {
+    "check": "dark/320 baseline never celebrates an old touchdown",
+    "pass": true
+  },
+  {
+    "check": "dark/320 only offensive starters get red-zone badges",
+    "pass": true
+  },
+  {
+    "check": "dark/320 explicitly describes the team offense",
+    "pass": true
+  },
+  {
+    "check": "dark/320 live detail expands to field position, clock and the latest play",
+    "pass": true
+  },
+  {
+    "check": "dark/320 phone panel and every action fit the screen",
+    "pass": true
+  },
+  {
+    "check": "dark/320 rapid expansion reversal settles visibly",
+    "pass": true
+  },
+  {
+    "check": "dark/320 live refresh preserves the field marker and expanded details",
+    "pass": true
+  },
+  {
+    "check": "dark/320 verified touchdown celebrates one connection",
+    "pass": true
+  },
+  {
+    "check": "dark/320 toast and portrait stay inside their bounds",
+    "pass": true
+  },
+  {
+    "check": "dark/320 repeated polling does not replay the event",
+    "pass": true
+  },
+  {
+    "check": "dark/320 big plays show actual yardage",
+    "pass": true
+  },
+  {
+    "check": "dark/320 quarterback label is TD PASS without invented fantasy points",
+    "pass": true
+  },
+  {
+    "check": "dark/320 an opponent receiver never changes your QB passing label",
+    "pass": true
+  },
+  {
+    "check": "dark/320 possession changes move the indicator to the correct side",
+    "pass": true
+  },
+  {
+    "check": "dark/320 stale feed removes red-zone claims",
+    "pass": true
+  },
+  {
+    "check": "dark/320 reopening and cleanup cannot replay a past event",
+    "pass": true
+  },
+  {
+    "check": "dark/320 teardown clears badges, panels and event timers",
+    "pass": true
+  },
+  {
+    "check": "dark/390 baseline never celebrates an old touchdown",
+    "pass": true
+  },
+  {
+    "check": "dark/390 only offensive starters get red-zone badges",
+    "pass": true
+  },
+  {
+    "check": "dark/390 explicitly describes the team offense",
+    "pass": true
+  },
+  {
+    "check": "dark/390 live detail expands to field position, clock and the latest play",
+    "pass": true
+  },
+  {
+    "check": "dark/390 phone panel and every action fit the screen",
+    "pass": true
+  },
+  {
+    "check": "dark/390 rapid expansion reversal settles visibly",
+    "pass": true
+  },
+  {
+    "check": "dark/390 live refresh preserves the field marker and expanded details",
+    "pass": true
+  },
+  {
+    "check": "dark/390 verified touchdown celebrates one connection",
+    "pass": true
+  },
+  {
+    "check": "dark/390 toast and portrait stay inside their bounds",
+    "pass": true
+  },
+  {
+    "check": "dark/390 repeated polling does not replay the event",
+    "pass": true
+  },
+  {
+    "check": "dark/390 big plays show actual yardage",
+    "pass": true
+  },
+  {
+    "check": "dark/390 quarterback label is TD PASS without invented fantasy points",
+    "pass": true
+  },
+  {
+    "check": "dark/390 an opponent receiver never changes your QB passing label",
+    "pass": true
+  },
+  {
+    "check": "dark/390 possession changes move the indicator to the correct side",
+    "pass": true
+  },
+  {
+    "check": "dark/390 stale feed removes red-zone claims",
+    "pass": true
+  },
+  {
+    "check": "dark/390 reopening and cleanup cannot replay a past event",
+    "pass": true
+  },
+  {
+    "check": "dark/390 teardown clears badges, panels and event timers",
+    "pass": true
+  },
+  {
+    "check": "native GameDay modal keeps its celebration visible in the top layer",
+    "pass": true
+  },
+  {
+    "check": "reduced motion retains a readable static alert",
+    "pass": true
+  },
+  {
+    "check": "no browser exceptions or actual push/database writes",
+    "pass": true
+  }
+]

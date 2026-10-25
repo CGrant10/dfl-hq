@@ -930,3 +930,20 @@ The full Home review caught a compact Clubhouse starter name shrinking below its
 the original name/photo layout; hold actions and the full card remain available.
 The explicit Actions icon stays on roomy rows. Added a 320/390 Light/Dark compact
 matchup regression without hiding or weakening the target-size checks.
+
+## 1.475.0 — Red Zone Watch and confirmed player moments
+
+Reviewed actual Light/Dark phone screens at 320/390px for red-zone offense and
+starter badges, the expanded field/down/clock/latest-play panel, touchdown and
+big-play moments, quarterback labels, and dismissal. Shared text, body, line,
+background, accent and danger tokens drive controls and semantic markers; NFL
+team color only supplies the player's decorative light sweep. Corrected the
+field marker/label overlap and close-button decoration found during inspection.
+The permanent panel island preserves expanded details and marker position across
+live score renders. Touch targets, focus, reduced motion, stale-state removal
+and native-dialog layering passed browser checks. No Medicine Wheel aliases or
+picker options changed. `pnpm themes` passes.
+
+Screens and checks are in `docs/live-football-1475/`. Physical iPhone/Safari and
+native phone notification presentation remain unverified; fixture tests and
+production dry runs do not send league alerts.

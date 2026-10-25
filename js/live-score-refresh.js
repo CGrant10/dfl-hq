@@ -4,7 +4,7 @@ export function mountLiveScoreRefresh({refresh,active=()=>true,enabled=()=>true,
   let stopped=false,suspended=false,running=false,queued=false,timer=null,wakeTimer=null,failures=0;
   const ready=()=>!stopped&&!suspended&&active()&&enabled()&&visible()&&online();
   const clear=()=>{clearTimeout(timer);clearTimeout(wakeTimer);timer=wakeTimer=null};
-  const schedule=()=>{clearTimeout(timer);if(ready()){const delay=failures?Math.min(interval,5000*3**Math.min(failures-1,3)):interval;timer=setTimeout(()=>void request(failures>0),delay)}};
+  const schedule=()=>{clearTimeout(timer);if(ready()){const cadence=typeof interval==='function'?Math.max(5000,Number(interval())||60000):interval,delay=failures?Math.min(cadence,5000*3**Math.min(failures-1,3)):cadence;timer=setTimeout(()=>void request(failures>0),delay)}};
   const request=async(force=false)=>{
     if(stopped||suspended||!active()||!visible())return;
     if(!online()){onOffline();return}

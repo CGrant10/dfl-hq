@@ -21,3 +21,7 @@ verify_jwt = false
 # Scheduled watchlist worker checks the existing private cron token itself.
 [functions.player-watchlist]
 verify_jwt = false
+
+[functions.live-football]
+# The existing private scheduler token is verified before any reads or writes.
+verify_jwt = false

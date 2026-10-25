@@ -85,4 +85,5 @@ describe('live score catch-up',()=>{
     await vi.advanceTimersByTimeAsync(0);expect(onError).not.toHaveBeenCalled();expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('uses the shorter visible-live cadence and returns to the normal interval',async()=>{let live=true;const {refresh}=setup({interval:()=>live?20000:60000});loop.start();await vi.advanceTimersByTimeAsync(20000);expect(refresh).toHaveBeenCalledTimes(2);live=false;await vi.advanceTimersByTimeAsync(20000);expect(refresh).toHaveBeenCalledTimes(3);await vi.advanceTimersByTimeAsync(59999);expect(refresh).toHaveBeenCalledTimes(3);await vi.advanceTimersByTimeAsync(1);expect(refresh).toHaveBeenCalledTimes(4)});
 });

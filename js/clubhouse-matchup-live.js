@@ -28,9 +28,9 @@ export function mountMatchupLive(root,model,threads,active,{onUpdate=(_data)=>{}
   if(busy||!current())return;busy=true;button.disabled=true;button.setAttribute('aria-busy','true');freshness.update({state:'checking'});if(force)button.textContent='Refreshing…';
    void previews(root,threads,current).catch(()=>{if(current())for(const slot of root.querySelectorAll('[data-chat-preview]'))if(slot.dataset.talkState==='loading'){const talk=matchupTalkHtml({error:true});slot.dataset.talkState=talk.state;slot.innerHTML=talk.html;}});
   try{
-   const results=await Promise.allSettled([loadWeeklyRosters(model.leagueId,model.week,{maxAgeMs:force?0:60000}),loadPlayers({maxAgeMs:force?0:model.completed?86400000:300000}),model.completed?Promise.resolve(null):loadNflGameDay(model.season,model.week,{force}).then(result=>result.teams),model.completed?Promise.resolve([]):sleeper.rosters(model.leagueId)]);
+   const results=await Promise.allSettled([loadWeeklyRosters(model.leagueId,model.week,{maxAgeMs:force?0:60000}),loadPlayers({maxAgeMs:force?0:model.completed?86400000:300000}),model.completed?Promise.resolve(null):loadNflGameDay(model.season,model.week,{force}),model.completed?Promise.resolve([]):sleeper.rosters(model.leagueId)]);
    if(!current())return;
-   const rows=results[0].status==='fulfilled'?results[0].value:[],players=results[1].status==='fulfilled'?results[1].value:playerMeta,nfl=results[2].status==='fulfilled'?results[2].value:null;
+   const rows=results[0].status==='fulfilled'?results[0].value:[],players=results[1].status==='fulfilled'?results[1].value:playerMeta,nflBundle=results[2].status==='fulfilled'?results[2].value:null,nfl=nflBundle?.teams||null;
    if(!rows.length)throw Error('Weekly scores unavailable');
    const rosters=new Map(rows.map(row=>[String(row.roster_id),row])),totals={};
    if(model.games.some(game=>[game.left,game.right].some(team=>!rosters.has(String(team.roster)))))throw Error('Incomplete weekly scores');
@@ -50,15 +50,15 @@ export function mountMatchupLive(root,model,threads,active,{onUpdate=(_data)=>{}
     const phase=matchupPhase(sides[0],sides[1],model.completed),badge=root.querySelector(`[data-matchup-phase="${game.matchup_id}"]`);badge.textContent=phase.label;badge.dataset.state=phase.key;
     root.querySelector(`[data-matchup-summary="${game.matchup_id}"]`).textContent=matchupSummary({...game.left,...sides[0]},{...game.right,...sides[1]},{completed:model.completed});
    }
-   onUpdate({rows,players,nfl,rosters:results[3].status==='fulfilled'?results[3].value:[],force});
-   stopScoreMotion=animateScoreChanges(root,{previous,model:{snapshot:{totals,points:{},checkedAt:Date.now()},games:[]},motion:readPageChoice('gameday-motion',['on','off'],'on')==='on',feedback:true});previous={totals,checkedAt:Date.now()};
+   onUpdate({rows,players,nfl,nflPayload:nflBundle?.payload,nflFetchedAt:nflBundle?.fetchedAt,rosters:results[3].status==='fulfilled'?results[3].value:[],force});
+   stopScoreMotion=animateScoreChanges(root,{previous,model:{snapshot:{totals,points:{},checkedAt:Date.now()},games:[]},motion:readPageChoice('gameday-motion',['on','off'],'on')==='on',feedback:true});previous={totals,checkedAt:Date.now(),nfl};
    freshness.update({state:navigator.onLine===false?'offline':'ready',checkedAt:Date.now(),nflAvailable:!!nfl,playersAvailable:results[1].status==='fulfilled',completed:model.completed});
 
    return true;
   }catch{if(current()){onError();freshness.update({state:navigator.onLine===false?'offline':'error'});for(const slot of root.querySelectorAll('[data-players-left],[data-players-right]'))if(slot.textContent.includes('Loading lineup'))slot.innerHTML='<small>KEY STARTERS</small><p>Lineup unavailable. Try refreshing.</p>';for(const slot of root.querySelectorAll('[data-remaining-left],[data-remaining-right]'))if(slot.textContent.includes('Checking'))slot.textContent='Player status unavailable'}return false}
   finally{busy=false;if(current()){button.disabled=false;button.removeAttribute('aria-busy');button.textContent='Refresh scores';}}
  };
- const refreshLoop=mountLiveScoreRefresh({refresh,active:current,enabled:()=>!model.completed&&!root.querySelector('#clubhouse-panel-matchups')?.hidden,onOffline:()=>freshness.update({state:'offline'})});
+ const refreshLoop=mountLiveScoreRefresh({refresh,active:current,interval:()=>[...(previous?.nfl?.values()||[])].some(s=>s.key==='live')?20000:60000,enabled:()=>!model.completed&&!root.querySelector('#clubhouse-panel-matchups')?.hidden,onOffline:()=>freshness.update({state:'offline'})});
  const click=()=>void refreshLoop.request(true),onTab=event=>{if(event.detail?.tab==='matchups')refreshLoop.wake()};
  button.addEventListener('click',click);root.addEventListener('dfl:clubhouse-tab',onTab);
  stopCurrent=()=>{stopped=true;refreshLoop.stop();freshness.stop();stopScoreMotion();button.removeEventListener('click',click);root.removeEventListener('dfl:clubhouse-tab',onTab);onStop()};

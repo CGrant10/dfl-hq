@@ -1,0 +1,38 @@
+.nfl-red-watch{margin:12px 0 18px;border-block:1px solid var(--line);padding:8px 0;color:var(--text)}
+.nfl-red-watch>header{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px}
+.nfl-red-watch>header>strong{display:flex;align-items:center;gap:8px;font:700 17px/1.2 var(--font-display)}
+.nfl-red-watch>header i{width:7px;height:7px;flex:none;border-radius:50%;background:var(--danger-ink)}
+.nfl-red-watch>header button{min-width:76px;min-height:44px;font:600 13px/1.2 var(--font-body)}
+.nfl-red-games{display:grid;gap:12px}.nfl-red-game{min-width:0;padding:4px 0 8px}.nfl-red-game+.nfl-red-game{border-top:1px solid var(--line-soft);padding-top:12px}
+.nfl-red-identities{display:flex;flex-wrap:wrap;gap:6px 16px}.nfl-red-identities>button{display:flex;align-items:center;gap:8px;min-height:44px;max-width:100%;padding:0;border:0;background:transparent;color:var(--text);text-align:left;font:600 14px/1.2 var(--font-body)}
+.nfl-red-identities>button>span:last-child{min-width:0;overflow-wrap:anywhere}.nfl-red-identities small{display:block;color:var(--body-text);font-size:11px;line-height:1.4}
+.nfl-red-identities .dfl-player-portrait{position:relative;display:block;flex:none;width:34px;height:38px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--bg-2)}
+.nfl-red-identities .dfl-player-portrait>i,.nfl-play-toast .dfl-player-portrait>i{position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-weight:700}.nfl-red-identities .dfl-player-portrait.has-photo>i,.nfl-play-toast .dfl-player-portrait.has-photo>i{display:none}
+.nfl-red-identities .dfl-player-portrait>img,.nfl-play-toast .dfl-player-portrait>img{display:block;position:relative;width:100%;height:100%;object-fit:cover;object-position:center top}
+.nfl-red-situation{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;margin:6px 0 0;font:500 12px/1.3 var(--font-body);color:var(--body-text)}.nfl-red-situation>b{color:var(--danger-ink);font-weight:700}
+.nfl-red-detail{padding-top:12px;min-width:0}.nfl-red-detail[hidden]{display:none}.nfl-red-detail p{margin:10px 0 4px;font:500 13px/1.5 var(--font-body);color:var(--text);overflow-wrap:anywhere}.nfl-red-detail time{font:500 11px/1.3 var(--font-body);color:var(--body-text)}
+.nfl-mini-field{position:relative;display:flex;align-items:center;justify-content:space-around;height:48px;overflow:hidden;border:1px solid var(--line);border-radius:6px;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(10% - 1px),var(--line-soft) calc(10% - 1px),var(--line-soft) 10%),linear-gradient(90deg,var(--bg-2) 80%,color-mix(in srgb,var(--danger-ink) 12%,var(--bg-2)) 80%);font:600 10px/1 var(--font-body);color:var(--body-text)}
+.nfl-mini-field>span{align-self:flex-start;margin-top:8px}
+.nfl-mini-field>i{position:absolute;left:clamp(5px,var(--ball-position),calc(100% - 5px));top:70%;width:8px;height:12px;border-radius:50%;border:1px solid var(--text);background:var(--accent-fill);transform:translate(-50%,-50%) rotate(30deg)}
+[data-football-motion="on"] .nfl-mini-field>i{transition:left 440ms cubic-bezier(.2,.75,.25,1)}
+.nfl-red-badge{display:block;margin-top:3px;color:var(--danger-ink);font:700 10px/1.3 var(--font-body);letter-spacing:.04em;white-space:normal}
+[data-football-motion="on"] [data-nfl-play]{animation:nfl-row-moment 1400ms ease-out}
+@keyframes nfl-row-moment{0%,100%{background-color:transparent}25%{background-color:color-mix(in srgb,var(--accent) 16%,var(--bg))}}
+.nfl-play-toast{position:fixed;z-index:100020;box-sizing:border-box;left:50%;bottom:calc(var(--bottomnav-h,72px) + env(safe-area-inset-bottom,0px) + 12px);translate:-50% 0;width:min(440px,calc(100vw - 24px));display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:8px;padding:12px;border:1px solid var(--line);border-left:3px solid var(--accent-fill);border-radius:var(--r-lg,14px);background:var(--bg);color:var(--text);box-shadow:0 8px 28px rgb(0 0 0 / .22);overflow:hidden}
+.nfl-toast-player{position:relative;display:flex;align-items:center;gap:12px;min-height:72px;min-width:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--text);text-align:left}
+.nfl-toast-player>span:last-child{position:relative;min-width:0}.nfl-toast-player strong{display:block;font:700 clamp(20px,5.8vw,26px)/1.1 var(--font-display);color:var(--accent);overflow-wrap:anywhere}.nfl-toast-player b{display:block;margin-top:4px;font:600 14px/1.25 var(--font-body);overflow-wrap:anywhere}
+.nfl-play-toast .dfl-player-portrait{position:relative;display:block;flex:none;width:64px;height:76px;border-radius:7px;border:1px solid var(--line);overflow:hidden;background:linear-gradient(140deg,color-mix(in srgb,var(--nfl-team,var(--accent-fill)) 20%,var(--bg-2)),var(--bg-2))}
+.nfl-play-toast[data-motion="on"] .nfl-toast-player::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 25%,color-mix(in srgb,var(--nfl-team,var(--accent)) 20%,transparent),transparent 75%);animation:nfl-touchdown-sweep 900ms ease-out both}
+@keyframes nfl-touchdown-sweep{from{transform:translateX(-110%);opacity:0}35%{opacity:1}to{transform:translateX(110%);opacity:0}}
+.nfl-toast-close{text-decoration:none!important;border:0;background:transparent;min-height:44px;min-width:44px;align-self:start;padding:0!important;font:500 24px/1 var(--font-body)!important}
+.nfl-play-toast>p{grid-column:1/-1;margin:0;font:500 12px/1.45 var(--font-body);color:var(--body-text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nfl-play-toast :is(button,a):focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+@media(max-height:500px){.nfl-play-toast{bottom:12px;left:auto;right:12px;translate:0 0;width:min(380px,calc(100vw - 24px))}.nfl-toast-player{min-height:52px}.nfl-play-toast .dfl-player-portrait{width:44px;height:52px}}
+html[data-ui-motion="off"] [data-nfl-play],html[data-ui-motion="off"] .nfl-toast-player::before{animation:none!important}
+@media(prefers-reduced-motion:reduce){[data-nfl-play],.nfl-toast-player::before{animation:none!important}.nfl-mini-field>i{transition:none!important}}
+
+.nfl-red-badge::before{content:"";display:inline-block;width:4px;height:4px;border-radius:50%;margin-right:4px;vertical-align:middle;background:currentColor}
+[data-football-motion="on"] .nfl-red-badge::before{animation:nfl-red-beacon 1800ms ease-in-out infinite}
+@keyframes nfl-red-beacon{0%,100%{opacity:.55}50%{opacity:1}}
+html[data-ui-motion="off"] .nfl-red-badge::before{animation:none!important}
+@media(prefers-reduced-motion:reduce){.nfl-red-badge::before{animation:none!important}}
