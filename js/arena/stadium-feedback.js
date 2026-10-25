@@ -1,12 +1,12 @@
 // Short, synthesized stadium cues. Audio starts only after the Sound button.
 export function createStadiumFeedback(){
- let context=null,enabled=false,stopped=false,last=-Infinity,lastSurge=-Infinity;const voices=new Set();
+ let context=null,enabled=false,stopped=false,last=-Infinity,lastSurge=-Infinity,revision=0;const voices=new Set();
  const silence=()=>{for(const voice of voices){try{voice.stop()}catch{}}voices.clear()};
- const visibility=()=>{if(document.hidden){silence();void context?.suspend()}};
+ const visibility=()=>{if(document.hidden){revision++;silence();void context?.suspend()}};
  document.addEventListener('visibilitychange',visibility);
  return {async enable(value){
-  if(stopped)return false;enabled=!!value;if(!enabled){silence();void context?.suspend();return false}
-  try{const Audio=globalThis.AudioContext||globalThis.webkitAudioContext;if(!Audio){enabled=false;return false}context??=new Audio();await context.resume();if(stopped){if(context.state!=='closed')void context.close();return false}enabled=context.state==='running';return enabled}catch{enabled=false;return false}
+  if(stopped)return false;const own=++revision;enabled=!!value;if(!enabled){silence();void context?.suspend();return false}
+  try{const Audio=globalThis.AudioContext||globalThis.webkitAudioContext;if(!Audio){enabled=false;return false}context??=new Audio();await context.resume();if(stopped||own!==revision||document.hidden)return false;enabled=context.state==='running';return enabled}catch{if(own===revision)enabled=false;return false}
  },quiet:silence,cue(kind){
   if(stopped||!enabled||document.hidden||context?.state!=='running'||performance.now()-last<120)return;
   const surge=kind==='overtake',final=kind==='final';
@@ -25,5 +25,15 @@ export function createStadiumFeedback(){
   }else{
    const voice=context.createOscillator();voice.type='sine';voice.frequency.setValueAtTime(150,start);voice.frequency.exponentialRampToValueAtTime(100,start+duration);voice.connect(gain);voices.add(voice);voice.onended=()=>{voices.delete(voice);voice.disconnect();gain.disconnect()};voice.start(start);voice.stop(start+duration);
   }
- },stop(){if(stopped)return;stopped=true;enabled=false;silence();if(context&&context.state!=='closed')void context.close();document.removeEventListener('visibilitychange',visibility)}};
+  if(kind==='launch'||finish){
+   // A brief whistle and three-note finish signature sit under the crowd.
+   const notes=finish?[523.25,659.25,783.99]:[2100];
+   notes.forEach((frequency,i)=>{
+    const at=start+i*.12,end=at+(finish?.55:.22),voice=context.createOscillator(),level=context.createGain();
+    voice.type='sine';voice.frequency.setValueAtTime(frequency,at);if(!finish)voice.frequency.linearRampToValueAtTime(1750,end);
+    level.gain.setValueAtTime(.0001,at);level.gain.linearRampToValueAtTime(finish?.025:.018,at+.025);level.gain.exponentialRampToValueAtTime(.0001,end);
+    voice.connect(level);level.connect(context.destination);voices.add(voice);voice.onended=()=>{voices.delete(voice);voice.disconnect();level.disconnect()};voice.start(at);voice.stop(end);
+   });
+  }
+ },stop(){if(stopped)return;stopped=true;revision++;enabled=false;silence();if(context&&context.state!=='closed')void context.close();document.removeEventListener('visibilitychange',visibility)}};
 }

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountPlayerCards } from './player-card-actions.js';
 import { openPlayerCard } from './player-card.js';
 
+vi.mock('./player-quick-actions.js',()=>({mountPlayerQuickActions:vi.fn()}));
 vi.mock('./player-card.js', () => ({ openPlayerCard:vi.fn() }));
 afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
 async function activate(closest) {

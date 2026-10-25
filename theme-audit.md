@@ -906,3 +906,21 @@ motion-off/reduced motion and narrow-screen bounds. Existing image share colors
 and layout are retained. Sleeper launch controls passed both themes at
 320/390/768px. `pnpm themes` passed. Native-device limits and captures:
 [player-game and Sleeper validation](docs/player-games-1473.md).
+
+## 1.474.0 — player quick actions and Arena finish sharing
+
+Reviewed Light/Dark at 320/390px using real production components: shared player
+identity/options, held action sheet, focus and pressed states, trade target link,
+finish PNG/video preview, primary/secondary export actions and compact viewport
+bounds. Fixed an unconstrained portrait found in the first actual screenshot;
+reviewed the corrected captures in `docs/premium-actions-1474/`. Controls use
+shared text, body, accent, on-accent, background and border tokens. The export
+canvas deliberately keeps the existing editorial paper/black/red/yellow palette;
+team/racer kit colors retain their identity. Tabs never scale or move on press.
+Default Medicine Wheel Light/Dark and legacy aliases remain unchanged.
+
+The existing Arena orientation/controller and shared motion checks cover action
+clearance, saved sound state, cancellation, reduced motion and cleanup. Full Home
+review checks identity placement, gutters and live controls. `pnpm themes` passes.
+Physical iPhone/Safari, native share-sheet destinations, audible hardware output
+and low-power frame pacing remain unverified. See `docs/premium-actions-1474.md`.

@@ -72,8 +72,8 @@ export function mountPressFeedback(doc=document,win=window) {
   let press=null;
   const release=()=>{if(press)delete press.node.dataset.uiPressed;press=null;};
   const action=target=>{
-    const node=target?.closest?.('.btn,.linkbtn,.player-card-trigger');
-    return node?.closest('.view,dialog,#more')&&!node.matches(':disabled,[aria-disabled="true"]')&&canPlay(node)?node:null;
+    const node=target?.closest?.('button,a.btn,a.linkbtn,summary');
+    return node?.closest('.view,dialog,#more')&&!node.matches(':disabled,[aria-disabled="true"],[role="tab"],[data-no-press]')&&!node.closest('[data-ui-rail],[inert]')&&canPlay(node)?node:null;
   };
   const down=event=>{
     if(event.isPrimary===false||event.button!==0){release();return;}

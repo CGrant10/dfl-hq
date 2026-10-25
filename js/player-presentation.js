@@ -18,5 +18,5 @@ export function playerIdentity(player = {}, { detail = "", signal = "", interact
   const meta = detail || [player.position, player.nflTeam || player.team].filter(Boolean).join(" · ");
   const name = esc(player.name || player.id || 'Player');
   const title = interactive && player.id ? `<button type="button" class="player-card-trigger" data-player-card="${esc(player.id)}" aria-label="View ${name} player card">${name}</button>` : `<strong>${name}</strong>`;
-  return `<span class="dfl-player">${playerPortrait(player)}<span class="dfl-player-copy">${title}<small>${esc(meta)}</small></span>${status ? `<em class="is-${tone || "neutral"}">${esc(status)}</em>` : ""}</span>`;
+  return `<span class="dfl-player">${playerPortrait(player)}<span class="dfl-player-copy">${interactive && player.id ? `<span class="dfl-player-title">${title}<button type="button" class="player-quick-trigger" data-player-quick aria-haspopup="dialog" aria-label="Actions for ${name}">⋯</button></span>` : title}<small>${esc(meta)}</small></span>${status ? `<em class="is-${tone || "neutral"}">${esc(status)}</em>` : ""}</span>`;
 }

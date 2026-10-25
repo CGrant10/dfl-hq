@@ -1,3 +1,4 @@
+import {readPageChoice,savePageChoice} from '../page-disclosure.js';
 import {esc} from '../ui.js';
 import {animateUi,cancelUiMotion} from '../ui-motion.js';
 import {stadiumReadyState,stadiumCrowdRun,stadiumCrowdReaction} from './stadium-crowd-model.js';
@@ -8,10 +9,14 @@ import {createStadiumFeedback} from './stadium-feedback.js';
 export function mountStadiumCrowd(root,{channel,key,getSnapshot,getRacers,getMember,motion=()=>true}){
  const bar=root.querySelector('[data-stadium-crowd]'),staging=root.querySelector('[data-stadium-staging]'),surface=root.querySelector('.sr-watch-surface');
  let stopped=false,connected=false,ready=false,revision='',field='',memberId='',lastSend=-Infinity,busy=false,received=[],sound=false,soundBusy=false,cooldown=0;
- const feedback=createStadiumFeedback();
+ const feedback=createStadiumFeedback();let soundWanted=readPageChoice('arena-sound',['on','off'],'off')==='on';
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const seen=new Set(),pops=new Map();
  bar.innerHTML='<summary>Crowd</summary><div class="sr-crowd-controls"><label class="sr-only" for="sr-cheer-racer">Cheer or heckle a racer</label><select id="sr-cheer-racer" data-crowd-racer></select><button type="button" data-crowd-call="cheer">Cheer</button><button type="button" data-crowd-call="heckle">Heckle</button><button type="button" data-crowd-ready aria-pressed="false" hidden>I’m ready</button><button type="button" data-race-sound aria-pressed="false">Sound off</button><span class="sr-only" data-crowd-status role="status"></span></div>';
+ const soundButton=root.querySelector('[data-race-sound]');
+ const paintSound=()=>{if(!soundButton)return;soundButton.disabled=soundBusy;soundButton.textContent=sound?'Sound on':soundWanted?'Enable sound':'Sound off';soundButton.setAttribute('aria-pressed',String(sound))};
+ const enableSound=async value=>{soundBusy=true;paintSound();sound=await feedback.enable(value);soundBusy=false;if(stopped)return;paintSound();if(value&&!sound)status.textContent='Sound unavailable. Tap Enable sound to try again.'};
+ const armSound=e=>{if(soundWanted&&!sound&&!soundBusy&&!e.target.closest('[data-race-sound]')&&(e.type!=='keydown'||['Enter',' '].includes(e.key)))void enableSound(true)};
  const status=bar.querySelector('[data-crowd-status]'),select=bar.querySelector('select');
  const clear=()=>{for(const [node,timer] of pops){clearTimeout(timer);cancelUiMotion(node);node.remove()}pops.clear()};
  const publish=async()=>{
@@ -53,7 +58,7 @@ export function mountStadiumCrowd(root,{channel,key,getSnapshot,getRacers,getMem
  };
  const click=async event=>{
   const button=event.target.closest('[data-crowd-call],[data-crowd-ready],[data-race-sound]');if(!button||!root.contains(button)||stopped)return;
-  if(button.hasAttribute('data-race-sound')){if(soundBusy)return;soundBusy=true;button.disabled=true;sound=await feedback.enable(!sound);soundBusy=false;if(stopped)return;button.disabled=false;button.textContent=sound?'Sound on':'Sound off';button.setAttribute('aria-pressed',String(sound));if(sound)feedback.cue('countdown');else status.textContent='Sound off.';return}
+  if(button.hasAttribute('data-race-sound')){if(soundBusy)return;soundWanted=!sound;savePageChoice('arena-sound',soundWanted?'on':'off');await enableSound(soundWanted);if(stopped)return;if(sound)feedback.cue('countdown');else status.textContent=soundWanted?'Sound unavailable. Try again.':'Sound off.';return}
   if(!connected||busy)return;
   if(button.hasAttribute('data-crowd-ready')){
    ready=!ready;busy=true;paint();await publish();if(stopped)return;busy=false;paint();return;
@@ -65,9 +70,10 @@ export function mountStadiumCrowd(root,{channel,key,getSnapshot,getRacers,getMem
   catch{lastSend=-Infinity;if(!stopped)status.textContent='Reaction could not send. Try again.'}
   finally{if(!stopped){busy=false;paint()}}
  };
- const visibility=()=>{clear();if(!document.hidden){sync();if(sound)void feedback.enable(true)}};
+ const visibility=()=>{clear();if(!document.hidden){sync();if(sound)void enableSound(true)}};
+ root.addEventListener('pointerdown',armSound);root.addEventListener('keydown',armSound);
  root.addEventListener('click',click);document.addEventListener('visibilitychange',visibility);window.addEventListener('dfl:ui-motion-change',clear);reduced.addEventListener('change',clear);
  channel.on('presence',{event:'sync'},sync).on('broadcast',{event:'stadium-cheer'},receive);
- paint();
- return {update:paint,cue:kind=>feedback.cue(kind),quiet:()=>feedback.quiet(),motionChanged(){if(!motion())clear()},connection(statusValue){if(stopped)return;const next=statusValue==='SUBSCRIBED';if(connected===next&&next)return;connected=next;if(!next){clear();ready=false}else void publish();paint()},stop(){if(stopped)return;stopped=true;clearTimeout(cooldown);feedback.stop();clear();seen.clear();root.removeEventListener('click',click);document.removeEventListener('visibilitychange',visibility);window.removeEventListener('dfl:ui-motion-change',clear);reduced.removeEventListener('change',clear)}};
+ paintSound();paint();
+ return {update:paint,cue:kind=>feedback.cue(kind),quiet:()=>feedback.quiet(),motionChanged(){if(!motion())clear()},connection(statusValue){if(stopped)return;const next=statusValue==='SUBSCRIBED';if(connected===next&&next)return;connected=next;if(!next){clear();ready=false}else void publish();paint()},stop(){if(stopped)return;stopped=true;clearTimeout(cooldown);feedback.stop();clear();seen.clear();root.removeEventListener('pointerdown',armSound);root.removeEventListener('keydown',armSound);root.removeEventListener('click',click);document.removeEventListener('visibilitychange',visibility);window.removeEventListener('dfl:ui-motion-change',clear);reduced.removeEventListener('change',clear)}};
 }
