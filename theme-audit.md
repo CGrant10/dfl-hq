@@ -924,3 +924,9 @@ clearance, saved sound state, cancellation, reduced motion and cleanup. Full Hom
 review checks identity placement, gutters and live controls. `pnpm themes` passes.
 Physical iPhone/Safari, native share-sheet destinations, audible hardware output
 and low-power frame pacing remain unverified. See `docs/premium-actions-1474.md`.
+
+The full Home review caught a compact Clubhouse starter name shrinking below its
+44px target. Compact side-by-side Clubhouse and Start/Sit identities now retain
+the original name/photo layout; hold actions and the full card remain available.
+The explicit Actions icon stays on roomy rows. Added a 320/390 Light/Dark compact
+matchup regression without hiding or weakening the target-size checks.

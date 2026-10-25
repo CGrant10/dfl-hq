@@ -2,7 +2,7 @@ import {esc} from './ui.js';
 import {sleeperAction} from './sleeper-links.js';
 import {playerIdentity} from './player-presentation.js';
 const points=n=>Number.isFinite(n)?n.toFixed(1):'—';
-const who=p=>playerIdentity({...p,injuryStatus:null,nflTeam:p.nflTeam||p.team},{interactive:true,detail:[p.position,p.opponent?`vs ${p.opponent}`:p.nflTeam||p.team].filter(Boolean).join(' · ')});
+const who=p=>playerIdentity({...p,injuryStatus:null,nflTeam:p.nflTeam||p.team},{interactive:true,quickActions:false,detail:[p.position,p.opponent?`vs ${p.opponent}`:p.nflTeam||p.team].filter(Boolean).join(' · ')});
 const form=p=>Number.isFinite(p.recentAverage)&&p.recentGames>=2?`<span class="ss-form">Last ${p.recentGames} · ${points(p.recentAverage)} avg.</span>`:'';
 const when=p=>{const at=Date.parse(p.kickoff);return Number.isFinite(at)?new Date(at).toLocaleString(undefined,{weekday:'short',hour:'numeric',minute:'2-digit'}):'';};
 

@@ -1,5 +1,9 @@
 [
   {
+    "check": "light/320 compact matchup keeps readable names and 44px card targets",
+    "pass": true
+  },
+  {
     "check": "light/320 no per-row data load before opening",
     "pass": true
   },
@@ -45,6 +49,10 @@
   },
   {
     "check": "light/320 closing restores focus and removes the preview",
+    "pass": true
+  },
+  {
+    "check": "light/390 compact matchup keeps readable names and 44px card targets",
     "pass": true
   },
   {
@@ -96,6 +104,10 @@
     "pass": true
   },
   {
+    "check": "dark/320 compact matchup keeps readable names and 44px card targets",
+    "pass": true
+  },
+  {
     "check": "dark/320 no per-row data load before opening",
     "pass": true
   },
@@ -141,6 +153,10 @@
   },
   {
     "check": "dark/320 closing restores focus and removes the preview",
+    "pass": true
+  },
+  {
+    "check": "dark/390 compact matchup keeps readable names and 44px card targets",
     "pass": true
   },
   {

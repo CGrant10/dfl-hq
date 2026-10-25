@@ -2,6 +2,8 @@
 
 A held player portrait/name now opens a compact action sheet. An explicit,
 keyboard-accessible Actions button sits beside shared interactive identities.
+Compact side-by-side starter cards retain their full name/photo tap targets and
+use the hold menu or the existing player-card actions instead of another icon.
 View player activates the original control, retaining GameDay's live context and
 portrait-first card transition. Build trade appears only after the existing
 cached player-card loader confirms an opponent-owned player and the member's
@@ -50,7 +52,7 @@ No background audio loop, new polling, database schema or league writes.
 
 - `pnpm check`: release, themes, names, TypeScript, unit suite and production
   bundles. Startup remains three modules and Home remains four.
-- 56 isolated production-component browser checks: Light/Dark at 320/390px,
+- 60 isolated production-component browser checks: Light/Dark at 320/390px,
   actual touch holds and scrolling, keyboard focus, exact trade routes, original
   player-card entry, press cancellation, real PNG and video downloads, recording
   cancellation, 32 racers, unsupported video and motion-off. [Checks](premium-actions-1474/checks.json).
@@ -62,7 +64,9 @@ No background audio loop, new polling, database schema or league writes.
   regressions. [Checks](premium-actions-1474/arena-checks.json).
 - Existing player-card motion regression and 90 shared touch/tab/scroll motion
   checks passed. The full themed Home review checks the identity layout in
-  context, including mobile gutters and live controls.
+  context, including mobile gutters and live controls. Its nine compact
+  Clubhouse layout regressions also passed independently after the touch-target
+  correction, with no relaxed assertions. [Checks](premium-actions-1474/compact-matchup-checks.json).
 
 Reviewed actual screenshots: [Light actions](premium-actions-1474/quick-light-390.png),
 [Dark actions](premium-actions-1474/quick-dark-390.png),
