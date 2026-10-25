@@ -1,3 +1,4 @@
+import {livePlaySource,LIVE_PLAY_AGE} from '../../../js/live-football-model.js';
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import webpush from "npm:web-push@3.6.7";
 import {WATCHLIST_NOTIFICATION_FILTER} from '../../../js/watchlist-alerts.js';
@@ -115,8 +116,13 @@ Deno.serve(async request => {
     const sourceKey = /^(?:trade|weekly|sportsbook):[a-z0-9:_-]{1,140}$/i.test(String(input.sourceKey || ""))
       ? String(input.sourceKey) : null;
     const lineupAlert=internalSync&&sourceKey?.startsWith('weekly:lineup:')&&category==='matchups';
-    const moment=category===MATCHUP_MOMENTS_CATEGORY;
-    if(moment&&(!internalSync||!/^weekly:matchup:[0-9]{4}:[0-9]{1,2}:[0-9]+:(close|final)$/.test(sourceKey||'')||input.audience!=='members'))return json({error:'Matchup moments require targeted internal delivery'},403);
+    const moment=category===MATCHUP_MOMENTS_CATEGORY,livePlay=moment&&livePlaySource(sourceKey);
+    if(moment&&(!internalSync||(!/^weekly:matchup:[0-9]{4}:[0-9]{1,2}:[0-9]+:(close|final)$/.test(sourceKey||'')&&!livePlay)||input.audience!=='members'))return json({error:'Matchup moments require targeted internal delivery'},403);
+    if(livePlay){
+      const parts=sourceKey!.split(':'),route=targetUrl.match(/^#\/clubhouse\?season=(\d{4})&week=(\d{1,2})&tab=matchups&matchup=(\d+)$/);if(!route||route[1]!==parts[2]||route[2]!==parts[3]||Number(route[3])<=0||input.targetMemberIds?.length!==1||String(input.targetMemberIds[0])!==parts[4])return json({error:'Invalid live play target'},422);
+      const {data:feed,error}=await admin.from('nfl_live_games').select('season,week,plays,fetched_at').eq('game_id',parts[5]).maybeSingle();if(error)throw error;const play=feed?.plays?.find((p:any)=>String(p.id)===parts[6]);
+      if(!feed||feed.season!==Number(parts[2])||feed.week!==Number(parts[3])||!play?.eligible||Date.now()-Date.parse(feed.fetched_at)>150000||!Number.isFinite(play.at)||Date.now()-play.at<0||Date.now()-play.at>LIVE_PLAY_AGE)return json({ok:true,skipped:'expired-play',delivered:0});
+    }
     const watch=internalSync&&category==='waivers'&&/^weekly:watch:[0-9]{4}:[0-9]{1,2}:[0-9]+:[a-f0-9]{64}$/.test(sourceKey||'');
     if(sourceKey?.startsWith('weekly:watch:')&&!watch)return json({error:'Watchlist updates require internal delivery'},403);
     if(watch&&input.audience!=='members')return json({error:'Watchlist updates require targeted delivery'},403);

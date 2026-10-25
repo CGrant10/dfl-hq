@@ -136,6 +136,13 @@ on:
       - 'js/weekly-clubhouse-ui.js'
       - 'js/game-day-score-motion*'
       - 'js/game-day-model*'
+      - 'js/live-football*'
+      - 'js/nfl-game-day.js'
+      - 'css/live-football.css'
+      - 'tools/capture-live-football.py'
+      - 'supabase/functions/live-football/**'
+      - 'supabase/migrations/*live_football*'
+      - 'supabase/tests/live_football.sql'
       - 'js/sleeper-links*'
       - 'tools/capture-sleeper-actions.py'
       - 'js/matchup-finish*'
@@ -214,6 +221,10 @@ jobs:
           DFL_PLAYER_GAMES_REVIEW_DIR: ${{ github.workspace }}/home-review-output/player-games
           DFL_SHEET_REVIEW_DIR: ${{ github.workspace }}/home-review-output/sheets
         run: python tools/capture-player-games-review.py
+      - name: Check verified red-zone watch and player moments
+        env:
+          DFL_LIVE_REVIEW_DIR: ${{ github.workspace }}/home-review-output/live-football
+        run: python tools/capture-live-football.py
       - name: Check player quick actions and real Arena replay export
         env:
           DFL_PREMIUM_REVIEW_DIR: ${{ github.workspace }}/home-review-output/premium-actions
@@ -329,3 +340,22 @@ jobs:
           docker cp supabase/migrations "$DFL_ARENA_TEST_CONTAINER:/qa/supabase/"
           docker cp supabase/tests "$DFL_ARENA_TEST_CONTAINER:/qa/supabase/"
           docker exec "$DFL_ARENA_TEST_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 -f /qa/supabase/tests/arena_fixture.sql
+
+  live-football-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check NFL baseline, freshness and read-only client access
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/tests/live_football.sql

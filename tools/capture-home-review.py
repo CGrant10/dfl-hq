@@ -198,7 +198,7 @@ def check_game_day_scope(page):
         import('./js/game-day-model.js'), import('./js/game-day-player-rows.js'),
         import('./js/game-day-score-motion.js'), import('./js/matchup-chirp-ui.js'), import('./js/matchup-banter.js'),
         import('./js/page-disclosure.js'), import('./js/game-day-disclosure.js'), import('./js/identity-rules.js'), import('./js/ui.js'),
-        import('./js/live-score-refresh.js'), import('./js/score-freshness.js'), import('./js/game-day-readiness.js'), import('./js/matchup-targets.js'), import('./js/record-chases-model.js')
+        import('./js/live-score-refresh.js'),import('./js/live-football.js'), import('./js/score-freshness.js'), import('./js/game-day-readiness.js'), import('./js/matchup-targets.js'), import('./js/record-chases-model.js')
       ]));
       const check=(condition,message)=>{if(!condition)throw Error(message)};
       const region=document.createElement('div');region.innerHTML='<div></div><div></div>';document.body.append(region);
@@ -283,7 +283,7 @@ def check_matchup_interactions(page):
     source=source[source.index('let stopCurrent='):].replace('export function','function')
     page.emulate_media(reduced_motion='reduce')
     result=page.evaluate('''async source=>{
-      const helpers=Object.assign({},...await Promise.all([import('./js/clubhouse-matchup-model.js'),import('./js/clubhouse-matchup-cards.js'),import('./js/matchup-chirp-ui.js'),import('./js/game-day-score-motion.js'),import('./js/page-disclosure.js'),import('./js/ui.js'),import('./js/live-score-refresh.js'),import('./js/score-freshness.js')]));
+      const helpers=Object.assign({},...await Promise.all([import('./js/clubhouse-matchup-model.js'),import('./js/clubhouse-matchup-cards.js'),import('./js/matchup-chirp-ui.js'),import('./js/game-day-score-motion.js'),import('./js/page-disclosure.js'),import('./js/ui.js'),import('./js/live-score-refresh.js'),import('./js/live-football.js'),import('./js/score-freshness.js')]));
       const check=(ok,message)=>{if(!ok)throw Error(message)};
       const until=async condition=>{for(let i=0;i<100&&!condition();i++)await new Promise(r=>setTimeout(r,10));check(condition(),'Matchup refresh did not settle')};
       const model={season:2026,week:5,leagueId:'fixture',completed:false,members:[],games:[{matchup_id:1,left:{roster:1,name:'The Very Long Bayou Championship Fantasy Football Bombers',score:0},right:{roster:2,name:'The Boys',score:0}}]};
@@ -641,7 +641,7 @@ def check_watch_score_strip(page):
     """Real Watch controller, with isolated reads and labeled sample teams."""
     source=(ROOT/'js/game-day-watch.js').read_text().split('export function mountGameDayWatch')[1]
     page.evaluate("""async source=>{
-      const helpers=Object.assign({},...await Promise.all(['ui','sleeper-links','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-moment-effects','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','clubhouse-matchup-model','watch-score-collapse','moment-recap','record-chases','record-chases-model','team-art','matchup-finish','matchup-finish-model','game-day-matchup-share'].map(name=>import(`./js/${name}.js`))));
+      const helpers=Object.assign({},...await Promise.all(['ui','sleeper-links','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-moment-effects','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','clubhouse-matchup-model','watch-score-collapse','moment-recap','record-chases','record-chases-model','team-art','live-football','matchup-finish','matchup-finish-model','game-day-matchup-share','live-football'].map(name=>import(`./js/${name}.js`))));
       const {buildGameDay}=await import('./js/game-day-model.js');
       const members=[1,2,3,4].map(id=>({id,sleeper_user_id:`strip-${id}`,team_name:id===1?'The Very Long Championship Bayou Bombers':id===2?'Klutch Sports Group':`Demo Team ${id}`}));
       const week={season:2099,week:6,leagueId:'1286077564572037120',completed:false,games:[1,2].map(id=>({matchup_id:id,user1:`strip-${id*2-1}`,user2:`strip-${id*2}`,roster1:id*2-1,roster2:id*2}))};
