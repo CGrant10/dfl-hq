@@ -91,6 +91,12 @@ on:
       - 'js/player-compare*'
       - 'js/moment-recap*'
       - 'js/football-moment*'
+      - 'js/player-directory*'
+      - 'js/service-worker.js'
+      - 'sw.js'
+      - 'tools/capture-first-launch.py'
+      - 'supabase/migrations/*player_directory*'
+      - 'supabase/tests/player_directory.sql'
       - 'js/matchup-highlights*'
       - 'js/matchup-story*'
       - 'css/matchup-highlights.css'
@@ -248,6 +254,10 @@ jobs:
         env:
           DFL_HIGHLIGHTS_REVIEW_DIR: ${{ github.workspace }}/home-review-output/highlights
         run: python tools/capture-matchup-highlights.py
+      - name: Check real first launch, compact player loading and fallback
+        env:
+          DFL_STARTUP_REVIEW_DIR: ${{ github.workspace }}/home-review-output/startup
+        run: python tools/capture-first-launch.py
       - name: Check live record chases and original team art
         env:
           DFL_RECORD_REVIEW_DIR: ${{ github.workspace }}/home-review-output/records
@@ -372,3 +382,5 @@ jobs:
         run: |
           psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/tests/live_football.sql
           psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/tests/matchup_highlights.sql
+          psql -h localhost -U postgres -c 'create database dfl_player_cache_test'
+          psql -h localhost -U postgres -d dfl_player_cache_test -v ON_ERROR_STOP=1 -f supabase/tests/player_directory.sql

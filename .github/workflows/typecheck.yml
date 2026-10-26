@@ -38,7 +38,7 @@ jobs:
       - name: Check live football and notification workers
         env:
           DENO_TLS_CA_STORE: system
-        run: npx --yes deno@2.5.4 check --no-config --node-modules-dir=none --no-lock supabase/functions/live-football/index.ts supabase/functions/send-notification/index.ts
+        run: npx --yes deno@2.5.4 check --no-config --node-modules-dir=none --no-lock supabase/functions/live-football/index.ts supabase/functions/send-notification/index.ts supabase/functions/player-directory/index.ts
       - name: Check public release verifier syntax
         run: python -c "import ast,pathlib;ast.parse(pathlib.Path('tools/verify-release-assets.py').read_text())"
       - name: Verify public release assets

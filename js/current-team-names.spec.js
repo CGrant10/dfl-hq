@@ -8,6 +8,11 @@ const stored=[{id:1,sleeper_user_id:'a',display_name:'Owner A',team_name:'Old A'
 const rosters=[{season:2019,sleeper_user_id:'a',team_name:'Ancient A'},{season:2026,sleeper_user_id:'a',team_name:'Synced A'},{season:2026,sleeper_user_id:'b',team_name:'Synced B'}];
 const members=currentTeamMembers(stored,[{user_id:'a',metadata:{team_name:' New A '}},{user_id:'b',metadata:{team_name:'New B'}}],rosters);
 describe('current team names everywhere',()=>{
+ it('keeps known Sleeper portraits while live identity lookup is delayed, but honors a verified removal',()=>{
+  const known=[{...stored[0],sleeper_team_image:'https://sleepercdn.com/team.png',sleeper_profile_image:'https://sleepercdn.com/profile.png'}];
+  expect(currentTeamMembers(known,[],rosters)[0]).toMatchObject({sleeper_team_image:known[0].sleeper_team_image,sleeper_profile_image:known[0].sleeper_profile_image});
+  expect(currentTeamMembers(known,[{user_id:'a',metadata:{}}],rosters)[0]).toMatchObject({sleeper_team_image:null,sleeper_profile_image:null});
+ });
  it('uses current trimmed names and keeps historical aliases without mutating stored records',()=>{
   expect(members[0].team_name).toBe('New A');expect(members[0].team_name_aliases).toContain('Ancient A');expect(stored[0].team_name).toBe('Old A');
   expect(currentTeamLabel('Ancient A',members)).toBe('New A');expect(currentTeamLabel('Old B',members)).toBe('New B');

@@ -42,6 +42,7 @@ function worker({ offline = false, saved = {}, legacy = {}, bundle=null, release
     fetch,
     releaseMessage(data,port){handlers.message({data,ports:port?[port]:[]});},
     async install(){let pending;handlers.install({waitUntil:promise=>pending=promise});await pending;return precached;},
+    async warm(){let pending;handlers.message({data:{type:'DFL_CACHE_EXTRAS'},source:{url:scope},waitUntil:promise=>pending=promise});await pending;return precached;},
     async request(path,options={}) {
       let response;
       const pending = [];
@@ -58,6 +59,15 @@ function worker({ offline = false, saved = {}, legacy = {}, bundle=null, release
 }
 
 describe('installed app worker navigation', () => {
+  it('activates without downloading decorative artwork, then warms it after the first route',async()=>{
+    const sw=worker({bundle:['./js/bundle/test/app.js']});const initial=[...await sw.install()];
+    expect(initial.some(r=>r.url.includes('/assets/'))).toBe(false);
+    const warmed=await sw.warm();expect(warmed.some(r=>r.url.endsWith('/assets/dfl-daily-hero.webp'))).toBe(true);
+  });
+  it('does not re-download an immutable cached bundle during normal navigation',async()=>{
+    const path='./js/bundle/test/app.js',sw=worker({bundle:[path],saved:{[path]:{body:'Cached release module',type:'application/javascript'}}});
+    expect(await(await sw.request(path,{mode:'cors',destination:'script',cache:'default'})).text()).toBe('Cached release module');expect(sw.fetch).not.toHaveBeenCalled();
+  });
   it('installs the compiled graph without fetching a duplicate raw app graph',async()=>{
     const files=['./js/bundle/test/app.js','./js/bundle/test/pages/calendar.js'],sw=worker({bundle:files});
     const other=await sw.install();

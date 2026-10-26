@@ -1,4 +1,6 @@
 import {reportAppIssue} from './app-diagnostics.js';
+import {compactPlayers} from './player-directory-model.js';
+import {loadCompactPlayers} from './player-directory-data.js';
 // =====================================================================
 // sleeper.js - a thin wrapper around the public Sleeper API
 // ---------------------------------------------------------------------
@@ -14,7 +16,7 @@ const BASE = "https://api.sleeper.app/v1";
 /** GET a Sleeper endpoint and return parsed JSON (or null for 404). */
 async function get(path, options = {}) {
   try {
-    const res = await fetch(`${BASE}${path}`, options);
+    const res = await fetch(`${BASE}${path}`, {signal:AbortSignal.timeout(12000),...options});
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`Sleeper API ${res.status} on ${path}`);
     return await res.json();
@@ -305,16 +307,23 @@ export function loadPlayers({maxAgeMs = PLAYER_CACHE_MS} = {}) {
   const epoch = playerEpoch;
   playersPending = true;
   const request = (async () => {
-    const cache = await caches.open(PLAYER_CACHE);
-    const hit = await cache.match(PLAYER_URL);
+    let cache=null,hit=null;
+    try{cache=await caches.open(PLAYER_CACHE);hit=await cache.match(PLAYER_URL)}catch{/* Storage can be unavailable or full on phones. */}
 
     if (hit) {
       const age = Date.now() - Number(hit.headers.get("x-fetched-at") || 0);
-      if (age < maxAgeMs) {
-        const slim = trim(await hit.json());
-        if (epoch === playerEpoch) playersFetchedAt = Date.now() - age;
-        return slim;
+      if (age >= 0 && age < maxAgeMs) {
+        try{const slim = compactPlayers(await hit.json());
+         if (epoch === playerEpoch) playersFetchedAt = Date.now() - age;
+         return slim;
+        }catch{/* A damaged cache entry must not strand the player view. */}
       }
+    }
+
+    const compact=await loadCompactPlayers(maxAgeMs);
+    if(compact){
+      if(epoch===playerEpoch){playersFetchedAt=compact.fetchedAt;if(cache)await cache.put(PLAYER_URL,new Response(JSON.stringify(compact.players),{headers:{'Content-Type':'application/json','x-fetched-at':String(compact.fetchedAt)}})).catch(()=>{})}
+      return compact.players;
     }
 
     const res = await fetch(PLAYER_URL, {signal:AbortSignal.timeout(12000),cache:maxAgeMs===0?'no-cache':'default'});
@@ -322,12 +331,12 @@ export function loadPlayers({maxAgeMs = PLAYER_CACHE_MS} = {}) {
     const raw = await res.json();
 
     // Store a slimmed copy - the full payload is mostly fields we never use.
-    const slim = trim(raw);
+    const slim = compactPlayers(raw);
     const fetchedAt = Date.now();
     if (epoch === playerEpoch) {
-      await cache.put(PLAYER_URL, new Response(JSON.stringify(slim), {
+      if(cache)await cache.put(PLAYER_URL, new Response(JSON.stringify(slim), {
         headers: { "Content-Type": "application/json", "x-fetched-at": String(fetchedAt) },
-      }));
+      })).catch(()=>{});
       playersFetchedAt = fetchedAt;
     }
     return slim;
@@ -337,28 +346,6 @@ export function loadPlayers({maxAgeMs = PLAYER_CACHE_MS} = {}) {
   playersPromise = pending;
 
   return playersPromise;
-}
-
-function trim(map) {
-  // Already slimmed on the way out of the cache.
-  const first = Object.values(map)[0];
-  if (first && first.n !== undefined) return map;
-
-  const out = {};
-  for (const [id, p] of Object.entries(map)) {
-    out[id] = {
-      n: p.full_name || `${p.first_name || ""} ${p.last_name || ""}`.trim() || id,
-      p: p.position || "",
-      fp:p.fantasy_positions||[],
-      t: p.team || "FA",
-      i: p.injury_status || null,
-      s: p.status || null,
-      pp: p.practice_participation || null,
-      is: p.injury_start_date || null,
-      nu: p.news_updated || null,
-    };
-  }
-  return out;
 }
 
 /** Friendly name for a player id, once loadPlayers() has resolved. */

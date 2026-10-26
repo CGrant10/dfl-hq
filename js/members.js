@@ -77,6 +77,7 @@ export async function loadMemberDirectory({ force = false, eagerNames = false } 
   if(force)directoryEpoch++;
   const requestEpoch = directoryEpoch;
   const request = (async () => {
+    let snapshots={users:[],rosters:[]};
     const names = async () => {
       const [leagueRes,rosterRes]=await Promise.allSettled([
         db().from('sleeper_leagues').select('sleeper_league_id,season').order('season',{ascending:false}).limit(1),
@@ -84,6 +85,7 @@ export async function loadMemberDirectory({ force = false, eagerNames = false } 
       ]);
       const leagueId=leagueRes.status==='fulfilled'&&!leagueRes.value.error?leagueRes.value.data?.[0]?.sleeper_league_id:null;
       const rosters=rosterRes.status==='fulfilled'&&!rosterRes.value.error?rosterRes.value.data||[]:[];
+      snapshots={users:[],rosters};
       const users=leagueId?await sleeper.users(leagueId).catch(()=>[]):[];
       return {users:Array.isArray(users)?users:[],rosters};
     };
@@ -93,15 +95,27 @@ export async function loadMemberDirectory({ force = false, eagerNames = false } 
     const { data, error } = await db().from('members').select('*')
       .order('sort_order', {ascending:true}).order('display_name', {ascending:true});
     if(error)throw error;
-    let members=data||[];
+    let members=(data||[]).map(m=>({...m})),lateNames=null;
     if(members.some(m=>m.sleeper_user_id)){
-      const {users,rosters}=await(pendingNames||names());
+      const liveNames=pendingNames||names();let timer,settled=false;
+      const result=await Promise.race([liveNames.then(value=>{settled=true;return value}),new Promise(resolve=>{timer=setTimeout(()=>resolve(snapshots),400)})]).finally(()=>clearTimeout(timer));
+      const {users,rosters}=result;
       members=currentTeamMembers(members,users,rosters);
+      if(!settled)lateNames=liveNames;
     }
     if (requestEpoch === directoryEpoch) {
       directoryCache = members;
       directoryExpiresAt=Date.now()+60000;
       if(current)current=members.find(m=>String(m.id)===String(current.id))||current;
+      // Slow external names cannot block identity or the first page. Keep the
+      // shared row objects current when that same request finishes later.
+      if(lateNames)void lateNames.then(({users,rosters})=>{
+        if(requestEpoch!==directoryEpoch||directoryCache!==members)return;
+        currentTeamMembers(members,users,rosters).forEach((fresh,index)=>Object.assign(members[index],fresh));
+        directoryExpiresAt=Date.now()+60000;
+        if(current)current=members.find(m=>String(m.id)===String(current.id))||current;
+        globalThis.dispatchEvent?.(new Event('dfl:profile-updated'));
+      }).catch(()=>{});
     }
     return members;
   })();

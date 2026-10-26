@@ -1,0 +1,46 @@
+[
+  {
+    "check": "plain launch renders Home and completes the real matchup loader",
+    "pass": true
+  },
+  {
+    "check": "plain launch uses the compact catalog without a full provider download",
+    "pass": true
+  },
+  {
+    "check": "plain launch remains within the phone width",
+    "pass": true
+  },
+  {
+    "check": "plain launch enters Home without a navigation tap",
+    "pass": true
+  },
+  {
+    "check": "explicit refresh still verifies directly with Sleeper",
+    "pass": true
+  },
+  {
+    "check": "a missing compact cache falls back to the provider",
+    "pass": true
+  },
+  {
+    "check": "unavailable phone storage does not prevent player loading",
+    "pass": true
+  },
+  {
+    "check": "Home route renders Home and completes the real matchup loader",
+    "pass": true
+  },
+  {
+    "check": "Home route uses the compact catalog without a full provider download",
+    "pass": true
+  },
+  {
+    "check": "Home route remains within the phone width",
+    "pass": true
+  },
+  {
+    "check": "no uncaught app errors",
+    "pass": true
+  }
+]

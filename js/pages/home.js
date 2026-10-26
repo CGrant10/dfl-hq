@@ -235,7 +235,7 @@ export function leave() {
   deferredStops = [];
 }
 
-function whenNear(node, task) {
+function whenNear(node, task, rootMargin="700px 0px") {
   if (!node) return () => {};
   let done = false;
   const run = () => {
@@ -248,7 +248,7 @@ function whenNear(node, task) {
   if (typeof IntersectionObserver === "function") {
     observer = new IntersectionObserver(entries => {
       if (entries.some(entry => entry.isIntersecting)) run();
-    }, { rootMargin: "700px 0px" });
+    }, { rootMargin });
     observer.observe(node);
   } else {
     queueMicrotask(run);
@@ -478,7 +478,13 @@ export async function render(view) {
   /* Projection data is intentionally second paint. One shared request feeds
      both the cold open and Power Pulse, so making Home livelier does not make
      it fetch the entire Sleeper model twice. */
-  const analysisPromise = import("../team-analyzer-data.js").then(({ loadAnalyzerData }) => loadAnalyzerData());
+  let startAnalysis,analysisStarted=false;
+  const analysisPromise = new Promise(resolve=>{startAnalysis=()=>{
+    if(analysisStarted||mine!==generation||!view.isConnected)return;
+    analysisStarted=true;resolve(import("../team-analyzer-data.js").then(({loadAnalyzerData})=>loadAnalyzerData()));
+  }});
+  for(const selector of ['.home-week-desk','[data-home-rankings-slot]'])deferredStops.push(whenNear(view.querySelector(selector),startAnalysis,'0px'));
+  const analysisTimer=setTimeout(startAnalysis,8000);deferredStops.push(()=>clearTimeout(analysisTimer));
   const tradeAlertsPromise = loadTradeAlerts({ limit: 12 }).catch(err => {
     console.warn("trade wire unavailable", err);
     return [];
@@ -521,7 +527,7 @@ export async function render(view) {
     if(slot&&slot.innerHTML!==markup){slot.innerHTML=markup;slot.hidden=!markup;}
     weekFlow.update(homeEdition);
   };
-  deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,detailsRoot:view.querySelector("[data-home-live-slot]"),onModel:edition=>{homeEdition=edition;updateWeekFlow();refreshEdition?.()},active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
+  deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,detailsRoot:view.querySelector("[data-home-live-slot]"),onModel:edition=>{homeEdition=edition;updateWeekFlow();refreshEdition?.();requestAnimationFrame(()=>requestAnimationFrame(startAnalysis))},active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
   // Archive stories load independently of the live weekly model.
   lorePromise.then(got => {
     if (mine !== generation || !view.isConnected || got?.error) return;
