@@ -1045,3 +1045,15 @@ theme tests pass with the full 2,210-test suite. No palettes or picker entries
 changed. Evidence: `/workspace/dfl-highlight-review/real-weekend/`; see
 `docs/weekend-highlights-validation-1484.md`. Installed iOS/Safari playback is
 unverified; native controls and official source fallback remain available.
+
+
+## 1.485.0 — highlight reel starts at the beginning (2026-10-26)
+
+Reviewed Home highlight previews at 320/390px in Light/Dark after switching the
+rail to chronological playback order. The first card now opens clip 1, and the
+reopened reel resets its thumbnail strip to the beginning. Surfaces, typography
+and colors are unchanged; headings and first-clip captions fit both phone sizes.
+All 112 focused browser checks pass, including first-card playback, forward
+progression, reopening after the last clip, focus, reduced motion and expiry.
+The full 2,210-test check passes, including themes and the production build.
+Evidence: `/workspace/dfl-highlight-review/`. Installed Safari remains unverified.
