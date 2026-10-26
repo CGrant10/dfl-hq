@@ -1012,4 +1012,5 @@ viewport bounds, 100px Home row limit, focus/scroll/score-node retention, reduce
 motion and deferred offscreen loading. `pnpm themes` and all theme tests passed
 in the 2,191-test full check. Evidence: `/workspace/dfl-player-week-review/`.
 See `docs/player-week-details-validation-1482.md`. Native Safari is unverified;
-the extended Home matrix is separately tracked and not represented as complete.
+the extended Home matrix also passed across Light/Dark, legacy aliases, Fairway
+and KC at 320/390/1280px without browser errors.

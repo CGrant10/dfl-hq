@@ -49,8 +49,11 @@ all four phone/theme Clubhouse captures and narrow Home captures were visually
 reviewed. Evidence: `/workspace/dfl-player-week-review/`.
 
 Existing finish/replay and record-art browser regressions passed. The broader
-Home regression matrix is also running in `/tmp/dfl-1482-home.log`; this report
-does not claim its unfinished checks passed. Native installed Safari behavior
+Home matrix also passed: six canonical/legacy/team themes at 320/390/1280px,
+paired lineups at 320/390/768px, live-stat focus/scroll retention, cached failure
+recovery, pinned scores, sliding tabs, motion preferences, player cards, injury
+scrolling and teardown. The matrix reported no browser errors. Evidence is in
+`/workspace/dfl-review/browser-checks.json`. Native installed Safari behavior
 has not been directly exercised.
 
 ## Video feasibility (research only)
