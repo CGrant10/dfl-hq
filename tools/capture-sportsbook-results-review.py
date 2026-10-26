@@ -33,6 +33,11 @@ with sync_playwright() as p:
    check(tag+' ties show a neutral mark',page.locator('#sb-ticket-4 [data-leg-result="void"] .sb-leg-mark').inner_text()=='—')
    check(tag+' actual bankroll and official bet status remain unchanged',page.locator('[data-review-wallet]').inner_text()=='420 SIN' and page.locator('#sb-ticket-1').get_attribute('data-ticket-status')=='open' and 'To return' in page.locator('#sb-ticket-1').text_content())
    check(tag+' book board shows hit/miss and actual final scores',page.locator('[data-fantasy-result="won"]').count()==1 and page.locator('[data-fantasy-result="lost"]').count()==1 and '120.50 pts' in page.locator('[data-review-board]').inner_text())
+
+   check(tag+' result pills retain semantic green and red',page.evaluate("""()=>{
+    const ctx=document.createElement('canvas').getContext('2d');const color=c=>{ctx.fillStyle=c;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data].join(',')};
+    return [[1,'--ok'],[2,'--danger-ink']].every(([id,token])=>{const style=getComputedStyle(document.querySelector('#sb-ticket-'+id+' .pill'));return color(style.color)===color(style.getPropertyValue(token).trim())});
+   }"""))
    check(tag+' no horizontal overflow',page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
    page.screenshot(path=str(EVIDENCE/f'book-{width}-{theme}.png'));page.locator('#sb-ticket-3').scroll_into_view_if_needed();page.screenshot(path=str(EVIDENCE/f'tickets-{width}-{theme}.png'))
    before=page.evaluate('resultReads');page.evaluate('mondayFinal=true;dispatchEvent(new Event("focus"))');page.wait_for_function('(before)=>resultReads>before',arg=before);page.wait_for_function('document.querySelectorAll("#sb-ticket-3 [data-leg-result=won]").length===2')

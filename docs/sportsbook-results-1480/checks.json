@@ -20,6 +20,10 @@
     "pass": true
   },
   {
+    "check": "320px light result pills retain semantic green and red",
+    "pass": true
+  },
+  {
     "check": "320px light no horizontal overflow",
     "pass": true
   },
@@ -60,6 +64,10 @@
     "pass": true
   },
   {
+    "check": "320px dark result pills retain semantic green and red",
+    "pass": true
+  },
+  {
     "check": "320px dark no horizontal overflow",
     "pass": true
   },
@@ -97,6 +105,10 @@
   },
   {
     "check": "390px light book board shows hit/miss and actual final scores",
+    "pass": true
+  },
+  {
+    "check": "390px light result pills retain semantic green and red",
     "pass": true
   },
   {
@@ -145,6 +157,10 @@
   },
   {
     "check": "390px dark book board shows hit/miss and actual final scores",
+    "pass": true
+  },
+  {
+    "check": "390px dark result pills retain semantic green and red",
     "pass": true
   },
   {

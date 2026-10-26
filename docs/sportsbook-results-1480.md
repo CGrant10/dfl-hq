@@ -32,7 +32,7 @@ Validation: full `pnpm check` passes 2,164 tests / 262 files, including new evid
 identity, Sunday/Monday, mixed parlay, tie, stale/missing data, official settlement,
 refund/estimated return and refresh lifecycle tests. Final theme check and build
 pass (85 modules / 3 startup / 4 Home). The production-controller browser harness
-passes 44 checks in Light/Dark at 320/390px, with 12 inspected app/share screenshots
+passes 48 checks in Light/Dark at 320/390px, with 12 inspected app/share screenshots
 and real result loading/foreground refresh against isolated providers. Existing
 bet-slip review passes 18 layouts without writes or errors.
 [Checks and screenshots](sportsbook-results-1480/checks.json).

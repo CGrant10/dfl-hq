@@ -745,7 +745,7 @@
 #sportsbook-wrap .sb-ticket .pill.green { border-color: var(--ok-line); background: var(--ok-bg); color: var(--ok); }
 #sportsbook-wrap .sb-ticket .pill.warn { border-color: var(--warn-line); background: var(--warn-bg); color: var(--warn-ink); }
 /* Open is the one that is still alive, so it is the one that is not grey. */
-#sportsbook-wrap .sb-ticket .pill:not(.green):not(.grey):not(.warn) {
+#sportsbook-wrap .sb-ticket .pill:not(.green):not(.grey):not(.warn):not(.sb-result-pill) {
   border-color: color-mix(in srgb, var(--accent-2) 34%, var(--line));
   background: color-mix(in srgb, var(--accent-2) 12%, transparent);
   color: var(--accent-2);
