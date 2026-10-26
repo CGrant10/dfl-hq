@@ -1,3 +1,4 @@
+import {mountHomeHighlights} from '../home-highlights.js';
 import {powerRankingsMarkup,powerRankingsLoading,mountPowerRankings} from '../league-power-ui.js';
 import {homeWeekReceipt,mountHomeWeekFlow} from '../home-week-flow.js';
 import {startSitContent} from '../start-sit-ui.js';
@@ -448,6 +449,7 @@ export async function render(view) {
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
     </section>
     </div>
+    <div data-home-highlights-slot></div>
     ${homeSectionLinks()}
     <section class="home-week-desk" aria-label="Your week">
     <div data-home-week-flow>
@@ -527,6 +529,7 @@ export async function render(view) {
     if(slot&&slot.innerHTML!==markup){slot.innerHTML=markup;slot.hidden=!markup;}
     weekFlow.update(homeEdition);
   };
+  deferredStops.push(mountHomeHighlights(view.querySelector('[data-home-highlights-slot]'),{active:()=>mine===generation&&view.isConnected&&location.hash.startsWith('#/home')}).stop);
   deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,detailsRoot:view.querySelector("[data-home-live-slot]"),onModel:edition=>{homeEdition=edition;updateWeekFlow();refreshEdition?.();requestAnimationFrame(()=>requestAnimationFrame(startAnalysis))},active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
   // Archive stories load independently of the live weekly model.
   lorePromise.then(got => {
