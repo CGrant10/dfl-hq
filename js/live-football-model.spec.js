@@ -52,7 +52,7 @@ describe('verified touchdown and big-play attribution',()=>{
 describe('starter-only notifications and event freshness',()=>{
  const args=()=>({season:2026,week:7,feeds:[feed()],rows:[{roster_id:1,matchup_id:7,starters:['1','2']}],rosters:[{roster_id:1,owner_id:'owner'}],members:[{id:1,sleeper_user_id:'owner'}],optedMemberIds:[1],now});
  it('groups a stack into one member/play notification and routes to the exact matchup',()=>{
-  const drafts=footballNotificationDrafts(args());expect(drafts).toHaveLength(1);expect(drafts[0]).toMatchObject({targetMemberIds:[1],sourceKey:'weekly:play:2026:7:1:999:123',targetUrl:'#/clubhouse?season=2026&week=7&tab=matchups&matchup=7',category:'matchup_moments'});
+  const drafts=footballNotificationDrafts(args());expect(drafts).toHaveLength(1);expect(drafts[0]).toMatchObject({targetMemberIds:[1],sourceKey:'weekly:play:2026:7:1:999:123',targetUrl:'#/clubhouse?season=2026&week=7&tab=matchups&matchup=7&moment=nfl:999:123:1',category:'matchup_moments'});
  });
  it('does not notify for bench players, opted-out members or ambiguous ownership',()=>{
   for(const patch of [{rows:[{roster_id:1,matchup_id:7,starters:['3']}]},{optedMemberIds:[]},{members:[{id:1,sleeper_user_id:'owner'},{id:2,sleeper_user_id:'owner'}]}])expect(footballNotificationDrafts({...args(),...patch})).toEqual([]);

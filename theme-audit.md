@@ -947,3 +947,14 @@ picker options changed. `pnpm themes` passes.
 Screens and checks are in `docs/live-football-1475/`. Physical iPhone/Safari and
 native phone notification presentation remain unverified; fixture tests and
 production dry runs do not send league alerts.
+
+### 1.476.0 — Saved matchup highlights
+
+Reviewed the actual compact highlight list, verified play recap, share chooser
+and final recap in default Light/Dark at 320/390px. Buttons, type, borders and
+surfaces use shared theme tokens; team/NFL identity accents remain decorative.
+The 85-case browser review covers contrast, full names, 44px actions, short
+screens, reduced motion, focus return and interrupted reads. Existing recap's
+64 checks pass. `pnpm themes` and the full 2,128-test/build check pass.
+Evidence: `docs/matchup-highlights-1476.md` and its linked screenshots/checks.
+Physical iPhone/Safari frame pacing and native phone delivery remain unverified.
