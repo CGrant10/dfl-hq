@@ -25,3 +25,7 @@ verify_jwt = false
 [functions.live-football]
 # The existing private scheduler token is verified before any reads or writes.
 verify_jwt = false
+
+[functions.player-directory]
+# Scheduled refresh verifies the private cron token before any read or write.
+verify_jwt = false

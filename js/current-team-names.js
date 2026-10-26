@@ -11,7 +11,7 @@ export function currentTeamMembers(members=[],users=[],rosters=[]){
   const u=live.get(String(m.sleeper_user_id)),r=latest.get(String(m.sleeper_user_id));
   const name=clean(u?.metadata?.team_name)||clean(u?.display_name)||clean(r?.team_name)||clean(m.team_name)||clean(m.display_name);
   const aliases=[...new Set([m.team_name,m.display_name,u?.metadata?.team_name,u?.display_name,...rosters.filter(r=>String(r.sleeper_user_id)===String(m.sleeper_user_id)).map(r=>r.team_name)].map(clean).filter(Boolean))];
-  return {...m,sleeper_team_image:sleeperAvatarUrl(u?.metadata?.avatar),sleeper_profile_image:sleeperAvatarUrl(u?.avatar),team_name:name,team_name_aliases:aliases,team_roster_ids:rosters.filter(r=>String(r.sleeper_user_id)===String(m.sleeper_user_id)&&r.roster_id!=null).map(r=>({season:Number(r.season),roster_id:String(r.roster_id)}))};
+  return {...m,sleeper_team_image:u?sleeperAvatarUrl(u.metadata?.avatar):m.sleeper_team_image||null,sleeper_profile_image:u?sleeperAvatarUrl(u.avatar):m.sleeper_profile_image||null,team_name:name,team_name_aliases:aliases,team_roster_ids:rosters.filter(r=>String(r.sleeper_user_id)===String(m.sleeper_user_id)&&r.roster_id!=null).map(r=>({season:Number(r.season),roster_id:String(r.roster_id)}))};
  });
 }
 export function currentTeamMember(label,members=[],identity={}){

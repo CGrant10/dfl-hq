@@ -39,3 +39,21 @@ it('uses the chosen identity photo as the profile and editorial fallback, never 
  expect(memberImage({...m,broadcast_image:'stage.jpg'},'broadcast')).toBe('stage.jpg');
  expect(memberImage(m,'broadcast')).toBe('sleeper.jpg');expect(memberImage({chaos_image:'private-chaos.jpg'})).toBeNull();
 });
+
+it('restores the directory promptly while a slow live name request finishes in the background',async()=>{
+ vi.useFakeTimers();let finish;
+ mocks.users.mockReturnValue(new Promise(resolve=>finish=resolve));
+ const pending=loadMemberDirectory({eagerNames:true});await vi.advanceTimersByTimeAsync(401);
+ const members=await pending;expect(members[0].team_name).toBe('Synced team');
+ finish([{user_id:'a',metadata:{team_name:'Latest live name'}}]);await vi.advanceTimersByTimeAsync(1);
+ expect(members[0].team_name).toBe('Latest live name');expect(await loadMemberDirectory()).toBe(members);
+ expect(mocks.rows[0].team_name).toBe('Old profile');
+});
+
+it('does not let an older delayed names request overwrite a forced refresh',async()=>{
+ vi.useFakeTimers();let finish;mocks.users.mockReturnValueOnce(new Promise(resolve=>finish=resolve));
+ const first=loadMemberDirectory({eagerNames:true});await vi.advanceTimersByTimeAsync(401);await first;
+ mocks.users.mockResolvedValue([{user_id:'a',metadata:{team_name:'Newer request'}}]);const newer=await loadMemberDirectory({force:true});
+ finish([{user_id:'a',metadata:{team_name:'Older request'}}]);await vi.advanceTimersByTimeAsync(1);
+ expect((await loadMemberDirectory())[0].team_name).toBe('Newer request');expect(newer[0].team_name).toBe('Newer request');
+});

@@ -6,7 +6,7 @@ describe('live player availability caching',()=>{
     vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-11T16:00:00Z'));vi.resetModules();
     const cache={match:vi.fn().mockResolvedValue(cached),put:vi.fn().mockResolvedValue(undefined)};
     vi.stubGlobal('caches',{open:vi.fn().mockResolvedValue(cache)});
-    const fetch=vi.fn().mockResolvedValue(new Response(JSON.stringify({x:{full_name:'Receiver',position:'WR',team:'DET',injury_status:'Out'}})));
+    const fetch=vi.fn().mockImplementation(async()=>new Response(JSON.stringify({x:{full_name:'Receiver',position:'WR',team:'DET',injury_status:'Out'}})));
     vi.stubGlobal('fetch',fetch);
     return {cache,fetch,...await import('./sleeper.js')};
   };
@@ -32,5 +32,12 @@ describe('live player availability caching',()=>{
   it('revalidates HTTP-cached player status during a final trade check',async()=>{
     const {loadPlayers,fetch}=await setup();await loadPlayers({maxAgeMs:0});
     expect(fetch.mock.calls[0][1].cache).toBe('no-cache');
+  });
+  it('keeps loading when phone cache storage is unavailable or full',async()=>{
+    const {loadPlayers,cache}=await setup();
+    caches.open.mockRejectedValueOnce(Error('Storage denied'));
+    expect((await loadPlayers({maxAgeMs:0})).x.n).toBe('Receiver');
+    cache.put.mockRejectedValue(Error('Quota exceeded'));
+    expect((await loadPlayers({maxAgeMs:0})).x.i).toBe('Out');
   });
 });

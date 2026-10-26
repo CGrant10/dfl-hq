@@ -1,0 +1,73 @@
+[
+  {
+    "version": "1.476.0",
+    "timings": {
+      "appReady": 10505.90000000596
+    },
+    "longTasks": [
+      157,
+      51,
+      157,
+      61,
+      158,
+      142,
+      106,
+      250,
+      735,
+      249,
+      52,
+      70,
+      77,
+      140,
+      52
+    ],
+    "weekTop": 959.109375,
+    "view": "MONDAY, OCT 26, 2026\nTHE DFL DAILY\n\n10\nYEAR ANNIVERSARY\n\nYour matchup\nCHECKING YOUR MATCHU",
+    "requests": 276,
+    "bytes": 7585902,
+    "catalog": [],
+    "errors": [],
+    "blockedWrites": [
+      "dfl_presence"
+    ]
+  },
+  {
+    "version": "1.477.0",
+    "timings": {
+      "appReady": 9395.20000000298,
+      "scoresReady": 13153.40000000596
+    },
+    "longTasks": [
+      151,
+      106,
+      51,
+      107,
+      236,
+      910,
+      246,
+      62,
+      244,
+      53,
+      56,
+      116,
+      110,
+      160,
+      89
+    ],
+    "weekTop": 813.109375,
+    "view": "MONDAY, OCT 26, 2026\nTHE DFL DAILY\n\n10\nYEAR ANNIVERSARY\n\nYour matchup\nWEEK 7\nSTATUS PENDIN",
+    "requests": 260,
+    "bytes": 7139739,
+    "catalog": [
+      {
+        "path": "https://rqavvpdbfdrwzalikkjg.supabase.co/rest/v1/nfl_player_directory",
+        "ms": 2570.3,
+        "bytes": 295372
+      }
+    ],
+    "errors": [],
+    "blockedWrites": [
+      "dfl_presence"
+    ]
+  }
+]

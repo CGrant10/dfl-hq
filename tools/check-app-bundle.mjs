@@ -12,6 +12,8 @@ export function checkAppBundle(root=fileURLToPath(new URL('../',import.meta.url)
  if(!worker.includes(`importScripts('./${folder}/precache.js')`))throw Error('Worker bundle manifest does not match this release');
  const manifest={};runInNewContext(read(`${folder}/precache.js`),{self:manifest});
  if(manifest.DFL_BUNDLE_RELEASE!==version)throw Error('Bundle cache release mismatch');
+ const bundledStyles=JSON.parse(read('css/shared-styles.json')).map(path=>'./'+path);
+ if(JSON.stringify(manifest.DFL_BUNDLE_STYLES)!==JSON.stringify(bundledStyles))throw Error('Bundled stylesheet cache metadata does not match the shipped CSS');
  const files=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(join(dir,e.name)):[join(dir,e.name)]);
  const scripts=files(base).filter(f=>f.endsWith('.js')&&!f.endsWith('/precache.js'));
  const cached=new Set(manifest.DFL_BUNDLE_SHELL.map(p=>resolve(root,p)));
