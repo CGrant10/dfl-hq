@@ -71,6 +71,8 @@ on:
       - 'supabase/functions/game-highlights/**'
       - 'supabase/migrations/*home_game_day_highlights*'
       - 'supabase/tests/home_highlights.sql'
+      - 'supabase/migrations/*weekend_highlight_playback*'
+      - 'tools/fixtures/highlight-playback.mp4'
       - 'js/pages/home.js'
       - 'js/league-power*'
       - 'tools/*power*'

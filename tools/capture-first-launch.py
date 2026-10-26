@@ -62,8 +62,11 @@ with sync_playwright() as p:
    check('unavailable phone storage does not prevent player loading',page.evaluate('rawReads===3&&noStorage["1"].n==="Player 0"'))
   page.evaluate("""async()=>{
    const {highlightSession}=await import('./js/home-highlight-model.js'),rows=await(await fetch('./tools/fixtures/home-highlight-clips.json')).json(),s=highlightSession();
-   window.launchHighlightRows=rows.map(row=>({...row,session_date:s.date,published_at:new Date(Date.now()-60000).toISOString(),expires_at:new Date(s.expiresAt).toISOString()}));
+   window.launchHighlightRows=rows.map(row=>({...row,video_url:null,session_date:s.active?s.date:s.startDate,published_at:new Date(Date.now()-60000).toISOString(),expires_at:new Date(s.expiresAt).toISOString()}));
   }""")
+  if not page.evaluate("import('./js/home-highlight-model.js').then(m=>m.highlightSession().active)"):
+   check(tag+' hides the weekend reel between editions',page.locator('[data-home-reel-open]').count()==0)
+   c.close();continue
   page.evaluate("document.querySelector('#welcome')?.remove()")  # Local guest fixture only; never select a league member.
   page.locator('[data-home-highlights-slot]').scroll_into_view_if_needed();page.evaluate('dispatchEvent(new Event("focus"))');page.wait_for_selector('[data-home-reel-open]',timeout=10000);page.locator('[data-home-reel-open]').click();page.wait_for_selector('.home-reel-player[open]')
   check(tag+' opens the real Home reel without loading any video player',page.locator('.home-reel-player iframe,.home-reel-player video').count()==0)
