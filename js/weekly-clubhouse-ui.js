@@ -42,6 +42,7 @@ export function wireClubhouseTabs(root,initial='overview'){
   const changed=selected.getAttribute('aria-selected')!=='true';
   for(const tab of tabs){const on=tab===selected;tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;tab.classList.toggle('on',on);root.querySelector('#'+tab.getAttribute('aria-controls')).hidden=!on}
   if(focus)selected.focus();
+  const bar=selected.parentElement;if(bar.scrollWidth>bar.clientWidth)bar.scrollTo({left:Math.max(0,selected.offsetLeft-bar.clientWidth/2+selected.clientWidth/2),behavior:'instant'});
   if(changed)root.dispatchEvent(new CustomEvent('dfl:clubhouse-tab',{detail:{tab:selected.dataset.clubhouseTab}}));
   const params=new URLSearchParams(location.hash.split('?')[1]||'');params.set('tab',selected.dataset.clubhouseTab);history.replaceState(history.state,'',location.hash.split('?')[0]+'?'+params);
  };
