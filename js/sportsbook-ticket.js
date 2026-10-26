@@ -1,3 +1,4 @@
+import {bookLegResult,bookEntryResult,pendingBookReturn} from './sportsbook-fantasy-results.js';
 import {ticketShareSpec} from './share-export-model.js';
 import {editorialShareCanvas} from './share-editorial.js';
 import {drawShareFrame,drawShareFooter} from "./share-card-style.js";
@@ -113,7 +114,7 @@ export function ticketData({ bet, legs = [], member, season = null } = {}) {
     pick: String(leg?.label || "Pick"),
     market: opponentLine(leg?.market, leg?.label),
     odds: fmtOdds(leg?.odds_american),
-    status: String(leg?.status || "open"),
+    status:bookLegResult(leg).status,pending:bookLegResult(leg).pending,
   }));
   const status = String(bet.status || "open");
   return {
@@ -129,6 +130,7 @@ export function ticketData({ bet, legs = [], member, season = null } = {}) {
        everybody and as stake+winnings to the other half. Print both. */
     profit: Math.max(0, ret - stake),
     status,
+    pendingReturn:pendingBookReturn(bet,legs),liveResult:bookEntryResult(legs),gradingPending:picks.some(p=>p.pending),
     /* A ticket the member pulled themselves is not a ticket the house voided,
        and the card should not accuse anybody of the wrong one. */
     pulled: status === "void" && !!bet.cancelled_at,
@@ -141,11 +143,12 @@ export function ticketData({ bet, legs = [], member, season = null } = {}) {
 /** The one-line text that goes with the image where a share sheet takes text. */
 export function ticketText(t) {
   if (!t) return "";
-  const head = t.status === "won" ? "Cashed" : t.status === "lost" ? "Torn up"
+  const head = t.status==='open'&&t.gradingPending&&t.liveResult!=='open'?(t.liveResult==='won'?'Hit — grading pending':t.liveResult==='lost'?'Missed — grading pending':'Push — grading pending'):t.status === "won" ? "Cashed" : t.status === "lost" ? "Torn up"
     : t.pulled ? "Pulled" : t.status === "void" ? "Voided" : "On the board";
   const what = t.picks.length === 1
     ? `${t.picks[0].pick} at ${t.odds}`
     : `${t.picks.length} picks at ${t.odds} — ${t.picks.map((p) => p.pick).join(", ")}`;
+  if(t.pendingReturn)return `${head}: ${what} — ${num(t.stake)} SIN staked; ${t.pendingReturn.label.toLowerCase()} ${num(t.pendingReturn.value)} SIN. DFL Sportsbook, where SIN is play money.`;
   return `${head}: ${what} — ${num(t.stake)} SIN to return ${num(t.ret)}. DFL Sportsbook, where SIN is play money.`;
 }
 

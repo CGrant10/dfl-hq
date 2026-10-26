@@ -745,7 +745,7 @@
 #sportsbook-wrap .sb-ticket .pill.green { border-color: var(--ok-line); background: var(--ok-bg); color: var(--ok); }
 #sportsbook-wrap .sb-ticket .pill.warn { border-color: var(--warn-line); background: var(--warn-bg); color: var(--warn-ink); }
 /* Open is the one that is still alive, so it is the one that is not grey. */
-#sportsbook-wrap .sb-ticket .pill:not(.green):not(.grey):not(.warn) {
+#sportsbook-wrap .sb-ticket .pill:not(.green):not(.grey):not(.warn):not(.sb-result-pill) {
   border-color: color-mix(in srgb, var(--accent-2) 34%, var(--line));
   background: color-mix(in srgb, var(--accent-2) 12%, transparent);
   color: var(--accent-2);
@@ -1202,3 +1202,11 @@
 .sb-fantasy-games>summary::after{content:'+';font-size:1.35rem;color:var(--accent)}
 .sb-fantasy-games[open]>summary::after{content:'−'}
 .sb-fantasy-games>.sb-market-grid{padding:14px}
+
+.sb-fantasy-result{display:inline-flex;align-items:center;justify-content:center;min-width:22px;min-height:22px;margin-left:6px;font:800 18px/1 ui-sans-serif,system-ui,sans-serif;vertical-align:middle}
+.sb-fantasy-result[data-fantasy-result="won"],.sb-result-pill.is-won{color:var(--ok)}
+.sb-fantasy-result[data-fantasy-result="lost"],.sb-result-pill.is-lost{color:var(--danger-ink)}
+.sb-fantasy-result[data-fantasy-result="void"]{color:var(--body-text)}
+.sb-outcome:has([data-fantasy-result]){opacity:1}
+#sportsbook-wrap .sb-result-pill.is-won{color:var(--ok);background:var(--ok-bg);border-color:var(--ok-line)}
+#sportsbook-wrap .sb-result-pill.is-lost{color:var(--danger-ink);background:var(--danger-bg);border-color:var(--danger-line)}

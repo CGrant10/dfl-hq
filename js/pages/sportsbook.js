@@ -1,3 +1,4 @@
+import {fantasyMarketKey,fantasyOutcomeResult,withFantasyLegResult,bookLegResult,bookEntryResult,pendingBookReturn} from '../sportsbook-fantasy-results.js';
 import {mountSheetDrag,enterSheet,exitSheet} from '../sheet-drag.js';
 import { fitDialogToViewport } from '../dialog-viewport.js';
 import {currentSportsbookNames} from '../current-team-names.js';
@@ -200,7 +201,7 @@ export async function render(view){
   const refreshSlip=wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
   rememberView(view,me.id);
   wireProductTabs(view,me.id);wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
-  wireMarketActivities(view);wirePageDisclosures(view);wireBookTabs(view,me.id);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me);wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);
+  wireMarketActivities(view);wirePageDisclosures(view);wireBookTabs(view,me.id);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me,()=>view._refreshFantasy?.({paint:false}));wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);
   if(canBook)wireCommissioner(view);
   const noticeSettlements=createSettlementTracker(bets,globalThis.localStorage,me.id),recentSettled=new Set();
   wallet ||= {balance:0};
@@ -209,14 +210,14 @@ export async function render(view){
     if(!status&&failed){status=document.createElement('p');status.dataset.bookAccountStatus='';status.className='sb-empty';status.setAttribute('role','status');view.querySelector('#sb-tickets')?.before(status);}
     if(status){status.hidden=!failed;status.textContent=failed?'Account refresh unavailable. Showing the last checked tickets and balance.':'';}
   };
-  const updateAccount=account=>{
+  const updateAccount=(account,{forceTickets=false}={})=>{
     accountStatus(false);
     const fresh=currentSportsbookNames({markets:[...marketMap.values()],outcomes:[...outcomeMap.values()],bets:account.bets},members).bets;
     const moments=noticeSettlements(fresh);for(const bet of moments)recentSettled.add(String(bet.id));
     const panel=view.querySelector('#sb-tickets'),focused=document.activeElement;
     const anchor=focused&&panel.contains(focused)?focused:[...panel.querySelectorAll('.sb-ticket')].find(node=>{const box=node.getBoundingClientRect();return box.height>0&&box.bottom>70&&box.top<innerHeight;});
     const top=anchor?.getBoundingClientRect().top,focusedCard=focused?.closest('.sb-ticket')?.id;
-    if(JSON.stringify(fresh)!==JSON.stringify(bets)){
+    if(forceTickets||JSON.stringify(fresh)!==JSON.stringify(bets)){
       const order=[...panel.querySelectorAll('[data-live-tickets] .sb-ticket')].map(node=>node.dataset.ticketId);
       bets=fresh;view.__bets=bets;
       patchGameDay(panel,ticketsMarkup(bets,marketMap,outcomeMap,recentSettled,order));wirePageDisclosures(panel);
@@ -238,7 +239,35 @@ export async function render(view){
     if(!status&&failed){status=document.createElement('p');status.dataset.bookLiveStatus='';status.className='sb-empty';status.setAttribute('role','status');view.querySelector('#sb-markets')?.prepend(status);}
     if(status){status.hidden=!failed;status.textContent=failed?'Refresh unavailable. Showing the last checked lines.':'';}
   };
-  if(view.isConnected)stopLive=mountSportsbookLive(view,{client:db(),memberId:me.id,outcomeMap,active,onAccount:updateAccount,onAccountError:()=>accountStatus(true),onError:()=>lineStatus(true),onUpdate:(fresh,ids)=>{
+  let fantasyTask=null,fantasyPainted='';
+  const refreshFantasy=({paint=true,force=false}={})=>{
+    if(!active())return Promise.resolve();
+    if(fantasyTask)return fantasyTask;
+    fantasyTask=(async()=>{
+      let results=new Map();
+      try{const {loadFantasyBookResults}=await import('../sportsbook-fantasy-data.js');results=await loadFantasyBookResults(db(),[...marketMap.values()],{force});}catch{/* An unavailable feed cannot keep a claimed result. */}
+      if(!active())return;
+      for(const market of marketMap.values()){delete market._fantasyResult;const result=results.get(String(market.id));if(result)market._fantasyResult=result;}
+      const official=[...outcomeMap.values()].filter(outcome=>{const m=marketMap.get(String(outcome.market_id));return fantasyMarketKey(m)&&['settled','void'].includes(m.status)}).map(outcome=>[outcome.id,marketMap.get(String(outcome.market_id)).status,outcome.is_winner]);
+      const stamp=JSON.stringify([[...results].map(([id,{final,scores,winner}])=>[id,final,scores,winner]),official]);
+      if(paint&&!view._bookTicketBusy&&stamp!==fantasyPainted){
+        for(const button of view.querySelectorAll('[data-bet-outcome]')){
+          const outcome=outcomeMap.get(button.dataset.betOutcome),market=marketMap.get(String(outcome?.market_id));if(!fantasyMarketKey(market))continue;
+          const result=fantasyOutcomeResult(market,outcome),name=button.querySelector('.sb-outcome-name');name?.querySelector('[data-fantasy-result]')?.remove();
+          const detail=button.querySelector('.sb-outcome-label>small');
+          if(result){
+            const mark=document.createElement('span');mark.dataset.fantasyResult=result.status;mark.className='sb-fantasy-result';mark.setAttribute('aria-label',result.status==='won'?'Hit':result.status==='lost'?'Miss':'Push');mark.textContent=result.status==='won'?'✓':result.status==='lost'?'×':'—';name?.append(mark);
+            if(detail){detail.dataset.fantasyBaseText??=detail.textContent;detail.textContent=Number.isFinite(result.score)?`${result.score.toFixed(2)} pts`:'Final';}
+          }else if(detail?.dataset.fantasyBaseText!=null){detail.textContent=detail.dataset.fantasyBaseText;delete detail.dataset.fantasyBaseText;}
+          const state=button.closest('.sb-market')?.querySelector('.sb-market-state');if(state)state.textContent=result?'FINAL':isOpen(market)?'OPEN':'LOCKED';
+        }
+        updateAccount({balance:wallet.balance,bets,ledger},{forceTickets:true});fantasyPainted=stamp;
+      }
+    })().finally(()=>fantasyTask=null);
+    return fantasyTask;
+  };
+  view._refreshFantasy=refreshFantasy;
+  if(view.isConnected)stopLive=mountSportsbookLive(view,{client:db(),memberId:me.id,outcomeMap,active,interval:30000,onRefresh:force=>refreshFantasy({force}),onAccount:updateAccount,onAccountError:()=>accountStatus(true),onError:()=>lineStatus(true),onUpdate:(fresh,ids)=>{
     lineStatus(false);
     const named=currentSportsbookNames({markets:fresh.markets,outcomes:fresh.outcomes,bets:[],trends:[],recap:null},members);
     const present=new Set(named.markets.map(m=>String(m.id)));
@@ -258,7 +287,7 @@ export async function render(view){
       const card=button.closest('.sb-market'),state=card?.querySelector('.sb-market-state');
       const heading=card?.querySelector('.card-heading');if(heading)heading.textContent=market.title;
       const locks=card?.querySelector('.sb-locks');if(locks&&market.closes_at)locks.textContent=`${button.disabled?'Locked':'Locks'} ${fmtTime(market.closes_at)}`;
-      if(state){state.textContent=button.disabled?'LOCKED':'OPEN';state.classList.toggle('is-open',!button.disabled);state.classList.toggle('is-locked',button.disabled);}
+      if(state){state.textContent=fantasyOutcomeResult(market,quote)?'FINAL':button.disabled?'LOCKED':'OPEN';state.classList.toggle('is-open',!button.disabled);state.classList.toggle('is-locked',button.disabled);}
     }
     const before=slip.length;slip=slip.filter(id=>isOpen(marketMap.get(String(outcomeMap.get(String(id))?.market_id))||{}));
     if(slip.length<before)toast('A selected line closed and was removed from your slip.',true);
@@ -634,20 +663,22 @@ function ledgerMarkup(rows){
 function entryLegs(b,marketMap,outcomeMap){
   let raw=b.legs;
   if(typeof raw==="string"){try{raw=JSON.parse(raw)}catch{raw=null}}
-  if(Array.isArray(raw)&&raw.length)return raw;
+  if(Array.isArray(raw)&&raw.length)return raw.map(leg=>withFantasyLegResult(leg,marketMap.get(String(leg.market_id)),outcomeMap.get(String(leg.outcome_id))));
   const o=outcomeMap.get(String(b.outcome_id)),m=marketMap.get(String(b.market_id));
-  return [{outcome_id:b.outcome_id,market_id:b.market_id,label:o?.label||"Ticket",
+  return [withFantasyLegResult({outcome_id:b.outcome_id,market_id:b.market_id,label:o?.label||"Ticket",
            market:m?.title||"DFL Sportsbook",odds_american:b.odds_american,status:b.status,
            provider_side:o?.provider_side,provider_line:m?.provider_line,accepted_line:m?.provider_line,
-           provider_score:m?.provider_score,market_status:m?.status,closes_at:m?.closes_at,category:m?.category}];
+           provider_score:m?.provider_score,market_status:m?.status,closes_at:m?.closes_at,category:m?.category},m,o)];
 }
 
 const STATUS_PILL={won:"green",lost:"grey",void:"warn"};
 function legMarketOpen(leg,market){const status=leg.market_status||market?.status,closes=leg.closes_at||market?.closes_at;return status==="open"&&(!closes||new Date(closes)>new Date())}
 function legPulse(leg){
-  if(leg.status==="won")return{tone:"is-ahead",text:"CASHED"};
-  if(leg.status==="lost")return{tone:"is-behind",text:"MISSED"};
-  if(leg.status==="void")return{tone:"",text:"VOID"};
+  const result=bookLegResult(leg);
+  if(result.pending)return {tone:result.status==='won'?'is-ahead':result.status==='lost'?'is-behind':'is-push',text:result.status==='won'?'HIT':result.status==='lost'?'MISS':'PUSH'};
+  if(result.status==="won")return{tone:"is-ahead",text:"CASHED"};
+  if(result.status==="lost")return{tone:"is-behind",text:"MISSED"};
+  if(result.status==="void")return{tone:"",text:"VOID"};
   const line=Number(leg.accepted_line??leg.provider_line),score=Number(leg.provider_score),hasLine=Number.isFinite(line),hasScore=leg.provider_score!==null&&leg.provider_score!==undefined&&Number.isFinite(score);
   if(hasLine&&hasScore){const side=String(leg.provider_side||"").toLowerCase(),push=score===line,ahead=side==="over"?score>line:score<line;return{tone:push?"is-push":ahead?"is-ahead":"is-behind",text:`${score} / ${line} · ${push?"PUSH":ahead?"WINNING":"BEHIND"}`}}
   if(leg.market_status==="locked")return{tone:"is-live",text:"LIVE · AWAITING STAT"};
@@ -655,8 +686,10 @@ function legPulse(leg){
 }
 function ticketCard(b,marketMap,outcomeMap){
   const legs=entryLegs(b,marketMap,outcomeMap);
-  const multi=legs.length>1;
+  const multi=legs.length>1,entryResult=bookEntryResult(legs),pendingResult=b.status==='open'&&entryResult!=='open'&&legs.some(leg=>bookLegResult(leg).pending);
   const pulled=b.status==="void"&&!!b.cancelled_at;
+  const pendingReturn=pendingBookReturn(b,legs),returnLabel=pendingReturn?.label||(b.status==='won'?'Paid':b.status==='lost'?'Returned':b.status==='void'?'Void':'To return');
+  const returnValue=pendingReturn?.value??(b.status==='lost'?0:b.status==='void'?'—':b.status==='won'?(b.payout??b.potential_payout):b.potential_payout);
   /* Pullable only while every market on the entry is still open. A locked leg
      makes a cancel a free look at a result, and the RPC refuses it too - this
      just avoids offering a button that is going to say no. */
@@ -676,14 +709,16 @@ function ticketCard(b,marketMap,outcomeMap){
   const stuck=!blocking?"" : (()=>{
     const m=blocking.market;
     const category=m?.category||blocking.leg.category;
+    if(pendingResult)return 'Grading pending.';
     if((m?.source==="provider"||blocking.leg.provider_side)&&ACTIVE_BOOK_CATEGORIES.has(String(category||"")))return `${esc(blocking.leg.label)} is live. Automatic grading follows the final stat.`;
+    if(fantasyMarketKey(m))return 'Matchup result pending.';
     if(!m)return "This line is gone from the board. The house has to void it to release your stake.";
     if(isGolf(m)||!isBookCategory(m))return `${esc(blocking.leg.label)} is on a retired line. The house has to void it to release your stake.`;
     return `${esc(blocking.leg.label)} has locked. Waiting on a ruling.`;
   })();
   const won=legs.filter(l=>l.status==="won").length;
   const pulses=legs.map(legPulse),live=pulses.some(p=>p.tone==="is-live"||p.tone==="is-ahead"||p.tone==="is-behind"||p.tone==="is-push"),behind=pulses.some(p=>p.tone==="is-behind"),ahead=pulses.some(p=>p.tone==="is-ahead")&&!behind;
-  const label=pulled?"PULLED":multi&&(b.status==="won"||b.status==="lost")?`${won} OF ${legs.length}`
+  const label=pendingResult?(entryResult==='won'?'HIT':entryResult==='lost'?'MISSED':'PUSH'):pulled?"PULLED":multi&&(b.status==="won"||b.status==="lost")?`${won} OF ${legs.length}`
     :b.status==="won"?"PAID":b.status==="lost"?"LOST":b.status==="void"?"VOID"
       :live?(ahead?"WINNING":"SWEATING"):blocking?"AWAITING RESULT":"OPEN";
   return `<article id="sb-ticket-${esc(b.id)}" data-ticket-id="${esc(b.id)}" data-ticket-status="${esc(b.status)}" class="card sb-ticket${multi?" is-entry":""}">
@@ -692,18 +727,18 @@ function ticketCard(b,marketMap,outcomeMap){
         <small class="sb-ticket-kicker">${multi?`${legs.length}-pick entry`:esc(legs[0].market||"DFL Sportsbook")}</small>
         <strong>${multi?fmtOdds(b.odds_american):esc(legs[0].label||"Ticket")}</strong>
       </div>
-      <span class="pill ${STATUS_PILL[b.status]||""}">${esc(label)}</span>
+      <span class="pill ${STATUS_PILL[b.status]||''}${pendingResult?` sb-result-pill is-${entryResult}`:''}"${pendingResult?' aria-label="'+label+'; grading pending"':''}>${esc(label)}</span>
     </div>
-    <ol class="sb-ticket-legs">${legs.map((l,i)=>{const pulse=pulses[i];return `
-      <li class="sb-leg is-${esc(l.status||"open")}">
-        <span class="sb-leg-mark" aria-hidden="true">${l.status==="won"?"&check;":l.status==="lost"?"&times;":i+1}</span>
+    <ol class="sb-ticket-legs">${legs.map((l,i)=>{const pulse=pulses[i],result=bookLegResult(l);return `
+      <li class="sb-leg is-${result.status}" data-leg-result="${result.status}">
+        <span class="sb-leg-mark" aria-hidden="true">${result.status==='won'?'&check;':result.status==='lost'?'&times;':result.status==='void'?'—':i+1}</span>
         <span class="sb-leg-body"><span class="sb-leg-pick">${esc(l.label)}</span><small>${esc(l.market||"")}</small><em class="sb-leg-pulse ${pulse.tone}">${esc(pulse.text)}</em></span>
         <strong class="sb-leg-odds">${fmtOdds(l.odds_american)}</strong>
       </li>`}).join("")}</ol>
     <div class="card-meta sb-ticket-foot">
       <span class="sb-ticket-figures">
         <span><b>${pulled?"Refunded":"Stake"}</b>${num(b.stake)}</span>
-        <span class="sb-ticket-return${b.status==="lost"||b.status==="void"?" is-dead":""}"><b>${b.status==="won"?"Paid":b.status==="lost"?"Returned":b.status==="void"?"Void":"To return"}</b>${b.status==="lost"?"0":b.status==="void"?"—":num(b.status==='won'?(b.payout??b.potential_payout):b.potential_payout)}</span>
+        <span class="sb-ticket-return${b.status==="lost"||b.status==="void"?" is-dead":""}"><b>${returnLabel}</b>${returnValue==='—'?'—':num(returnValue)}</span>
       </span>
       <span class="sb-ticket-actions">
         ${stuck?`<span class="sb-ticket-stuck">${stuck}</span>`:""}
@@ -781,7 +816,7 @@ function wireClaim(view){
   every SIN it moved stay in Receipts, which is why it does not ask for
   confirmation and pulling does.
 */
-function wireTicketActions(view,marketMap,outcomeMap,me){
+function wireTicketActions(view,marketMap,outcomeMap,me,refreshFantasy=async()=>{}){
   view._bookTicketController?.abort();
   const controller=new AbortController();view._bookTicketController=controller;
   const generation=renderGeneration;
@@ -795,7 +830,7 @@ function wireTicketActions(view,marketMap,outcomeMap,me){
     if(button.hasAttribute('data-cancel-bet')&&!confirm(`Pull this ticket and take the ${num(bet.stake)} SIN back?`))return;
     view._bookTicketBusy=true;button.disabled=true;
     try{
-      if(button.hasAttribute('data-share-ticket'))await shareTicket({bet,legs:entryLegs(bet,marketMap,outcomeMap),member:me});
+      if(button.hasAttribute('data-share-ticket')){await refreshFantasy();if(current())await shareTicket({bet,legs:entryLegs(bet,marketMap,outcomeMap),member:me});}
       else{
         const pull=button.hasAttribute('data-cancel-bet');
         const {data,error}=await db().rpc(pull?'sportsbook_cancel_bet':'sportsbook_dismiss_bet',{target_bet_id:Number(id)});

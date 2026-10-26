@@ -970,3 +970,17 @@ reduced motion, retained focus/scroll and rapid selection. Compacting inherited
 label margins keeps the first offer visible on a 320px screen. No theme picker
 or legacy preference changes. `pnpm themes` passes. Evidence:
 `docs/trade-receive-controls-1479/`. Physical Safari frame pacing is unverified.
+
+### 1.480.0 — Sportsbook live hit/miss marks
+
+Inspected actual betting-board and ticket screens in default Light/Dark at
+320/390px: a Sunday finish, mixed pending Monday parlay, winning/losing selections,
+neutral push and result removal when evidence fails. Checks/Xs and explicit
+Hit/Miss text use semantic success/danger tokens; neutral marks use body text.
+Pending result pills use matching success/danger washes and lines. Disabled
+finished board selections retain legible result marks without becoming bettable.
+The 12 reviewed screens include clean/photo ticket exports with all six picks,
+the losing sixth leg, pending grading and correct estimated return. Vector marks
+use dark semantic ink on paper and light ink on the dark export. `pnpm themes`
+passes; no default palette or theme-picker changes. Evidence is in
+`docs/sportsbook-results-1480/`. Physical Safari remains unverified.

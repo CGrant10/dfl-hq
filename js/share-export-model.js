@@ -37,9 +37,9 @@ export function keeperShareSpec(board){return {
 export function ticketShareSpec(t){return {
  template:'ticket',ticket:t,
  kind:'Sportsbook ticket',context:[t.season,t.who].filter(Boolean).join(' / '),headline:t.title.toUpperCase(),summary:t.market,
- status:t.pulled?'Pulled':t.status==='open'?`All ${t.picks.length} picks must land`:t.picks.length>1?`${t.status.toUpperCase()} · ${t.won} of ${t.picks.length} picks won`:t.status,
- results:[{label:'Odds',value:t.odds},{label:t.pulled?'Refunded':'Stake',value:String(t.stake)},{label:t.status==='won'?'Paid':t.status==='lost'?'Returned':t.status==='void'?'Void':'To return',value:t.status==='lost'?'0':t.status==='void'?'—':String(t.ret)}],
- sections:[{label:'Your picks',rows:t.picks.map(p=>({name:p.pick,value:p.odds,detail:[p.market,p.status].filter(Boolean).join(' · ')}))},...(t.status==='open'?[{label:'Potential profit',rows:[{name:`${t.profit} SIN profit if ${t.picks.length>1?'all picks land':'the pick lands'}`}]}]:[])],
+ status:t.pulled?'Pulled':t.status==='open'&&t.gradingPending&&t.liveResult!=='open'?`${{won:'HIT',lost:'MISSED',void:'PUSH'}[t.liveResult]} · GRADING PENDING`:t.status==='open'?`All ${t.picks.length} picks must land`:t.picks.length>1?`${t.status.toUpperCase()} · ${t.won} of ${t.picks.length} picks won`:t.status,
+ results:[{label:'Odds',value:t.odds},{label:t.pulled?'Refunded':'Stake',value:String(t.stake)},{label:t.pendingReturn?.label||(t.status==='won'?'Paid':t.status==='lost'?'Returned':t.status==='void'?'Void':'To return'),value:t.pendingReturn?String(t.pendingReturn.value):t.status==='lost'?'0':t.status==='void'?'—':String(t.ret)}],
+ sections:[{label:'Your picks',rows:t.picks.map(p=>({name:p.pick,value:p.odds,detail:[p.market,p.status].filter(Boolean).join(' · ')}))},...(t.status==='open'&&(!t.gradingPending||t.liveResult==='open')?[{label:'Potential profit',rows:[{name:`${t.profit} SIN profit if ${t.picks.length>1?'all picks land':'the pick lands'}`}]}]:[])],
  footer:'SIN is play money · No cash value'
 }}
 export function aftermathShareSpec(card){
