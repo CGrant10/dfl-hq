@@ -958,3 +958,15 @@ screens, reduced motion, focus return and interrupted reads. Existing recap's
 64 checks pass. `pnpm themes` and the full 2,128-test/build check pass.
 Evidence: `docs/matchup-highlights-1476.md` and its linked screenshots/checks.
 Physical iPhone/Safari frame pacing and native phone delivery remain unverified.
+
+### 1.479.0 — Trade receive-position controls
+
+Inspected actual Light/Dark screens at 320/390px with all positions selected,
+QB/TE excluded, preset selection and keyboard focus. Incoming checkboxes, preset
+text, outlines and selected washes use shared text/body/background/line/accent
+tokens; native check marks follow the same accent. Browser checks verify at
+least 4.5:1 control-text contrast, 44px width/height, no horizontal overflow,
+reduced motion, retained focus/scroll and rapid selection. Compacting inherited
+label margins keeps the first offer visible on a 320px screen. No theme picker
+or legacy preference changes. `pnpm themes` passes. Evidence:
+`docs/trade-receive-controls-1479/`. Physical Safari frame pacing is unverified.

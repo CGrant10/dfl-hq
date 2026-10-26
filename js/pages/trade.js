@@ -1,3 +1,4 @@
+import {normalizeReceivePositions,setReceivePositions,receivePositionsMarkup} from '../trade-receive-controls.js';
 import {createTradeIntentions} from '../trade-intentions-ui.js';
 import {tradeAssessment} from '../trade-assessment.js';
 import {sleeperAction} from '../sleeper-links.js';
@@ -128,6 +129,7 @@ function tradeBoardHeader(mode='offers',leagueId=null){
 function tradeLab(team, teams, pool, shop) {
   if(shop.mode==='room')return `<section class="tb-board">${tradeBoardHeader('room',shop.leagueId)}</section>`;
   if(shop.mode==='manual')return `<section class="tb-board">${tradeBoardHeader('manual',shop.leagueId)}</section>`;
+  const receivePositions=shop.receivePositions=normalizeReceivePositions(shop.receivePositions);
   const otherTeams = teams.filter(item => String(item.id) !== String(team.id));
   const allPartners = shop.partnerId === "all";
   const partner = allPartners ? null
@@ -140,7 +142,7 @@ function tradeLab(team, teams, pool, shop) {
   const parties = [team, partner, ...shop.memberIds.map(id => otherTeams.find(t => String(t.id) === String(id)))].filter(Boolean);
   const multi = parties.length > 2;
   const returnTeam = multi ? parties.at(-1) : partner;
-  const theirPlayers = (returnTeam?.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
+  const theirPlayers = (returnTeam?.playerIds || []).map(id => pool.get(String(id))).filter(player=>player&&receivePositions.includes(player.position)).sort((a, b) => b.tradeValue - a.tradeValue);
   partnerKey = [partnerKey, ...shop.memberIds].join("/");
   shop.sendAnchors = (shop.sendAnchors || []).filter(id => minePlayers.some(player => String(player.id) === String(id)));
   if (String(shop.anchorPartnerId) !== String(partnerKey)) {
@@ -165,9 +167,9 @@ function tradeLab(team, teams, pool, shop) {
       shapeKeys.push(`${send}-${receive}`);
     }
   }
-  const cacheKey = [shop.intentionsStamp||0,shop.horizon||'season',shop.scheduleStamp||0,shop.goal||"best",team.id, partnerKey, shop.sendAnchors.join(","), shop.receiveAnchors.join(","), maxPlayers, sendCount, receiveCount].map(String).join("|");
+  const cacheKey = [shop.intentionsStamp||0,shop.horizon||'season',shop.scheduleStamp||0,shop.goal||"best",team.id, partnerKey, shop.sendAnchors.join(","), shop.receiveAnchors.join(","), receivePositions.join(","), maxPlayers, sendCount, receiveCount].map(String).join("|");
   const query={intentions:shop.intentions||{},teamId:team.id,partnerId: allPartners ? undefined : partner?.id,partyIds:multi?parties.map(t=>t.id):null,
-    goal:shop.goal||"best",horizon:shop.horizon||'season',weekSchedules:shop.weekSchedules||[],maxPlayers,sendAnchorIds:shop.sendAnchors,receiveAnchorIds:shop.receiveAnchors,sendCount,receiveCount,intent,
+    receivePositions,goal:shop.goal||"best",horizon:shop.horizon||'season',weekSchedules:shop.weekSchedules||[],maxPlayers,sendAnchorIds:shop.sendAnchors,receiveAnchorIds:shop.receiveAnchors,sendCount,receiveCount,intent,
     limit:allPartners?132:96,shapes:shapeKeys};
   const result=shop.findOffers(cacheKey,query);
   const intentCount = tier => result.countErrors?.[tier] ? '?' : result.counts?.[tier] ?? '…';
@@ -206,8 +208,8 @@ function tradeLab(team, teams, pool, shop) {
           <label class="tb-max"><span>Maximum package size <output data-tb-max-output>${maxPlayers}</output></span><input type="range" min="${anchorMinimum}" max="8" step="1" value="${maxPlayers}" data-tb-max></label>
           <div class="tb-split"><label><span>You send</span><select data-tb-send-count>${countOptions("send", sendCount, Math.max(1, shop.sendAnchors.length))}</select></label><b aria-hidden="true">↔</b><label><span>You get</span><select data-tb-receive-count>${countOptions("receive", receiveCount, Math.max(1, shop.receiveAnchors.length))}</select></label></div>
         </div>
-        <label class="tb-goal"><span>Trade goal</span><select data-tb-goal>${[['best','Best fit'],['starter','Upgrade a starter'],['consolidate','Depth for a stud'],['RB','Add RB help'],['WR','Add WR help'],['TE','Add TE help'],['QB','Add QB help']].map(([value,label])=>`<option value="${value}"${(shop.goal||'best')===value?' selected':''}>${label}</option>`).join('')}</select></label>
-        ${!shop.sendAnchors.length&&!shop.receiveAnchors.length&&['RB','WR','TE','QB'].includes(team.need)?`<button type="button" class="btn ghost small tb-need-action" data-tb-shop-need="${esc(team.need)}">Find ${esc(team.need)} help across the league <span aria-hidden="true">→</span></button>`:''}
+        <label class="tb-goal"><span>Trade goal</span><select data-tb-goal>${[['best','Best fit'],['starter','Upgrade a starter'],['consolidate','Depth for a stud'],['RB','Add RB help'],['WR','Add WR help'],['TE','Add TE help'],['QB','Add QB help']].map(([value,label])=>`<option value="${value}"${(shop.goal||'best')===value?' selected':''}${['QB','RB','WR','TE'].includes(value)&&!receivePositions.includes(value)?' disabled':''}>${label}</option>`).join('')}</select></label>
+        ${!shop.sendAnchors.length&&!shop.receiveAnchors.length&&['RB','WR','TE','QB'].includes(team.need)?`<button type="button" class="btn ghost small tb-need-action" data-tb-shop-need="${esc(team.need)}"${receivePositions.includes(team.need)?'':' disabled'}>Find ${esc(team.need)} help across the league <span aria-hidden="true">→</span></button>`:''}
         <label class="tb-goal"><span>Plan for</span><select data-tb-horizon${shop.scheduleLoading?' disabled':''}><option value="season"${shop.horizon!=='next4'?' selected':''}>Rest of season</option><option value="next4"${shop.horizon==='next4'?' selected':''}>Next 4 weeks</option></select></label>
         ${shop.scheduleLoading?'<p class="tb-search-status" role="status">Checking upcoming schedules…</p>':shop.scheduleError?'<p class="tb-search-status" role="status">Upcoming schedules unavailable. Using rest of season.</p><button type="button" class="btn ghost small" data-tb-retry-schedules>Retry schedules</button>':''}
         </details>
@@ -215,16 +217,17 @@ function tradeLab(team, teams, pool, shop) {
     </details>
     <div class="tb-blueprint tb-player-pickers tb-quick-targets">
       <section><header><small>PLAYERS I’LL MOVE</small></header><div class="tb-anchor-chips">${anchorChips(shop.sendAnchors, pool, "send")}</div><select aria-label="Add one of your players to send" data-tb-add-anchor="send">${anchorOptions(minePlayers, shop.sendAnchors, "Add player…")}</select></section>
-      ${allPartners ? `<section class="tb-league-return"><header><small>PLAYERS I WANT</small><span>Any team</span></header><div class="tb-anchor-chips"><span class="tb-anchor-empty">Best league-wide return</span></div><select aria-label="Choose a player you want from any team" data-tb-league-target><option value="">Add player…</option>${otherTeams.map(owner => `<optgroup label="${esc(teamName(owner))}">${anchorOptions((owner.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a,b) => b.tradeValue-a.tradeValue), [], null)}</optgroup>`).join('')}</select></section>`
-        : `<section><header><small>PLAYERS I WANT</small></header><div class="tb-anchor-chips">${anchorChips(shop.receiveAnchors, pool, "receive")}</div><select aria-label="Add a player you want to receive" data-tb-add-anchor="receive">${anchorOptions(theirPlayers, shop.receiveAnchors, "Add player…")}</select></section>`}
+      ${allPartners ? `<section class="tb-league-return" data-tb-receive-targets><header><small>PLAYERS I WANT</small><span>Any team</span></header><div class="tb-anchor-chips"><span class="tb-anchor-empty">Best league-wide return</span></div><select aria-label="Choose a player you want from any team" data-tb-league-target><option value="">Add player…</option>${otherTeams.map(owner => `<optgroup label="${esc(teamName(owner))}">${anchorOptions((owner.playerIds || []).map(id => pool.get(String(id))).filter(player=>player&&receivePositions.includes(player.position)).sort((a,b) => b.tradeValue-a.tradeValue), [], null)}</optgroup>`).join('')}</select></section>`
+        : `<section data-tb-receive-targets><header><small>PLAYERS I WANT</small></header><div class="tb-anchor-chips">${anchorChips(shop.receiveAnchors, pool, "receive")}</div><select aria-label="Add a player you want to receive" data-tb-add-anchor="receive">${anchorOptions(theirPlayers, shop.receiveAnchors, "Add player…")}</select></section>`}
     </div>
+    ${receivePositionsMarkup(receivePositions)}
     <div class="tb-intent" aria-label="Offer type"><span>SHOW ME</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "Fair"], ["aggressive", "Aggressive"], ["steal", "Steal"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" aria-pressed="${intent === value}" aria-label="${intentLabel(value,label)}" class="${intent === value ? "is-active" : ""}"><span>${label}</span><span class="tb-intent-count" data-tb-intent-count>(${intentCount(value)})</span></button>`).join("")}</div></div>
     <section class="tb-layout-section" data-tb-offers tabindex="-1">
       <h2 class="section-title">Generated offers<span class="count">${searching?'Finding offers…':failed?'Try again':closestOffers.length?`${closestOffers.length} alternatives`:`Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}`}</span></h2>
       <div class="tb-offers-card" aria-busy="${searching}">
         ${searching?'<p class="tb-search-status" role="status">Finding offers…</p><div class="tb-search-placeholder" aria-hidden="true"><i></i><i></i><i></i></div>':failed?'<p class="tb-search-status" role="status">Couldn’t find offers.</p><button type="button" class="btn ghost small" data-tb-retry>Try again</button>':`
         ${tierOffers.length || !closestOffers.length ? `<div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, true, tierOffers.length)}</div>` : ""}
-        ${tierOffers.length ? "" : `<div class="ta-empty" role="status">${esc(tradeOfferEmptyCopy(intent, shop.receiveAnchors.map(id=>pool.get(String(id))?.position),allOffers))}${tradeSearchRestricted(shop)?`<button type="button" class="btn ghost small" data-tb-reset-search>Reset search · all teams</button>`:""}</div>`}
+        ${tierOffers.length ? "" : `<div class="ta-empty" role="status">${esc(receivePositions.length?tradeOfferEmptyCopy(intent, shop.receiveAnchors.map(id=>pool.get(String(id))?.position),allOffers):'Select a position to find offers.')}${tradeSearchRestricted(shop)?`<button type="button" class="btn ghost small" data-tb-reset-search>Reset search · all teams</button>`:""}</div>`}
         ${closestOffers.length ? `<div data-tb-closest><p class="tb-search-status">Closest available</p><div class="tb-tiers">${tierMarkup(closestTier,closestOffers,pool,true)}</div><button type="button" class="btn ghost small" data-tb-intent="${closestTier}">See all ${tierCopy[closestTier].title} offers</button></div>` : ""}
         ${closestOffers.length ? "" : `
         <div class="tb-offer-actions">
@@ -301,12 +304,21 @@ function page(data, tradeAlerts = []) {
         if(section.open)shop.openTiers.add(tier);else shop.openTiers.delete(tier);
         saveDraft?.();
       }));};
-      const paintOffers=({countsOnly=false}={})=>{
+      const paintOffers=({countsOnly=false,updateControls=false,preservePrevious=true}={})=>{
         if(!current()||shop.mode!=='offers')return;
         const old=body.querySelector('[data-tb-offers]');if(!old)return;
         const focused=old.contains(document.activeElement);
         const template=document.createElement('template');
         template.innerHTML=tradeLab(data.teams.find(t=>String(t.id)===String(selectedId))||data.teams[0],data.teams,data.pool,shop);
+        if(updateControls){
+          for(const input of body.querySelectorAll('[data-tb-receive-position]'))input.checked=shop.receivePositions.includes(input.value);
+          for(const button of body.querySelectorAll('[data-tb-receive-preset]'))button.setAttribute('aria-pressed',template.content.querySelector(`[data-tb-receive-preset="${button.dataset.tbReceivePreset}"]`).getAttribute('aria-pressed'));
+          const targets=body.querySelector('[data-tb-receive-targets]');
+          if(targets){stopPickers();targets.innerHTML=template.content.querySelector('[data-tb-receive-targets]').innerHTML;stopPickers=mountTradePlayerPickers(body,data.pool,data.teams);}
+          const goal=body.querySelector('[data-tb-goal]');if(goal){goal.innerHTML=template.content.querySelector('[data-tb-goal]').innerHTML;goal.value=shop.goal;}
+          const need=body.querySelector('[data-tb-shop-need]');if(need)need.disabled=!shop.receivePositions.includes(need.dataset.tbShopNeed);
+          const summary=body.querySelector('.tb-setup-summary em');if(summary)summary.innerHTML=template.content.querySelector('.tb-setup-summary em').innerHTML;
+        }
         template.content.querySelectorAll('.tb-intent-options [data-tb-intent]').forEach(next=>{
           const button=body.querySelector(`[data-tb-intent="${next.dataset.tbIntent}"]`);
           if(!button)return;
@@ -315,7 +327,7 @@ function page(data, tradeAlerts = []) {
         });
         if(countsOnly)return;
         const next=template.content.querySelector('[data-tb-offers]');
-        if(next.querySelector('.tb-offers-card[aria-busy="true"]')&&old.querySelector('.tb-offer')){
+        if(preservePrevious&&next.querySelector('.tb-offers-card[aria-busy="true"]')&&old.querySelector('.tb-offer')){
           old.setAttribute('aria-busy','true');
           old.querySelectorAll('[data-td-load-offer]').forEach(button=>button.disabled=true);
           if(!old.querySelector('[data-ti-search-status]')){const status=document.createElement('p');status.className='tb-search-status';status.dataset.tiSearchStatus='';status.setAttribute('role','status');status.textContent='Updating offers…';old.querySelector('.tb-offers-card')?.prepend(status);}
@@ -421,7 +433,12 @@ function page(data, tradeAlerts = []) {
         shop.maxPlayers = 8; shop.sendCount = "any"; shop.receiveCount = "any";
         shop.intent = "fair"; shop.visibleCount = OFFER_BATCH_SIZE; shop.openTiers=new Set(["fair"]); shop.customOpen = false;shop.mode="offers";
       };
+      const updateReceivePositions=positions=>{
+        setReceivePositions(shop,positions,data.pool);shop.visibleCount=OFFER_BATCH_SIZE;
+        paintOffers({updateControls:true,preservePrevious:false});saveDraft?.();
+      };
       body.addEventListener("change", event => {
+        if(event.target.matches('[data-tb-receive-position]')){updateReceivePositions([...body.querySelectorAll('[data-tb-receive-position]:checked')].map(input=>input.value));return;}
         if(event.target.matches('[data-tb-horizon]')){shop.horizon=event.target.value;if(shop.horizon==='next4'&&!shop.weekSchedules?.length)void loadSchedules();else refreshOffers();return;}
         if(event.target.matches('[data-tb-goal]')){shop.goal=event.target.value;refreshOffers();return;}
         if (event.target.matches("[data-tb-member]")) {
@@ -494,6 +511,8 @@ function page(data, tradeAlerts = []) {
         if (summary) summary.textContent = value;
       });
       body.addEventListener("click", async event => {
+        const preset=event.target.closest('[data-tb-receive-preset]');
+        if(preset){updateReceivePositions(preset.dataset.tbReceivePreset==='all'?normalizeReceivePositions():['RB','WR']);return;}
         if(event.target.closest('[data-td-negotiate]')){
           if(!deal||sharing)return;const original=deal;sharing=true;event.target.closest('button').disabled=true;
           try{
@@ -622,9 +641,8 @@ function page(data, tradeAlerts = []) {
           const options = body.querySelector(".tb-intent-options");
           if (options) options.dataset.intent = value;
           options?.querySelectorAll("[data-tb-intent]").forEach(button => {button.classList.toggle("is-active", button.dataset.tbIntent === value);button.setAttribute('aria-pressed',String(button.dataset.tbIntent === value));});
-          const offers=body.querySelector('[data-tb-offers]');if(offers){offers.inert=true;offers.setAttribute('aria-busy','true');}
-          const stamp = shop.intentStamp = (shop.intentStamp || 0) + 1;
-          setTimeout(() => { if (current()&&stamp === shop.intentStamp) refreshOffers(); }, 260);
+          shop.intentStamp=(shop.intentStamp||0)+1;shop.visibleCount=OFFER_BATCH_SIZE;
+          paintOffers({preservePrevious:false});saveDraft?.();
           return;
         }
         if (event.target.closest("[data-tb-show-all]")) { shop.visibleCount = Number.MAX_SAFE_INTEGER; draw(); return; }
