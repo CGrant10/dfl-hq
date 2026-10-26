@@ -22,6 +22,8 @@ is outside the latest page, the view reads that exact scoped key separately.
 Missing or failed lookups show a retry rather than opening a different event.
 Closing an alert does not reopen it on refresh. A bounded reel includes the
 requested older play; ordinary openings start at the first frame.
+Choosing another matchup clears the previous alert's play parameter. A pending
+final-share read cannot open an export after closing or switching the matchup.
 
 GameDay's existing Moments tab also renders verified plays and opens them in
 the same recap. Sharing a play reuses the existing clean/photo export chooser,

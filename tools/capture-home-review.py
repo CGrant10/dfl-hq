@@ -558,8 +558,8 @@ def check_clubhouse_center(page):
           return {slidingTabMarker:true,keyboardTabs:true,rapidSelection:true,finiteMatchupLight:true,scoreGeometryStable:true,motionOff:true};
         }""")
         result['updates']=page.evaluate("""async()=>{
-          const f=window.clubhouseFixture,root=f.region,check=(v,m)=>{if(!v)throw Error(m)},settle=()=>new Promise(r=>setTimeout(r,30));
-          root.querySelector('[data-clubhouse-game="2"]').click();check(root.querySelector('[data-clubhouse-matchup]:not([hidden])').dataset.clubhouseMatchup==='2'&&root.querySelector('[data-clubhouse-game="2"]').getAttribute('aria-pressed')==='true','Matchup switch did not select');
+          const f=window.clubhouseFixture,root=f.region,check=(v,m)=>{if(!v)throw Error(m)},settle=()=>new Promise(r=>setTimeout(r,30));const intent=new URLSearchParams(location.hash.split('?')[1]||'');intent.set('moment','nfl:999:123:1');history.replaceState(history.state,'',location.hash.split('?')[0]+'?'+intent);
+          root.querySelector('[data-clubhouse-game="2"]').click();check(root.querySelector('[data-clubhouse-matchup]:not([hidden])').dataset.clubhouseMatchup==='2'&&root.querySelector('[data-clubhouse-game="2"]').getAttribute('aria-pressed')==='true','Matchup switch did not select');check(!new URLSearchParams(location.hash.split('?')[1]||'').has('moment'),'Matchup switch retains the previous alert highlight');
           root.querySelector('[data-clubhouse-game="1"]').click();
           const card=root.querySelector('[data-clubhouse-matchup="1"]'),button=card.querySelector('[data-gameday-player]'),identity=button,bench=card.querySelector('.gd-compare-bench'),positions=card.querySelector('.clubhouse-position-stats');
           check(bench&&positions,'Bench/positional stats missing');bench.open=true;positions.open=true;button.focus();button.scrollIntoView({behavior:'instant',block:'center'});
@@ -642,7 +642,7 @@ def check_watch_score_strip(page):
     source=(ROOT/'js/game-day-watch.js').read_text().split('export function mountGameDayWatch')[1]
     page.evaluate("""async source=>{
       const helpers=Object.assign({},...await Promise.all(['ui','sleeper-links','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-moment-effects','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','clubhouse-matchup-model','watch-score-collapse','moment-recap','record-chases','record-chases-model','team-art','live-football','matchup-finish','matchup-finish-model','game-day-matchup-share','matchup-story','matchup-highlights','live-football'].map(name=>import(`./js/${name}.js`))));
-      const {buildGameDay}=await import('./js/game-day-model.js');
+      const {buildGameDay}=await import('./js/game-day-model.js');window.watchShareCount=0;window.watchHoldMoments=false;helpers.shareMatchupReceipt=()=>{window.watchShareCount++};
       const members=[1,2,3,4].map(id=>({id,sleeper_user_id:`strip-${id}`,team_name:id===1?'The Very Long Championship Bayou Bombers':id===2?'Klutch Sports Group':`Demo Team ${id}`}));
       const week={season:2099,week:6,leagueId:'1286077564572037120',completed:false,games:[1,2].map(id=>({matchup_id:id,user1:`strip-${id*2-1}`,user2:`strip-${id*2}`,roster1:id*2-1,roster2:id*2}))};
       const players={},slots=['QB','RB','RB','WR','WR','TE','WR','K','DEF'];
@@ -653,7 +653,7 @@ def check_watch_score_strip(page):
       const mount=Function(...Object.keys(helpers),'db','currentMember','mountScoreVfx','mountPlayerSpotlight','loadRivalryCalls','rivalryStoryHtml','return function mountGameDayWatch'+source)(...Object.values(helpers),()=>({from:()=>({select:()=>({match:()=>({order:()=>({order:()=>({limit:async()=>({data:[]})})})})})})}),()=>null,()=>({stop(){}}),()=>({stop(){},update(){},setMotion(){}}),async()=>[],()=>'<p>Demo rivalry · sample matchup only</p>');
       helpers.savePageChoice('watch-matchup-2099-6','1');helpers.savePageChoice('watch-tab','matchup');
       const timeline={items:[{key:'demo-1',kind:'lead',text:'Demo Team takes the lead · 45.00 – 42.00',at:Date.UTC(2099,9,1,18),matchupId:'1',team:{team_name:members[0].team_name}},{key:'demo-2',kind:'surge',text:'Demo Player: +8.00 fantasy points since the previous sync',at:Date.UTC(2099,9,1,19),matchupId:'1',player:{id:'6794',name:'Demo Player',position:'WR',nflTeam:'MIN'}}]};
-      const watch=mount(root,{getModel:()=>model,getHistory:()=>[],getTimeline:()=>timeline,getMotion:()=>motion,members,onRefresh:async()=>{},onMotion:()=>{motion=!motion;watch.setMotion()}});
+      const watch=mount(root,{getModel:()=>model,getHistory:()=>[],getTimeline:()=>timeline,getMotion:()=>motion,members,onRefresh:async()=>{},onMoments:async()=>{if(window.watchHoldMoments)await new Promise(resolve=>window.watchReleaseMoments=resolve)},onMotion:()=>{motion=!motion;watch.setMotion()}});
       watch.open({tab:'matchup'});
       const dialog=root.querySelector('dialog');
       window.watchStripFixture={root,watch,dialog,get model(){return model},setMotion(value){motion=value;watch.setMotion()},setPhase(state){model.games[0].sides.forEach(t=>{t.live=state==='live'?9:0;t.known=state!=='unknown';t.starters.forEach(p=>p.state=state);t.lineup.forEach(p=>p.state=state)});watch.update()},final(){model.completed=true;watch.update()},stop(){watch.stop();root.remove()}};
@@ -733,6 +733,15 @@ def check_watch_score_strip(page):
         recap.locator('[data-recap-play]').click();page.wait_for_timeout(4700)
         assert recap.locator('.moment-recap-count').text_content()=='2 of 3'
         page.keyboard.press('Escape');result['momentRecap']['playPause']=True
+        page.evaluate('window.watchHoldMoments=true')
+        page.locator('.gameday-watch [data-finish-share]').click()
+        page.wait_for_function('!!window.watchReleaseMoments')
+        page.evaluate('window.watchStripFixture.dialog.querySelector("[data-watch-close]").click()')
+        page.wait_for_function('!window.watchStripFixture.dialog.open')
+        page.evaluate('window.watchReleaseMoments()');page.wait_for_timeout(100)
+        assert page.evaluate('window.watchShareCount===0')
+        result['momentRecap']['abandonedShareCancelled']=True
+        page.evaluate('window.watchHoldMoments=false;window.watchStripFixture.watch.open({tab:"matchup"})')
         page.emulate_media(reduced_motion='reduce')
         assert page.locator('.gd-watch-scoreboard').evaluate("e=>getComputedStyle(e).transitionDuration")=='0s'
         result['reducedMotion']=True

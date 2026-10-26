@@ -51,7 +51,7 @@ export function mountGameDayWatch(root,{getModel,getHistory,getMotion,members,on
  const motion=()=>getMotion()&&!reduced.matches;
  const selected=()=>getModel()?.games.find(g=>g.id===gameId);
  const recordWatch=mountRecordChases(content,{getModel,getGame:selected,getMotion});
- const finish=mountMatchupFinish(content,{getModel,getGame:selected,getMotion,getOwner:()=>currentMember()?.id,onShare:async()=>{await onMoments();return shareMatchupReceipt(matchupReceiptData(getModel(),{gameId,moments:getTimeline()?.items||[]}))}});
+ const finish=mountMatchupFinish(content,{getModel,getGame:selected,getMotion,getOwner:()=>currentMember()?.id,onShare:async()=>{const target=gameId,sharedModel=getModel();await onMoments();if(stopped||!dialog.open||gameId!==target)return;return shareMatchupReceipt(matchupReceiptData(sharedModel,{gameId:target,moments:getTimeline()?.items||[]}))}});
  const expandFinish=event=>{if(event.target.closest('[data-finish-replay]'))scoreCollapse.expand()};
  content.addEventListener('click',expandFinish,true);
  const cancelAnimations=()=>{recordWatch.motionChanged();animations.forEach(a=>a.cancel());animations=[];stopScores();stopScores=()=>{}};
