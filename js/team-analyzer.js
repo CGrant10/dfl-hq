@@ -1,4 +1,5 @@
 import {intentionPlayerAllowed,offerManagerFit} from './trade-intentions-model.js';
+import {normalizeReceivePositions,receivePackageAllowed} from './trade-receive-controls.js';
 import {offerPlayerLimit} from './trade-package-limits.js';
 import { scorePlayer } from "./dfl-scoring.js";
 import {tradeTransfers} from './trade-routing.js';
@@ -963,14 +964,17 @@ function withTradeWindow(rows,pool,{horizon,weekSchedules,limit=96,intent='fair'
  * the package ceiling does not turn the Trade Board into a Cartesian freeze.
  */
 export function suggestTrades({ teams = [], teamId, playerId, playerIds, partnerId, anchorTeamId, sendAnchorIds, receiveAnchorIds,
-  pool = new Map(), limit = 12, shapes = [], maxPlayers = 8, intent = "aggressive", goal="best",horizon='season',weekSchedules=[],intentions={} } = {}) {
+  pool = new Map(), limit = 12, shapes = [], maxPlayers = 8, intent = "aggressive", goal="best",horizon='season',weekSchedules=[],intentions={},receivePositions } = {}) {
   pool = tradePlayerPool(pool);
+  const allowedReceive = normalizeReceivePositions(receivePositions);
+  if (!allowedReceive.length) return [];
   const mine = teams.find(team => String(team.id) === String(teamId));
   if (!mine) return [];
   const anchorId = String(anchorTeamId ?? teamId), anchorTeam = teams.find(team => String(team.id) === anchorId);
   const anchors = (playerIds?.length ? playerIds : [playerId]).filter(Boolean).map(String);
   const sendRequired = [...new Set((sendAnchorIds ?? (anchorId === String(mine.id) ? anchors : [])).map(String))];
   const receiveRequired = [...new Set((receiveAnchorIds ?? (anchorId !== String(mine.id) ? anchors : [])).map(String))];
+  if (!receivePackageAllowed(receiveRequired,pool,allowedReceive)) return [];
   if (sendRequired.some(id => !mine.playerIds.map(String).includes(id))) return [];
   if (anchors.length && !anchorTeam) return [];
   const partners = partnerId
@@ -981,7 +985,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
   const minePlayers = sortedPlayers(mine.playerIds.filter(id=>intentionPlayerAllowed(mine,id,intentions,sendRequired)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
   for (const other of partners) {
     if (receiveRequired.some(id => !other.playerIds.map(String).includes(id))) continue;
-    const theirs = sortedPlayers(other.playerIds.filter(id=>intentionPlayerAllowed(other,id,intentions,receiveRequired)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
+    const theirs = sortedPlayers(other.playerIds.filter(id=>intentionPlayerAllowed(other,id,intentions,receiveRequired)&&receivePackageAllowed([id],pool,allowedReceive)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
     if(intent==='steal')compactPossibilities.push(...compactStealCandidates(minePlayers,theirs,pool,allowedShapes,sendRequired,receiveRequired,supported).map(candidate=>({other,...candidate})));
     for (const [sendCount, receiveCount] of allowedShapes) {
       const ratios=intent==='steal'?[.65,.8,1]:[.9,1,1.1];
@@ -997,6 +1001,8 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     }
   }
   const evaluateCandidate = candidate => {
+    // Refinement can add or replace players outside the original candidate pool.
+    if (!receivePackageAllowed(candidate.sendB,pool,allowedReceive)) return null;
     if(candidate.sendA.some(id=>!intentionPlayerAllowed(mine,id,intentions,sendRequired))||candidate.sendB.some(id=>!intentionPlayerAllowed(candidate.other,id,intentions,receiveRequired)))return null;
     const result = evaluateTrade({ teamA: mine, teamB: candidate.other, sendA: candidate.sendA, sendB: candidate.sendB, pool });
     if (!result) return null;
@@ -1033,14 +1039,17 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
 
 /** Bounded package search for a circular exchange, matching the manual desk. */
 export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlayers = 8,
-  sendAnchorIds = [], receiveAnchorIds = [], sendCount = "any", receiveCount = "any", intent = "aggressive", limit = 96,goal="best",horizon='season',weekSchedules=[],intentions={} } = {}) {
+  sendAnchorIds = [], receiveAnchorIds = [], sendCount = "any", receiveCount = "any", intent = "aggressive", limit = 96,goal="best",horizon='season',weekSchedules=[],intentions={},receivePositions } = {}) {
   pool = tradePlayerPool(pool);
+  const allowedReceive = normalizeReceivePositions(receivePositions);
+  if (!allowedReceive.length || !receivePackageAllowed(receiveAnchorIds,pool,allowedReceive)) return [];
   if (parties.length < 3 || parties.length > 8 || new Set(parties.map(t => String(t.id))).size !== parties.length) return [];
   const cap = offerPlayerLimit(maxPlayers, sendAnchorIds, receiveAnchorIds, parties.length);
   const choices = parties.map((team, index) => {
     const required = index === 0 ? sendAnchorIds : index === parties.length - 1 ? receiveAnchorIds : [];
     if (required.some(id => !team.playerIds.map(String).includes(String(id)))) return [];
-    const ranked = sortedPlayers(team.playerIds.filter(id=>intentionPlayerAllowed(team,id,intentions,required)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
+    const ranked = sortedPlayers(team.playerIds.filter(id=>intentionPlayerAllowed(team,id,intentions,required)
+      &&(index!==parties.length-1||receivePackageAllowed([id],pool,allowedReceive))), pool).sort((a, b) => b.tradeValue - a.tradeValue);
     const players = ranked.slice(0, 8);
     for (const id of required) { const player = ranked.find(p => String(p.id) === String(id)); if (player && !players.includes(player)) players.push(player); }
     const fixed = index === 0 ? sendCount : index === parties.length - 1 ? receiveCount : "any";
@@ -1062,7 +1071,7 @@ export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlay
   }
   const usable=beam.map(candidate => {
     const result = evaluateMultiTeamTrade({ teams: parties, sends: candidate.sends, pool });
-    if (!result || result.projectionEvidence?.missing?.length || result.fairness < 40 || result.weeklyDeltas.some(n => n < -2.5)
+    if (!result || !receivePackageAllowed(result.receives[0],pool,allowedReceive) || result.projectionEvidence?.missing?.length || result.fairness < 40 || result.weeklyDeltas.some(n => n < -2.5)
       || result.rosterImpacts.some(n => n < -2.25) || result.usefulIncoming.some(ids => !ids.length)) return null;
     const tier=tradeSuggestionTier({...result, fairness:result.fairness,valueToA:result.values[0],valueToB:result.outgoingValues[0],
       rosterImpactA:result.rosterImpacts[0],rosterImpactB:Math.min(...result.rosterImpacts.slice(1)),

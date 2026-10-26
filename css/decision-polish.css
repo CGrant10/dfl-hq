@@ -63,3 +63,16 @@ html[data-ui-motion="off"] .gd-moment-recap,html[data-ui-motion="off"] .gd-momen
 #view.view[data-page-system][data-route][data-route="trade"] .tb-quick-targets>section{min-width:0;padding:12px 0;border:0;background:transparent}
 #view.view[data-page-system][data-route][data-route="trade"] .tb-quick-targets>section+section{padding-left:12px;border-left:1px solid var(--line)}
 #view.view[data-page-system][data-route][data-route="trade"] .tb-quick-targets .tb-anchor-chips:has(>.tb-anchor-empty:only-child){display:none}
+
+/* Incoming-position choices stay mounted while the worker updates offers. */
+#view .tb-receive-positions{min-width:0;margin:4px 0;padding:0;border:0}
+#view .tb-receive-positions legend{padding:0 0 6px;font-size:12px;line-height:1.3;font-weight:700;color:var(--body-text)}
+#view .tb-receive-options button{min-height:44px;min-width:0;padding:0 3px;border:0;border-radius:7px;background:transparent;color:var(--body-text);font:600 11px/1.3 var(--font-body);cursor:pointer}
+#view .tb-receive-options button[aria-pressed="true"]{color:var(--text);text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:4px}
+#view .tb-receive-options{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+#view .tb-receive-options label{display:flex;align-items:center;justify-content:center;gap:4px;min-height:44px;margin:0;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--body-text);font-size:12px;font-weight:700;cursor:pointer;transition:background-color 160ms ease,border-color 160ms ease,transform 120ms ease}
+#view .tb-receive-options label:has(:checked){background:color-mix(in srgb,var(--accent) 9%,var(--bg));border-color:color-mix(in srgb,var(--accent) 55%,var(--line));color:var(--text)}
+#view .tb-receive-options input{flex:0 0 16px;width:16px;height:16px;margin:0;accent-color:var(--accent);cursor:pointer}
+#view .tb-receive-options label:active{transform:scale(.97)}
+#view .tb-receive-options label:focus-within,#view .tb-receive-options button:focus-visible{outline:2px solid var(--text);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){#view .tb-receive-options label{transition:none;transform:none}}

@@ -5,6 +5,8 @@ on:
       - 'js/trade-*'
       - 'js/connected-artwork.js'
       - 'tools/fixtures/dfl-trade-benchmark.json'
+      - 'tools/capture-trade-receive-controls.py'
+      - 'css/decision-polish.css'
       - 'tools/capture-trade-motion.py'
       - 'tools/capture-trade-pick-motion.py'
       - 'tools/capture-trade-receipt-motion.py'
@@ -68,6 +70,8 @@ jobs:
           test -n "$dfl_review_browser"
           printf 'DFL_REVIEW_CHROMIUM=%s\n' "$dfl_review_browser" >> "$GITHUB_ENV"
       - run: node tools/render-trade-review.mjs
+      - name: Check receive-position controls and mobile themes
+        run: python tools/capture-trade-receive-controls.py
       - run: python tools/capture-trade-review.py
       - name: Check connected offer transitions
         run: python tools/capture-trade-motion.py

@@ -10,6 +10,7 @@ const receiptFixtures=[makeReceipt(receiptTx),makeReceipt({...receiptTx,transact
 const source=readFileSync(new URL('../js/pages/trade.js',import.meta.url),'utf8');
 const production=source.slice(source.indexOf('const teamName'),source.indexOf('export async function render('));
 const imports=`
+import {normalizeReceivePositions,setReceivePositions,receivePositionsMarkup} from '/js/trade-receive-controls.js';
 import {createTradeIntentions as createRealTradeIntentions} from '/js/trade-intentions-ui.js';
 const createTradeIntentions=options=>createRealTradeIntentions({...options,createApi:async()=>window.reviewIntentionsApi||{list:async()=>[],save:async()=>{throw Error('Review intention writes are blocked')}}});
 import {completedTradeMarkup} from '/js/trade-receipt-ui.js';
