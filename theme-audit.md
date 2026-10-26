@@ -984,3 +984,17 @@ the losing sixth leg, pending grading and correct estimated return. Vector marks
 use dark semantic ink on paper and light ink on the dark export. `pnpm themes`
 passes; no default palette or theme-picker changes. Evidence is in
 `docs/sportsbook-results-1480/`. Physical Safari remains unverified.
+
+
+## 1.481.0 — whole-trade position controls (2026-10-26)
+
+Reviewed actual Trade Board screenshots in Light/Dark at 320 and 390px after
+filtering to RB + WR. “Positions in trade” fits cleanly; native checkbox labels
+and presets retain 44px hit targets. Both player pickers preserve their DOM nodes
+and offer only enabled positions. All 84 browser checks passed, including text
+contrast >=4.5:1, overflow, rapid changes, focus/scroll retention and reduced
+motion. Shared Medicine Wheel tokens and semantic tier colors are unchanged.
+`pnpm themes` and all relevant theme tests passed in the full `pnpm check` run.
+Screenshots and checks: `/workspace/dfl-trade-review/receive-controls/`.
+See `docs/trade-value-position-validation-1481.md` for source-refresh limits and
+validation. Native installed-device rendering was not directly verified.

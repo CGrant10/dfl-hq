@@ -80,16 +80,16 @@ async function fetchAnalyzerData({freshTrade=false,liveRefresh=false} = {}) {
   // Exclude the ongoing week: partial totals are not a full game sample.
   const completedWeeks = Array.from({length:Math.max(0,liveWeek-1)},(_,i)=>i+1);
   const liveSignals = liveWeek ? Promise.all([
-    loadWeeklyProjections(projectionSeason, liveWeek, {maxAgeMs:freshTrade?0:liveRefresh?60000:TRADE_SIGNALS_CACHE_MS}).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
+    loadWeeklyProjections(projectionSeason, liveWeek, {maxAgeMs:freshTrade?0:ANALYZER_CACHE_MS}).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
     Promise.all(completedWeeks.map(week => loadWeeklyStats(projectionSeason, week)
       .catch(() => ({ data: [], fetchedAt: 0, stale: true })))),
     loadTrendingPlayers().catch(() => ({ adds: new Map(), drops: new Map(), fetchedAt: 0 })),
   ]) : Promise.resolve([{ data: [], fetchedAt: 0 }, [], { adds: new Map(), drops: new Map(), fetchedAt: 0 }]);
   const [players, statsRes, currentStatsRes, projectionRes, matchupRes, [weeklyProjectionRes, recentStatsRes, trending], latestResults,expertRankings,powerRes] = await Promise.all([
-    loadPlayers(freshTrade?{maxAgeMs:0}:{}),
+    loadPlayers({maxAgeMs:freshTrade?0:TRADE_SIGNALS_CACHE_MS}),
     loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
-    loadSeasonStats(projectionSeason, { maxAgeMs:freshTrade?0:liveRefresh?60000:TRADE_SIGNALS_CACHE_MS }).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
-    loadMarketAdp(projectionSeason, format).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
+    loadSeasonStats(projectionSeason, { maxAgeMs:freshTrade?0:ANALYZER_CACHE_MS }).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
+    loadMarketAdp(projectionSeason, format, {maxAgeMs:freshTrade?0:TRADE_SIGNALS_CACHE_MS}).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
     /* Power Pulse builds its weekly ranking boards from final scores. Keep
        this season-scoped and column-scoped: the board needs at most 84 small
        matchup rows, not the full multi-season history payload. */
@@ -98,7 +98,7 @@ async function fetchAnalyzerData({freshTrade=false,liveRefresh=false} = {}) {
       .eq("season", projectionSeason).eq('league_id',String(league.sleeper_league_id)).lte("week", 14).order("week", { ascending: true }),
     liveSignals,
     liveWeek > 1 ? loadLatestLeagueResults(league.sleeper_league_id, projectionSeason, liveWeek).catch(() => null) : null,
-    loadExpertRankings({season:projectionSeason,scoring:format},{force:freshTrade}),
+    loadExpertRankings({season:projectionSeason,scoring:format},{force:freshTrade,maxAgeMs:ANALYZER_CACHE_MS}),
     db().from('league_power_publications').select('season,week,model_version,payload,published_at').eq('league_id',String(league.sleeper_league_id)).eq('season',projectionSeason).order('week',{ascending:true}),
   ]);
   if(freshTrade&&liveWeek&&(!weeklyProjectionRes.fetchedAt||weeklyProjectionRes.stale))throw new Error('Could not verify current injuries. Try sharing again.');

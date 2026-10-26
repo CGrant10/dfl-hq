@@ -136,7 +136,7 @@ function tradeLab(team, teams, pool, shop) {
     : otherTeams.find(item => String(item.id) === String(shop.partnerId)) || otherTeams[0];
   if (!allPartners) shop.partnerId = partner?.id || "";
   let partnerKey = allPartners ? "all" : partner?.id || "";
-  const minePlayers = (team.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
+  const minePlayers = (team.playerIds || []).map(id => pool.get(String(id))).filter(player=>player&&receivePositions.includes(player.position)).sort((a, b) => b.tradeValue - a.tradeValue);
   shop.memberIds = (shop.memberIds || []).filter((id, index, ids) => otherTeams.some(t => String(t.id) === String(id)) && String(id) !== String(partner?.id) && ids.indexOf(id) === index);
   if (allPartners) shop.memberIds = [];
   const parties = [team, partner, ...shop.memberIds.map(id => otherTeams.find(t => String(t.id) === String(id)))].filter(Boolean);
@@ -216,7 +216,7 @@ function tradeLab(team, teams, pool, shop) {
       <button type="button" class="btn tb-browse-offers" data-tb-view-offers>View offers <span aria-hidden="true">→</span></button></div>
     </details>
     <div class="tb-blueprint tb-player-pickers tb-quick-targets">
-      <section><header><small>PLAYERS I’LL MOVE</small></header><div class="tb-anchor-chips">${anchorChips(shop.sendAnchors, pool, "send")}</div><select aria-label="Add one of your players to send" data-tb-add-anchor="send">${anchorOptions(minePlayers, shop.sendAnchors, "Add player…")}</select></section>
+      <section data-tb-send-targets><header><small>PLAYERS I’LL MOVE</small></header><div class="tb-anchor-chips">${anchorChips(shop.sendAnchors, pool, "send")}</div><select aria-label="Add one of your players to send" data-tb-add-anchor="send">${anchorOptions(minePlayers, shop.sendAnchors, "Add player…")}</select></section>
       ${allPartners ? `<section class="tb-league-return" data-tb-receive-targets><header><small>PLAYERS I WANT</small><span>Any team</span></header><div class="tb-anchor-chips"><span class="tb-anchor-empty">Best league-wide return</span></div><select aria-label="Choose a player you want from any team" data-tb-league-target><option value="">Add player…</option>${otherTeams.map(owner => `<optgroup label="${esc(teamName(owner))}">${anchorOptions((owner.playerIds || []).map(id => pool.get(String(id))).filter(player=>player&&receivePositions.includes(player.position)).sort((a,b) => b.tradeValue-a.tradeValue), [], null)}</optgroup>`).join('')}</select></section>`
         : `<section data-tb-receive-targets><header><small>PLAYERS I WANT</small></header><div class="tb-anchor-chips">${anchorChips(shop.receiveAnchors, pool, "receive")}</div><select aria-label="Add a player you want to receive" data-tb-add-anchor="receive">${anchorOptions(theirPlayers, shop.receiveAnchors, "Add player…")}</select></section>`}
     </div>
@@ -313,8 +313,14 @@ function page(data, tradeAlerts = []) {
         if(updateControls){
           for(const input of body.querySelectorAll('[data-tb-receive-position]'))input.checked=shop.receivePositions.includes(input.value);
           for(const button of body.querySelectorAll('[data-tb-receive-preset]'))button.setAttribute('aria-pressed',template.content.querySelector(`[data-tb-receive-preset="${button.dataset.tbReceivePreset}"]`).getAttribute('aria-pressed'));
-          const targets=body.querySelector('[data-tb-receive-targets]');
-          if(targets){stopPickers();targets.innerHTML=template.content.querySelector('[data-tb-receive-targets]').innerHTML;stopPickers=mountTradePlayerPickers(body,data.pool,data.teams);}
+          // Keep each native select and its connected picker trigger alive.
+          for(const side of ['send','receive']){
+            const selector=`[data-tb-${side}-targets]`,targets=body.querySelector(selector),next=template.content.querySelector(selector);
+            if(!targets||!next)continue;
+            targets.querySelector('.tb-anchor-chips').innerHTML=next.querySelector('.tb-anchor-chips').innerHTML;
+            const select=targets.querySelector('select');select.innerHTML=next.querySelector('select').innerHTML;
+            const trigger=targets.querySelector('[data-trade-picker]');if(trigger)trigger.disabled=![...select.options].some(option=>option.value&&!option.disabled);
+          }
           const goal=body.querySelector('[data-tb-goal]');if(goal){goal.innerHTML=template.content.querySelector('[data-tb-goal]').innerHTML;goal.value=shop.goal;}
           const need=body.querySelector('[data-tb-shop-need]');if(need)need.disabled=!shop.receivePositions.includes(need.dataset.tbShopNeed);
           const summary=body.querySelector('.tb-setup-summary em');if(summary)summary.innerHTML=template.content.querySelector('.tb-setup-summary em').innerHTML;

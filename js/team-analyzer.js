@@ -91,7 +91,10 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const projection = projectionById.get(id) || null;
     const weekly = weeklyById.get(id) || null;
     const weeklyMeta = weekly?.player || {};
-    const availability = injuryProfile(weekly?.injury_status || weeklyMeta.injury_status || meta?.i || meta?.injury_status,
+    // An explicit healthy status from this week's feed clears an older injury.
+    const injury = weekly && Object.hasOwn(weekly,'injury_status') ? weekly.injury_status
+      : Object.hasOwn(weeklyMeta,'injury_status') ? weeklyMeta.injury_status : meta?.i || meta?.injury_status;
+    const availability = injuryProfile(injury,
       reserveIds.has(id) ? 'Injured Reserve' : weeklyMeta.status || meta?.s || meta?.status);
     const lastPoints = priorLine ? scorePlayer(priorLine, scoringSettings) : null;
     const projectedPoints = projection?.stats ? scorePlayer(projection.stats, scoringSettings) : null;
@@ -974,7 +977,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
   const anchors = (playerIds?.length ? playerIds : [playerId]).filter(Boolean).map(String);
   const sendRequired = [...new Set((sendAnchorIds ?? (anchorId === String(mine.id) ? anchors : [])).map(String))];
   const receiveRequired = [...new Set((receiveAnchorIds ?? (anchorId !== String(mine.id) ? anchors : [])).map(String))];
-  if (!receivePackageAllowed(receiveRequired,pool,allowedReceive)) return [];
+  if (!receivePackageAllowed([...sendRequired,...receiveRequired],pool,allowedReceive)) return [];
   if (sendRequired.some(id => !mine.playerIds.map(String).includes(id))) return [];
   if (anchors.length && !anchorTeam) return [];
   const partners = partnerId
@@ -982,7 +985,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     : anchorId !== String(mine.id) && anchorTeam ? [anchorTeam] : teams.filter(team => String(team.id) !== String(mine.id));
   const allowedShapes = tradeShapes(offerPlayerLimit(maxPlayers, sendRequired, receiveRequired), shapes).filter(([send,receive])=>goal!=='consolidate'||send>receive);
   const possibilities = [],compactPossibilities=[],supported=new Map();
-  const minePlayers = sortedPlayers(mine.playerIds.filter(id=>intentionPlayerAllowed(mine,id,intentions,sendRequired)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
+  const minePlayers = sortedPlayers(mine.playerIds.filter(id=>intentionPlayerAllowed(mine,id,intentions,sendRequired)&&receivePackageAllowed([id],pool,allowedReceive)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
   for (const other of partners) {
     if (receiveRequired.some(id => !other.playerIds.map(String).includes(id))) continue;
     const theirs = sortedPlayers(other.playerIds.filter(id=>intentionPlayerAllowed(other,id,intentions,receiveRequired)&&receivePackageAllowed([id],pool,allowedReceive)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
@@ -1002,7 +1005,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
   }
   const evaluateCandidate = candidate => {
     // Refinement can add or replace players outside the original candidate pool.
-    if (!receivePackageAllowed(candidate.sendB,pool,allowedReceive)) return null;
+    if (!receivePackageAllowed([...candidate.sendA,...candidate.sendB],pool,allowedReceive)) return null;
     if(candidate.sendA.some(id=>!intentionPlayerAllowed(mine,id,intentions,sendRequired))||candidate.sendB.some(id=>!intentionPlayerAllowed(candidate.other,id,intentions,receiveRequired)))return null;
     const result = evaluateTrade({ teamA: mine, teamB: candidate.other, sendA: candidate.sendA, sendB: candidate.sendB, pool });
     if (!result) return null;
@@ -1042,14 +1045,14 @@ export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlay
   sendAnchorIds = [], receiveAnchorIds = [], sendCount = "any", receiveCount = "any", intent = "aggressive", limit = 96,goal="best",horizon='season',weekSchedules=[],intentions={},receivePositions } = {}) {
   pool = tradePlayerPool(pool);
   const allowedReceive = normalizeReceivePositions(receivePositions);
-  if (!allowedReceive.length || !receivePackageAllowed(receiveAnchorIds,pool,allowedReceive)) return [];
+  if (!allowedReceive.length || !receivePackageAllowed([...sendAnchorIds,...receiveAnchorIds],pool,allowedReceive)) return [];
   if (parties.length < 3 || parties.length > 8 || new Set(parties.map(t => String(t.id))).size !== parties.length) return [];
   const cap = offerPlayerLimit(maxPlayers, sendAnchorIds, receiveAnchorIds, parties.length);
   const choices = parties.map((team, index) => {
     const required = index === 0 ? sendAnchorIds : index === parties.length - 1 ? receiveAnchorIds : [];
     if (required.some(id => !team.playerIds.map(String).includes(String(id)))) return [];
     const ranked = sortedPlayers(team.playerIds.filter(id=>intentionPlayerAllowed(team,id,intentions,required)
-      &&(index!==parties.length-1||receivePackageAllowed([id],pool,allowedReceive))), pool).sort((a, b) => b.tradeValue - a.tradeValue);
+      &&receivePackageAllowed([id],pool,allowedReceive)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
     const players = ranked.slice(0, 8);
     for (const id of required) { const player = ranked.find(p => String(p.id) === String(id)); if (player && !players.includes(player)) players.push(player); }
     const fixed = index === 0 ? sendCount : index === parties.length - 1 ? receiveCount : "any";
@@ -1071,7 +1074,7 @@ export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlay
   }
   const usable=beam.map(candidate => {
     const result = evaluateMultiTeamTrade({ teams: parties, sends: candidate.sends, pool });
-    if (!result || !receivePackageAllowed(result.receives[0],pool,allowedReceive) || result.projectionEvidence?.missing?.length || result.fairness < 40 || result.weeklyDeltas.some(n => n < -2.5)
+    if (!result || !receivePackageAllowed(candidate.sends.flat(),pool,allowedReceive) || result.projectionEvidence?.missing?.length || result.fairness < 40 || result.weeklyDeltas.some(n => n < -2.5)
       || result.rosterImpacts.some(n => n < -2.25) || result.usefulIncoming.some(ids => !ids.length)) return null;
     const tier=tradeSuggestionTier({...result, fairness:result.fairness,valueToA:result.values[0],valueToB:result.outgoingValues[0],
       rosterImpactA:result.rosterImpacts[0],rosterImpactB:Math.min(...result.rosterImpacts.slice(1)),

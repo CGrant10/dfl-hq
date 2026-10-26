@@ -35,7 +35,7 @@ def snapshot(html,now):
  return {'schemaVersion':1,'source':'FantasyPros','sourceUrl':SOURCE,'kind':'rest-of-season','scoring':'ppr','season':int(data['year']),'experts':experts,'updatedAt':updated,'fetchedAt':now,'players':players}
 def publish(result,output=OUTPUT):
  # A successful check is not a new expert opinion. Avoid a commit and site
- # rebuild every two hours when only our download timestamp has changed.
+ # rebuild every thirty minutes when only our download timestamp has changed.
  if output.exists():
   previous=json.loads(output.read_text())
   facts=lambda data:{key:value for key,value in data.items() if key!='fetchedAt'}
