@@ -53,6 +53,9 @@ four size/theme combinations were visually reviewed. Evidence is retained under
 
 Connected offer and player-picking motion checks cover focus return, reduced and
 app-disabled motion, explicit three-team recipients and teardown without leftover
-portrait layers. Broader trade-flow regression results are recorded in
-`/workspace/dfl-trade-review/trade-review.json` after the current run completes.
+portrait layers. Broader trade-flow regressions also passed at 320/390/768px, including explicit
+three-team routing, saved/reloaded routes, counteroffers, five-player anchors,
+stale ownership and fresh-injury rechecks, provider-failure sharing safeguards,
+receipts and no page errors/overflow. Results are recorded in
+`/workspace/dfl-trade-review/trade-review.json`.
 Native installed-device behavior is not directly exercised by Chromium.
