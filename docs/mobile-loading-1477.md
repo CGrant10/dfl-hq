@@ -69,5 +69,6 @@ a physical-phone benchmark or a p75 claim. Worker and page traffic do not share
 the same CDP throttle, so cumulative transfer totals are not a mobile-bandwidth
 benchmark. Provider reads were allowed; verification writes were intercepted.
 
-No visual redesign, valuation changes, permission changes or notification tests.
+Existing member permissions and trade valuation are unchanged. No visual redesign
+or test notifications.
 Physical iPhone/Safari startup and hardware frame pacing remain unverified.
