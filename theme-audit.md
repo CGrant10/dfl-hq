@@ -1030,3 +1030,18 @@ Home route teardown is verified with the reel open. Evidence:
 `/workspace/dfl-highlight-review/`; see `docs/home-highlights-validation-1483.md`.
 Playback uses the official external ESPN clip page. Native installed Safari and
 future publisher availability remain unverified.
+
+
+## 1.484.0 — weekend reel with in-app playback (2026-10-26)
+
+Reviewed actual Home posters and native video sheet at 320/390px in Light/Dark,
+using real publisher footage. Weekend heading wraps cleanly at 320px; posters,
+headlines and the filmstrip remain distinct. Native video keeps a 16:9 frame and
+controls; the explicit source action uses a shared-token link and inline SVG.
+No missing glyphs, clipped actions or horizontal page overflow. The 100-check
+focused mobile matrix passes, including 4.5:1 caption contrast, 44px targets,
+reduced motion, focus restoration and expiry while open. `pnpm themes` and all
+theme tests pass with the full 2,210-test suite. No palettes or picker entries
+changed. Evidence: `/workspace/dfl-highlight-review/real-weekend/`; see
+`docs/weekend-highlights-validation-1484.md`. Installed iOS/Safari playback is
+unverified; native controls and official source fallback remain available.

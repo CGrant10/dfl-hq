@@ -1,4 +1,4 @@
-"""Production daily-reel controller with public metadata fixtures; no backend writes."""
+"""Production weekend-reel controller with public metadata fixtures; no backend writes."""
 import json,os,threading
 from pathlib import Path
 from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
@@ -27,6 +27,8 @@ with sync_playwright() as p:
    def route(r):
     if '/highlight-review.html' in r.request.url:return r.fulfill(content_type='text/html',body=html)
     if r.request.url.startswith(base):return r.continue_()
+    if r.request.url.endswith('.mp4'):
+     return r.fulfill(content_type='video/mp4',body=(ROOT/'tools/fixtures/highlight-playback.mp4').read_bytes(),headers={'Access-Control-Allow-Origin':'*','Accept-Ranges':'bytes'})
     if r.request.resource_type=='image':
      photo=OUT/'poster-0.jpg';photo=photo if photo.exists() else ROOT/'tools/fixtures/player-portrait.png'
      return r.fulfill(content_type='image/jpeg' if photo.suffix=='.jpg' else 'image/png',body=photo.read_bytes(),headers={'Access-Control-Allow-Origin':'*'})
@@ -52,22 +54,35 @@ with sync_playwright() as p:
     return Math.min(...[...root.querySelectorAll('header small,.home-reel-kind,.home-reel-matchup,.home-reel-total,.home-reel-duration')].map(e=>{let p=e,bg;while(p){bg=rgb(getComputedStyle(p).backgroundColor);if(bg[3]===255)break;p=p.parentElement}const a=lum(rgb(getComputedStyle(e).color)),b=lum(bg||[255,255,255,255]);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)}));
    }""")
    check(tag+' secondary labels and duration meet 4.5:1 contrast',contrast>=4.5)
+   check(tag+' weekend heading is visible',page.locator('#home-reel-title').text_content()=='Weekend highlights.' and 'WEEKEND REEL' in page.locator('.home-highlight-reel header').inner_text())
    page.screenshot(path=str(OUT/f'{width}-{theme}-home.png'))
    page.locator('[data-home-reel-open]').click();sheet=page.locator('.home-reel-player');page.wait_for_selector('.home-reel-player[open]')
    check(tag+' opens the complete chronological reel',sheet.locator('[data-reel-choose]').count()==10 and sheet.locator('[data-reel-count]').inner_text()=='1 / 10')
-   check(tag+' uses the exact official source with a safe explicit playback link',sheet.locator('.home-reel-source-play').evaluate('e=>e.href.startsWith("https://www.espn.com/video/clip/_/id/")&&e.target==="_blank"&&e.rel.includes("noopener")') and 'Watch clip on ESPN' in sheet.locator('.home-reel-source-play').inner_text())
+   page.wait_for_function('document.querySelector(".home-reel-player video")?.currentTime>0.1')
+   check(tag+' plays a native inline video with controls and a safe publisher source',sheet.locator('video').evaluate('e=>e.playsInline&&e.controls&&e.videoWidth>0&&e.src.startsWith("https://espnmedia-cdn.akamaized.net/espn/media/")') and sheet.locator('iframe').count()==0)
+   check(tag+' retains a safe explicit publisher fallback',sheet.locator('[data-reel-source]').evaluate('e=>e.href.startsWith("https://www.espn.com/video/clip/_/id/")&&e.target==="_blank"&&e.rel.includes("noopener")'))
    check(tag+' player sheet stays inside mobile edges',sheet.evaluate('e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight+1&&e.scrollWidth<=e.clientWidth+1}'))
    sheet.locator('[data-reel-next]').click();check(tag+' next/back move one clip with a selected filmstrip item',sheet.locator('[data-reel-count]').inner_text()=='2 / 10' and sheet.locator('[data-reel-choose][aria-pressed="true"]').count()==1)
-   sheet.locator('[data-reel-previous]').click();page.evaluate('f.kept=document.querySelector(".home-reel-source-play");f.selected=document.querySelector("[data-reel-choose][aria-pressed=true]").dataset.reelChoose;f.rows.push({...f.rows[0],id:"960001",source_url:"https://www.espn.com/video/clip/_/id/960001",published_at:new Date(f.now()-1000).toISOString()})');page.evaluate('f.c.refresh()');page.wait_for_function('document.querySelector("[data-reel-count]").textContent==="1 / 11"')
-   check(tag+' new highlights preserve the open clip instead of interrupting it',page.evaluate('f.kept===document.querySelector(".home-reel-source-play")&&f.selected===document.querySelector("[data-reel-choose][aria-pressed=true]").dataset.reelChoose'))
+   sheet.locator('[data-reel-previous]').click();page.evaluate('f.kept=document.querySelector(".home-reel-player video");f.selected=document.querySelector("[data-reel-choose][aria-pressed=true]").dataset.reelChoose;f.rows.push({...f.rows[0],id:"960001",source_url:"https://www.espn.com/video/clip/_/id/960001",published_at:new Date(f.now()-1000).toISOString()})');page.evaluate('f.c.refresh()');page.wait_for_function('document.querySelector("[data-reel-count]").textContent==="1 / 11"')
+   check(tag+' new highlights preserve the open clip instead of interrupting it',page.evaluate('f.kept===document.querySelector(".home-reel-player video")&&f.selected===document.querySelector("[data-reel-choose][aria-pressed=true]").dataset.reelChoose'))
    page.screenshot(path=str(OUT/f'{width}-{theme}-reel.png'));page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open')
+   check(tag+' closing stops playback and releases the source',page.evaluate('f.kept.paused&&!f.kept.hasAttribute("src")'))
    check(tag+' close restores the originating Home control',page.evaluate('document.activeElement===document.querySelector("[data-home-reel-open]")'))
    page.locator('[data-home-reel-clip]').first.click();check(tag+' a card opens that specific clip',page.evaluate('document.querySelector("[data-reel-choose][aria-pressed=true]").dataset.reelChoose===document.querySelector("[data-home-reel-clip]").dataset.homeReelClip'))
+   sheet.locator('[data-reel-choose]').first.click();page.evaluate('document.querySelector(".home-reel-player video").dispatchEvent(new Event("ended"))')
+   check(tag+' playback advances to the next clip on ended',sheet.locator('[data-reel-count]').inner_text()=='2 / 11')
    page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open');page.evaluate('f.fail=true;f.c.refresh()');page.wait_for_timeout(100)
    check(tag+' a failed refresh retains current unexpired clips',page.locator('[data-home-reel-clip]').count()==8)
+   page.locator('[data-home-reel-open]').click();page.evaluate('document.querySelector(".home-reel-player video").dispatchEvent(new Event("error"))')
+   check(tag+' playback errors show the source fallback without breaking the reel',sheet.locator('[data-reel-error]').is_visible() and sheet.locator('[data-reel-source]').is_visible())
+   page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open')
+   page.evaluate('f.playableRows=f.rows;f.rows=f.rows.map(row=>({...row,video_url:null}));f.fail=false;f.c.refresh()');page.wait_for_timeout(100);page.locator('[data-home-reel-open]').click()
+   check(tag+' missing video metadata still opens the exact source clip',sheet.locator('.home-reel-source-play').count()==1 and sheet.locator('video').count()==0)
+   page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open')
+   page.evaluate('f.rows=f.playableRows;f.c.refresh()');page.wait_for_timeout(100)
    page.emulate_media(reduced_motion='reduce');page.locator('[data-home-reel-open]').click();check(tag+' reduced motion opens directly without running entrance effects',sheet.evaluate('e=>!e.getAnimations().length'))
-   page.evaluate('f.fail=false;f.time(Date.parse(f.rows[0].expires_at)-100);f.c.refresh()');page.wait_for_function('!document.querySelector("[data-home-reel-open]")&&!document.querySelector(".home-reel-player").open')
-   check(tag+' morning expiry removes the Home reel and closes an open clip',page.locator('[data-home-reel-clip]').count()==0)
+   page.evaluate('f.expiringVideo=document.querySelector(".home-reel-player video");f.fail=false;f.time(Date.parse(f.rows[0].expires_at)-100);f.c.refresh()');page.wait_for_function('!document.querySelector("[data-home-reel-open]")&&!document.querySelector(".home-reel-player").open')
+   check(tag+' morning expiry removes the Home reel and closes an open clip',page.locator('[data-home-reel-clip]').count()==0 and page.evaluate('f.expiringVideo.paused&&!f.expiringVideo.hasAttribute("src")'))
    page.evaluate('f.c.refresh()');page.wait_for_timeout(100);check(tag+' expired cached clips cannot reappear after refresh',page.locator('[data-home-reel-open]').count()==0)
    page.evaluate('f.c.stop();f.time(Date.parse("2026-10-25T22:00:00Z"));f.hold=true;f.c=f.mount()');page.wait_for_function('typeof f.release==="function"');page.evaluate('f.c.stop();f.active=false;f.release()');page.wait_for_timeout(100)
    check(tag+' late responses do not revive a stopped Home reel',page.locator('[data-home-reel-open]').count()==0 and page.locator('.home-reel-player').count()==0)

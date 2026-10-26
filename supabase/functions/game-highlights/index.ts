@@ -13,8 +13,13 @@ Deno.serve(async request=>{
   if(!dryRun){const removed=await admin.from('nfl_highlight_clips').delete().lte('expires_at',new Date(now).toISOString());if(removed.error)throw removed.error}
   const config=await admin.from('sleeper_config').select('auto_sync_enabled').eq('id',1).single();if(config.error)throw config.error;
   if(!config.data.auto_sync_enabled)return Response.json({ok:true,skipped:'disabled'});
-  const board=await get(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${session.date.replaceAll('-','')}`);
-  const events=(board.events||[]).filter((e:any)=>/^\d{1,24}$/.test(String(e.id))&&highlightGameDate(Date.parse(e.date))===session.date&&Date.parse(e.date)<=now+30000);
+  if(!session.active)return Response.json({ok:true,skipped:'between-weekends',clips:0});
+  const dates=Array.from({length:5},(_,i)=>new Date(Date.parse(session.startDate+'T12:00:00Z')+i*86400000).toISOString().slice(0,10)).filter(date=>date<=session.date);
+  const boards=await Promise.allSettled(dates.map(date=>get(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${date.replaceAll('-','')}`)));
+  const failedBoards=boards.filter(result=>result.status==='rejected').length;
+  if(failedBoards===boards.length)throw Error('Highlight scoreboards unavailable');
+  const allEvents=boards.flatMap(result=>result.status==='fulfilled'?result.value.events||[]:[]);
+  const events=[...new Map(allEvents.filter((e:any)=>/^\d{1,24}$/.test(String(e.id))&&(highlightGameDate(Date.parse(e.date))||'')>=session.startDate&&(highlightGameDate(Date.parse(e.date))||'')<=session.endDate&&Date.parse(e.date)<=now+30000).map((e:any)=>[String(e.id),e])).values()] as any[];
   let cursor=0,failed=0;const clips:any[]=[];
   await Promise.all(Array.from({length:Math.min(3,events.length)},async()=>{while(cursor<events.length){const event=events[cursor++];try{
    const summary=await get(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${event.id}`);
@@ -24,6 +29,6 @@ Deno.serve(async request=>{
   const rows=[...new Map(clips.map(clip=>[clip.id,clip])).values()];
   if(!dryRun&&rows.length){const saved=await admin.from('nfl_highlight_clips').upsert(rows,{onConflict:'id'});if(saved.error)throw saved.error}
   if(events.length&&failed===events.length)throw Error('Highlight sources unavailable');
-  return Response.json({ok:true,dryRun,date:session.date,expiresAt:new Date(session.expiresAt).toISOString(),games:events.length,clips:rows.length,failed});
+  return Response.json({ok:true,dryRun,date:session.date,startDate:session.startDate,endDate:session.endDate,expiresAt:new Date(session.expiresAt).toISOString(),games:events.length,clips:rows.length,failed,failedBoards});
  }catch(error){console.error('game-highlights',error instanceof Error?error.message:'provider unavailable');return Response.json({error:'Highlight refresh unavailable'},{status:500})}
 });

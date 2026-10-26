@@ -11,7 +11,7 @@ create function cron.alter_job(job_id bigint,active boolean default true) return
 \ir ../migrations/20261026192037_home_game_day_highlights.sql
 insert into public.nfl_highlight_clips(id,game_id,session_date,headline,kind,thumbnail_url,source_url,duration,published_at,expires_at,game_label)
 values('1','401',(now() at time zone 'America/Chicago')::date,'Real touchdown','touchdown','https://espnmedia-cdn.akamaized.net/clip.jpg','https://www.espn.com/video/clip/_/id/1',27,now(),(((now() at time zone 'America/Chicago')::date+1)+time '06:00') at time zone 'America/Chicago','KC · BUF'),
-('2','401',(now() at time zone 'America/Chicago')::date-1,'Yesterday touchdown','touchdown','https://espnmedia-cdn.akamaized.net/clip.jpg','https://www.espn.com/video/clip/_/id/2',27,now()-interval '1 day',(((now() at time zone 'America/Chicago')::date)+time '06:00') at time zone 'America/Chicago','KC · BUF');
+('2','401',(now() at time zone 'America/Chicago')::date-1,'Yesterday touchdown','touchdown','https://espnmedia-cdn.akamaized.net/clip.jpg','https://www.espn.com/video/clip/_/id/2',27,now()-interval '1 day',least(now()-interval '1 minute',(((now() at time zone 'America/Chicago')::date)+time '06:00') at time zone 'America/Chicago'),'KC · BUF');
 set role anon;
 do $$begin
  if (select count(*) from public.nfl_highlight_clips)<>1 then raise exception 'Expired clips leaked';end if;
@@ -30,3 +30,22 @@ do $$begin
 end$$;
 delete from public.nfl_highlight_clips where expires_at<=now();
 do $$begin if (select count(*) from public.nfl_highlight_clips)<>1 then raise exception 'Retention removed current clips';end if;end$$;
+
+-- The new edition may keep Sunday until Tuesday; only official direct MP4s.
+\ir ../migrations/20261026202356_weekend_highlight_playback.sql
+update public.nfl_highlight_clips set video_url='https://espnmedia-cdn.akamaized.net/espn/media/16x9/test.mp4';
+insert into public.nfl_highlight_clips(id,game_id,session_date,headline,kind,thumbnail_url,source_url,video_url,duration,published_at,expires_at,game_label)
+values('3','401','2026-10-25','Weekend touchdown','touchdown','https://espnmedia-cdn.akamaized.net/clip.jpg','https://www.espn.com/video/clip/_/id/3','https://espnmedia-cdn.akamaized.net/espn/media/16x9/weekend.mp4',27,'2026-10-25 18:00Z','2026-10-27 11:00Z','KC · BUF');
+do $$begin
+ begin update public.nfl_highlight_clips set expires_at='2026-10-27 11:00:01Z' where id='3';raise exception 'Weekend cutoff extended';exception when check_violation then null;end;
+ begin update public.nfl_highlight_clips set video_url='https://evil.test/clip.mp4' where id='3';raise exception 'Untrusted video host accepted';exception when check_violation then null;end;
+ begin update public.nfl_highlight_clips set video_url='https://espnmedia-cdn.akamaized.net.evil.test/espn/media/clip.mp4' where id='3';raise exception 'Spoofed host accepted';exception when check_violation then null;end;
+ begin update public.nfl_highlight_clips set video_url='https://espnmedia-cdn.akamaized.net/espn/media/clip.mp4?redirect=evil' where id='3';raise exception 'Query video accepted';exception when check_violation then null;end;
+ if ('2026-11-03 06:00:00'::timestamp at time zone 'America/Chicago')<>'2026-11-03 12:00:00Z'::timestamptz then raise exception 'Weekend DST expiry wrong';end if;
+ if not(select relrowsecurity from pg_class where oid='public.nfl_highlight_clips'::regclass) then raise exception 'Weekend migration disabled RLS';end if;
+end$$;
+set role anon;
+do $$begin
+ begin update public.nfl_highlight_clips set video_url=null;raise exception 'Browser can change video sources';exception when insufficient_privilege then null;end;
+end$$;
+reset role;
