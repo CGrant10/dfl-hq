@@ -5,7 +5,7 @@ import {startSitContent} from '../start-sit-ui.js';
 import {syncHomePrimaryAction} from '../home-primary-action.js';
 import {loadRosterCoach} from '../roster-coach-data.js';
 import {mountLiveScoreRefresh} from '../live-score-refresh.js';
-import {mountGameDay} from "../game-day.js";
+import {mountHomeMatchupPreview} from "../home-matchup-preview.js";
 import {disclosure,wirePageDisclosures} from "../page-disclosure.js";
 import {loadClubhouseWeek,loadWeeklyRosters} from "../weekly-clubhouse-data.js";
 // =====================================================================
@@ -454,7 +454,6 @@ export async function render(view) {
     <section class="home-week-desk" aria-label="Your week">
     <div data-home-week-flow>
     ${disclosure("home-week","Plan your week","",`<div data-home-report-slot data-content-state="loading" aria-busy="true">${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`).replace('data-page-detail="home-week"','data-page-detail="home-week" data-home-week-part="plan"')}
-    <div data-home-live-slot data-home-week-part="live"></div>
     <div data-home-recap-slot data-home-week-part="recap" hidden></div>
     </div>
     <div data-home-pickem-slot></div>
@@ -530,7 +529,7 @@ export async function render(view) {
     weekFlow.update(homeEdition);
   };
   deferredStops.push(mountHomeHighlights(view.querySelector('[data-home-highlights-slot]'),{active:()=>mine===generation&&view.isConnected&&location.hash.startsWith('#/home')}).stop);
-  deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,detailsRoot:view.querySelector("[data-home-live-slot]"),onModel:edition=>{homeEdition=edition;updateWeekFlow();refreshEdition?.();requestAnimationFrame(()=>requestAnimationFrame(startAnalysis))},active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
+  deferredStops.push(mountHomeMatchupPreview(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,onModel:edition=>{homeEdition=edition;updateWeekFlow();refreshEdition?.();requestAnimationFrame(()=>requestAnimationFrame(startAnalysis))},active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
   // Archive stories load independently of the live weekly model.
   lorePromise.then(got => {
     if (mine !== generation || !view.isConnected || got?.error) return;

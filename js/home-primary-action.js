@@ -10,5 +10,5 @@ export function syncHomePrimaryAction(owner,phase){
   const link=owner.querySelector('[data-home-primary]');if(!link)return;
   const action=homePrimaryAction(phase),label=link.querySelector('span');if(label.textContent!==action.label){label.textContent=action.label;animateUi(label,[{opacity:.6,transform:'translateY(3px)'},{opacity:1,transform:'translateY(0)'}],{duration:180});}
   link.toggleAttribute('data-gameday-watch',action.watch);
-  link.href=action.watch?'#/clubhouse?tab=matchups':'#/analyzer';
+  link.href=action.watch?(owner.dataset.clubhouseHref||'#/clubhouse?tab=matchups'):'#/analyzer';
 }

@@ -1057,3 +1057,18 @@ All 112 focused browser checks pass, including first-card playback, forward
 progression, reopening after the last clip, focus, reduced motion and expiry.
 The full 2,210-test check passes, including themes and the production build.
 Evidence: `/workspace/dfl-highlight-review/`. Installed Safari remains unverified.
+
+
+## 1.486.0 — unified Clubhouse and roster highlights (2026-10-26)
+
+Reviewed Home's compact matchup shortcut and Clubhouse Highlights/Leaders at
+320/390px in Light/Dark. Five section tabs scroll within the phone, retain the
+existing sliding marker and expose the selected tab. Roster scopes use shared
+text/border/wash tokens. Leaders keep portraits at 34×40px, names next to images,
+paired score/status, and secondary weekly lines below; long team names wrap.
+Checkbox accent now follows the theme. No palette or theme-picker changes.
+All 88 dedicated browser checks pass, including 4.5:1 names/metadata/filter
+contrast, 44px controls, phone bounds, reduced motion and interrupted requests.
+The full 2,215-test check and existing 112 Home reel checks pass. Screenshots and
+checks: `/workspace/dfl-clubhouse-live-review/`; see
+`docs/clubhouse-live-validation-1486.md`. Physical installed Safari is unverified.

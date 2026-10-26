@@ -65,6 +65,10 @@ on:
       - 'js/season-nav*'
       - 'js/home-clubhouse*'
       - 'js/home-highlight*'
+      - 'js/home-matchup-preview.js'
+      - 'js/team-highlight*'
+      - 'js/clubhouse-team-highlights.js'
+      - 'tools/capture-clubhouse-live.py'
       - 'css/home-highlight-reel.css'
       - 'tools/capture-home-highlights.py'
       - 'tools/fixtures/home-highlight-clips.json'
@@ -322,6 +326,10 @@ jobs:
         env:
           DFL_PLAYER_WEEK_REVIEW_DIR: ${{ github.workspace }}/home-review-output/player-week-review
         run: python tools/capture-player-week-details.py
+      - name: Check the unified Clubhouse and roster highlights
+        env:
+          DFL_CLUBHOUSE_LIVE_REVIEW_DIR: ${{ github.workspace }}/home-review-output/clubhouse-live
+        run: python tools/capture-clubhouse-live.py
       - name: Check the daily Home highlight reel on phones
         env:
           DFL_HOME_HIGHLIGHTS_REVIEW_DIR: ${{ github.workspace }}/home-review-output/highlights

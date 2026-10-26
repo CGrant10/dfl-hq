@@ -58,8 +58,8 @@ export function mountMatchupLive(root,model,threads,active,{onUpdate=(_data)=>{}
   }catch{if(current()){onError();freshness.update({state:navigator.onLine===false?'offline':'error'});for(const slot of root.querySelectorAll('[data-players-left],[data-players-right]'))if(slot.textContent.includes('Loading lineup'))slot.innerHTML='<small>KEY STARTERS</small><p>Lineup unavailable. Try refreshing.</p>';for(const slot of root.querySelectorAll('[data-remaining-left],[data-remaining-right]'))if(slot.textContent.includes('Checking'))slot.textContent='Player status unavailable'}return false}
   finally{busy=false;if(current()){button.disabled=false;button.removeAttribute('aria-busy');button.textContent='Refresh scores';}}
  };
- const refreshLoop=mountLiveScoreRefresh({refresh,active:current,interval:()=>[...(previous?.nfl?.values()||[])].some(s=>s.key==='live')?20000:60000,enabled:()=>!model.completed&&!root.querySelector('#clubhouse-panel-matchups')?.hidden,onOffline:()=>freshness.update({state:'offline'})});
- const click=()=>void refreshLoop.request(true),onTab=event=>{if(event.detail?.tab==='matchups')refreshLoop.wake()};
+ const refreshLoop=mountLiveScoreRefresh({refresh,active:current,interval:()=>[...(previous?.nfl?.values()||[])].some(s=>s.key==='live')?20000:60000,enabled:()=>!model.completed&&['matchups','leaders'].some(tab=>!root.querySelector('#clubhouse-panel-'+tab)?.hidden),onOffline:()=>freshness.update({state:'offline'})});
+ const click=()=>void refreshLoop.request(true),onTab=event=>{if(['matchups','leaders'].includes(event.detail?.tab))refreshLoop.wake()};
  button.addEventListener('click',click);root.addEventListener('dfl:clubhouse-tab',onTab);
  stopCurrent=()=>{stopped=true;refreshLoop.stop();freshness.stop();stopScoreMotion();button.removeEventListener('click',click);root.removeEventListener('dfl:clubhouse-tab',onTab);onStop()};
  refreshLoop.start();

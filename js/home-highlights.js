@@ -7,7 +7,7 @@ import {readPageChoice} from './page-disclosure.js';
 import {animateUi,cancelUiMotion,exitUi,cancelUiExit} from './ui-motion.js';
 import {fitDialogToViewport} from './dialog-viewport.js';
 
-export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadHomeHighlights,now=()=>Date.now()}={}){
+export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadHomeHighlights,now=()=>Date.now(),markup=homeHighlightMarkup,title='Weekend reel'}={}){
  let stopped=false,nearby=typeof IntersectionObserver==='undefined',clips=[],selected='',dialog=null,opener=null,expiryTimer=null,stopViewport=()=>{},request=0;
  const posterError=event=>{
   const image=event.target;if(image.tagName!=='IMG'||image.dataset.posterFallback)return;
@@ -72,7 +72,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
  };
  const open=(id,source)=>{
   clips=visibleClips();if(!clips.length){paint();return}
-  opener=source;setup();cancelUiExit(dialog);selected=id||clips[0].id;
+  opener=source;setup();dialog.querySelector('h2').textContent=typeof title==='function'?title():title;cancelUiExit(dialog);selected=id||clips[0].id;
   dialog.showModal();stopViewport=fitDialogToViewport(dialog);drawPlayer(true);scrollQueue(true);dialog.querySelector('h2').focus({preventScroll:true});
   if(motion())animateUi(dialog,[{opacity:0,transform:'translateY(10px)'},{opacity:1,transform:'translateY(0)'}],{duration:220,easing:'cubic-bezier(.2,.75,.25,1)'});
  };
@@ -82,7 +82,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
  };
  const paint=()=>{
   if(!current())return;
-  clips=visibleClips();patchGameDay(root,homeHighlightMarkup(clips,now()));drawPlayer();scheduleExpiry();
+  clips=visibleClips();patchGameDay(root,markup(clips,now()));drawPlayer();scheduleExpiry();
  };
  const loop=mountLiveScoreRefresh({active:()=>current()&&nearby,interval:120000,refresh:async()=>{
   const token=++request,rows=await load({now:now()});if(!current()||token!==request)return;
@@ -93,5 +93,5 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
  root.addEventListener('error',posterError,true);root.addEventListener('click',click);document.addEventListener('visibilitychange',hidden);
  const observer=typeof IntersectionObserver==='undefined'?null:new IntersectionObserver(entries=>{nearby=entries.some(entry=>entry.isIntersecting);if(nearby)loop.wake()},{rootMargin:'120px 0px'});observer?.observe(root);
  loop.start();scheduleExpiry();
- return {refresh:()=>loop.request(true),stop(){stopped=true;request++;clearTimeout(expiryTimer);observer?.disconnect();loop.stop();root.removeEventListener('error',posterError,true);root.removeEventListener('click',click);document.removeEventListener('visibilitychange',hidden);stopViewport();close();dialog?.remove()}};
+ return {refresh:()=>loop.request(true),close:()=>close(),reset(){request++;clips=[];close();paint()},stop(){stopped=true;request++;clearTimeout(expiryTimer);observer?.disconnect();loop.stop();root.removeEventListener('error',posterError,true);root.removeEventListener('click',click);document.removeEventListener('visibilitychange',hidden);stopViewport();close();dialog?.remove()}};
 }
