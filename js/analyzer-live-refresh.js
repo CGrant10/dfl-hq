@@ -2,9 +2,15 @@ import {mountLiveScoreRefresh} from './live-score-refresh.js';
 import {captureRefreshView,restoreRefreshView} from './view-memory.js';
 
 export function analyzerRevision(data) {
-  return JSON.stringify([data.projectionSeason,data.liveWeek,data.staleSources,data.expertConsensus?.status,
-    data.teams.map(t=>[t.id,t.team_name,t.playerIds,t.wins,t.losses,t.overallGrade,t.lineup?.weeklyPoints]),
-    [...data.pool.values()].map(p=>[p.id,p.tradeValue,p.expectedPoints,p.currentPoints,p.currentGames,p.recentAverage,p.injuryStatus,p.gameForm])]);
+  // Values are rounded. Evidence, forecasts and availability can change a
+  // verdict even when that displayed number is identical. Retrieval timestamps
+  // alone must not redraw an otherwise unchanged report.
+  const expert=data.expertConsensus;
+  const replacements=new Map([...data.pool.values()].flatMap(p=>(p.waiverOptions||[]).map(option=>[option.id,option])));
+  return JSON.stringify([data.projectionSeason,data.liveWeek,data.staleSources,data.liveScoresStale,
+    data.leagueFormat,expert&&[expert.status,expert.updatedAt,expert.experts,expert.matched,expert.total],
+    data.teams,[...data.pool],[...replacements],data.nflSchedule?[...data.nflSchedule]:null],
+    (key,value)=>key==='waiverOptions'?undefined:value);
 }
 export function mountAnalyzerLiveRefresh({view,initial,apply,active=()=>view.isConnected,
   load=()=>Promise.resolve(initial),canApply=()=>!document.querySelector('dialog[open]')

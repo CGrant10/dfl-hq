@@ -74,3 +74,16 @@ describe('external ROS opinions',()=>{
   vi.setSystemTime(now+5*60*1000);await loadExpertRankings({season:2026});expect(fetch).toHaveBeenCalledTimes(6);
  });
 });
+
+describe('trade-view consensus freshness',()=>{
+ it('checks for newly published ranks on the minute budget without waiting fifteen minutes or overlapping reads',async()=>{
+  vi.useFakeTimers();vi.setSystemTime(now);let rank=10;
+  const fetch=vi.fn(async()=>({ok:true,json:async()=>payload({players:[...rows,{name:'Receiver',position:'WR',team:'DET',rank,positionRank:rank,minRank:rank,maxRank:rank,stdDev:0}]})}));
+  vi.stubGlobal('fetch',fetch);vi.resetModules();const {loadExpertRankings}=await import('./expert-rankings-data.js');
+  await loadExpertRankings({season:2026},{maxAgeMs:60000});
+  await vi.advanceTimersByTimeAsync(59999);await loadExpertRankings({season:2026},{maxAgeMs:60000});expect(fetch).toHaveBeenCalledTimes(2);
+  rank=20;await vi.advanceTimersByTimeAsync(1);
+  const reports=await Promise.all([loadExpertRankings({season:2026},{maxAgeMs:60000}),loadExpertRankings({season:2026},{maxAgeMs:60000})]);
+  expect(fetch).toHaveBeenCalledTimes(4);expect(reports.every(r=>r.players.at(-1).rank===20)).toBe(true);
+ });
+});

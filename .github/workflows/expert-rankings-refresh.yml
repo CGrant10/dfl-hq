@@ -7,7 +7,7 @@ on:
       - 'tools/*expert*rankings*'
       - '.github/workflows/expert-rankings-refresh.yml'
   schedule:
-    - cron: '23 */2 * * *'
+    - cron: '23,53 * * * *'
   workflow_dispatch:
 permissions:
   contents: write

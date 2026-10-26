@@ -1,5 +1,5 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
-import {mountAnalyzerLiveRefresh} from './analyzer-live-refresh.js';
+import {mountAnalyzerLiveRefresh,analyzerRevision} from './analyzer-live-refresh.js';
 const data=(points=2)=>({state:'ready',projectionSeason:2026,liveWeek:5,teams:[{id:'1',playerIds:['p']}],pool:new Map([['p',{id:'p',gameForm:{week:5,points,state:'final'}}]])});
 describe('analyzer background refresh',()=>{
  let stop;afterEach(()=>{stop?.();vi.useRealTimers()});
@@ -19,4 +19,31 @@ describe('analyzer background refresh',()=>{
   await vi.advanceTimersByTimeAsync(5000);expect(f.apply).toHaveBeenCalledOnce();expect(f.afterApply).toHaveBeenCalledWith({y:500});
  });
 
+});
+
+describe('analyzer source revisions',()=>{
+ it.each([
+  ['consistency',{consistency:{games:6,variation:.8}}],
+  ['forward forecast',{forwardPerGame:12.23}],
+  ['expert disagreement',{expertDisagreement:true,expertSplit:true}],
+  ['injury return',{estimatedMissedGames:3,isOut:true}],
+  ['source failure',{staleSignals:['production']}],
+  ['usage',{usageFactor:1.05,recentUsage:9}],
+ ])('invalidates offers when %s changes without a rounded value change',(_label,change)=>{
+  const before=data(),after=data();before.pool.get('p').tradeValue=after.pool.get('p').tradeValue=50;
+  Object.assign(after.pool.get('p'),change);expect(analyzerRevision(after)).not.toBe(analyzerRevision(before));
+ });
+ it('detects new expert publications, schedule and replacement-player changes',()=>{
+  const before=data(),after=data();before.expertConsensus={status:'Fresh',updatedAt:1};after.expertConsensus={status:'Fresh',updatedAt:2};
+  expect(analyzerRevision(after)).not.toBe(analyzerRevision(before));
+  delete after.expertConsensus;delete before.expertConsensus;after.nflSchedule=new Map([['DET',{available:false}]]);
+  expect(analyzerRevision(after)).not.toBe(analyzerRevision(before));
+  delete after.nflSchedule;after.pool.get('p').waiverOptions=[{id:'streamer',forwardPerGame:15}];
+  expect(analyzerRevision(after)).not.toBe(analyzerRevision(before));
+ });
+ it('does not redraw an unchanged model just because it was downloaded again',()=>{
+  const before=data(),after=data();before.expertConsensus={status:'Fresh',updatedAt:1,fetchedAt:2};after.expertConsensus={status:'Fresh',updatedAt:1,fetchedAt:3};
+  after.productionUpdatedAt=Date.now();after.availabilityUpdatedAt=Date.now();
+  expect(analyzerRevision(after)).toBe(analyzerRevision(before));
+ });
 });

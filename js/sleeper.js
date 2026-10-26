@@ -124,7 +124,7 @@ async function readCachedJson(cacheName, url, maxAgeMs) {
   }
 
   try {
-    const res = await fetch(url, {cache:maxAgeMs===0?'no-cache':'default'});
+    const res = await fetch(url, {cache:'no-cache'});
     if (!res.ok) throw new Error(`Sleeper API ${res.status}`);
     const data = await res.json();
     const fetchedAt = Date.now();
@@ -166,13 +166,13 @@ function cachedJson(cacheName, url, maxAgeMs) {
  * dfl-scoring.js - so a PPR league is never shown standard-scoring ADP.
  * @returns {Promise<{data:Object[], fetchedAt:number}>}
  */
-export function loadMarketAdp(season, format = "ppr") {
+export function loadMarketAdp(season, format = "ppr", {maxAgeMs = SIX_HOURS_MS} = {}) {
   const year = Number(season);
   if (!Number.isFinite(year)) return Promise.resolve({ data: [], fetchedAt: 0 });
   const positions = MARKET_POSITIONS.map((p) => `position[]=${p}`).join("&");
   const url = `https://api.sleeper.app/projections/nfl/${year}`
             + `?season_type=regular&order_by=adp_${format}&${positions}`;
-  return cachedJson(MARKET_CACHE, url, SIX_HOURS_MS);
+  return cachedJson(MARKET_CACHE, url, maxAgeMs);
 }
 
 // ---------------------------------------------------------------------
@@ -295,17 +295,23 @@ const PLAYER_URL   = `${BASE}/players/nfl`;
 const PLAYER_CACHE_MS = 24 * 60 * 60 * 1000;
 
 let playersPromise = null;
-let playersFetchedAt = 0, playersPending = false, playerEpoch = 0;
+let playersFetchedAt = 0, playersPending = false, playerEpoch = 0, playersMaxAgeMs = PLAYER_CACHE_MS;
 
 /**
  * Returns a { player_id: {name, position, team} } map.
  * First call may take a few seconds; after that it is instant.
  */
 export function loadPlayers({maxAgeMs = PLAYER_CACHE_MS} = {}) {
-  if (playersPromise && (playersPending || Date.now() - playersFetchedAt < maxAgeMs)) return playersPromise;
+  if (playersPromise && playersPending) {
+    if (maxAgeMs >= playersMaxAgeMs) return playersPromise;
+    // A final check must not inherit a daily-cache read already started by Home.
+    return playersPromise.catch(()=>null).then(()=>loadPlayers({maxAgeMs}));
+  }
+  if (playersPromise && Date.now() - playersFetchedAt < maxAgeMs) return playersPromise;
 
   const epoch = playerEpoch;
   playersPending = true;
+  playersMaxAgeMs = maxAgeMs;
   const request = (async () => {
     let cache=null,hit=null;
     try{cache=await caches.open(PLAYER_CACHE);hit=await cache.match(PLAYER_URL)}catch{/* Storage can be unavailable or full on phones. */}
@@ -326,7 +332,7 @@ export function loadPlayers({maxAgeMs = PLAYER_CACHE_MS} = {}) {
       return compact.players;
     }
 
-    const res = await fetch(PLAYER_URL, {signal:AbortSignal.timeout(12000),cache:maxAgeMs===0?'no-cache':'default'});
+    const res = await fetch(PLAYER_URL, {signal:AbortSignal.timeout(12000),cache:'no-cache'});
     if (!res.ok) throw new Error(`Could not load the Sleeper player list (${res.status})`);
     const raw = await res.json();
 

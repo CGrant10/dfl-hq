@@ -47,7 +47,7 @@ vi.mock("./team-analyzer.js", () => ({
 }));
 
 import {loadNflGameDay} from "./nfl-game-day.js";
-import { sleeper, loadSeasonStats, loadWeeklyStats, loadWeeklyProjections } from "./sleeper.js";
+import { sleeper, loadSeasonStats, loadWeeklyStats, loadWeeklyProjections, loadMarketAdp } from "./sleeper.js";
 import {loadExpertRankings} from './expert-rankings-data.js';
 import { loadMemberDirectory } from "./members.js";
 import { clearAnalyzerDataCache, loadAnalyzerData } from "./team-analyzer-data.js";
@@ -56,11 +56,14 @@ describe("shared analyzer model", () => {
   beforeEach(()=>{clearAnalyzerDataCache();vi.clearAllMocks();});
   const liveLeague=()=>({league_id:'league',season:2026,total_rosters:2,scoring_settings:{rec:1},roster_positions:['QB','RB','RB','WR','WR','TE','FLEX','K','DEF','BN']});
   const freshRosters=()=>[{roster_id:1,owner_id:'a',players:['p1'],starters:['p1']},{roster_id:2,owner_id:'b',players:['p2'],starters:['p2']}];
-  it('bounds ordinary stats and availability caching to five minutes',async()=>{
+  it('bounds current stats and availability to a minute, metadata and projections to five minutes',async()=>{
     clearAnalyzerDataCache();loadSeasonStats.mockClear();loadWeeklyProjections.mockClear();
     await loadAnalyzerData();
-    expect(loadSeasonStats).toHaveBeenCalledWith(2026,{maxAgeMs:300000});
-    expect(loadWeeklyProjections).toHaveBeenCalledWith(2026,3,{maxAgeMs:300000});
+    expect(loadSeasonStats).toHaveBeenCalledWith(2026,{maxAgeMs:60000});
+    expect(loadWeeklyProjections).toHaveBeenCalledWith(2026,3,{maxAgeMs:60000});
+    expect(mocks.loadPlayers).toHaveBeenCalledWith({maxAgeMs:300000});
+    expect(loadMarketAdp).toHaveBeenCalledWith(2026,'ppr',{maxAgeMs:300000});
+    expect(loadExpertRankings).toHaveBeenLastCalledWith({season:2026,scoring:'ppr'},{force:false,maxAgeMs:60000});
   });
   it('fetches current stats, injuries and expert facts together before a final trade check',async()=>{
     clearAnalyzerDataCache();sleeper.league.mockResolvedValueOnce(liveLeague());sleeper.rosters.mockResolvedValueOnce(freshRosters());
@@ -68,7 +71,9 @@ describe("shared analyzer model", () => {
     const data=await loadAnalyzerData({freshTrade:true});
     expect(loadSeasonStats).toHaveBeenCalledWith(2026,{maxAgeMs:0});
     expect(loadWeeklyProjections).toHaveBeenLastCalledWith(2026,3,{maxAgeMs:0});
-    expect(loadExpertRankings).toHaveBeenLastCalledWith({season:2026,scoring:'ppr'},{force:true});
+    expect(loadExpertRankings).toHaveBeenLastCalledWith({season:2026,scoring:'ppr'},{force:true,maxAgeMs:60000});
+    expect(loadMarketAdp).toHaveBeenLastCalledWith(2026,'ppr',{maxAgeMs:0});
+    expect(mocks.loadPlayers).toHaveBeenLastCalledWith({maxAgeMs:0});
     expect(data.leagueFormat.verified).toBe(true);
   });
   it('blocks final sharing when a current-stat refresh falls back to stale data',async()=>{
@@ -145,6 +150,9 @@ describe("shared analyzer model", () => {
     await loadAnalyzerData({liveRefresh:true});
     expect(loadSeasonStats).toHaveBeenCalledWith(2026,{maxAgeMs:60000});
     expect(loadWeeklyProjections).toHaveBeenCalledWith(2026,3,{maxAgeMs:60000});
+    expect(mocks.loadPlayers).toHaveBeenLastCalledWith({maxAgeMs:300000});
+    expect(loadMarketAdp).toHaveBeenLastCalledWith(2026,'ppr',{maxAgeMs:300000});
+    expect(loadExpertRankings).toHaveBeenLastCalledWith({season:2026,scoring:'ppr'},{force:false,maxAgeMs:60000});
     expect(sleeper.rosters).toHaveBeenCalledWith('league');
     expect(loadNflGameDay).toHaveBeenLastCalledWith(2026,3,{force:true});
   });

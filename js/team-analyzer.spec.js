@@ -97,6 +97,14 @@ describe("team analyzer", () => {
     expect(hot.get("r1").expectedPoints).toBeGreaterThan(cold.get("r1").expectedPoints);
   });
 
+  it('lets an explicit healthy weekly status clear old metadata while respecting roster IR',()=>{
+    const input={rosters,players:{...players,r1:{...players.r1,i:'Out',s:'Active'}},projections,scoringSettings:scoring};
+    expect(buildPlayerPool({...input,weeklyProjections:[{player_id:'r1',injury_status:null}]}).get('r1')).toMatchObject({injuryStatus:null,isOut:false,estimatedMissedGames:0});
+    expect(buildPlayerPool({...input,weeklyProjections:[{player_id:'r1',player:{injury_status:null,status:'Active'}}]}).get('r1').isOut).toBe(false);
+    expect(buildPlayerPool({...input,weeklyProjections:[{player_id:'r1',stats:{gp:1}}]}).get('r1').isOut).toBe(true);
+    expect(buildPlayerPool({...input,rosters:rosters.map(r=>({...r,reserve:['r1']})),weeklyProjections:[{player_id:'r1',injury_status:null}]}).get('r1')).toMatchObject({isOut:true,estimatedMissedGames:3});
+  });
+
   it("prices current injury availability into points and trade value", () => {
     const input = { rosters, players, projections, scoringSettings: scoring,
       previousStats: { r1: { gp: 17, rush_yd: 1020 } }, currentStats: { r1: { gp: 4, rec: 80 } } };

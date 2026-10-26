@@ -33,6 +33,16 @@ describe('live player availability caching',()=>{
     const {loadPlayers,fetch}=await setup();await loadPlayers({maxAgeMs:0});
     expect(fetch.mock.calls[0][1].cache).toBe('no-cache');
   });
+  it('does not let a final trade check inherit a weaker in-flight directory cache read',async()=>{
+    const cached=new Response(JSON.stringify({x:{n:'Receiver',p:'WR',t:'DET',i:'Questionable'}}),{headers:{'x-fetched-at':String(Date.parse('2026-10-11T15:30:00Z'))}});
+    const {loadPlayers,fetch,cache}=await setup(cached);let release;
+    cache.match.mockImplementationOnce(()=>new Promise(resolve=>release=resolve));
+    const ordinary=loadPlayers();await vi.advanceTimersByTimeAsync(0);
+    const finalCheck=loadPlayers({maxAgeMs:0});release(cached);
+    expect((await ordinary).x.i).toBe('Questionable');
+    expect((await finalCheck).x.i).toBe('Out');expect(fetch).toHaveBeenCalledOnce();
+    expect(fetch.mock.calls[0][1].cache).toBe('no-cache');
+  });
   it('keeps loading when phone cache storage is unavailable or full',async()=>{
     const {loadPlayers,cache}=await setup();
     caches.open.mockRejectedValueOnce(Error('Storage denied'));

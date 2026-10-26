@@ -1,4 +1,4 @@
-"""Incoming-position controls, real workers and page handlers; isolated providers."""
+"""Whole-trade position controls, real workers and page handlers; isolated providers."""
 import json,os,threading
 from pathlib import Path
 from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
@@ -24,27 +24,32 @@ with sync_playwright() as p:
    page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f'http://127.0.0.1:{server.server_port}/trade-review/index.html#/trade');page.wait_for_function('window.reviewReady');page.evaluate('document.fonts.ready');page.evaluate("async mode=>{const t=await import('/js/theme.js');t.pinMode(mode)}",theme)
    tag=f'{width}px {theme}'
    def settled():page.wait_for_function(r"[...document.querySelectorAll('.tb-intent-options [data-tb-intent-count]')].length===3&&[...document.querySelectorAll('.tb-intent-options [data-tb-intent-count]')].every(e=>/^\(\d+\)$/.test(e.textContent))&&!document.querySelector('.tb-offers-card[aria-busy=true]')",timeout=20000)
-   def incoming_ok(positions):return page.locator('.tb-offer-flow .tb-package:nth-child(2) [data-player-card]').evaluate_all('(es,positions)=>es.every(e=>positions.includes(window.reviewData.pool.get(e.dataset.playerCard).position))',positions)
-   settled();check(tag+' starts with every receive position enabled',page.locator('[data-tb-receive-position]:checked').count()==4)
+   def incoming_ok(positions):return page.locator('.tb-offer-flow .tb-package [data-player-card]').evaluate_all('(es,positions)=>es.every(e=>positions.includes(window.reviewData.pool.get(e.dataset.playerCard).position))',positions)
+   settled();check(tag+' starts with every trade position enabled',page.locator('[data-tb-receive-position]:checked').count()==4)
    check(tag+' uses 44px checkbox labels and preset actions',page.locator('.tb-receive-options label,[data-tb-receive-preset]').evaluate_all('es=>es.every(e=>e.getBoundingClientRect().height>=44&&e.getBoundingClientRect().width>=44)'))
    check(tag+' has no horizontal overflow',page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
    page.screenshot(path=str(EVIDENCE/f'{width}-{theme}-all.png'))
    # Select a TE target and goal through the real production handlers.
+   page.locator('[data-tb-add-anchor=send]').evaluate("e=>{e.value='1-5';e.dispatchEvent(new Event('change',{bubbles:true}))}");settled()
    page.locator('[data-tb-league-target]').evaluate("e=>{e.value='2-5';e.dispatchEvent(new Event('change',{bubbles:true}))}");settled()
    page.locator('.tb-setup').evaluate('e=>e.open=true');page.locator('.tb-refine').evaluate('e=>e.open=true');page.locator('[data-tb-goal]').select_option('TE');settled();page.locator('.tb-setup').evaluate('e=>e.open=false')
-   page.locator('[data-tb-receive-position="TE"]').scroll_into_view_if_needed();page.evaluate('window.receiveInput=document.querySelector("[data-tb-receive-position=TE]");window.sendPicker=document.querySelector("[data-trade-picker=send]")')
+   page.locator('[data-tb-receive-position="TE"]').scroll_into_view_if_needed();page.evaluate('window.receiveInput=document.querySelector("[data-tb-receive-position=TE]");window.sendPicker=document.querySelector("[data-trade-picker=send]");window.returnPicker=document.querySelector("[data-trade-picker=receive]");window.sendSelect=document.querySelector("[data-tb-add-anchor=send]");window.returnSelect=document.querySelector("[data-tb-add-anchor=receive]")')
    page.locator('[data-tb-receive-position="TE"]').uncheck();settled()
-   check(tag+' retains checkbox and send-picker DOM during filtering',page.evaluate('receiveInput===document.querySelector("[data-tb-receive-position=TE]")&&sendPicker===document.querySelector("[data-trade-picker=send]")'))
-   check(tag+' removes a conflicting target and resets its goal',page.locator('[data-tb-remove-anchor="receive"]').count()==0 and page.locator('[data-tb-goal]').input_value()=='best')
+   check(tag+' retains both pickers, native selects and checkbox DOM during filtering',page.evaluate('receiveInput===document.querySelector("[data-tb-receive-position=TE]")&&sendPicker===document.querySelector("[data-trade-picker=send]")&&returnPicker===document.querySelector("[data-trade-picker=receive]")&&sendSelect===document.querySelector("[data-tb-add-anchor=send]")&&returnSelect===document.querySelector("[data-tb-add-anchor=receive]")'))
+   check(tag+' removes conflicting targets on both sides and resets the goal',page.locator('[data-tb-remove-anchor]').count()==0 and page.locator('[data-tb-goal]').input_value()=='best')
    check(tag+' keeps the chosen trading partner',page.locator('[data-ta-shop-partner]').input_value()=='2')
    page.locator('[data-tb-receive-preset="flex-skill"]').click();settled()
    check(tag+' applies RB + WR with one tap',page.locator('[data-tb-receive-position]:checked').evaluate_all('es=>es.map(e=>e.value)')==['RB','WR'])
    for intent in ['fair','aggressive','steal']:
     page.locator(f'.tb-intent-options [data-tb-intent="{intent}"]').click();settled()
-    check(tag+f' excludes unwanted positions from {intent} and closest offers',incoming_ok(['RB','WR']))
+    check(tag+f' excludes unwanted positions from both sides of {intent} and closest offers',incoming_ok(['RB','WR']))
    page.locator('.tb-intent-options [data-tb-intent="fair"]').click();settled()
    page.locator('[data-trade-picker="receive"]').click();page.wait_for_selector('.trade-player-picker[open]');page.wait_for_timeout(320);check(tag+' tier switching does not dismiss a newly opened picker',page.locator('.trade-player-picker').evaluate('e=>e.open'))
-   check(tag+' player picker only contains allowed incoming positions',page.locator('.trade-player-picker [data-picker-player]').evaluate_all("es=>es.length>0&&es.every(e=>['RB','WR'].includes(window.reviewData.pool.get(e.dataset.pickerPlayer).position))"))
+   check(tag+' player picker only contains allowed trade positions',page.locator('.trade-player-picker [data-picker-player]').evaluate_all("es=>es.length>0&&es.every(e=>['RB','WR'].includes(window.reviewData.pool.get(e.dataset.pickerPlayer).position))"))
+   page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".trade-player-picker")?.open')
+
+   page.locator('[data-trade-picker="send"]').click();page.wait_for_selector('.trade-player-picker[open]')
+   check(tag+' outgoing player picker also excludes unchecked positions',page.locator('.trade-player-picker [data-picker-player]').evaluate_all("es=>es.length>0&&es.every(e=>['RB','WR'].includes(window.reviewData.pool.get(e.dataset.pickerPlayer).position))"))
    page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".trade-player-picker")?.open')
 
    contrast=page.locator('.tb-receive-positions').evaluate("""root=>{
