@@ -188,3 +188,18 @@
 .gd-advantage-team { position:relative; }
 .gd-advantage-marker { position:absolute; left:25%; bottom:0; width:50%; height:2px; border-radius:2px; background:color-mix(in srgb,var(--gd-lead-color) 65%,var(--text)); pointer-events:none; }
 .gd-advantage-marker[hidden] { display:none; }
+
+/* Quiet weekly production and completed-game PPR average, shared across views. */
+.gd-player-week-detail { display:grid; gap:3px; min-width:0; color:var(--body-text); font:400 11px/1.45 var(--font-display); overflow-wrap:anywhere; }
+.gd-player-week-average { font-variant-numeric:tabular-nums; }
+.gameday-player:has(> .gd-player-week-detail) { flex-wrap:wrap; }
+.gameday-player > .gd-player-week-detail { flex:0 0 100%; grid-column:1 / -1; padding-left:0; }
+.gd-player-stat-line { display:flex; }
+.gd-player-stat-line .gd-player-week-detail { flex:1; grid-template-rows:1fr auto; font:inherit; }
+.gd-player-stat-line .gd-player-week-line { min-height:2.9em; }
+.gd-player-stat-line [data-player-week-position="QB"] .gd-player-week-line { min-height:4.35em; }
+.gd-player-stat-line .gd-player-week-average { min-height:1.45em; }
+.gameday-player:has(> .gameday-slot) > .gd-player-week-detail { grid-column:2 / -1; }
+#home-wrap .home-thermal-leaders .gd-player-week-detail { grid-column:2 / -1; display:flex; align-items:baseline; gap:8px; margin-bottom:8px; }
+#home-wrap .home-thermal-leaders .gd-player-week-line { flex:1; min-width:0; }
+#home-wrap .home-thermal-leaders .gd-player-week-average { flex:none; white-space:nowrap; }

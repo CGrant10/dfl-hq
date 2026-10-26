@@ -124,7 +124,7 @@ async function readCachedJson(cacheName, url, maxAgeMs) {
   }
 
   try {
-    const res = await fetch(url, {cache:'no-cache'});
+    const res = await fetch(url, {cache:'no-cache',signal:AbortSignal.timeout(12000)});
     if (!res.ok) throw new Error(`Sleeper API ${res.status}`);
     const data = await res.json();
     const fetchedAt = Date.now();

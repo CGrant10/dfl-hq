@@ -33,7 +33,7 @@ describe("Sleeper analyzer cache", () => {
     globalThis.caches={open:vi.fn().mockResolvedValue(cache)};
     globalThis.fetch=vi.fn().mockResolvedValue(new Response(JSON.stringify({x:{rec:12}})));
     expect((await loadSeasonStats(2098,{maxAgeMs:0})).data.x.rec).toBe(12);
-    expect(globalThis.fetch).toHaveBeenCalledWith(expect.stringContaining('/regular/2098'),{cache:'no-cache'});
+    expect(globalThis.fetch).toHaveBeenCalledWith(expect.stringContaining('/regular/2098'),{cache:'no-cache',signal:expect.any(AbortSignal)});
   });
   it('refreshes season projections after the caller budget, preserving the long keeper default',async()=>{
     const cached=new Response(JSON.stringify([{player_id:'p',stats:{rec:10}}]),{headers:{'x-fetched-at':String(Date.now()-3600000)}});
@@ -42,7 +42,7 @@ describe("Sleeper analyzer cache", () => {
     globalThis.fetch=vi.fn(async()=>new Response(JSON.stringify([{player_id:'p',stats:{rec:12}}])));
     expect((await loadMarketAdp(2097,'ppr')).data[0].stats.rec).toBe(10);expect(fetch).not.toHaveBeenCalled();
     expect((await loadMarketAdp(2097,'ppr',{maxAgeMs:300000})).data[0].stats.rec).toBe(12);
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('order_by=adp_ppr'),{cache:'no-cache'});
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('order_by=adp_ppr'),{cache:'no-cache',signal:expect.any(AbortSignal)});
     expect(cache.put).toHaveBeenCalledOnce();
   });
 

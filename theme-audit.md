@@ -998,3 +998,18 @@ motion. Shared Medicine Wheel tokens and semantic tier colors are unchanged.
 Screenshots and checks: `/workspace/dfl-trade-review/receive-controls/`.
 See `docs/trade-value-position-validation-1481.md` for source-refresh limits and
 validation. Native installed-device rendering was not directly verified.
+
+
+## 1.482.0 — weekly player lines and PPR averages (2026-10-26)
+
+Reviewed actual Clubhouse screenshots at 320/390px in Light and Dark and narrow
+Home leaders. Weekly production sits below the player/score, followed by a quiet
+PPR/game average; opposing stats remain paired and names wrap naturally. Home
+uses one compact secondary row with the average alongside its stat line. No new
+color literals or palette options were added; labels use the shared body ink.
+All 68 dedicated browser checks passed, including 4.5:1 secondary-text contrast,
+viewport bounds, 100px Home row limit, focus/scroll/score-node retention, reduced
+motion and deferred offscreen loading. `pnpm themes` and all theme tests passed
+in the 2,191-test full check. Evidence: `/workspace/dfl-player-week-review/`.
+See `docs/player-week-details-validation-1482.md`. Native Safari is unverified;
+the extended Home matrix is separately tracked and not represented as complete.
