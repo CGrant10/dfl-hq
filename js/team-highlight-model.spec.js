@@ -19,6 +19,11 @@ describe('fantasy-roster highlight selection',()=>{
   const clips=[clip('Tyler Shough hits Chris Olave for 30 yards'),clip('Chris Olave scores the next touchdown')];
   expect(match(clips,[player(),player('Tyler Shough','NO','QB')])).toEqual(clips);
  });
+ it('recognizes common unique player nicknames only for the correct NFL team',()=>{
+  expect(match([clip('CMC leaps in for a touchdown','401','SF · ATL')],[player('Christian McCaffrey','SF','RB')])).toHaveLength(1);
+  expect(match([clip('JSN makes a diving grab','401','SEA · LAR')],[player('Jaxon Smith-Njigba','SEA')])).toHaveLength(1);
+  expect(match([clip('CMC scores','401','KC · DEN')],[player('Christian McCaffrey','SF','RB')])).toEqual([]);
+ });
  it('requires verified week game IDs and normalizes provider team aliases',()=>{
   expect(teamHighlightClips([clip('Chris Olave scores')],[player()])).toEqual([]);
   expect(match([clip('Jayden Daniels scores','401','WSH · NYG')],[player('Jayden Daniels','WAS','QB')])).toHaveLength(1);

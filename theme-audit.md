@@ -1072,3 +1072,19 @@ contrast, 44px controls, phone bounds, reduced motion and interrupted requests.
 The full 2,215-test check and existing 112 Home reel checks pass. Screenshots and
 checks: `/workspace/dfl-clubhouse-live-review/`; see
 `docs/clubhouse-live-validation-1486.md`. Physical installed Safari is unverified.
+
+
+## 1.487.0 — player-first clip browser (2026-10-26)
+
+Reviewed Home/Clubhouse player chips and the new readable clip browser in Light
+and Dark at 320/390px, plus 320×568, 844×390 and 1280×800. Video, headline,
+navigation and the scrollable clip list occupy separate regions. Full player
+names stay available in the horizontal chip row; selected/current states use
+shared borders and washes. Search input stays at 16px, with a shared-token
+placeholder; all clip labels/counts/filter text meet 4.5:1 contrast. Actions keep
+44px targets. Reduced motion, keyboard-sized viewport placement, visible focus
+restoration and playback-preserving search are verified. The full 2,223-test
+check, 156 shared-reel checks and 96 Clubhouse checks pass. Evidence:
+`/workspace/dfl-highlight-review/` and `/workspace/dfl-clubhouse-live-review/`.
+See `docs/player-highlight-browser-validation-1487.md`. Native installed Safari
+and physical on-screen keyboard behavior remain unverified.
