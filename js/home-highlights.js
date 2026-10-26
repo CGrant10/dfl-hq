@@ -47,11 +47,13 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
    if(motion())animateUi(link,[{opacity:.4},{opacity:1}],{duration:180});
   }
  };
+ const scrollQueue=(immediate=false)=>{
+  const queue=dialog.querySelector('[data-reel-queue]'),button=queue.querySelector(`[data-reel-choose="${selected}"]`);
+  if(button)queue.scrollTo({left:Math.max(0,button.offsetLeft-queue.offsetLeft-queue.clientWidth/2+button.clientWidth/2),behavior:!immediate&&motion()?'smooth':'instant'});
+ };
  const choose=id=>{
   if(!visibleClips().some(clip=>clip.id===id))return;
-  selected=id;drawPlayer(true);
-  const queue=dialog.querySelector('[data-reel-queue]'),button=queue.querySelector(`[data-reel-choose="${id}"]`);
-  queue.scrollTo({left:Math.max(0,button.offsetLeft-queue.offsetLeft-queue.clientWidth/2+button.clientWidth/2),behavior:motion()?'smooth':'instant'});
+  selected=id;drawPlayer(true);scrollQueue();
  };
  const setup=()=>{
   if(dialog)return;
@@ -71,7 +73,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
  const open=(id,source)=>{
   clips=visibleClips();if(!clips.length){paint();return}
   opener=source;setup();cancelUiExit(dialog);selected=id||clips[0].id;
-  dialog.showModal();stopViewport=fitDialogToViewport(dialog);drawPlayer(true);dialog.querySelector('h2').focus({preventScroll:true});
+  dialog.showModal();stopViewport=fitDialogToViewport(dialog);drawPlayer(true);scrollQueue(true);dialog.querySelector('h2').focus({preventScroll:true});
   if(motion())animateUi(dialog,[{opacity:0,transform:'translateY(10px)'},{opacity:1,transform:'translateY(0)'}],{duration:220,easing:'cubic-bezier(.2,.75,.25,1)'});
  };
  const scheduleExpiry=()=>{
