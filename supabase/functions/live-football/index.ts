@@ -3,6 +3,7 @@ import {footballGame,footballPlays,candidatePlay,footballPlay,footballPlayerInde
 import {footballNotificationDrafts} from '../../../js/live-football-notifications.js';
 import {MATCHUP_MOMENTS_FILTER} from '../../../js/matchup-moments.js';
 import {leagueHealth} from '../../../js/league-health.js';
+import {footballMomentRows} from '../../../js/football-moments.js';
 const TOKEN_HASH='c7429c5c8cfd182e13e7f1b537b0f671b0b99dcb004b19f8580b960f8f957091';
 let playerRaw:any=null,playerCache:any=null,playerAt=0,playerPending:Promise<any>|null=null;
 const get=async(url:string)=>{const response=await fetch(url,{headers:{'User-Agent':'DFL-HQ-Live-Football/1.0'},signal:AbortSignal.timeout(10000)});if(!response.ok)throw Error(`NFL provider ${response.status}`);return response.json()};
@@ -53,8 +54,10 @@ Deno.serve(async request=>{
   if(!feeds.length)throw Error('All live game providers unavailable');
   const drafts=footballNotificationDrafts({season,week,feeds,rows,rosters,members:members.data||[],optedMemberIds:(opted.data||[]).map(row=>Number(row.member_id)),now});
   if(dryRun)return Response.json({ok:true,dryRun,season,week,games:feeds.map(feed=>({id:feed.game_id,redZone:feed.snapshot.redZone,plays:feed.plays.length,verified:feed.plays.filter((p:any)=>p.kind).length})),drafts:[],wouldCapture:feeds.length});
+  const moments=footballMomentRows({leagueId:String(league.league_id),season,week,feeds,rows,now});
+  if(moments.length){const saved=await admin.from('gameday_moments').upsert(moments,{onConflict:'league_id,season,week,event_key',ignoreDuplicates:true});if(saved.error)throw saved.error}
   let created=0,duplicates=0;
   for(const draft of drafts){const response=await fetch(`${url}/functions/v1/send-notification`,{method:'POST',headers:{'Content-Type':'application/json','x-dfl-cron-token':token},body:JSON.stringify(draft),signal:AbortSignal.timeout(10000)});const result=await response.json();if(!response.ok||!result.ok)throw Error(`Live notification delivery ${response.status}`);if(result.duplicate)duplicates++;else if(!result.skipped)created++}
-  return Response.json({ok:true,season,week,games:feeds.length,created,duplicates});
+  return Response.json({ok:true,season,week,games:feeds.length,created,duplicates,moments:moments.length});
  }catch(error){console.error('live-football',error instanceof Error?error.message:'capture unavailable');return Response.json({error:'Live football refresh unavailable'},{status:500})}
 });

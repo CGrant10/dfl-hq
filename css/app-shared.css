@@ -6392,3 +6392,33 @@ html[data-ui-motion="off"] [data-nfl-play],html[data-ui-motion="off"] .nfl-toast
 @keyframes nfl-red-beacon{0%,100%{opacity:.55}50%{opacity:1}}
 html[data-ui-motion="off"] .nfl-red-badge::before{animation:none!important}
 @media(prefers-reduced-motion:reduce){.nfl-red-badge::before{animation:none!important}}
+
+
+/* Source: css/matchup-highlights.css */
+.matchup-highlights{min-width:0;padding:16px 0;margin:4px 0 12px;border-block:1px solid var(--line);color:var(--text)}
+.matchup-highlights>header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.matchup-highlights h3{margin:0;font:700 16px/1.3 var(--font-display)}
+.matchup-highlights ol{list-style:none;padding:0;margin:6px 0}
+.matchup-highlights li+li{border-top:1px solid var(--line)}
+.matchup-highlights [data-highlight],.saved-play-open{display:flex;align-items:center;gap:12px;width:100%;min-width:0;min-height:64px;padding:10px 0;background:transparent;border:0;text-align:left;color:var(--text);cursor:pointer}
+.matchup-highlights [data-highlight]>span:last-child,.saved-play-open>span:last-child{display:grid;gap:3px;min-width:0}
+.matchup-highlights [data-highlight] strong,.saved-play-open strong{font:700 13px/1.35 var(--font-display);color:var(--text)}
+.matchup-highlights [data-highlight]>span:last-child>span,.saved-play-open>span:last-child>span{font:500 13px/1.45 var(--font-display);color:var(--body-text);overflow-wrap:anywhere}
+.matchup-highlights :is(.dfl-player-portrait,.moment-mini-mark),.saved-play-open .dfl-player-portrait{position:relative;flex:none;display:block;width:42px;height:48px;overflow:hidden;border-radius:8px;background:var(--bg-2);border:1px solid var(--line);box-sizing:border-box}
+.matchup-highlights .dfl-player-portrait img,.saved-play-open .dfl-player-portrait img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+.matchup-highlights .dfl-player-portrait i,.saved-play-open .dfl-player-portrait i{position:absolute;inset:0;display:grid;place-items:center;font:700 14px/1 var(--font-display);color:var(--text)}
+.matchup-highlights .dfl-player-portrait.has-photo i,.saved-play-open .dfl-player-portrait.has-photo i{display:none}
+.matchup-highlights .moment-mini-mark{display:grid;place-items:center;font:700 24px/1 var(--font-display);color:var(--accent)}
+.matchup-highlights .linkbtn,.gd-moment-recap [data-recap-share]{min-height:44px;color:var(--text);font:600 13px/1.35 var(--font-display);padding:8px 0;flex-shrink:0}
+.matchup-highlights>p{font:500 13px/1.5 var(--font-display);color:var(--muted);margin:8px 0}
+.matchup-highlights button:focus-visible,.saved-play-open:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.moment-play-description{margin:0;color:var(--body-text);font:500 15px/1.5 var(--font-display);overflow-wrap:anywhere}
+.moment-play-clock,.moment-play-stack{margin:0;color:var(--muted);font:600 13px/1.4 var(--font-display);overflow-wrap:anywhere}
+.moment-recap-frame.is-touchdown>small,.moment-recap-frame.is-big-play>small{color:var(--accent);font-weight:700}
+.moment-final-mvp{display:flex;align-items:center;gap:12px;padding-block:12px;border-block:1px solid var(--line)}
+.gd-moment-recap .moment-final-mvp .dfl-player-portrait{width:56px;height:64px;border-radius:8px}
+.moment-final-mvp>span{display:grid;gap:4px;min-width:0}
+.moment-final-mvp :is(strong,b){font:700 15px/1.35 var(--font-display);color:var(--text);overflow-wrap:anywhere}
+.moment-final-mvp small,.moment-final-turn small{font:600 12px/1.4 var(--font-display);color:var(--muted)}
+.moment-final-turn p{font:500 14px/1.45 var(--font-display);color:var(--body-text);margin:4px 0 0;overflow-wrap:anywhere}
+html[data-readability="comfortable"] :is(.matchup-highlights,.saved-play-open) span{font-size:1rem;line-height:1.5}

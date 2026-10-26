@@ -1,0 +1,342 @@
+[
+  {
+    "check": "light/320 alert fetches and opens the exact older play",
+    "pass": true
+  },
+  {
+    "check": "light/320 verified play has real player, yards, quarter, clock and description",
+    "pass": true
+  },
+  {
+    "check": "light/320 play frame and controls fit mobile",
+    "pass": true
+  },
+  {
+    "check": "light/320 readable themed highlight",
+    "pass": true
+  },
+  {
+    "check": "light/320 shares through existing clean and photo chooser",
+    "pass": true
+  },
+  {
+    "check": "light/320 closing an alert does not reopen it on refresh",
+    "pass": true
+  },
+  {
+    "check": "light/320 alert close returns focus to the recap button",
+    "pass": true
+  },
+  {
+    "check": "light/320 compact highlight list fits and has useful portraits",
+    "pass": true
+  },
+  {
+    "check": "light/320 postgame frame uses actual finals and top starter",
+    "pass": true
+  },
+  {
+    "check": "light/320 final frame fits and remains readable",
+    "pass": true
+  },
+  {
+    "check": "light/320 recap reopens at its default first frame",
+    "pass": true
+  },
+  {
+    "check": "light/320 switching matchup never leaks another game highlights",
+    "pass": true
+  },
+  {
+    "check": "light/320 late previous-matchup responses are discarded",
+    "pass": true
+  },
+  {
+    "check": "light/320 failed read has a retry",
+    "pass": true
+  },
+  {
+    "check": "light/320 retry recovers without navigation",
+    "pass": true
+  },
+  {
+    "check": "light/320 missing alert never opens an unrelated play",
+    "pass": true
+  },
+  {
+    "check": "light/320 missing alert respects normal refresh cadence",
+    "pass": true
+  },
+  {
+    "check": "light/320 returning to a tab after a hidden response can refresh again",
+    "pass": true
+  },
+  {
+    "check": "light/320 reduced motion opens the chosen highlight without running animations",
+    "pass": true
+  },
+  {
+    "check": "light/320 short phone keeps recap controls accessible while content scrolls",
+    "pass": true
+  },
+  {
+    "check": "light/320 teardown removes the recap and listeners",
+    "pass": true
+  },
+  {
+    "check": "light/390 alert fetches and opens the exact older play",
+    "pass": true
+  },
+  {
+    "check": "light/390 verified play has real player, yards, quarter, clock and description",
+    "pass": true
+  },
+  {
+    "check": "light/390 play frame and controls fit mobile",
+    "pass": true
+  },
+  {
+    "check": "light/390 readable themed highlight",
+    "pass": true
+  },
+  {
+    "check": "light/390 shares through existing clean and photo chooser",
+    "pass": true
+  },
+  {
+    "check": "light/390 closing an alert does not reopen it on refresh",
+    "pass": true
+  },
+  {
+    "check": "light/390 alert close returns focus to the recap button",
+    "pass": true
+  },
+  {
+    "check": "light/390 compact highlight list fits and has useful portraits",
+    "pass": true
+  },
+  {
+    "check": "light/390 postgame frame uses actual finals and top starter",
+    "pass": true
+  },
+  {
+    "check": "light/390 final frame fits and remains readable",
+    "pass": true
+  },
+  {
+    "check": "light/390 recap reopens at its default first frame",
+    "pass": true
+  },
+  {
+    "check": "light/390 switching matchup never leaks another game highlights",
+    "pass": true
+  },
+  {
+    "check": "light/390 late previous-matchup responses are discarded",
+    "pass": true
+  },
+  {
+    "check": "light/390 failed read has a retry",
+    "pass": true
+  },
+  {
+    "check": "light/390 retry recovers without navigation",
+    "pass": true
+  },
+  {
+    "check": "light/390 missing alert never opens an unrelated play",
+    "pass": true
+  },
+  {
+    "check": "light/390 missing alert respects normal refresh cadence",
+    "pass": true
+  },
+  {
+    "check": "light/390 returning to a tab after a hidden response can refresh again",
+    "pass": true
+  },
+  {
+    "check": "light/390 reduced motion opens the chosen highlight without running animations",
+    "pass": true
+  },
+  {
+    "check": "light/390 short phone keeps recap controls accessible while content scrolls",
+    "pass": true
+  },
+  {
+    "check": "light/390 teardown removes the recap and listeners",
+    "pass": true
+  },
+  {
+    "check": "dark/320 alert fetches and opens the exact older play",
+    "pass": true
+  },
+  {
+    "check": "dark/320 verified play has real player, yards, quarter, clock and description",
+    "pass": true
+  },
+  {
+    "check": "dark/320 play frame and controls fit mobile",
+    "pass": true
+  },
+  {
+    "check": "dark/320 readable themed highlight",
+    "pass": true
+  },
+  {
+    "check": "dark/320 shares through existing clean and photo chooser",
+    "pass": true
+  },
+  {
+    "check": "dark/320 closing an alert does not reopen it on refresh",
+    "pass": true
+  },
+  {
+    "check": "dark/320 alert close returns focus to the recap button",
+    "pass": true
+  },
+  {
+    "check": "dark/320 compact highlight list fits and has useful portraits",
+    "pass": true
+  },
+  {
+    "check": "dark/320 postgame frame uses actual finals and top starter",
+    "pass": true
+  },
+  {
+    "check": "dark/320 final frame fits and remains readable",
+    "pass": true
+  },
+  {
+    "check": "dark/320 recap reopens at its default first frame",
+    "pass": true
+  },
+  {
+    "check": "dark/320 switching matchup never leaks another game highlights",
+    "pass": true
+  },
+  {
+    "check": "dark/320 late previous-matchup responses are discarded",
+    "pass": true
+  },
+  {
+    "check": "dark/320 failed read has a retry",
+    "pass": true
+  },
+  {
+    "check": "dark/320 retry recovers without navigation",
+    "pass": true
+  },
+  {
+    "check": "dark/320 missing alert never opens an unrelated play",
+    "pass": true
+  },
+  {
+    "check": "dark/320 missing alert respects normal refresh cadence",
+    "pass": true
+  },
+  {
+    "check": "dark/320 returning to a tab after a hidden response can refresh again",
+    "pass": true
+  },
+  {
+    "check": "dark/320 reduced motion opens the chosen highlight without running animations",
+    "pass": true
+  },
+  {
+    "check": "dark/320 short phone keeps recap controls accessible while content scrolls",
+    "pass": true
+  },
+  {
+    "check": "dark/320 teardown removes the recap and listeners",
+    "pass": true
+  },
+  {
+    "check": "dark/390 alert fetches and opens the exact older play",
+    "pass": true
+  },
+  {
+    "check": "dark/390 verified play has real player, yards, quarter, clock and description",
+    "pass": true
+  },
+  {
+    "check": "dark/390 play frame and controls fit mobile",
+    "pass": true
+  },
+  {
+    "check": "dark/390 readable themed highlight",
+    "pass": true
+  },
+  {
+    "check": "dark/390 shares through existing clean and photo chooser",
+    "pass": true
+  },
+  {
+    "check": "dark/390 closing an alert does not reopen it on refresh",
+    "pass": true
+  },
+  {
+    "check": "dark/390 alert close returns focus to the recap button",
+    "pass": true
+  },
+  {
+    "check": "dark/390 compact highlight list fits and has useful portraits",
+    "pass": true
+  },
+  {
+    "check": "dark/390 postgame frame uses actual finals and top starter",
+    "pass": true
+  },
+  {
+    "check": "dark/390 final frame fits and remains readable",
+    "pass": true
+  },
+  {
+    "check": "dark/390 recap reopens at its default first frame",
+    "pass": true
+  },
+  {
+    "check": "dark/390 switching matchup never leaks another game highlights",
+    "pass": true
+  },
+  {
+    "check": "dark/390 late previous-matchup responses are discarded",
+    "pass": true
+  },
+  {
+    "check": "dark/390 failed read has a retry",
+    "pass": true
+  },
+  {
+    "check": "dark/390 retry recovers without navigation",
+    "pass": true
+  },
+  {
+    "check": "dark/390 missing alert never opens an unrelated play",
+    "pass": true
+  },
+  {
+    "check": "dark/390 missing alert respects normal refresh cadence",
+    "pass": true
+  },
+  {
+    "check": "dark/390 returning to a tab after a hidden response can refresh again",
+    "pass": true
+  },
+  {
+    "check": "dark/390 reduced motion opens the chosen highlight without running animations",
+    "pass": true
+  },
+  {
+    "check": "dark/390 short phone keeps recap controls accessible while content scrolls",
+    "pass": true
+  },
+  {
+    "check": "dark/390 teardown removes the recap and listeners",
+    "pass": true
+  },
+  {
+    "check": "no browser errors",
+    "pass": true
+  }
+]

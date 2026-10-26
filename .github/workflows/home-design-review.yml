@@ -90,6 +90,13 @@ on:
       - 'tools/capture-score-scroll-review.py'
       - 'js/player-compare*'
       - 'js/moment-recap*'
+      - 'js/football-moment*'
+      - 'js/matchup-highlights*'
+      - 'js/matchup-story*'
+      - 'css/matchup-highlights.css'
+      - 'tools/capture-matchup-highlights.py'
+      - 'supabase/migrations/*matchup_highlights*'
+      - 'supabase/tests/matchup_highlights.sql'
       - 'js/record-chases*'
       - 'js/team-art*'
       - 'js/lore.js'
@@ -237,6 +244,10 @@ jobs:
         env:
           DFL_RECAP_REVIEW_DIR: ${{ github.workspace }}/home-review-output/recap
         run: python tools/capture-recap-review.py
+      - name: Check exact play alerts, saved highlights and final recap
+        env:
+          DFL_HIGHLIGHTS_REVIEW_DIR: ${{ github.workspace }}/home-review-output/highlights
+        run: python tools/capture-matchup-highlights.py
       - name: Check live record chases and original team art
         env:
           DFL_RECORD_REVIEW_DIR: ${{ github.workspace }}/home-review-output/records
@@ -358,4 +369,6 @@ jobs:
       - name: Check NFL baseline, freshness and read-only client access
         env:
           PGPASSWORD: postgres
-        run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/tests/live_football.sql
+        run: |
+          psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/tests/live_football.sql
+          psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/tests/matchup_highlights.sql

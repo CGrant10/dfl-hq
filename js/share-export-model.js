@@ -3,12 +3,19 @@ const signed=value=>`${Number(value)>0?'+':''}${Number(value||0).toFixed(1)}`;
 export function sharePlayers(players=[]){
  const seen=new Set();return players.filter(p=>{const id=String(p?.id||p?.player_id||p?.player||'');if(!/^\d+$/.test(id)||Number(id)===0||String(p.position||p.player_pos||'').toUpperCase()==='DEF'||seen.has(id))return false;seen.add(id);return true}).map(p=>({...p,id:String(p.id||p.player_id||p.player),name:p.name||p.playerName||'Player'}));
 }
+export function footballMomentShareSpec(moment,{season,week}={}){
+ const play=moment?.recap?.play;if(!play||!['touchdown','big-play'].includes(moment.kind)||!moment.eventKey)return null;
+ return {kind:'Matchup highlight',context:`${season} / WEEK ${String(week).padStart(2,'0')}`,headline:moment.title,photoHeadline:moment.title,
+  summary:moment.text,photoCaption:moment.team?.team_name,status:[play.period?play.period>4?'OT':`Q${play.period}`:null,play.clock].filter(Boolean).join(' · '),
+  results:[{label:'Play distance',value:`${play.yards} YDS`}],sections:[{label:'The play',copy:play.text},{label:'The lineup',rows:(moment.recap.players||[]).map(p=>({name:p.name,detail:[p.position,p.nflTeam,p.role].filter(Boolean).join(' · ')}))}],
+  players:sharePlayers(moment.recap.players),footer:'DFL · Talk your shit. Keep the receipt.'};
+}
 export function matchupShareSpec(data){return {
  kind:'Matchup final',context:`${data.season} / WEEK ${String(data.week).padStart(2,'0')}`,
  headline:data.winner?'BRAGGING\nRIGHTS.':'ALL\nSQUARE.',photoHeadline:data.winner?.name||'All square.',photoCaption:data.winner?`Wins by ${n(data.margin)}`:'Final · Tied',
  summary:data.winner?`${data.winner.name} wins by ${n(data.margin)}`:'Final · Tied',status:'Final',
  results:data.sides.map(t=>({label:t.name,value:n(t.score)})),
- sections:data.mvp?[{label:'Matchup MVP',prominent:true,rows:[{name:data.mvp.name,value:`${n(data.mvp.points)} pts`}]}]:[],
+ sections:[...(data.mvp?[{label:'Matchup MVP',prominent:true,rows:[{name:data.mvp.name,value:`${n(data.mvp.points)} pts`}]}]:[]),...(data.turningPoint?[{label:'Last saved lead change',copy:data.turningPoint.text}]:[])],
  players:sharePlayers(data.mvp?[data.mvp]:[]),footer:'Draft · Golf · Sin · Fold'
 }}
 export function tradeShareSpec(t){return {

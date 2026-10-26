@@ -1,5 +1,6 @@
 import {LIVE_PLAY_AGE,LIVE_FEED_AGE} from './live-football-model.js';
 import {MATCHUP_MOMENTS_CATEGORY} from './matchup-moments.js';
+import {footballMomentKey} from './football-moments.js';
 
 // Only a fresh verified play affecting the owner's current starting lineup.
 // One member/play key covers a passer/receiver stack, even across devices.
@@ -20,7 +21,7 @@ export function footballNotificationDrafts({season,week,feeds=[],rows=[],rosters
     const people=[...new Map(involved.map(p=>[p.id,p])).values()],names=people.map(p=>p.name).join(' + '),passing=people.every(p=>p.role==='passer');
     const label=play.kind==='touchdown'?(passing?'TD PASS':'TOUCHDOWN'):`${play.yards}-YD ${passing?'PASS':people.some(p=>p.role==='receiver')?'RECEPTION':'RUN'}`;
     drafts.push({title:`${names} · ${label}`.slice(0,80),body:play.text.slice(0,240),category:MATCHUP_MOMENTS_CATEGORY,audience:'members',targetMemberIds:[member],
-     sourceKey:`weekly:play:${season}:${week}:${member}:${feed.game_id}:${play.id}`,targetUrl:`#/clubhouse?season=${season}&week=${week}&tab=matchups&matchup=${row.matchup_id}`,
+     sourceKey:`weekly:play:${season}:${week}:${member}:${feed.game_id}:${play.id}`,targetUrl:`#/clubhouse?season=${season}&week=${week}&tab=matchups&matchup=${row.matchup_id}&moment=${footballMomentKey(row.roster_id,feed.game_id,play.id)}`,
      expiresAt:new Date(play.at+LIVE_PLAY_AGE).toISOString()});
    }
   }
