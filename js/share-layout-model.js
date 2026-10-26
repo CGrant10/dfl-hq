@@ -10,7 +10,7 @@ export function shareLayoutView(spec,format='compact') {
  }
  if(spec.template==='ticket') {
   const t=spec.ticket,labels={open:'On the board',won:'Cashed',lost:'Torn up',void:'Voided'};
-  return {template:'ticket',full,ticket:t,picks:full?t.picks:t.picks.slice(0,5),omitted:full?0:Math.max(0,t.picks.length-5),status:t.pulled?'Pulled':labels[t.status]||t.status,returnLabel:t.pulled?'Refunded':t.status==='won'?'Paid':t.status==='lost'?'Returned':t.status==='void'?'Void':'To return',returnValue:t.pulled?t.stake:t.status==='lost'?0:t.status==='void'?'—':t.ret};
+  return {template:'ticket',full,ticket:t,picks:full?t.picks:t.picks.slice(0,6),omitted:full?0:Math.max(0,t.picks.length-6),status:t.pulled?'Pulled':t.status==='open'&&t.gradingPending&&t.liveResult!=='open'?{won:'Hit',lost:'Missed',void:'Push'}[t.liveResult]:labels[t.status]||t.status,returnLabel:t.pendingReturn?.label||(t.pulled?'Refunded':t.status==='won'?'Paid':t.status==='lost'?'Returned':t.status==='void'?'Void':'To return'),returnValue:t.pendingReturn?.value??(t.pulled?t.stake:t.status==='lost'?0:t.status==='void'?'—':t.ret)};
  }
  if(spec.template==='recap') {
   const r=spec.recap;
@@ -33,7 +33,7 @@ export function shareImageDescription(spec,format='compact') {
   rows.push(...t.deltas.map(d=>`${d.team}: ${signed(d.delta)} points per week.`),...v.remarks.map(r=>[r.title,v.full?r.copy:''].filter(Boolean).join('. ')));
  }else if(v.template==='ticket') {
   const t=v.ticket;rows.push(`${v.status}. ${t.picks.length} picks. Odds ${t.odds}. Stake ${t.stake} SIN. ${v.returnLabel} ${v.returnValue}${v.returnValue==='—'?'':' SIN'}.`);
-  rows.push(...v.picks.map((p,i)=>`Pick ${i+1}: ${p.pick}. ${p.market}. Odds ${p.odds}. ${p.status}.`));if(v.omitted)rows.push(`${v.omitted} more picks.`);if(t.status==='open')rows.push(`Potential profit ${t.profit} SIN. All picks must land.`);
+  if(t.gradingPending)rows.push('Live result; official grading and payout pending.');rows.push(...v.picks.map((p,i)=>`Pick ${i+1}: ${p.pick}. ${p.market}. Odds ${p.odds}. ${p.pending?{won:'Hit; grading pending',lost:'Miss; grading pending',void:'Push; grading pending'}[p.status]:p.status}.`));if(v.omitted)rows.push(`${v.omitted} more picks.`);if(t.status==='open'&&(!t.gradingPending||t.liveResult==='open'))rows.push(`Potential profit ${t.profit} SIN. All picks must land.`);
  }else if(v.template==='recap') {
   const r=v.recap;rows.push([r.hero?.label,r.hero?.name,r.hero?.value,r.hero?.detail].filter(Boolean).join('. '));if(r.mvp)rows.push(`${r.mvp.label||'MVP'}: ${r.mvp.name}, ${score(r.mvp.points)} points.`);
   rows.push(...v.highlights.map(h=>[h.label,h.name,h.value,h.detail].filter(Boolean).join('. ')));if(v.full)rows.push(r.story||'',...v.sections.map(s=>[s.label,...(s.rows||[]).map(r=>[r.name,r.value,r.detail].filter(Boolean).join(', ')),s.copy].filter(Boolean).join('. ')));if(v.omitted)rows.push(`${v.omitted} more highlights.`);

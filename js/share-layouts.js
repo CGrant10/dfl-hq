@@ -4,7 +4,7 @@ import {shareLayoutView} from './share-layout-model.js';
 export function tailoredShareCanvas(spec,{style='clean',photo=null,photos=new Map(),selected='',format='compact',kit}) {
  const view=shareLayoutView(spec,format);if(!view)return null;
  const {FONT,DISPLAY,lines,text,display,rule,photoHero,palette,paper,sealImage}=kit;
- const p=palette(style),RED='#C8102E',YELLOW='#EFC94C',canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1350;
+ const p=palette(style),GREEN=style==='photo'?'#6DD89C':'#137744',RED='#C8102E',RESULT_RED=style==='photo'?'#FF7D88':RED,YELLOW='#EFC94C',canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1350;
  let ctx=canvas.getContext('2d');const paint=[];
  const wrap=(value,width,size,font=FONT,weight=500)=>lines(ctx,value,width,size,font,weight);
  const block=(value,x,y,width,size=30,{limit=Infinity,color=p.ink,font=FONT,weight=500,leading=size*1.35,align='left'}={})=>{
@@ -67,17 +67,20 @@ export function tailoredShareCanvas(spec,{style='clean',photo=null,photos=new Ma
   const t=view.ticket;
   big('SPORTSBOOK',64,265,952,116);
   block(`${t.picks.length===1?'SINGLE':`${t.picks.length}-PICK`} ENTRY`,64,331,450,31,{weight:600});
-  big(view.status.toUpperCase(),1016,331,470,58,t.status==='lost'?RED:p.ink,'right');divider(376);
+  big(view.status.toUpperCase(),1016,331,470,58,t.status==='lost'||t.status==='open'&&t.liveResult==='lost'?RESULT_RED:t.status==='won'||t.liveResult==='won'?GREEN:p.ink,'right');if(t.status==='open'&&t.gradingPending)tiny('GRADING PENDING',1016,362,350,{align:'right'});divider(376);
   const stats=[['ODDS',t.odds,''],['STAKE',t.stake,'SIN'],[view.returnLabel.toUpperCase(),view.returnValue,view.returnValue==='—'?'':'SIN']];
   stats.forEach(([label,value,unit],i)=>{const x=64+i*330;tiny(label,x,423,292);big(value,x,530,292,96);tiny(unit,x,564,292);if(i)paint.push(()=>{ctx.fillStyle=p.line;ctx.fillRect(x-24,401,1,163)})});
   divider(593);tiny('YOUR PICKS',64,636);let y=665;
   view.picks.forEach((pick,i)=>{
    const n=block(pick.pick,124,y+32,722,32,{weight:600,limit:view.full?Infinity:2}),m=block(pick.market,124,y+n+31,722,24,{color:p.muted,limit:view.full?Infinity:2});
-   big(String(i+1).padStart(2,'0'),64,y+32,44,32,p.muted);tiny(pick.status.toUpperCase(),1016,y+26,145,{align:'right',color:pick.status==='lost'?RED:p.muted});big(pick.odds,1016,y+74,145,42,p.ink,'right');
+   if(pick.status==='won'||pick.status==='lost'){
+    const markY=y+16,won=pick.status==='won';paint.push(()=>{ctx.save();ctx.strokeStyle=won?GREEN:RESULT_RED;ctx.lineWidth=5;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();if(won){ctx.moveTo(67,markY);ctx.lineTo(78,markY+11);ctx.lineTo(99,markY-13)}else{ctx.moveTo(69,markY-12);ctx.lineTo(95,markY+12);ctx.moveTo(95,markY-12);ctx.lineTo(69,markY+12)}ctx.stroke();ctx.restore();});
+   }else big(pick.status==='void'?'—':String(i+1).padStart(2,'0'),64,y+32,44,32,p.muted);
+   tiny(pick.pending?{won:'HIT',lost:'MISS',void:'PUSH'}[pick.status]:pick.status.toUpperCase(),1016,y+26,145,{align:'right',color:pick.status==='lost'?RESULT_RED:pick.status==='won'?GREEN:p.muted});big(pick.odds,1016,y+74,145,42,p.ink,'right');
    const h=Math.max(110,n+m+48);divider(y+h-14);y+=h;
   });
   if(view.omitted)y+=block(`+ ${view.omitted} more pick${view.omitted===1?'':'s'}`,64,y+29,952,26,{color:p.muted})+32;
-  if(t.status==='open'){y+=32;const must=t.picks.length===1?'THE PICK MUST LAND':`ALL ${t.picks.length} PICKS MUST LAND`;y+=tiny(must,64,y)+10;y+=block(`${Number(t.profit).toLocaleString('en-US')} SIN potential profit`,64,y+28,952,28,{weight:600})+28}
+  if(t.status==='open'&&(!t.gradingPending||t.liveResult==='open')){y+=32;const must=t.picks.length===1?'THE PICK MUST LAND':`ALL ${t.picks.length} PICKS MUST LAND`;y+=tiny(must,64,y)+10;y+=block(`${Number(t.profit).toLocaleString('en-US')} SIN potential profit`,64,y+28,952,28,{weight:600})+28}
   end=y;
  }else if(view.template==='recap') {
   const r=view.recap,hero=r.hero||{};

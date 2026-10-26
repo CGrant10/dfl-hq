@@ -163,6 +163,8 @@ on:
       - 'tools/capture-finish-review.py'
       - 'css/home.css'
       - 'js/sportsbook-pickem.js'
+      - 'js/sportsbook-fantasy*'
+      - 'tools/*sportsbook-results-review*'
       - 'js/member-wall.js'
       - 'js/game-day.js'
       - 'js/matchup-banter*'
@@ -225,6 +227,12 @@ jobs:
           python tools/capture-player-card-motion.py
           python tools/capture-sheet-review.py
           python tools/capture-sportsbook-slip-review.py
+      - name: Check live fantasy results and shared ticket marks
+        env:
+          DFL_BOOK_RESULTS_DIR: ${{ github.workspace }}/home-review-output/book-results
+        run: |
+          node tools/render-sportsbook-results-review.mjs
+          python tools/capture-sportsbook-results-review.py
       - name: Check score effects while scrolling
         env:
           DFL_SCORE_SCROLL_REVIEW_DIR: ${{ github.workspace }}/home-review-output/score-scroll

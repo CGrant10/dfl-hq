@@ -1,0 +1,162 @@
+[
+  {
+    "check": "320px light finished Sunday matchup marks both winning and losing picks",
+    "pass": true
+  },
+  {
+    "check": "320px light Monday starter keeps its leg open while completed parlay legs show hits",
+    "pass": true
+  },
+  {
+    "check": "320px light ties show a neutral mark",
+    "pass": true
+  },
+  {
+    "check": "320px light actual bankroll and official bet status remain unchanged",
+    "pass": true
+  },
+  {
+    "check": "320px light book board shows hit/miss and actual final scores",
+    "pass": true
+  },
+  {
+    "check": "320px light no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "320px light foreground refresh marks a newly finished matchup without reloading the page",
+    "pass": true
+  },
+  {
+    "check": "320px light unavailable evidence clears provisional marks",
+    "pass": true
+  },
+  {
+    "check": "320px light no uncaught errors",
+    "pass": true
+  },
+  {
+    "check": "320px dark finished Sunday matchup marks both winning and losing picks",
+    "pass": true
+  },
+  {
+    "check": "320px dark Monday starter keeps its leg open while completed parlay legs show hits",
+    "pass": true
+  },
+  {
+    "check": "320px dark ties show a neutral mark",
+    "pass": true
+  },
+  {
+    "check": "320px dark actual bankroll and official bet status remain unchanged",
+    "pass": true
+  },
+  {
+    "check": "320px dark book board shows hit/miss and actual final scores",
+    "pass": true
+  },
+  {
+    "check": "320px dark no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "320px dark foreground refresh marks a newly finished matchup without reloading the page",
+    "pass": true
+  },
+  {
+    "check": "320px dark unavailable evidence clears provisional marks",
+    "pass": true
+  },
+  {
+    "check": "320px dark no uncaught errors",
+    "pass": true
+  },
+  {
+    "check": "390px light finished Sunday matchup marks both winning and losing picks",
+    "pass": true
+  },
+  {
+    "check": "390px light Monday starter keeps its leg open while completed parlay legs show hits",
+    "pass": true
+  },
+  {
+    "check": "390px light ties show a neutral mark",
+    "pass": true
+  },
+  {
+    "check": "390px light actual bankroll and official bet status remain unchanged",
+    "pass": true
+  },
+  {
+    "check": "390px light book board shows hit/miss and actual final scores",
+    "pass": true
+  },
+  {
+    "check": "390px light no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "390px light foreground refresh marks a newly finished matchup without reloading the page",
+    "pass": true
+  },
+  {
+    "check": "390px light clean share includes the losing sixth leg and pending grading",
+    "pass": true
+  },
+  {
+    "check": "390px light photo share includes the losing sixth leg and pending grading",
+    "pass": true
+  },
+  {
+    "check": "390px light unavailable evidence clears provisional marks",
+    "pass": true
+  },
+  {
+    "check": "390px light no uncaught errors",
+    "pass": true
+  },
+  {
+    "check": "390px dark finished Sunday matchup marks both winning and losing picks",
+    "pass": true
+  },
+  {
+    "check": "390px dark Monday starter keeps its leg open while completed parlay legs show hits",
+    "pass": true
+  },
+  {
+    "check": "390px dark ties show a neutral mark",
+    "pass": true
+  },
+  {
+    "check": "390px dark actual bankroll and official bet status remain unchanged",
+    "pass": true
+  },
+  {
+    "check": "390px dark book board shows hit/miss and actual final scores",
+    "pass": true
+  },
+  {
+    "check": "390px dark no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "390px dark foreground refresh marks a newly finished matchup without reloading the page",
+    "pass": true
+  },
+  {
+    "check": "390px dark clean share includes the losing sixth leg and pending grading",
+    "pass": true
+  },
+  {
+    "check": "390px dark photo share includes the losing sixth leg and pending grading",
+    "pass": true
+  },
+  {
+    "check": "390px dark unavailable evidence clears provisional marks",
+    "pass": true
+  },
+  {
+    "check": "390px dark no uncaught errors",
+    "pass": true
+  }
+]

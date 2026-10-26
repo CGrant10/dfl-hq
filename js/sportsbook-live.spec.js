@@ -5,13 +5,19 @@ import {mountSportsbookLive} from './sportsbook-live.js';
 describe('mounted book quote refresh',()=>{
   let stop;
   afterEach(()=>{stop?.();vi.useRealTimers();vi.unstubAllGlobals();});
-  const setup=()=>{
+  const setup=(extra={})=>{
     vi.useFakeTimers();const doc=new EventTarget(),win=new EventTarget();doc.visibilityState='visible';win.navigator={onLine:true};vi.stubGlobal('document',doc);vi.stubGlobal('window',win);
     let busy=false,writing=false,active=true;const root={querySelector:selector=>(selector==='.sb-slip[open]'?busy:writing)?{}:null,querySelectorAll:()=>[{dataset:{betOutcome:'2'}},{dataset:{betOutcome:'3'}}]},onUpdate=vi.fn(),onError=vi.fn();
     mocks.read.mockReset().mockResolvedValue({markets:[{id:1,status:'open'}],outcomes:[]});
-    const client={rpc:vi.fn().mockResolvedValue({data:{member_id:1,balance:200,bets:[],ledger:[]}})},onAccount=vi.fn(),onAccountError=vi.fn();stop=mountSportsbookLive(root,{client,memberId:1,onAccount,onAccountError,outcomeMap:new Map([['2',{market_id:1}],['3',{market_id:1}]]),active:()=>active,onUpdate,onError});
+    const client={rpc:vi.fn().mockResolvedValue({data:{member_id:1,balance:200,bets:[],ledger:[]}})},onAccount=vi.fn(),onAccountError=vi.fn();stop=mountSportsbookLive(root,{client,memberId:1,onAccount,onAccountError,outcomeMap:new Map([['2',{market_id:1}],['3',{market_id:1}]]),active:()=>active,onUpdate,onError,...extra});
     return{win,doc,onUpdate,onError,onAccount,onAccountError,client,root,writing:value=>writing=value,busy:value=>busy=value,retire:()=>active=false};
   };
+  it('refreshes result evidence on entry and foreground, and pauses while writing or hidden',async()=>{
+    const onRefresh=vi.fn(),f=setup({onRefresh,interval:30000});await vi.advanceTimersByTimeAsync(0);expect(onRefresh).toHaveBeenCalledExactlyOnceWith(false);
+    f.doc.visibilityState='hidden';f.doc.dispatchEvent(new Event('visibilitychange'));await vi.advanceTimersByTimeAsync(60000);expect(onRefresh).toHaveBeenCalledTimes(1);
+    f.doc.visibilityState='visible';f.doc.dispatchEvent(new Event('visibilitychange'));await vi.advanceTimersByTimeAsync(80);expect(onRefresh).toHaveBeenLastCalledWith(true);
+    f.root._bookTicketBusy=true;await vi.advanceTimersByTimeAsync(30000);expect(onRefresh).toHaveBeenCalledTimes(2);
+  });
   it('reads mounted markets once on return and pauses while a slip is open',async()=>{
     const f=setup();await vi.advanceTimersByTimeAsync(0);expect(mocks.read).not.toHaveBeenCalled();
     f.busy(true);f.win.dispatchEvent(new Event('online'));await vi.advanceTimersByTimeAsync(80);expect(mocks.read).not.toHaveBeenCalled();expect(f.onAccount).toHaveBeenCalledOnce();
