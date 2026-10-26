@@ -248,7 +248,8 @@ export async function render(view){
       try{const {loadFantasyBookResults}=await import('../sportsbook-fantasy-data.js');results=await loadFantasyBookResults(db(),[...marketMap.values()],{force});}catch{/* An unavailable feed cannot keep a claimed result. */}
       if(!active())return;
       for(const market of marketMap.values()){delete market._fantasyResult;const result=results.get(String(market.id));if(result)market._fantasyResult=result;}
-      const stamp=JSON.stringify([...results].map(([id,{final,scores,winner}])=>[id,final,scores,winner]));
+      const official=[...outcomeMap.values()].filter(outcome=>{const m=marketMap.get(String(outcome.market_id));return fantasyMarketKey(m)&&['settled','void'].includes(m.status)}).map(outcome=>[outcome.id,marketMap.get(String(outcome.market_id)).status,outcome.is_winner]);
+      const stamp=JSON.stringify([[...results].map(([id,{final,scores,winner}])=>[id,final,scores,winner]),official]);
       if(paint&&!view._bookTicketBusy&&stamp!==fantasyPainted){
         for(const button of view.querySelectorAll('[data-bet-outcome]')){
           const outcome=outcomeMap.get(button.dataset.betOutcome),market=marketMap.get(String(outcome?.market_id));if(!fantasyMarketKey(market))continue;
@@ -256,7 +257,7 @@ export async function render(view){
           const detail=button.querySelector('.sb-outcome-label>small');
           if(result){
             const mark=document.createElement('span');mark.dataset.fantasyResult=result.status;mark.className='sb-fantasy-result';mark.setAttribute('aria-label',result.status==='won'?'Hit':result.status==='lost'?'Miss':'Push');mark.textContent=result.status==='won'?'✓':result.status==='lost'?'×':'—';name?.append(mark);
-            if(detail){detail.dataset.fantasyBaseText??=detail.textContent;detail.textContent=`${result.score.toFixed(2)} pts`;}
+            if(detail){detail.dataset.fantasyBaseText??=detail.textContent;detail.textContent=Number.isFinite(result.score)?`${result.score.toFixed(2)} pts`:'Final';}
           }else if(detail?.dataset.fantasyBaseText!=null){detail.textContent=detail.dataset.fantasyBaseText;delete detail.dataset.fantasyBaseText;}
           const state=button.closest('.sb-market')?.querySelector('.sb-market-state');if(state)state.textContent=result?'FINAL':isOpen(market)?'OPEN':'LOCKED';
         }
@@ -675,9 +676,9 @@ function legMarketOpen(leg,market){const status=leg.market_status||market?.statu
 function legPulse(leg){
   const result=bookLegResult(leg);
   if(result.pending)return {tone:result.status==='won'?'is-ahead':result.status==='lost'?'is-behind':'is-push',text:result.status==='won'?'HIT':result.status==='lost'?'MISS':'PUSH'};
-  if(leg.status==="won")return{tone:"is-ahead",text:"CASHED"};
-  if(leg.status==="lost")return{tone:"is-behind",text:"MISSED"};
-  if(leg.status==="void")return{tone:"",text:"VOID"};
+  if(result.status==="won")return{tone:"is-ahead",text:"CASHED"};
+  if(result.status==="lost")return{tone:"is-behind",text:"MISSED"};
+  if(result.status==="void")return{tone:"",text:"VOID"};
   const line=Number(leg.accepted_line??leg.provider_line),score=Number(leg.provider_score),hasLine=Number.isFinite(line),hasScore=leg.provider_score!==null&&leg.provider_score!==undefined&&Number.isFinite(score);
   if(hasLine&&hasScore){const side=String(leg.provider_side||"").toLowerCase(),push=score===line,ahead=side==="over"?score>line:score<line;return{tone:push?"is-push":ahead?"is-ahead":"is-behind",text:`${score} / ${line} · ${push?"PUSH":ahead?"WINNING":"BEHIND"}`}}
   if(leg.market_status==="locked")return{tone:"is-live",text:"LIVE · AWAITING STAT"};

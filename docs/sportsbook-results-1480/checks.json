@@ -32,6 +32,10 @@
     "pass": true
   },
   {
+    "check": "320px light official results remain marked after the live feed fails",
+    "pass": true
+  },
+  {
     "check": "320px light no uncaught errors",
     "pass": true
   },
@@ -65,6 +69,10 @@
   },
   {
     "check": "320px dark unavailable evidence clears provisional marks",
+    "pass": true
+  },
+  {
+    "check": "320px dark official results remain marked after the live feed fails",
     "pass": true
   },
   {
@@ -112,6 +120,10 @@
     "pass": true
   },
   {
+    "check": "390px light official results remain marked after the live feed fails",
+    "pass": true
+  },
+  {
     "check": "390px light no uncaught errors",
     "pass": true
   },
@@ -153,6 +165,10 @@
   },
   {
     "check": "390px dark unavailable evidence clears provisional marks",
+    "pass": true
+  },
+  {
+    "check": "390px dark official results remain marked after the live feed fails",
     "pass": true
   },
   {

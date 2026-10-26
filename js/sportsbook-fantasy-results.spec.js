@@ -36,6 +36,14 @@ describe('live fantasy Sportsbook results',()=>{
   expect(bookLegResult(marked,f.now+90001)).toEqual({status:'open',pending:false});
   expect(withFantasyLegResult(marked,{},outcome).live_result).toBeUndefined();
  });
+ it('retains official board results when provisional evidence expires or fails',()=>{
+  const f=fixture();f.market.status='settled';
+  expect(fantasyOutcomeResult(f.market,{is_winner:true})).toMatchObject({status:'won',official:true});
+  expect(fantasyOutcomeResult(f.market,{is_winner:false})).toMatchObject({status:'lost',official:true});
+  expect(bookLegResult(withFantasyLegResult({status:'open'},f.market,{is_winner:true}))).toEqual({status:'won',pending:false});
+  expect(bookLegResult(withFantasyLegResult({status:'open'},f.market,{is_winner:true}),f.now+3600000)).toEqual({status:'won',pending:false});
+  f.market.status='void';expect(fantasyOutcomeResult(f.market,{})).toMatchObject({status:'void',official:true});
+ });
  it('shows mixed parlays per pick while keeping the payout and wallet states official',()=>{
   const f=fixture();f.market._fantasyResult=fantasyMatchupResults(f).get('1');
   const winner=withFantasyLegResult({status:'open',label:'A',market:'A vs B',odds_american:120},f.market,{sleeper_roster_id:1});

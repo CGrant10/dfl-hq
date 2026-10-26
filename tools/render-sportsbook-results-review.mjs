@@ -45,6 +45,7 @@ ${source.slice(controllerStart,controllerEnd).replace("import('../sportsbook-fan
 window.reviewStop=mountSportsbookLive(view,{client:db(),memberId:1,outcomeMap,active,onUpdate:()=>{},onError:e=>{window.reviewRefreshError=e.stack},onRefresh:force=>refreshFantasy({force}),interval:30000});
 window.reviewRefresh=()=>refreshFantasy({force:true});window.reviewTheme=pinMode;
 window.reviewShare=async(id,style='clean')=>{await shareSealReady;const t=ticketData({bet:bets.find(b=>b.id===id),legs:entryLegs(bets.find(b=>b.id===id),marketMap,outcomeMap),member:{display_name:'DFL Member'},season:2026}),spec=ticketShareSpec(t);return {data:editorialShareCanvas(spec,{style}).toDataURL('image/png'),text:shareImageDescription(spec),ticket:t}};
+window.reviewOfficial=()=>{marketMap.get('1').status='settled';outcomeMap.get('2').is_winner=true;outcomeMap.get('3').is_winner=false;return refreshFantasy({force:true})};
 window.reviewReady=true;
 `;
 writeFileSync(out+'/fixture.js',code);

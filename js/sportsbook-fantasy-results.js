@@ -25,6 +25,10 @@ export function fantasyMatchupResults({markets=[],rows=[],players={},schedule,se
 }
 
 export function fantasyOutcomeResult(market,outcome,now=Date.now()) {
+  if(!fantasyMarketKey(market))return null;
+  if(market.status==='void')return {status:'void',score:null,checkedAt:now,official:true};
+  if(market.status==='settled'&&typeof outcome?.is_winner==='boolean')
+    return {status:outcome.is_winner?'won':'lost',score:null,checkedAt:now,official:true};
   const result=market?._fantasyResult,id=outcome?.sleeper_roster_id;
   if(!result?.final||!Number.isFinite(result.checkedAt)||now-result.checkedAt<0||now-result.checkedAt>90000
     ||id==null||!Object.hasOwn(result.scores,String(id)))return null;
@@ -41,8 +45,8 @@ export function withFantasyLegResult(leg,market,outcome,now=Date.now()) {
 export function bookLegResult(leg,now=Date.now()) {
   if(['won','lost','void'].includes(leg?.status))return {status:leg.status,pending:false};
   const live=leg?.live_result;
-  return live&&['won','lost','void'].includes(live.status)&&Number.isFinite(live.checkedAt)&&now-live.checkedAt>=0&&now-live.checkedAt<=90000
-    ?{status:live.status,pending:true}:{status:'open',pending:false};
+  return live&&['won','lost','void'].includes(live.status)&&Number.isFinite(live.checkedAt)&&(live.official===true||now-live.checkedAt>=0&&now-live.checkedAt<=90000)
+    ?{status:live.status,pending:!live.official}:{status:'open',pending:false};
 }
 
 export function bookEntryResult(legs,now=Date.now()) {
