@@ -73,9 +73,12 @@ with sync_playwright() as p:
     print('REEL DEBUG',page.evaluate('async()=>({reads:f.clipReads,now:Date.now(),session:(await import("/js/home-highlight-model.js")).highlightSession(),activeRows:(await import("/js/home-highlight-model.js")).activeHighlightClips(f.clips).length,scope:document.querySelector("[data-clubhouse-reel-slot]").innerText,view:document.querySelector("#clubhouse-panel-highlights").hidden,lineups:[...document.querySelectorAll("[data-gameday-player]")].map(e=>e.textContent.slice(0,70))})'),errors,flush=True)
     page.screenshot(path=str(OUT/'debug.png'));raise
    check(tag+' Your team matches the actual weekly roster',page.locator('[data-home-reel-clip]').count()==1 and 'Tyler Shough' in page.locator('.home-reel-cards').inner_text())
+   check(tag+' personal player chips only offer roster-matched players',page.locator('[data-reel-player-filter="1"]').count()==1 and page.locator('[data-reel-player-filter="3"],[data-reel-player-filter="5"]').count()==0)
    page.screenshot(path=str(OUT/f'{width}-{mode}-highlights.png'))
    page.locator('[data-home-reel-open]').click();page.wait_for_function('document.querySelector(".home-reel-player video")?.currentTime>0.1')
    check(tag+' personal reel plays inside Clubhouse from clip one',page.locator('[data-reel-count]').inner_text()=='1 / 1' and 'Your team' in page.locator('#home-reel-player-title').text_content())
+   page.locator('[data-reel-search]').fill('Metcalf');check(tag+' personal search stays restricted to your team',page.locator('[data-reel-choose]').count()==0)
+   page.locator('.reel-search-row [data-reel-clear]').click()
    page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open')
    reads_before_scope=page.evaluate('f.clipReads')
    page.locator('[data-team-reel-scope="matchup"]').click();page.wait_for_function('document.querySelectorAll("[data-home-reel-clip]").length===2')

@@ -14,7 +14,7 @@ export function mountClubhouseTeamHighlights(root,{getModel,getGame,active=()=>r
  const contextKey=()=>JSON.stringify([getModel()?.season,getModel()?.week,currentMember()?.id,scope,scope==='matchup'?getGame()?.id:null,scope==='league'?[]:players().map(p=>[p.id,p.name,p.nflTeam]).sort()]);
  const title=()=>scope==='mine'?"Your team’s highlights":scope==='matchup'?'Matchup highlights':'Weekend highlights';
  const empty=()=>scope==='mine'&&!currentMember()?'Choose your profile to see your team’s clips.':'No clips available for this week right now.';
- const reel=mountHomeHighlights(slot,{active:()=>!stopped&&active(),title,markup:(clips,now)=>homeHighlightMarkup(clips,now,{title:title(),eyebrow:scope==='mine'?own()?.name||'YOUR TEAM':scope==='matchup'?'THIS MATCHUP':'AROUND THE LEAGUE',emptyText:empty()}),load:async()=>{
+ const reel=mountHomeHighlights(slot,{active:()=>!stopped&&active(),title,getPlayers:()=>scope==='league'?getModel()?.games.flatMap(game=>game.sides.flatMap(side=>[...side.lineup,...side.bench]))||[]:players(),markup:(clips,now,browse)=>homeHighlightMarkup(clips,now,{...browse,title:title(),eyebrow:scope==='mine'?own()?.name||'YOUR TEAM':scope==='matchup'?'THIS MATCHUP':'AROUND THE LEAGUE',emptyText:empty()}),load:async()=>{
   const model=getModel(),requested=contextKey();if(!model)return [];
   const [rows,nfl]=await Promise.all([metadata(),model.events?.length?null:loadNfl(model.season,model.week)]);
   if(stopped||requested!==contextKey())return [];
@@ -24,7 +24,7 @@ export function mountClubhouseTeamHighlights(root,{getModel,getGame,active=()=>r
  }});
  const sync=()=>{
   for(const button of root.querySelectorAll('[data-team-reel-scope]'))button.setAttribute('aria-pressed',String(button.dataset.teamReelScope===scope));
-  const next=contextKey();if(next!==key){key=next;reel.reset();if(!root.querySelector('#clubhouse-panel-highlights')?.hidden)void reel.refresh()}
+  const next=contextKey();if(next!==key){key=next;reel.reset();if(!root.querySelector('#clubhouse-panel-highlights')?.hidden)void reel.refresh()}else reel.updatePlayers();
  };
  const click=event=>{const button=event.target.closest('[data-team-reel-scope]');if(button){scope=button.dataset.teamReelScope;sync()}};
  const tab=event=>{if(event.detail?.tab!=='highlights')reel.close();else{sync();void reel.refresh()}};

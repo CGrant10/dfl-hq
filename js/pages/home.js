@@ -519,7 +519,7 @@ export async function render(view) {
       return {sleeper_user_id:uid,team_name:member?.team_name||member?.display_name,actual:Number(row.points),complete:row.points!=null&&Number.isFinite(Number(row.points))&&!!row.players_points,starterScores:scores.filter(([id])=>starters.has(id)).map(performance),benchScores:scores.filter(([id])=>!starters.has(id)).map(performance)};
     })};
   }).catch(err => { console.warn("Completed week report unavailable", err); return null; });
-  let homeEdition = {}, refreshEdition = null, homeCompletedReport = null;
+  let homeEdition = {}, refreshEdition = null, homeCompletedReport = null, homeHighlightReel = null;
   const weekFlow=mountHomeWeekFlow(view.querySelector(".home-week-desk"));
   deferredStops.push(()=>weekFlow.stop());
   const updateWeekFlow=()=>{
@@ -528,8 +528,8 @@ export async function render(view) {
     if(slot&&slot.innerHTML!==markup){slot.innerHTML=markup;slot.hidden=!markup;}
     weekFlow.update(homeEdition);
   };
-  deferredStops.push(mountHomeHighlights(view.querySelector('[data-home-highlights-slot]'),{active:()=>mine===generation&&view.isConnected&&location.hash.startsWith('#/home')}).stop);
-  deferredStops.push(mountHomeMatchupPreview(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,onModel:edition=>{homeEdition=edition;updateWeekFlow();refreshEdition?.();requestAnimationFrame(()=>requestAnimationFrame(startAnalysis))},active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
+  homeHighlightReel=mountHomeHighlights(view.querySelector('[data-home-highlights-slot]'),{active:()=>mine===generation&&view.isConnected&&location.hash.startsWith('#/home'),getPlayers:()=>homeEdition.model?.games.flatMap(game=>game.sides.flatMap(side=>[...side.lineup,...side.bench]))||[]});deferredStops.push(homeHighlightReel.stop);
+  deferredStops.push(mountHomeMatchupPreview(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,onModel:edition=>{homeEdition=edition;homeHighlightReel?.updatePlayers();updateWeekFlow();refreshEdition?.();requestAnimationFrame(()=>requestAnimationFrame(startAnalysis))},active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
   // Archive stories load independently of the live weekly model.
   lorePromise.then(got => {
     if (mine !== generation || !view.isConnected || got?.error) return;

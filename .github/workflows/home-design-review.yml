@@ -65,6 +65,7 @@ on:
       - 'js/season-nav*'
       - 'js/home-clubhouse*'
       - 'js/home-highlight*'
+      - 'js/highlight-browse*'
       - 'js/home-matchup-preview.js'
       - 'js/team-highlight*'
       - 'js/clubhouse-team-highlights.js'
