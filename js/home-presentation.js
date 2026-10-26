@@ -1,3 +1,4 @@
+import {playerWeekDetailHtml} from './player-week-detail-model.js';
 import {dailyBroadcast} from './daily-broadcast.js';
 import { playerScorePhase } from './game-day-player-rows.js';
 import { matchupPhase, matchupSummary } from './clubhouse-matchup-model.js';
@@ -129,6 +130,7 @@ export function homeThermalBoard(model) {
         <small data-player-phase="${esc(player.id)}"${player.state === 'final' ? ' data-player-final' : ''}>${esc(playerScorePhase(player))}</small>
       </span>
       <svg class="home-player-chevron" aria-hidden="true"><use href="#home-ui-chevron-right"></use></svg>
+      ${playerWeekDetailHtml(player)}
     </li>`;
   }).join('');
   return `<section class="home-thermal-leaders" aria-label="Player leaders">

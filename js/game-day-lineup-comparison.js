@@ -1,3 +1,4 @@
+import {playerWeekDetailHtml} from './player-week-detail-model.js';
 import {esc} from './ui.js';
 import {playerRowContent} from './game-day-player-rows.js';
 import {lineupCheckHtml} from './game-day-readiness.js';
@@ -23,8 +24,8 @@ export function matchupPlayerPairs(left=[],right=[]) {
   });
 }
 
-const playerCell=(player,team,key)=>`<div class="gameday-player gd-compare-player" data-gameday-row="${esc(player?`${player.roster}:${player.id}`:`missing:${team.roster}:${key}`)}" role="group" aria-label="${esc(team.name)} player">${player?playerRowContent(player,{showSlot:false}):`<span class="gd-lineup-missing">${team.lineup?.length?'No player in slot':'Lineup unavailable'}</span><span class="gd-lineup-missing-score" aria-label="Points unavailable">—</span>`}</div>`;
-const pairedRows=(pairs,a,b,statLines=null)=>`<ul class="gd-lineup-pairs">${pairs.map(row=>`<li class="gd-compare-row" data-compare-slot="${esc(row.key)}" aria-label="${esc(row.label)} comparison">${playerCell(row.left,a,row.key)}<span class="gd-compare-slot">${esc(row.label)}</span>${playerCell(row.right,b,row.key)}${statLines?[row.left,row.right].map((p,i)=>`<p data-clubhouse-stat-key="${esc(p?`${p.roster}:${p.id}`:'')}" class="gd-player-stat-line is-${i?'right':'left'}">${esc(p&&!p.empty?statLines.get(`${p.roster}:${p.id}`)||'No box score yet':'')}</p>`).join(''):''}</li>`).join('')}</ul>`;
+const playerCell=(player,team,key)=>`<div class="gameday-player gd-compare-player" data-gameday-row="${esc(player?`${player.roster}:${player.id}`:`missing:${team.roster}:${key}`)}" role="group" aria-label="${esc(team.name)} player">${player?playerRowContent(player,{showSlot:false,showDetails:false}):`<span class="gd-lineup-missing">${team.lineup?.length?'No player in slot':'Lineup unavailable'}</span><span class="gd-lineup-missing-score" aria-label="Points unavailable">—</span>`}</div>`;
+const pairedRows=(pairs,a,b,statLines=null)=>`<ul class="gd-lineup-pairs">${pairs.map(row=>`<li class="gd-compare-row" data-compare-slot="${esc(row.key)}" aria-label="${esc(row.label)} comparison">${playerCell(row.left,a,row.key)}<span class="gd-compare-slot">${esc(row.label)}</span>${playerCell(row.right,b,row.key)}${[row.left,row.right].map((p,i)=>`<p data-clubhouse-stat-key="${esc(p?`${p.roster}:${p.id}`:'')}" class="gd-player-stat-line is-${i?'right':'left'}">${playerWeekDetailHtml(p,{line:statLines?.get(`${p?.roster}:${p?.id}`)||''})}</p>`).join('')}</li>`).join('')}</ul>`;
 
 export function matchupLineupHtml(game,{statLines=null,completed=false}={}) {
   const [a,b]=game.sides,pairs=matchupPlayerPairs(a.lineup,b.lineup);

@@ -81,6 +81,8 @@ on:
       - 'js/route-motion.js'
       - 'tools/*route-review*'
       - 'js/player-card*'
+      - 'js/player-week-*'
+      - 'tools/capture-player-week-details.py'
       - 'js/player-quick*'
       - 'js/player-presentation.js'
       - 'css/premium-actions.css'
@@ -307,6 +309,10 @@ jobs:
         run: python tools/capture-sleeper-actions.py
       - name: Check full themed Home screens
         run: python tools/capture-home-review.py
+      - name: Check weekly player lines and PPR averages on phones
+        env:
+          DFL_PLAYER_WEEK_REVIEW_DIR: ${{ github.workspace }}/home-review-output/player-week-review
+        run: python tools/capture-player-week-details.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

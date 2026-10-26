@@ -217,6 +217,7 @@ def check_game_day_scope(page):
         matchupReceiptData:()=>null,shareMatchupReceipt:async()=>{},
         syncLeadMarkers:(await import('./js/game-day-moment-effects.js')).syncLeadMarkers,loadGameDayMoments:async()=>({items:[]}),animateScoreChanges:()=>noop,mountScoreVfx:()=>({stop:noop}),
         mountPlayerSpotlight:()=>({update:noop,setMotion:noop,stop:noop}),
+        mountPlayerWeekDetails:()=>({update:noop,stop:noop}),
         mountGameDayWatch:()=>({open:()=>opens++,update:noop,updateFreshness:noop,redraw:noop,setMotion:noop,wantsMoments:()=>false,stop:noop}),
       };
       helpers.savePageChoice('gameday-motion','on');helpers.savePageChoice('gameday-tab','mine');
@@ -490,7 +491,7 @@ def check_clubhouse_center(page):
       document.querySelector('#view').append(region);
       savePageChoice('gameday-motion','on');savePageChoice('clubhouse-matchup-2099-5','1');
       let active=true,pending=null,failed=false,statsCalls=0;
-      const loadStats=async()=>{statsCalls++;if(failed)throw Error('Demo offline');if(statsCalls===1)return {data:[]};return new Promise(resolve=>pending=resolve)};
+      const loadStats=async(_season,wk)=>{if(wk!==5)return {data:[]};statsCalls++;if(failed)throw Error('Demo offline');if(statsCalls===1)return {data:[]};return new Promise(resolve=>pending=resolve)};
       const center=mountClubhouseCenter(region,week,{active:()=>active,loadStats,loadLeague:async()=>({roster_positions:slots})});
       const wireTabs=Function('history','function wireClubhouseTabs'+tabsSource+';return wireClubhouseTabs')({replaceState(){}});wireTabs(region,'matchups');
       center.update({rows,players,nfl});
@@ -568,14 +569,14 @@ def check_clubhouse_center(page):
           check(card.querySelector('.gd-moment-caption')&&card.querySelector('.clubhouse-pressure-label'),'Actual live moment/close-game context missing');
           f.pending(f.bundle);await settle();
           check(card.querySelector('.gd-moment-caption'),'Stats arriving cancelled live score effect');
-          check(card.querySelector('[data-clubhouse-stat-key="1:demo-1-0"]').textContent==='205 pass yd · 2 pass TD · 0 INT','Actual scoped QB box score missing');
-          check(card.querySelector('[data-clubhouse-stat-key="1:demo-1-3"]').textContent==='6 rec · 98 rec yd · 1 rec TD','Actual scoped WR box score missing');
-          check(card.querySelector('[data-clubhouse-stat-key="1:demo-1-7"]').textContent==='Yet to play','Future kicker shows stale stats');
+          check(card.querySelector('[data-clubhouse-stat-key="1:demo-1-0"] .gd-player-week-line').textContent==='205 pass yd · 2 pass TD · 0 INT','Actual scoped QB box score missing');
+          check(card.querySelector('[data-clubhouse-stat-key="1:demo-1-3"] .gd-player-week-line').textContent==='6 rec · 98 yd · 1 TD','Actual scoped WR box score missing');
+          check(card.querySelector('[data-clubhouse-stat-key="1:demo-1-7"] .gd-player-week-line').textContent==='Yet to play','Future kicker shows stale stats');
           check(positions.querySelector('tbody tr td').textContent==='25.00','Positional points do not follow starters');
           root.querySelector('[data-clubhouse-motion]').click();check(root.querySelector('[data-clubhouse-motion]').getAttribute('aria-pressed')==='false'&&!card.querySelector('.gd-moment-caption'),'Motion off left moment running');
           f.failStats();f.rows[0].players_points['demo-1-0']=31;f.center.update({rows:f.rows,players:f.players,nfl:f.nfl,force:true});await settle();
           check(!card.querySelector('.gd-moment-caption'),'Motion off creates celebration');
-          check(root.querySelector('[data-clubhouse-stats-state]').textContent.includes('last checked stats')&&card.querySelector('[data-clubhouse-stat-key="1:demo-1-3"]').textContent.includes('98 rec yd'),'Stats failure discarded known values');
+          check(root.querySelector('[data-clubhouse-stats-state]').textContent.includes('last checked stats')&&card.querySelector('[data-clubhouse-stat-key="1:demo-1-3"]').textContent.includes('98 yd'),'Stats failure discarded known values');
           f.center.fail();check(card.querySelector('.gd-lineup-comparison'),'Score failure discarded lineup');
           root.querySelector('[data-clubhouse-motion]').click();button.scrollIntoView({behavior:'instant',block:'center'});f.rows[0].players_points['demo-1-0']=42;f.center.update({rows:f.rows,players:f.players,nfl:f.nfl});check(card.querySelector('.gd-moment-caption'),'Motion on did not restore live effect');return {selectableMatchups:true,refreshPreservesFocus:true,expandedStatsPreserved:true,realBoxScores:true,upcomingExplicit:true,positionalPoints:true,liveMoment:true,statsDoNotCancelMoment:true,motionOff:true,failureKeepsData:true};
         }""")
@@ -641,7 +642,8 @@ def check_watch_score_strip(page):
     """Real Watch controller, with isolated reads and labeled sample teams."""
     source=(ROOT/'js/game-day-watch.js').read_text().split('export function mountGameDayWatch')[1]
     page.evaluate("""async source=>{
-      const helpers=Object.assign({},...await Promise.all(['ui','sleeper-links','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-moment-effects','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','clubhouse-matchup-model','watch-score-collapse','moment-recap','record-chases','record-chases-model','team-art','live-football','matchup-finish','matchup-finish-model','game-day-matchup-share','matchup-story','matchup-highlights','live-football'].map(name=>import(`./js/${name}.js`))));
+      const helpers=Object.assign({},...await Promise.all(['ui','sleeper-links','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-moment-effects','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','player-week-details','clubhouse-matchup-model','watch-score-collapse','moment-recap','record-chases','record-chases-model','team-art','live-football','matchup-finish','matchup-finish-model','game-day-matchup-share','matchup-story','matchup-highlights','live-football'].map(name=>import(`./js/${name}.js`))));
+      const mountDetails=helpers.mountPlayerWeekDetails;helpers.mountPlayerWeekDetails=(root,options)=>mountDetails(root,{...options,load:async()=>[]});
       const {buildGameDay}=await import('./js/game-day-model.js');window.watchShareCount=0;window.watchHoldMoments=false;helpers.shareMatchupReceipt=()=>{window.watchShareCount++};
       const members=[1,2,3,4].map(id=>({id,sleeper_user_id:`strip-${id}`,team_name:id===1?'The Very Long Championship Bayou Bombers':id===2?'Klutch Sports Group':`Demo Team ${id}`}));
       const week={season:2099,week:6,leagueId:'1286077564572037120',completed:false,games:[1,2].map(id=>({matchup_id:id,user1:`strip-${id*2-1}`,user2:`strip-${id*2}`,roster1:id*2-1,roster2:id*2}))};
@@ -951,7 +953,8 @@ with sync_playwright() as p:
     assert page.locator('[data-bx-go="0"]').get_attribute('aria-current') == 'true', 'Previous slide did not return'
     assert all(page.locator(f'#tabbar [data-route="{route}"] svg use').get_attribute('href').startswith('#dfl-nav-') for route in ['home','clubhouse','sportsbook','trade','analyzer'])
     assert page.evaluate('document.querySelector("#dfl-nav-house").namespaceURI') == 'http://www.w3.org/2000/svg'
-    assert metrics['leaderCore'] < 240, 'Leader rows must stay compact beneath the color key'
+    assert metrics['leaderCore'] < 420, 'Weekly stat lines must keep the four-player Home preview compact'
+    assert page.locator('.home-thermal-leaders .gameday-player').evaluate_all('es=>es.every(e=>e.offsetHeight<=100&&e.querySelector(".gd-player-week-line")&&e.querySelector(".gd-player-week-average"))'), 'Every Home leader needs a compact weekly line and PPR average'
     metrics['pause'] = page.locator('.bx-pause').get_attribute('aria-label')
     assert metrics['pause'] == 'Play the broadcast'
     assert all(metrics[str(w)]['scroll'] <= w for w in [390, 320, 832, 1280]), 'Horizontal overflow'
