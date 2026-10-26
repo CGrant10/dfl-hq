@@ -64,6 +64,13 @@ on:
       - 'tools/capture-home-week-review.py'
       - 'js/season-nav*'
       - 'js/home-clubhouse*'
+      - 'js/home-highlight*'
+      - 'css/home-highlight-reel.css'
+      - 'tools/capture-home-highlights.py'
+      - 'tools/fixtures/home-highlight-clips.json'
+      - 'supabase/functions/game-highlights/**'
+      - 'supabase/migrations/*home_game_day_highlights*'
+      - 'supabase/tests/home_highlights.sql'
       - 'js/pages/home.js'
       - 'js/league-power*'
       - 'tools/*power*'
@@ -313,6 +320,10 @@ jobs:
         env:
           DFL_PLAYER_WEEK_REVIEW_DIR: ${{ github.workspace }}/home-review-output/player-week-review
         run: python tools/capture-player-week-details.py
+      - name: Check the daily Home highlight reel on phones
+        env:
+          DFL_HOME_HIGHLIGHTS_REVIEW_DIR: ${{ github.workspace }}/home-review-output/highlights
+        run: python tools/capture-home-highlights.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -396,5 +407,7 @@ jobs:
         run: |
           psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/tests/live_football.sql
           psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/tests/matchup_highlights.sql
+          psql -h localhost -U postgres -c 'create database dfl_highlight_test'
+          psql -h localhost -U postgres -d dfl_highlight_test -v ON_ERROR_STOP=1 -f supabase/tests/home_highlights.sql
           psql -h localhost -U postgres -c 'create database dfl_player_cache_test'
           psql -h localhost -U postgres -d dfl_player_cache_test -v ON_ERROR_STOP=1 -f supabase/tests/player_directory.sql

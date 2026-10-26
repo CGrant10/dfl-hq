@@ -29,3 +29,7 @@ verify_jwt = false
 [functions.player-directory]
 # Scheduled refresh verifies the private cron token before any read or write.
 verify_jwt = false
+
+[functions.game-highlights]
+# The shared collector verifies the existing scheduler's secret header itself.
+verify_jwt = false

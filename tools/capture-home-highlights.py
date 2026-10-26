@@ -1,0 +1,76 @@
+"""Production daily-reel controller with public metadata fixtures; no backend writes."""
+import json,os,threading
+from pathlib import Path
+from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
+from playwright.sync_api import sync_playwright
+ROOT=Path(__file__).resolve().parents[1];OUT=Path(os.environ.get('DFL_HOME_HIGHLIGHTS_REVIEW_DIR',ROOT.parent/'dfl-highlight-review'));OUT.mkdir(parents=True,exist_ok=True)
+class Handler(SimpleHTTPRequestHandler):
+ def __init__(self,*args,**kwargs):super().__init__(*args,directory=str(ROOT),**kwargs)
+ def do_GET(self):
+  path=self.path.split('?')[0];code=None
+  if path=='/js/supabase.js':code="export const db=()=>({});export const edge=()=>{throw Error('Review writes blocked')};"
+  if path=='/js/members.js':code="export const currentMember=()=>null;export const getMemberId=()=>null;"
+  if code is not None:self.send_response(200);self.send_header('Content-Type','text/javascript');self.end_headers();self.wfile.write(code.encode());return
+  super().do_GET()
+ def log_message(self,*args):pass
+server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start();base=f'http://127.0.0.1:{server.server_port}'
+head=(ROOT/'index.html').read_text().split('<head>')[1].split('</head>')[0]
+html='<!doctype html><html lang="en"><head>'+head+'</head><body><main id="view" class="view" data-route="home"><div id="home-wrap"><h1>DFL Daily</h1><div id="reel" data-home-highlights-slot></div></div></main></body></html>'
+checks=[]
+def check(name,ok):
+ checks.append({'check':name,'pass':bool(ok)});(OUT/'checks.json').write_text(json.dumps(checks,indent=2));assert ok,name;print('PASS '+name,flush=True)
+with sync_playwright() as p:
+ browser=p.chromium.launch(executable_path=os.environ.get('DFL_REVIEW_CHROMIUM'),headless=True,args=['--no-sandbox','--disable-dev-shm-usage'])
+ for width in [320,390]:
+  for theme in ['light','dark']:
+   context=browser.new_context(viewport={'width':width,'height':844},is_mobile=True,has_touch=True,service_workers='block')
+   def route(r):
+    if '/highlight-review.html' in r.request.url:return r.fulfill(content_type='text/html',body=html)
+    if r.request.url.startswith(base):return r.continue_()
+    if r.request.resource_type=='image':
+     photo=OUT/'poster-0.jpg';photo=photo if photo.exists() else ROOT/'tools/fixtures/player-portrait.png'
+     return r.fulfill(content_type='image/jpeg' if photo.suffix=='.jpg' else 'image/png',body=photo.read_bytes(),headers={'Access-Control-Allow-Origin':'*'})
+    return r.abort()
+   context.route('**/*',route);page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(base+'/highlight-review.html',wait_until='domcontentloaded')
+   page.evaluate('''async theme=>{
+    const {pinMode}=await import('/js/theme.js');pinMode(theme);
+    const {mountHomeHighlights}=await import('/js/home-highlights.js');const rows=await(await fetch('/tools/fixtures/home-highlight-clips.json')).json();
+    const f=window.f={base:Date.parse('2026-10-25T22:00:00Z'),wall:Date.now(),rows,loads:0,fail:false,hold:false,active:true};f.now=()=>f.base+Date.now()-f.wall;f.time=at=>{f.base=at;f.wall=Date.now()};
+    for(let i=0;i<2;i++)f.rows.push({...rows[0],id:'95000'+i,source_url:'https://www.espn.com/video/clip/_/id/95000'+i,published_at:new Date(f.base-60000+i).toISOString(),headline:'Fixture late-day big play '+i});
+    f.root=document.getElementById('reel');f.mount=()=>mountHomeHighlights(f.root,{now:f.now,active:()=>f.active,load:async()=>{f.loads++;if(f.hold)await new Promise(r=>f.release=r);if(f.fail)throw Error('Fixture unavailable');return f.rows}});f.c=f.mount();
+   }''',theme)
+   tag=f'{width}px {theme}';page.wait_for_selector('[data-home-reel-open]');page.evaluate('document.fonts.ready')
+   check(tag+' shows eight recent clips and the complete ten-clip reel',page.locator('[data-home-reel-clip]').count()==8 and '10 clips' in page.locator('.home-reel-total').inner_text())
+   check(tag+' keeps the first Home load free of embedded players',page.locator('iframe,video').count()==0 and page.evaluate('f.loads===1'))
+   check(tag+' cards fit the phone with a clear next-card peek',page.locator('.home-reel-cards').evaluate('e=>e.scrollWidth>e.clientWidth&&e.getBoundingClientRect().right<=innerWidth') and page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
+   page.locator('.home-reel-cards img').first.evaluate('e=>e.dispatchEvent(new Event("error"))')
+   check(tag+' poster service failures fall back to the validated publisher image',page.locator('.home-reel-cards img').first.evaluate('e=>e.dataset.posterFallback==="1"&&e.src.startsWith("https://espnmedia-cdn.akamaized.net/")'))
+   check(tag+' primary actions retain 44px touch targets',page.locator('[data-home-reel-open],[data-home-reel-clip]').evaluate_all('es=>es.every(e=>e.getBoundingClientRect().height>=44)'))
+   contrast=page.locator('.home-highlight-reel').evaluate("""root=>{
+    const ctx=document.createElement('canvas').getContext('2d');const rgb=c=>{ctx.clearRect(0,0,1,1);ctx.fillStyle=c;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data]};
+    const lum=c=>c.slice(0,3).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((n,v,i)=>n+v*[.2126,.7152,.0722][i],0);
+    return Math.min(...[...root.querySelectorAll('header small,.home-reel-kind,.home-reel-matchup,.home-reel-total,.home-reel-duration')].map(e=>{let p=e,bg;while(p){bg=rgb(getComputedStyle(p).backgroundColor);if(bg[3]===255)break;p=p.parentElement}const a=lum(rgb(getComputedStyle(e).color)),b=lum(bg||[255,255,255,255]);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)}));
+   }""")
+   check(tag+' secondary labels and duration meet 4.5:1 contrast',contrast>=4.5)
+   page.screenshot(path=str(OUT/f'{width}-{theme}-home.png'))
+   page.locator('[data-home-reel-open]').click();sheet=page.locator('.home-reel-player');page.wait_for_selector('.home-reel-player[open]')
+   check(tag+' opens the complete chronological reel',sheet.locator('[data-reel-choose]').count()==10 and sheet.locator('[data-reel-count]').inner_text()=='1 / 10')
+   check(tag+' uses the exact official source with a safe explicit playback link',sheet.locator('.home-reel-source-play').evaluate('e=>e.href.startsWith("https://www.espn.com/video/clip/_/id/")&&e.target==="_blank"&&e.rel.includes("noopener")') and 'Watch clip on ESPN' in sheet.locator('.home-reel-source-play').inner_text())
+   check(tag+' player sheet stays inside mobile edges',sheet.evaluate('e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight+1&&e.scrollWidth<=e.clientWidth+1}'))
+   sheet.locator('[data-reel-next]').click();check(tag+' next/back move one clip with a selected filmstrip item',sheet.locator('[data-reel-count]').inner_text()=='2 / 10' and sheet.locator('[data-reel-choose][aria-pressed="true"]').count()==1)
+   sheet.locator('[data-reel-previous]').click();page.evaluate('f.kept=document.querySelector(".home-reel-source-play");f.selected=document.querySelector("[data-reel-choose][aria-pressed=true]").dataset.reelChoose;f.rows.push({...f.rows[0],id:"960001",source_url:"https://www.espn.com/video/clip/_/id/960001",published_at:new Date(f.now()-1000).toISOString()})');page.evaluate('f.c.refresh()');page.wait_for_function('document.querySelector("[data-reel-count]").textContent==="1 / 11"')
+   check(tag+' new highlights preserve the open clip instead of interrupting it',page.evaluate('f.kept===document.querySelector(".home-reel-source-play")&&f.selected===document.querySelector("[data-reel-choose][aria-pressed=true]").dataset.reelChoose'))
+   page.screenshot(path=str(OUT/f'{width}-{theme}-reel.png'));page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open')
+   check(tag+' close restores the originating Home control',page.evaluate('document.activeElement===document.querySelector("[data-home-reel-open]")'))
+   page.locator('[data-home-reel-clip]').first.click();check(tag+' a card opens that specific clip',page.evaluate('document.querySelector("[data-reel-choose][aria-pressed=true]").dataset.reelChoose===document.querySelector("[data-home-reel-clip]").dataset.homeReelClip'))
+   page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open');page.evaluate('f.fail=true;f.c.refresh()');page.wait_for_timeout(100)
+   check(tag+' a failed refresh retains current unexpired clips',page.locator('[data-home-reel-clip]').count()==8)
+   page.emulate_media(reduced_motion='reduce');page.locator('[data-home-reel-open]').click();check(tag+' reduced motion opens directly without running entrance effects',sheet.evaluate('e=>!e.getAnimations().length'))
+   page.evaluate('f.fail=false;f.time(Date.parse(f.rows[0].expires_at)-100);f.c.refresh()');page.wait_for_function('!document.querySelector("[data-home-reel-open]")&&!document.querySelector(".home-reel-player").open')
+   check(tag+' morning expiry removes the Home reel and closes an open clip',page.locator('[data-home-reel-clip]').count()==0)
+   page.evaluate('f.c.refresh()');page.wait_for_timeout(100);check(tag+' expired cached clips cannot reappear after refresh',page.locator('[data-home-reel-open]').count()==0)
+   page.evaluate('f.c.stop();f.time(Date.parse("2026-10-25T22:00:00Z"));f.hold=true;f.c=f.mount()');page.wait_for_function('typeof f.release==="function"');page.evaluate('f.c.stop();f.active=false;f.release()');page.wait_for_timeout(100)
+   check(tag+' late responses do not revive a stopped Home reel',page.locator('[data-home-reel-open]').count()==0 and page.locator('.home-reel-player').count()==0)
+   check(tag+' no page errors or unauthorized writes',not errors);context.close()
+ browser.close()
+server.shutdown()

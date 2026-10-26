@@ -14,7 +14,7 @@ window.catalog=Object.fromEntries(Array.from({length:1000},(_,i)=>[String(i+1),{
 window.people=Array.from({length:12},(_,i)=>({id:i+1,active:true,display_name:'Owner '+(i+1),team_name:'Team '+(i+1),sleeper_user_id:String(i+1),sort_order:i}));
 window.rows=people.map(m=>({roster_id:m.id,matchup_id:Math.ceil(m.id/2),points:100+m.id,starters:[String(m.id)],players:[String(m.id)],players_points:{[m.id]:25}}));
 window.week={season:2026,week:7,leagueId:'fixture',completed:true,voteClosesAt:'2026-12-01T00:00:00Z',games:Array.from({length:6},(_,i)=>({matchup_id:i+1,user1:String(i*2+1),user2:String(i*2+2),roster1:i*2+1,roster2:i*2+2,score1:100+i*2+1,score2:100+i*2+2}))};
-const table=name=>name==='app_settings'?[]:name==='members'?people:name==='sleeper_leagues'?[{season:2026,sleeper_league_id:'fixture',scoring_settings:{rec:1},status:'in_season'}]:name==='sleeper_rosters'?rows.map(r=>({...r,season:2026,sleeper_user_id:String(r.roster_id)})):name==='nfl_player_directory'?(catalogMissing?null:{players:catalog,fetched_at:new Date().toISOString()}):[];
+const table=name=>name==='app_settings'?[]:name==='members'?people:name==='sleeper_leagues'?[{season:2026,sleeper_league_id:'fixture',scoring_settings:{rec:1},status:'in_season'}]:name==='sleeper_rosters'?rows.map(r=>({...r,season:2026,sleeper_user_id:String(r.roster_id)})):name==='nfl_highlight_clips'?(window.launchHighlightRows||[]):name==='nfl_player_directory'?(catalogMissing?null:{players:catalog,fetched_at:new Date().toISOString()}):[];
 const rpc=name=>name==='home_bootstrap'?{events:[],announcements:[],polls:[],leagues:[{season:2026,sleeper_league_id:'fixture',status:'in_season'}],golf:[],standings:[],golf_done:[]}:name==='clubhouse_week_index'?[{season:2026,week:7,completed:true}]:name==='clubhouse_week_data'?week:name==='nfl_live_week'?[]:null;
 const builder=(data,object=false)=>{const q={then:(a,b)=>Promise.resolve({data,error:null}).then(a,b)};for(const name of ['select','order','limit','eq','neq','gte','gt','lte','lt','in','not','is','match','range','abortSignal','contains'])q[name]=()=>q;q.single=q.maybeSingle=()=>q;for(const name of ['insert','update','upsert','delete'])q[name]=()=>builder(null);return q};
 window.fixtureDb={from:name=>{if(name==='nfl_player_directory')catalogReads++;return builder(table(name))},rpc:name=>builder(rpc(name)),functions:{invoke:async()=>({data:null,error:null})},channel:()=>{const c={on:()=>c,subscribe:()=>c,track:async()=>{},presenceState:()=>({})};return c},removeChannel:async()=>{}};
@@ -60,6 +60,15 @@ with sync_playwright() as p:
    check('a missing compact cache falls back to the provider',page.evaluate('rawReads===2&&fallback["1"].p==="QB"'))
    page.evaluate("import('./js/sleeper.js').then(async m=>{await m.clearSleeperAnalysisCache();window.openCache=caches.open;caches.open=async()=>{throw Error('Storage unavailable')};try{window.noStorage=await m.loadPlayers({maxAgeMs:0})}finally{caches.open=openCache}})");page.wait_for_function('window.noStorage')
    check('unavailable phone storage does not prevent player loading',page.evaluate('rawReads===3&&noStorage["1"].n==="Player 0"'))
+  page.evaluate("""async()=>{
+   const {highlightSession}=await import('./js/home-highlight-model.js'),rows=await(await fetch('./tools/fixtures/home-highlight-clips.json')).json(),s=highlightSession();
+   window.launchHighlightRows=rows.map(row=>({...row,session_date:s.date,published_at:new Date(Date.now()-60000).toISOString(),expires_at:new Date(s.expiresAt).toISOString()}));
+  }""")
+  page.evaluate("document.querySelector('#welcome')?.remove()")  # Local guest fixture only; never select a league member.
+  page.locator('[data-home-highlights-slot]').scroll_into_view_if_needed();page.evaluate('dispatchEvent(new Event("focus"))');page.wait_for_selector('[data-home-reel-open]',timeout=10000);page.locator('[data-home-reel-open]').click();page.wait_for_selector('.home-reel-player[open]')
+  check(tag+' opens the real Home reel without loading any video player',page.locator('.home-reel-player iframe,.home-reel-player video').count()==0)
+  page.evaluate('location.hash="#/rules"');page.wait_for_function('document.querySelector("#view").dataset.route==="rules"');page.wait_for_selector('.home-reel-player',state='detached')
+  check(tag+' leaving Home removes an open reel and its controller',page.locator('.home-reel-player').count()==0)
   c.close()
  check('no uncaught app errors',not errors)
  browser.close()

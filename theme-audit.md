@@ -1014,3 +1014,19 @@ in the 2,191-test full check. Evidence: `/workspace/dfl-player-week-review/`.
 See `docs/player-week-details-validation-1482.md`. Native Safari is unverified;
 the extended Home matrix also passed across Light/Dark, legacy aliases, Fairway
 and KC at 320/390/1280px without browser errors.
+
+
+## 1.483.0 — daily Home highlights (2026-10-26)
+
+Reviewed actual Home reel and open-sheet screenshots at 320/390px in Light and
+Dark. Posters occupy their own 16:9 frames; headlines remain below, with native
+horizontal card/filmstrip scrolling. Controls fit phone edges and keep 44px hit
+targets. Shared Medicine Wheel tokens provide all surface/text/border colors;
+semantic action colors are unchanged. Inline SVG icons avoid platform emoji or
+missing arrow glyphs. All 76 dedicated browser checks pass, including 4.5:1
+caption contrast, reduced motion, focus return, expiry and selection preservation.
+`pnpm themes` and theme tests pass in the 2,206-test full check. Actual compiled
+Home route teardown is verified with the reel open. Evidence:
+`/workspace/dfl-highlight-review/`; see `docs/home-highlights-validation-1483.md`.
+Playback uses the official external ESPN clip page. Native installed Safari and
+future publisher availability remain unverified.
