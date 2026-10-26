@@ -9,7 +9,7 @@ class Handler(SimpleHTTPRequestHandler):
  def log_message(self,*a):pass
 server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start();base=f'http://127.0.0.1:{server.server_port}/'
 fixture='''
-window.catalogMissing=false;window.catalogReads=0;window.rawReads=0;window.bootEvents=[];
+window.catalogMissing=false;window.catalogReads=0;window.rawReads=0;window.scoreReads=0;window.bootEvents=[];
 window.catalog=Object.fromEntries(Array.from({length:1000},(_,i)=>[String(i+1),{n:'Player '+i,p:['QB','RB','WR','TE','K'][i%5],fp:[],t:'BUF',i:null,s:'Active',pp:null,is:null,nu:123}]));
 window.people=Array.from({length:12},(_,i)=>({id:i+1,active:true,display_name:'Owner '+(i+1),team_name:'Team '+(i+1),sleeper_user_id:String(i+1),sort_order:i}));
 window.rows=people.map(m=>({roster_id:m.id,matchup_id:Math.ceil(m.id/2),points:100+m.id,starters:[String(m.id)],players:[String(m.id)],players_points:{[m.id]:25}}));
@@ -32,7 +32,8 @@ with sync_playwright() as p:
    url=r.request.url
    if url.endswith('/players/nfl'):
     r.request.frame.page.evaluate('rawReads++');data={str(i+1):{'full_name':'Player '+str(i),'position':['QB','RB','WR','TE','K'][i%5],'fantasy_positions':[],'team':'BUF'} for i in range(1000)}
-   elif '/matchups/' in url:data=[{'roster_id':i+1,'matchup_id':(i//2)+1,'points':101+i,'starters':[str(i+1)],'players':[str(i+1)],'players_points':{str(i+1):25}} for i in range(12)]
+   elif '/matchups/' in url:
+    r.request.frame.page.evaluate('scoreReads++');data=[{'roster_id':i+1,'matchup_id':(i//2)+1,'points':101+i,'starters':[str(i+1)],'players':[str(i+1)],'players_points':{str(i+1):25}} for i in range(12)]
    elif url.endswith('/users'):data=[{'user_id':str(i+1),'metadata':{'team_name':'Team '+str(i+1)}} for i in range(12)]
    elif url.endswith('/rosters'):data=[{'roster_id':i+1,'owner_id':str(i+1),'players':[str(i+1)]} for i in range(12)]
    elif '/league/fixture' in url:data={'league_id':'fixture','season':'2026','status':'in_season','total_rosters':12,'roster_positions':['QB','RB','RB','WR','WR','TE','FLEX','K','DEF','BN'],'scoring_settings':{'rec':1}}
@@ -47,6 +48,10 @@ with sync_playwright() as p:
   check(tag+' renders Home and completes the real matchup loader',page.locator('#view').get_attribute('data-route')=='home' and page.locator('[data-gameday-freshness]').get_attribute('data-score-freshness')=='ready')
   check(tag+' uses the compact catalog without a full provider download',page.evaluate('catalogReads>=1&&rawReads===0'))
   check(tag+' remains within the phone width',page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
+  before=page.evaluate('scoreReads');page.evaluate('dispatchEvent(new Event("focus"))')
+  page.wait_for_function('(before)=>scoreReads>before',arg=before,timeout=10000)
+  page.wait_for_selector('[data-gameday-freshness][data-score-freshness="ready"]',state='attached',timeout=10000)
+  check(tag+' refreshes scores on focus without redownloading fresh player details',page.evaluate('rawReads===0'))
   if not route:
    check('plain launch enters Home without a navigation tap',page.evaluate('location.hash==="#/home"'))
    page.evaluate("import('./js/sleeper.js').then(m=>m.loadPlayers({maxAgeMs:0})).then(p=>window.forced=p)");page.wait_for_function('window.forced')

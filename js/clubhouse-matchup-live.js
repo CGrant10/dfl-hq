@@ -28,7 +28,7 @@ export function mountMatchupLive(root,model,threads,active,{onUpdate=(_data)=>{}
   if(busy||!current())return;busy=true;button.disabled=true;button.setAttribute('aria-busy','true');freshness.update({state:'checking'});if(force)button.textContent='Refreshing…';
    void previews(root,threads,current).catch(()=>{if(current())for(const slot of root.querySelectorAll('[data-chat-preview]'))if(slot.dataset.talkState==='loading'){const talk=matchupTalkHtml({error:true});slot.dataset.talkState=talk.state;slot.innerHTML=talk.html;}});
   try{
-   const results=await Promise.allSettled([loadWeeklyRosters(model.leagueId,model.week,{maxAgeMs:force?0:60000}),loadPlayers({maxAgeMs:force?0:model.completed?86400000:300000}),model.completed?Promise.resolve(null):loadNflGameDay(model.season,model.week,{force}),model.completed?Promise.resolve([]):sleeper.rosters(model.leagueId)]);
+   const results=await Promise.allSettled([loadWeeklyRosters(model.leagueId,model.week,{maxAgeMs:force?0:60000}),loadPlayers({maxAgeMs:model.completed?86400000:300000}),model.completed?Promise.resolve(null):loadNflGameDay(model.season,model.week,{force}),model.completed?Promise.resolve([]):sleeper.rosters(model.leagueId)]);
    if(!current())return;
    const rows=results[0].status==='fulfilled'?results[0].value:[],players=results[1].status==='fulfilled'?results[1].value:playerMeta,nflBundle=results[2].status==='fulfilled'?results[2].value:null,nfl=nflBundle?.teams||null;
    if(!rows.length)throw Error('Weekly scores unavailable');
