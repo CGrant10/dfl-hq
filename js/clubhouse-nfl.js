@@ -11,5 +11,5 @@ export function mountClubhouseNfl(root,{getModel,active=()=>root.isConnected,onC
   const next=`${model.season}:${model.week}`;if(next!==key){key=next;clips=[];void loadHomeHighlights().then(rows=>{if(stopped||key!==next)return;clips=rows;if(visible())void center.refresh()}).catch(()=>{})}
  };
  const tab=event=>{if(event.detail?.tab==='nfl')sync();else center?.pause()};root.addEventListener('dfl:clubhouse-tab',tab);sync();
- return {open(mode='plays'){preferred=mode==='fantasy'?'fantasy':'plays';root.querySelector('#clubhouse-tab-nfl').click();if(center)center.setMode(preferred);else sync();},stop(){stopped=true;center?.stop();root.removeEventListener('dfl:clubhouse-tab',tab)}};
+ return {open(mode='plays'){preferred=mode==='fantasy'?'fantasy':'plays';root.querySelector('#clubhouse-tab-nfl').click();if(center)center.setMode(preferred);else sync();return center?.ready;},stop(){stopped=true;center?.stop();root.removeEventListener('dfl:clubhouse-tab',tab)}};
 }

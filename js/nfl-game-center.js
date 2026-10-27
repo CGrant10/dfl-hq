@@ -59,6 +59,6 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
  const visibility=()=>{if(document.hidden)suspend();else wake()};
  const offline=()=>{suspend();if(current())paint()};
  const events=[['visibilitychange',visibility,document],['online',wake,window],['offline',offline,window],['focus',wake,window],['pageshow',wake,window],['pagehide',suspend,window]];
- scroller.addEventListener('scroll',reading,{passive:true});root.addEventListener('change',change);root.addEventListener('click',click);for(const [event,handler,target] of events)target.addEventListener(event,handler);paint();void refresh();
- return {setMode(next){if(!['plays','fantasy'].includes(next)||next===mode)return;mode=next;paint();scroller.scrollTop=0},refresh:()=>refresh({force:true}),selectGame,pause:suspend,stop(){stopped=true;suspend();scroller.removeEventListener('scroll',reading);root.removeEventListener('change',change);root.removeEventListener('click',click);for(const [event,handler,target] of events)target.removeEventListener(event,handler)}};
+ scroller.addEventListener('scroll',reading,{passive:true});root.addEventListener('change',change);root.addEventListener('click',click);for(const [event,handler,target] of events)target.addEventListener(event,handler);paint();const ready=refresh();
+ return {ready,setMode(next){if(!['plays','fantasy'].includes(next)||next===mode)return;mode=next;paint();scroller.scrollTop=0},refresh:()=>refresh({force:true}),selectGame,pause:suspend,stop(){stopped=true;suspend();scroller.removeEventListener('scroll',reading);root.removeEventListener('change',change);root.removeEventListener('click',click);for(const [event,handler,target] of events)target.removeEventListener(event,handler)}};
 }
