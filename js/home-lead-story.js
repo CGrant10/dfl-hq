@@ -59,11 +59,26 @@ const outcome=(game,id)=>{const side=game.sides.find(side=>side.uid===id),other=
 /** One supporting story, never a second personal scoreboard or a new opener.
  * Incomplete history falls back to the already-verified weekly result slide.
  */
-export function homeLeagueStory(report,{history=[],season,week,meSleeperId=null}={}){
+export function homeLeagueStory(report,{history=[],season,week,meSleeperId=null,editionDate=''}={}){
  const base=weeklyHeadlineSlide(report,{season,week,meSleeperId});
  if(!base)return null;
  const games=report.games.filter(game=>game.winner.value>game.loser.value&&uid(game.winner.uid)&&uid(game.loser.uid)
   &&(!meSleeperId||![game.winner.uid,game.loser.uid].some(id=>String(id)===String(meSleeperId))));
+ const editionDay=Date.parse(String(editionDate).slice(0,10)+'T12:00:00Z');
+ if(editionDate&&Number.isFinite(editionDay)){
+  // Rotate actual completed matchups, preserving the proven headline on its day.
+  const lead=homeLeagueStory(report,{history,season,week,meSleeperId}),pairs=new Set();
+  const candidates=[lead,...games.map(game=>{
+   const margin=game.winner.value-game.loser.value;
+   return {...base,storyKey:`matchup-file:${report.season}:${report.week}:${game.winner.uid}`,
+    kicker:`${report.season} · WEEK ${report.week} · MATCHUP FILE`,
+    headline:margin<=5?'Way too fucking close.':margin>=30?'Keep the group chat receipts.':'Somebody had to take the L.',
+    figure:margin.toFixed(2),figureLabel:'Winning margin',
+    subtitle:`${game.winner.name} ${game.winner.value.toFixed(2)} · ${game.loser.name} ${game.loser.value.toFixed(2)}`,
+    sides:[game.winner,game.loser].map((s,i)=>({name:s.name,score:s.value.toFixed(2),up:i===0,down:i===1}))};
+  })].filter(story=>{const key=JSON.stringify(story.sides.map(s=>[s.name,s.score]).sort());if(pairs.has(key))return false;pairs.add(key);return true});
+  return candidates[((Math.floor(editionDay/86400000)%candidates.length)+candidates.length)%candidates.length];
+ }
  const past=pastReceipts(history,report.season,report.week),signals=[];
  const story=(game,type,priority,figure,figureLabel,headline,subject=game.winner.uid)=>signals.push({game,type,priority,figure,figureLabel,headline,subject:String(subject)});
  const run=(id,sign)=>{

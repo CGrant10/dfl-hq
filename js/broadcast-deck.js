@@ -626,7 +626,7 @@ function newsItem(ctx) {
   return [item({
     kind: "news", treatment: "announcement", temporal: "recent",
     priority: P.ACTIVITY * decay(age, 21),
-    kicker: "From the commissioner", headline: a.title || "Announcement",
+    publishedAt:a.created_at,kicker: "From the commissioner", headline: a.title || "Announcement",
     body: a.content || "", subtitle: fmtDate(a.created_at), href: "#/home",
   })];
 }

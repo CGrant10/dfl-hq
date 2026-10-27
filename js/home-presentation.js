@@ -1,3 +1,4 @@
+import {broadcastEdition} from './broadcast-edition.js';
 import {playerWeekDetailHtml} from './player-week-detail-model.js';
 import {dailyBroadcast} from './daily-broadcast.js';
 import { playerScorePhase } from './game-day-player-rows.js';
@@ -31,7 +32,6 @@ export function homeBroadcastDeck(deck = [], { now = new Date(), coveredTrade = 
   const covered=transaction(coveredTrade);
   if(covered){const filtered=deck.filter(item=>transaction(item?.href)!==covered);if(filtered.length!==deck.length)deck=filtered.filter(item=>!item.homeFeature);}
   const daily=dailyBroadcast(now);
-  if (deck[0]?.key === 'home:clubhouse-opener'&&deck[0].dailyDate===daily.date) return deck;
   const opener = {
     key: 'home:clubhouse-opener', treatment: 'announcement', homeFeature: true,
     ...daily,dailyDate:daily.date,
@@ -40,17 +40,7 @@ export function homeBroadcastDeck(deck = [], { now = new Date(), coveredTrade = 
     background: 'default',
   };
   const stories = deck.filter(item => item && item.key !== opener.key);
-  const archive = stories.filter(item => !item.pinned && !item.featured && item.source !== 'manual'
-    && ['past', 'record', 'fact'].includes(item.kind));
-  const date = Date.parse(daily.date+'T12:00:00Z');
-  const feature = archive.length ? archive[Math.floor(date / 86400000) % archive.length] : null;
-  const brand = stories.find(item => item.kind === 'season') || stories.find(item => item.kind === 'identity');
-  return [opener, ...stories.filter(item => {
-    if (item.pinned || item.featured || item.source === 'manual') return true;
-    if (archive.includes(item)) return item === feature;
-    if (['season', 'identity'].includes(item.kind)) return item === brand;
-    return true;
-  })];
+  return [opener, ...broadcastEdition(stories,daily.date,{now})];
 }
 
 /** Direct entry to the same tools and saved state used by their full pages. */
