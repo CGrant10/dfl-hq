@@ -37,6 +37,8 @@ with sync_playwright() as p:
   check(tag+' keeps newest plays at the top without moving the video',pg.locator('#feed').evaluate('e=>e.scrollTop===0') and pg.evaluate('f.video===document.querySelector("video")&&!f.video.paused'))
   pg.locator('.nfl-center-plays li').nth(12).scroll_into_view_if_needed();anchor=pg.locator('.nfl-center-plays li').nth(12);anchor_id=anchor.get_attribute('id');anchor.locator('summary').click();before_y=anchor.bounding_box()['y'];pg.evaluate('f.add()');pg.clock.run_for(10020)
   check(tag+' adds plays without moving an older play being read',abs(pg.locator('#'+anchor_id).bounding_box()['y']-before_y)<2)
+  check(tag+' reports new plays without pulling the reader away',pg.locator('[data-nfl-latest]').is_visible() and '1 new play' in pg.locator('[data-nfl-latest]').inner_text())
+  pg.locator('[data-nfl-latest]').click();check(tag+' Latest returns to the newest play and clears the count',pg.locator('[data-nfl-latest]').is_hidden() and pg.locator('.nfl-center-plays li').first.bounding_box()['y']>=pg.locator('#feed').bounding_box()['y'])
   check(tag+' preserves open play details during refresh',pg.locator('#'+anchor_id+' details').evaluate('e=>e.open'))
   pg.locator('[data-nfl-center-filter]').select_option('big');before=pg.evaluate('f.reads');pg.evaluate('f.add()');pg.clock.run_for(10020)
   check(tag+' keeps the selected play filter while updating',pg.locator('[data-nfl-center-filter]').input_value()=='big' and pg.evaluate('f.reads')==before+1)
