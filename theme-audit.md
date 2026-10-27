@@ -1144,3 +1144,16 @@ with keyboard controls and visible focus. Video and posters preserve their full
 image with contain sizing. Phone, keyboard and landscape layouts fit the viewport;
 reduced motion skips pane transitions. Clip names, counts and search placeholders
 pass contrast checks. Native iOS sizing/fullscreen was not manually exercised.
+
+## 1.493.0 — Persistent replay and snapping drawer
+
+Reviewed Watch, Browse, expanded search and the portrait player gallery at
+320/390 in Medicine Wheel Light/Dark, plus short phone, landscape, desktop and
+keyboard-constrained viewports. The drawer has three stops, visible keyboard
+focus and 44px controls; dragging preserves the native video. Small-screen
+headers avoid clipping the title. Larger portraits and counts retain contrast;
+poster-to-frame transitions retain full images without cropping. The live-feed
+Latest action uses existing accent/on-accent tokens and preserves older reading
+positions. Reduced motion disables loading motion and skips pane/clip effects.
+Native installed iOS/fullscreen and screen-reader behavior were not manually
+exercised; no claim of full accessibility compliance is made.

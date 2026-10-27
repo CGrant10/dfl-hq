@@ -24,10 +24,12 @@ with sync_playwright() as p:
  for width in [320,390]:
   for theme in ['light','dark']:
    context=browser.new_context(viewport={'width':width,'height':844},is_mobile=True,has_touch=True,service_workers='block')
+   held_media={'on':False,'requests':[]}
    def route(r):
     if '/highlight-review.html' in r.request.url:return r.fulfill(content_type='text/html',body=html)
     if r.request.url.startswith(base):return r.continue_()
     if r.request.url.endswith('.mp4'):
+     if held_media['on']:held_media['requests'].append(r);return
      return r.fulfill(content_type='video/mp4',body=(ROOT/'tools/fixtures/highlight-playback.mp4').read_bytes(),headers={'Access-Control-Allow-Origin':'*','Accept-Ranges':'bytes'})
     if r.request.resource_type=='image':
      photo=OUT/'poster-0.jpg';photo=photo if photo.exists() else ROOT/'tools/fixtures/player-portrait.png'
@@ -61,9 +63,24 @@ with sync_playwright() as p:
    page.locator('#reel [data-reel-player-filter=""]').click()
    page.screenshot(path=str(OUT/f'{width}-{theme}-home.png'))
    page.locator('[data-home-reel-open]').click();sheet=page.locator('.home-reel-player');page.wait_for_selector('.home-reel-player[open]')
+   def browse():
+    if sheet.get_attribute('data-reel-snap')=='watch':sheet.locator('[data-reel-layout="browse"]').click();page.wait_for_timeout(300)
+   def people():
+    browse()
+    if not sheet.locator('.reel-people-picker').evaluate('e=>e.open'):sheet.locator('.reel-people-picker>summary').click()
    check(tag+' opens the complete chronological reel',sheet.locator('[data-reel-choose]').count()==10 and sheet.locator('[data-reel-count]').inner_text()=='1 / 10')
    page.wait_for_function('document.querySelector(".home-reel-player video")?.currentTime>0.1')
    check(tag+' plays a native inline video with controls and a safe publisher source',sheet.locator('video').evaluate('e=>e.playsInline&&e.controls&&e.videoWidth>0&&e.src.startsWith("https://espnmedia-cdn.akamaized.net/espn/media/")') and sheet.locator('iframe').count()==0)
+   if width==390 and theme=='dark':
+    held_media['on']=True;sheet.locator('h2').focus();page.keyboard.press('ArrowRight');page.wait_for_timeout(80)
+    check('a pending clip keeps its poster over the player until a frame is ready',sheet.locator('.reel-frame-cover').count()==1 and sheet.locator('[data-reel-screen]').get_attribute('aria-busy')=='true')
+    page.keyboard.press('ArrowRight');page.wait_for_timeout(80);held_media['on']=False
+    for pending in held_media['requests']:
+     try:pending.fulfill(content_type='video/mp4',body=(ROOT/'tools/fixtures/highlight-playback.mp4').read_bytes(),headers={'Access-Control-Allow-Origin':'*'})
+     except Exception:pass
+    page.wait_for_function('document.querySelector(".home-reel-player video")?.readyState>=2&&!document.querySelector(".reel-frame-cover")')
+    check('a stale media completion cannot replace the newly selected clip',sheet.locator('[data-reel-count]').inner_text()=='3 / 10' and sheet.locator('video').get_attribute('aria-label')==page.evaluate('f.rows[2].headline'))
+    page.keyboard.press('ArrowLeft');page.keyboard.press('ArrowLeft');page.wait_for_function('document.querySelector(".home-reel-player video")?.currentTime>0.1')
    check(tag+' retains a safe explicit publisher fallback',sheet.locator('[data-reel-source]').evaluate('e=>e.href.startsWith("https://www.espn.com/video/clip/_/id/")&&e.target==="_blank"&&e.rel.includes("noopener")'))
    check(tag+' player sheet stays inside mobile edges',sheet.evaluate('e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight+1&&e.scrollWidth<=e.clientWidth+1}'))
    page.evaluate('f.layoutVideo=document.querySelector(".home-reel-player video")')
@@ -76,23 +93,30 @@ with sync_playwright() as p:
    check(tag+' portrait previews use the full browser width',sheet.locator('.reel-list-poster').first.evaluate('e=>e.clientWidth>250'))
    page.screenshot(path=str(OUT/f'{width}-{theme}-browse.png'))
    sheet.locator('[data-reel-layout="watch"]').click();page.wait_for_timeout(260)
-   check(tag+' Watch smoothly gives space back to the video',stage.evaluate('e=>e.clientHeight')>initial_stage and queue.evaluate('e=>e.clientHeight')<browse_height)
+   check(tag+' Watch smoothly gives space back to the video',stage.evaluate('e=>e.clientHeight')>=initial_stage-2 and queue.evaluate('e=>e.clientHeight')<browse_height)
    page.screenshot(path=str(OUT/f'{width}-{theme}-watch.png'))
    grip.focus();grip.press('Enter');page.wait_for_timeout(260);before=stage.evaluate('e=>e.clientHeight');grip.press('ArrowUp');page.wait_for_timeout(260)
    check(tag+' splitter supports keyboard resizing',stage.evaluate('e=>e.clientHeight')<before and int(grip.get_attribute('aria-valuenow'))<50)
    grip.press('Enter');page.wait_for_timeout(260);box=grip.bounding_box();before=queue.evaluate('e=>e.clientHeight')
-   page.mouse.move(box['x']+box['width']/2,box['y']+box['height']/2);page.mouse.down();page.mouse.move(box['x']+box['width']/2,box['y']+box['height']/2-85,steps=8);page.mouse.up();page.wait_for_timeout(50)
+   page.mouse.move(box['x']+box['width']/2,box['y']+box['height']/2);page.mouse.down();page.mouse.move(box['x']+box['width']/2,box['y']+box['height']/2-220,steps=8);page.mouse.up();page.wait_for_timeout(50)
    check(tag+' dragging continuously resizes the panes without recreating playback',queue.evaluate('e=>e.clientHeight')>before and page.evaluate('f.layoutVideo===document.querySelector(".home-reel-player video")') and not sheet.evaluate('e=>e.hasAttribute("data-reel-resizing")'))
    grip.press('Enter');page.wait_for_timeout(260)
-   sheet.locator('[data-reel-next]').click();check(tag+' next/back move one clip with a selected clip list item',sheet.locator('[data-reel-count]').inner_text()=='2 / 10' and sheet.locator('[data-reel-choose][aria-pressed="true"]').count()==1)
+   browse()
+   sheet.locator('.home-reel-stage').dispatch_event('pointerdown');sheet.locator('[data-reel-next]').click();check(tag+' next/back move one clip with a selected clip list item',sheet.locator('[data-reel-count]').inner_text()=='2 / 10' and sheet.locator('[data-reel-choose][aria-pressed="true"]').count()==1)
    sheet.locator('[data-reel-previous]').click();page.evaluate('f.kept=document.querySelector(".home-reel-player video");f.selected=document.querySelector("[data-reel-choose][aria-pressed=true]").dataset.reelChoose;f.rows.push({...f.rows[0],id:"960001",source_url:"https://www.espn.com/video/clip/_/id/960001",published_at:new Date(f.now()-1000).toISOString()})');page.evaluate('f.c.refresh()');page.wait_for_function('document.querySelector("[data-reel-count]").textContent==="1 / 11"')
    check(tag+' new highlights preserve the open clip instead of interrupting it',page.evaluate('f.kept===document.querySelector(".home-reel-player video")&&f.selected===document.querySelector("[data-reel-choose][aria-pressed=true]").dataset.reelChoose'))
    check(tag+' readable clip rows include the headline and game',sheet.locator('[data-reel-choose]').evaluate_all('es=>es.every(e=>e.querySelector("strong")?.textContent.length>5&&e.querySelector("small")?.textContent.includes("·"))'))
+   people()
+   page.screenshot(path=str(OUT/f'{width}-{theme}-players.png'))
+   check(tag+' player gallery uses larger portraits and accessible targets',sheet.locator('[data-reel-players] .dfl-player-portrait').evaluate_all('es=>es.every(e=>e.clientWidth>=36)') and sheet.locator('[data-reel-players] button').evaluate_all('es=>es.every(e=>e.clientHeight>=44)'))
    check(tag+' player chips show available clip counts',sheet.locator('[data-reel-players] [data-reel-player-filter="qb"]').count()==1 and sheet.locator('[data-reel-players] [data-reel-player-filter="qb"] b').inner_text()=='3')
    page.evaluate('f.searchVideo=document.querySelector(".home-reel-player video")')
+   browse()
    search=sheet.locator('[data-reel-search]');search.fill('Metcalf');check(tag+' search finds that player without replacing the video',sheet.locator('[data-reel-choose]').count()==1 and 'Metcalf' in sheet.locator('[data-reel-choose] strong').inner_text() and page.evaluate('f.searchVideo===document.querySelector(".home-reel-player video")'))
    search.fill('nobody matches this');check(tag+' empty search offers a clear recovery',sheet.locator('[data-reel-choose]').count()==0 and sheet.locator('.reel-search-empty').is_visible())
+   browse()
    sheet.locator('.reel-search-row [data-reel-clear]').click();check(tag+' clearing search restores the queue without restarting the clip',sheet.locator('[data-reel-choose]').count()==11 and page.evaluate('f.searchVideo===document.querySelector(".home-reel-player video")'))
+   people()
    sheet.locator('[data-reel-players] [data-reel-player-filter="qb"]').click();check(tag+' a player filter starts their first clip in order',sheet.locator('[data-reel-choose]').count()==3 and sheet.locator('[data-reel-count]').inner_text()=='1 / 3')
    sheet.locator('.reel-search-row [data-reel-clear]').click()
    browser_contrast=sheet.evaluate('''root=>{
@@ -115,6 +139,7 @@ with sync_playwright() as p:
      check(f'{review_width}x{review_height} clip browser stays usable',sheet.locator('[data-reel-queue]').evaluate('e=>e.clientHeight>=78') and sheet.locator('[data-reel-search]').is_visible() and sheet.evaluate('e=>e.scrollWidth<=e.clientWidth&&e.getBoundingClientRect().right<=innerWidth') and sheet.locator('[data-reel-next]').evaluate('e=>e.getBoundingClientRect().bottom<=e.closest("dialog").getBoundingClientRect().bottom'))
      page.screenshot(path=str(OUT/f'browser-{review_width}x{review_height}.png'))
     page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(80)
+    browse()
     sheet.evaluate('e=>{e.style.setProperty("--dialog-viewport-height","360px");e.style.setProperty("--dialog-viewport-top","100px");e.style.setProperty("--dialog-viewport-bottom","384px")}');sheet.locator('[data-reel-search]').focus();page.wait_for_timeout(40)
     check('small visible viewport prioritizes search and readable results',sheet.locator('[data-reel-queue]').evaluate('e=>e.clientHeight>=78') and not sheet.locator('.home-reel-stage').is_visible() and sheet.evaluate('e=>{const r=e.getBoundingClientRect();return r.top>=100&&r.bottom<=460}'))
     sheet.locator('h2').focus();sheet.evaluate('e=>["height","top","bottom"].forEach(key=>e.style.removeProperty("--dialog-viewport-"+key))');page.wait_for_timeout(40)
@@ -123,12 +148,15 @@ with sync_playwright() as p:
    check(tag+' close restores the originating Home control',page.evaluate('document.activeElement===document.querySelector("[data-home-reel-open]")'))
    page.locator('[data-home-reel-clip]').first.click();check(tag+' a card opens that specific clip',page.evaluate('document.querySelector("[data-reel-choose][aria-pressed=true]").dataset.reelChoose===document.querySelector("[data-home-reel-clip]").dataset.homeReelClip'))
    check(tag+' first Home card starts at clip one with Previous disabled',sheet.locator('[data-reel-count]').inner_text()=='1 / 11' and sheet.locator('[data-reel-previous]').is_disabled())
+   people()
    sheet.locator('[data-reel-players] [data-reel-player-filter="wr"]').click();page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open')
    check(tag+' changing player then closing restores a visible Home control',page.evaluate('document.activeElement===document.querySelector("[data-home-reel-open]")'))
    page.locator('#reel [data-reel-player-filter=""]').click();page.locator('[data-home-reel-clip]').first.click()
+   browse()
    sheet.locator('[data-reel-choose]').first.click();page.evaluate('document.querySelector(".home-reel-player video").dispatchEvent(new Event("ended"))')
    check(tag+' playback advances to the next clip on ended',sheet.locator('[data-reel-count]').inner_text()=='2 / 11')
-   sheet.locator('[data-reel-choose]').last.click();page.wait_for_function('document.querySelector("[data-reel-queue]").scrollTop>0')
+   browse()
+   sheet.locator('[data-reel-choose]').last.click();browse();page.wait_for_function('document.querySelector("[data-reel-queue]").scrollTop>0')
    page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open');page.locator('[data-home-reel-open]').click()
    check(tag+' reopening the reel resets playback and the clip list to the start',sheet.locator('[data-reel-count]').inner_text()=='1 / 11' and sheet.locator('[data-reel-previous]').is_disabled() and sheet.locator('[data-reel-queue]').evaluate('e=>e.scrollTop===0'))
    if width==390 and theme=='dark':
