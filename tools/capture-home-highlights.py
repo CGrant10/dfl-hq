@@ -41,11 +41,12 @@ with sync_playwright() as p:
     const {mountHomeHighlights}=await import('/js/home-highlights.js');const rows=await(await fetch('/tools/fixtures/home-highlight-clips.json')).json();
     const f=window.f={base:Date.parse('2026-10-25T22:00:00Z'),wall:Date.now(),rows,loads:0,fail:false,hold:false,active:true};f.now=()=>f.base+Date.now()-f.wall;f.time=at=>{f.base=at;f.wall=Date.now()};
     for(let i=0;i<2;i++)f.rows.push({...rows[0],id:'95000'+i,source_url:'https://www.espn.com/video/clip/_/id/95000'+i,published_at:new Date(f.base-60000+i).toISOString(),headline:'Fixture late-day big play '+i});
-    f.roster=[{id:'qb',name:'Tyler Shough',position:'QB',nflTeam:'NO'},{id:'wr',name:'DK Metcalf',position:'WR',nflTeam:'PIT'},{id:'te',name:'Darnell Washington',position:'TE',nflTeam:'PIT'}];f.root=document.getElementById('reel');f.mount=()=>mountHomeHighlights(f.root,{getPlayers:()=>f.roster,now:f.now,active:()=>f.active,load:async()=>{f.loads++;if(f.hold)await new Promise(r=>f.release=r);if(f.fail)throw Error('Fixture unavailable');return f.rows}});f.c=f.mount();
+    f.rows.sort((a,b)=>Date.parse(b.published_at)-Date.parse(a.published_at));
+    f.roster=[{id:'qb',name:'Tyler Shough',position:'QB',nflTeam:'NO'},{id:'wr',name:'DK Metcalf',position:'WR',nflTeam:'PIT'},{id:'te',name:'Darnell Washington',position:'TE',nflTeam:'PIT'}];f.root=document.getElementById('reel');f.mount=()=>mountHomeHighlights(f.root,{getPlayers:()=>f.roster,now:f.now,active:()=>f.active,load:async()=>{f.loads++;if(f.hold)await new Promise(r=>f.release=r);if(f.fail)throw Error('Fixture unavailable');return [...f.rows].reverse()}});f.c=f.mount();
    }''',theme)
    tag=f'{width}px {theme}';page.wait_for_selector('[data-home-reel-open]');page.evaluate('document.fonts.ready')
    check(tag+' shows the first eight clips and the complete ten-clip reel',page.locator('[data-home-reel-clip]').count()==8 and '10 clips' in page.locator('.home-reel-total').inner_text())
-   check(tag+' Home previews follow the reel from the first clip',page.evaluate('document.querySelector("[data-home-reel-clip]").dataset.homeReelClip===f.rows[0].id'))
+   check(tag+' Home previews start with the newest published clip',page.evaluate('document.querySelector("[data-home-reel-clip]").dataset.homeReelClip===f.rows[0].id'))
    check(tag+' keeps the first Home load free of embedded players',page.locator('iframe,video').count()==0 and page.evaluate('f.loads===1'))
    check(tag+' cards fit the phone with a clear next-card peek',page.locator('.home-reel-cards').evaluate('e=>e.scrollWidth>e.clientWidth&&e.getBoundingClientRect().right<=innerWidth') and page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
    page.locator('.home-reel-cards img').first.evaluate('e=>e.dispatchEvent(new Event("error"))')
@@ -68,7 +69,7 @@ with sync_playwright() as p:
    def people():
     browse()
     if not sheet.locator('.reel-people-picker').evaluate('e=>e.open'):sheet.locator('.reel-people-picker>summary').click()
-   check(tag+' opens the complete chronological reel',sheet.locator('[data-reel-choose]').count()==10 and sheet.locator('[data-reel-count]').inner_text()=='1 / 10')
+   check(tag+' opens the complete newest-first reel',sheet.locator('[data-reel-choose]').count()==10 and sheet.locator('[data-reel-count]').inner_text()=='1 / 10')
    page.wait_for_function('document.querySelector(".home-reel-player video")?.currentTime>0.1')
    check(tag+' plays a native inline video with controls and a safe publisher source',sheet.locator('video').evaluate('e=>e.playsInline&&e.controls&&e.videoWidth>0&&e.src.startsWith("https://espnmedia-cdn.akamaized.net/espn/media/")') and sheet.locator('iframe').count()==0)
    if width==390 and theme=='dark':
@@ -86,14 +87,16 @@ with sync_playwright() as p:
    page.evaluate('f.layoutVideo=document.querySelector(".home-reel-player video")')
    stage=sheet.locator('.home-reel-stage');queue=sheet.locator('[data-reel-queue]');grip=sheet.locator('[data-reel-resize]')
    initial_stage=stage.evaluate('e=>e.clientHeight')
-   check(tag+' portrait starts with a larger uncapped video frame',sheet.locator('[data-reel-screen]').evaluate('e=>e.clientHeight>180'))
+   check(tag+' Watch uses a natural video frame without tall empty letterboxing',sheet.locator('[data-reel-screen]').evaluate('e=>Math.abs(e.clientHeight-e.clientWidth*9/16)<28'))
+   check(tag+' clip navigation sits outside the footage',sheet.locator('.home-reel-player-controls').evaluate('e=>e.getBoundingClientRect().top>=e.closest(".home-reel-stage").querySelector("video").getBoundingClientRect().bottom-1'))
    sheet.locator('[data-reel-layout="browse"]').click();page.wait_for_timeout(260)
    browse_height=queue.evaluate('e=>e.clientHeight')
-   check(tag+' Browse expands the clip list without replacing video',stage.evaluate('e=>e.clientHeight')<initial_stage and page.evaluate('f.layoutVideo===document.querySelector(".home-reel-player video")'))
+   check(tag+' Browse reveals filters without replacing video',stage.evaluate('e=>e.clientHeight')<initial_stage and page.evaluate('f.layoutVideo===document.querySelector(".home-reel-player video")'))
    check(tag+' portrait previews use the full browser width',sheet.locator('.reel-list-poster').first.evaluate('e=>e.clientWidth>250'))
    page.screenshot(path=str(OUT/f'{width}-{theme}-browse.png'))
    sheet.locator('[data-reel-layout="watch"]').click();page.wait_for_timeout(260)
-   check(tag+' Watch smoothly gives space back to the video',stage.evaluate('e=>e.clientHeight')>=initial_stage-2 and queue.evaluate('e=>e.clientHeight')<browse_height)
+   check(tag+' Watch restores the larger video frame',stage.evaluate('e=>e.clientHeight')>=initial_stage-2)
+   check(tag+' Watch keeps a usable clip list below the controls',queue.evaluate('e=>e.clientHeight>=160') and sheet.locator('.reel-list-poster').first.evaluate('e=>e.clientHeight>=64'))
    page.screenshot(path=str(OUT/f'{width}-{theme}-watch.png'))
    grip.focus();grip.press('Enter');page.wait_for_timeout(260);before=stage.evaluate('e=>e.clientHeight');grip.press('ArrowUp');page.wait_for_timeout(260)
    check(tag+' splitter supports keyboard resizing',stage.evaluate('e=>e.clientHeight')<before and int(grip.get_attribute('aria-valuenow'))<50)
@@ -103,12 +106,15 @@ with sync_playwright() as p:
    grip.press('Enter');page.wait_for_timeout(260)
    browse()
    sheet.locator('.home-reel-stage').dispatch_event('pointerdown');sheet.locator('[data-reel-next]').click();check(tag+' next/back move one clip with a selected clip list item',sheet.locator('[data-reel-count]').inner_text()=='2 / 10' and sheet.locator('[data-reel-choose][aria-pressed="true"]').count()==1)
-   sheet.locator('[data-reel-previous]').click();page.evaluate('f.kept=document.querySelector(".home-reel-player video");f.selected=document.querySelector("[data-reel-choose][aria-pressed=true]").dataset.reelChoose;f.rows.push({...f.rows[0],id:"960001",source_url:"https://www.espn.com/video/clip/_/id/960001",published_at:new Date(f.now()-1000).toISOString()})');page.evaluate('f.c.refresh()');page.wait_for_function('document.querySelector("[data-reel-count]").textContent==="1 / 11"')
+   sheet.locator('[data-reel-previous]').click();page.evaluate('f.kept=document.querySelector(".home-reel-player video");f.selected=document.querySelector("[data-reel-choose][aria-pressed=true]").dataset.reelChoose;f.rows.push({...f.rows.find(row=>row.headline.includes("Tyler Shough")),id:"960001",source_url:"https://www.espn.com/video/clip/_/id/960001",published_at:new Date(f.now()-1000).toISOString()})');page.evaluate('f.c.refresh()');page.wait_for_function('document.querySelector("[data-reel-count]").textContent==="2 / 11"')
    check(tag+' new highlights preserve the open clip instead of interrupting it',page.evaluate('f.kept===document.querySelector(".home-reel-player video")&&f.selected===document.querySelector("[data-reel-choose][aria-pressed=true]").dataset.reelChoose'))
    check(tag+' readable clip rows include the headline and game',sheet.locator('[data-reel-choose]').evaluate_all('es=>es.every(e=>e.querySelector("strong")?.textContent.length>5&&e.querySelector("small")?.textContent.includes("·"))'))
    people()
    page.screenshot(path=str(OUT/f'{width}-{theme}-players.png'))
    check(tag+' player gallery uses larger portraits and accessible targets',sheet.locator('[data-reel-players] .dfl-player-portrait').evaluate_all('es=>es.every(e=>e.clientWidth>=36)') and sheet.locator('[data-reel-players] button').evaluate_all('es=>es.every(e=>e.clientHeight>=44)'))
+   grip.focus();grip.press('End');page.wait_for_timeout(280)
+   check(tag+' returning to Watch closes the gallery and restores the list',not sheet.locator('.reel-people-picker').evaluate('e=>e.open') and queue.evaluate('e=>e.clientHeight>=160'))
+   people()
    check(tag+' player chips show available clip counts',sheet.locator('[data-reel-players] [data-reel-player-filter="qb"]').count()==1 and sheet.locator('[data-reel-players] [data-reel-player-filter="qb"] b').inner_text()=='3')
    page.evaluate('f.searchVideo=document.querySelector(".home-reel-player video")')
    browse()
@@ -135,6 +141,10 @@ with sync_playwright() as p:
      sheet.locator('[data-reel-queue]').evaluate('e=>e.scrollTop=0')
      check(f'{review_width}x{review_height} keeps a full preview image visible',sheet.locator('.reel-list-poster').first.evaluate('e=>{const p=e.getBoundingClientRect(),q=e.closest("ol").getBoundingClientRect();return p.top>=q.top&&p.bottom<=q.bottom}'))
      page.screenshot(path=str(OUT/f'browser-{review_width}x{review_height}.png'))
+     if review_width==320:
+      sheet.locator('[data-reel-layout="watch"]').click();page.wait_for_timeout(280)
+      check('short portrait Watch keeps the video at its natural proportions',sheet.locator('[data-reel-screen]').evaluate('e=>Math.abs(e.clientHeight-e.clientWidth*9/16)<28'))
+      page.screenshot(path=str(OUT/'short-portrait-watch.png'));sheet.locator('[data-reel-layout="browse"]').click();page.wait_for_timeout(280)
      if sheet.locator('[data-reel-queue]').evaluate('e=>e.clientHeight<78'):print('LAYOUT',page.evaluate('()=>[...document.querySelectorAll("dialog[open],.home-reel-stage,.home-reel-browser,.reel-clip-browser,.reel-game-label,.reel-search-row,[data-reel-players],[data-reel-queue]")].map(e=>[e.className,e.clientHeight,getComputedStyle(e).flex])'),flush=True)
      check(f'{review_width}x{review_height} clip browser stays usable',sheet.locator('[data-reel-queue]').evaluate('e=>e.clientHeight>=78') and sheet.locator('[data-reel-search]').is_visible() and sheet.evaluate('e=>e.scrollWidth<=e.clientWidth&&e.getBoundingClientRect().right<=innerWidth') and sheet.locator('[data-reel-next]').evaluate('e=>e.getBoundingClientRect().bottom<=e.closest("dialog").getBoundingClientRect().bottom'))
      page.screenshot(path=str(OUT/f'browser-{review_width}x{review_height}.png'))
