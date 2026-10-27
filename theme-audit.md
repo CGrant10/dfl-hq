@@ -1170,3 +1170,13 @@ uses the drawer body instead of covering it. Shared tokens retain the contrast
 checks; safe-area insets and native controls are respected. No blur backdrop or
 ambient video copy remains. Native installed iOS and physical notched-device
 rendering were not manually tested.
+
+## 1.495.0 — Compact clip grids
+
+Reviewed the two-column replay picker and Clubhouse game groups at 320/390 in
+Medicine Wheel Light/Dark, plus the existing short-phone, keyboard, landscape
+and desktop checks. Thumbnails retain the complete 16:9 image; two-line titles,
+game labels and duration stay legible. The active tile uses shared accent tokens,
+a Playing badge and aria-pressed. Buttons retain 44px targets, focus and contrast
+checks pass, and changing the layout preserves native video. Physical iOS remains
+unverified.
