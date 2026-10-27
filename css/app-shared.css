@@ -6718,15 +6718,30 @@ html[data-readability="comfortable"] :is(.matchup-highlights,.saved-play-open) s
 .nfl-center-fantasy button { min-height:44px; max-width:100%; white-space:normal; overflow-wrap:anywhere; }
 .reel-grid-filters input::placeholder { color:var(--body-text); opacity:1; }
 
-/* Keep the lower browser useful without shrinking the clip previews. */
-@media(max-width:700px) {
- .home-reel-player { width:calc(100vw - 12px); height:calc(var(--dialog-viewport-height,100dvh) - 12px); max-height:calc(var(--dialog-viewport-height,100dvh) - 12px); border-radius:10px; }
- .home-reel-stage { flex:0 1 auto; min-height:0; max-height:45%; overflow-y:auto; }
- .home-reel-browser { flex:1 0 55%; }
+/* Portrait gets a movable split and previews that grow with the browser pane. */
+.reel-splitter { display:none; }
+.home-reel-grid { grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); }
+.home-reel-grid strong { font-size:15px; }
+@media(max-width:700px) and (orientation:portrait) {
+ .home-reel-player { width:calc(100vw - 8px); height:calc(var(--dialog-viewport-height,100dvh) - 8px); max-height:calc(var(--dialog-viewport-height,100dvh) - 8px); border-radius:10px; }
+ .home-reel-view { display:flex; flex-direction:column; }
+ .home-reel-stage { display:flex; flex-direction:column; flex:0 0 var(--reel-stage-size,50%); min-height:0; max-height:none; overflow-y:auto; }
+ .home-reel-screen { flex:1; min-height:0; aspect-ratio:auto; max-height:none; }
+ .home-reel-stage>:is(.reel-scorebug,.home-reel-player-copy,.home-reel-player-controls) { flex:none; }
  .home-reel-player-copy { padding:4px 12px; }
- .home-reel-player-copy h3 { margin:4px 0; font-size:15px; line-height:1.25; }
+ .home-reel-player-copy h3 { display:block; margin:4px 0; font-size:15px; line-height:1.25; }
  .reel-now-row { display:none; }
+ .home-reel-player[data-reel-pane="browse"] :is(.home-reel-player-copy,.home-reel-player-controls) { display:none; }
  .home-reel-player-controls { padding:4px 12px 8px; }
+ .home-reel-browser { flex:1; min-height:0; border-top:0; }
+ .reel-splitter { display:flex; flex:none; height:44px; align-items:center; justify-content:center; gap:18px; border-block:1px solid var(--line); background:var(--bg); }
+ .reel-splitter button { min-width:64px; padding:0 8px; border:0; margin:0; background:transparent; color:var(--body-text); font:600 13px/1.2 var(--font-display); }
+ .reel-splitter button[aria-pressed="true"] { color:var(--accent); }
+ [data-reel-resize] { display:grid; place-items:center; width:80px; height:44px; flex:none; cursor:row-resize; touch-action:none; }
+ [data-reel-resize] i { width:40px; height:4px; border-radius:4px; background:var(--body-text); opacity:.6; }
+ [data-reel-resize]:focus-visible { outline:2px solid var(--accent); outline-offset:-4px; border-radius:5px; }
+ [data-reel-resizing] [data-reel-resize] i { background:var(--accent); opacity:1; }
+ [data-reel-layout-motion] .home-reel-stage { transition:flex-basis 220ms cubic-bezier(.2,.75,.25,1); }
  .reel-clip-browser { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-rows:auto auto minmax(0,1fr); }
  .reel-game-label { display:grid; margin:4px 6px 4px 12px; gap:0; font-size:0; }
  .reel-game-label select { font-size:13px; }
@@ -6735,15 +6750,26 @@ html[data-readability="comfortable"] :is(.matchup-highlights,.saved-play-open) s
  .reel-search-row button { font-size:11px; }
  .reel-clip-browser>.home-reel-players,.reel-clip-browser>.home-reel-queue { grid-column:1/-1; }
  .home-reel-browser .home-reel-players { padding-block:2px; }
+ .home-reel-queue { container-type:size; }
+ .home-reel-queue button[data-reel-choose] { position:relative; grid-template-columns:minmax(0,1fr); gap:9px; min-height:0; padding:10px 6px; }
+ .home-reel-queue .reel-list-poster { width:100%; max-height:max(64px,calc(100cqh - 24px)); }
+ .home-reel-queue .reel-list-copy strong { font-size:15px; }
+ .home-reel-queue .reel-list-copy small { font-size:12px; }
+ .home-reel-queue .reel-list-number { display:none; }
+}
+@media(max-width:700px) and (orientation:landscape) {
+ .home-reel-view { display:grid; grid-template-columns:minmax(0,1fr) minmax(240px,1fr); }
+ .home-reel-browser { min-height:0; border-top:0; border-left:1px solid var(--line); }
+ .home-reel-stage { min-height:0; overflow-y:auto; }
 }
 @container (max-height:460px) {
+ .home-reel-view:has([data-reel-search]:focus) .reel-splitter { display:none; }
  .home-reel-view:has([data-reel-search]:focus) .home-reel-browser { flex:1; }
  .home-reel-view:has([data-reel-search]:focus) .reel-clip-browser { display:flex; }
  .home-reel-view:has([data-reel-search]:focus) .reel-search-row { padding:8px 12px; }
 }
-@media(max-width:700px) and (min-height:651px) {
- .home-reel-screen { max-height:min(180px,calc(45cqh - 180px)); }
-}
+@media(prefers-reduced-motion:reduce) { [data-reel-layout-motion] .home-reel-stage { transition:none; } }
+html[data-ui-motion="off"] [data-reel-layout-motion] .home-reel-stage { transition:none; }
 
 /* A player and an outcome lead each play; the full log stays one tap away. */
 .nfl-center-plays li { padding-block:16px; }

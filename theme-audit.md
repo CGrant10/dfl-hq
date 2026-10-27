@@ -1134,3 +1134,13 @@ play logs available without a wall of text. Point changes use “Points added”
 Home uses “Latest updates.” The existing theme tokens, 44px actions, focus
 return, reduced motion and contrast checks remain intact. This includes the
 app-wide Pulse styling. Native iOS rendering was not manually exercised.
+
+## 1.492.0 — Adaptive portrait replay and live plays
+
+Reviewed the larger single-column Clubhouse previews and replay Watch/Browse
+panes at 320/390 in Medicine Wheel Light and Dark, plus 320×568, 844×390 and
+1280×800. The movable divider uses shared text/accent/line tokens, a 44px grip
+with keyboard controls and visible focus. Video and posters preserve their full
+image with contain sizing. Phone, keyboard and landscape layouts fit the viewport;
+reduced motion skips pane transitions. Clip names, counts and search placeholders
+pass contrast checks. Native iOS sizing/fullscreen was not manually exercised.

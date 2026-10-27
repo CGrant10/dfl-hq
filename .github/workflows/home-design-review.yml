@@ -67,6 +67,7 @@ on:
       - 'js/home-highlight*'
       - 'js/highlight-play-link*'
       - 'js/nfl-game-center*'
+      - 'js/replay-layout.js'
       - 'js/nfl-play-presentation*'
       - 'js/moment-summary-ui.js'
       - 'js/clubhouse-nfl.js'
@@ -77,6 +78,7 @@ on:
       - 'tools/capture-clubhouse-live.py'
       - 'css/home-highlight-reel.css'
       - 'tools/capture-home-highlights.py'
+      - 'tools/capture-nfl-live-refresh.py'
       - 'tools/fixtures/home-highlight-clips.json'
       - 'tools/fixtures/nfl-game-center-summary.json'
       - 'tools/fixtures/nfl-highlight-play.json'
@@ -343,6 +345,10 @@ jobs:
         env:
           DFL_HOME_HIGHLIGHTS_REVIEW_DIR: ${{ github.workspace }}/home-review-output/highlights
         run: python tools/capture-home-highlights.py
+      - name: Check live NFL play refresh and recovery
+        env:
+          DFL_NFL_REFRESH_REVIEW_DIR: ${{ github.workspace }}/home-review-output/nfl-refresh
+        run: python tools/capture-nfl-live-refresh.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
