@@ -25,8 +25,9 @@ export function highlightVideoUrl(value){
 export function highlightKind(video){
  if(video?.source!=='espn'||video?.tracking?.leagueName!=='NFL'||video?.tracking?.coverageType!=='OnePlay')return null;
  const text=`${clean(video.headline)} ${clean(video.description)}`;
- if(/\b(?:touchdown|TD|pick[- ]six)\b/i.test(text))return 'touchdown';
- if(/\b(?:field goal|FG)\b/i.test(text))return null;
+ const setup=/\b(?:sets? up|leads? to)\b/i.test(text);
+ if(!setup&&/\b(?:touchdown|TD|pick[- ]six)\b/i.test(text))return 'touchdown';
+ if(!setup&&/\b(?:field goal|FG)\b/i.test(text))return null;
  const yards=[...text.matchAll(/\b(\d{2,3})[- ]yard\b/gi)].map(m=>Number(m[1]));
  return yards.some(n=>n>=20)||/\b(?:interception|intercepts?|picks? off|picked off|diving pick|one-handed|spectacular catch)\b/i.test(text)?'big-play':null;
 }

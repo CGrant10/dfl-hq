@@ -4,6 +4,7 @@ import {highlightSession,gameHighlightClips,activeHighlightClips,highlightVideoU
 const now=Date.parse('2026-10-25T22:00:00Z'),event={id:'401',date:'2026-10-25T17:00:00Z',competitions:[{competitors:[{team:{abbreviation:'KC'}},{team:{abbreviation:'BUF'}}]}]};
 const video=changes=>({id:123,source:'espn',tracking:{leagueName:'NFL',coverageType:'OnePlay'},headline:'Receiver scores a 49-yard touchdown',description:'A touchdown catch',duration:27,thumbnail:'https://espnmedia-cdn.akamaized.net/highlight.jpg',originalPublishDate:'2026-10-25T18:00:00Z',timeRestrictions:{expirationDate:'2026-10-27T18:00:00Z'},links:{web:{href:'https://www.espn.com/video/clip/_/id/123/receiver-td'},source:{href:'https://espnmedia-cdn.akamaized.net/espn/media/16x9/clip.mp4'}},...changes});
 const parse=(videos=[video()],e=event,at=now)=>gameHighlightClips({header:{id:e.id},videos},e,{now:at});
+it('labels a long catch that sets up a later touchdown as a big play',()=>{expect(parse([video({headline:'A receiver’s 51-yard catch sets up a touchdown'})])[0].kind).toBe('big-play')});
 describe('weekend Central highlight windows',()=>{
  it.each([
   ['2026-10-26T22:00:00Z','2026-10-22','2026-10-27T11:00:00.000Z',true],

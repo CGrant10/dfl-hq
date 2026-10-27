@@ -1,7 +1,8 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.57.4';
 import {gameHighlightClips,highlightSession,highlightGameDate} from '../../../js/home-highlight-model.js';
+import {linkHighlightPlays} from '../_shared/highlight-links.ts';
 const TOKEN_HASH='c7429c5c8cfd182e13e7f1b537b0f671b0b99dcb004b19f8580b960f8f957091';
-const get=async(url:string)=>{const r=await fetch(url,{headers:{'User-Agent':'DFL-HQ-Highlights/1.0'},signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error(`Highlight provider ${r.status}`);return r.json()};
+const get=async(url:string,timeout=10000)=>{const r=await fetch(url,{headers:{'User-Agent':'DFL-HQ-Highlights/1.0'},signal:AbortSignal.timeout(timeout)});if(!r.ok)throw Error(`Highlight provider ${r.status}`);return r.json()};
 function secretKey(){try{return JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}').default||Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''}catch{return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''}}
 Deno.serve(async request=>{
  if(request.method!=='POST')return Response.json({error:'Method not allowed'},{status:405});
@@ -24,11 +25,14 @@ Deno.serve(async request=>{
   await Promise.all(Array.from({length:Math.min(3,events.length)},async()=>{while(cursor<events.length){const event=events[cursor++];try{
    const summary=await get(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${event.id}`);
    if(String(summary.header?.id)!==String(event.id))throw Error('Highlight game scope mismatch');
-   clips.push(...gameHighlightClips(summary,event,{now}));
+   clips.push(...await linkHighlightPlays(gameHighlightClips(summary,event,{now}),summary,url=>get(url,3000)));
   }catch{failed++}}}));
   const rows=[...new Map(clips.map(clip=>[clip.id,clip])).values()];
+  if(rows.length){const known=await admin.from('nfl_highlight_clips').select('id,game_id,headline,kind,play_id').in('id',rows.map(row=>row.id)).not('play_id','is',null);if(known.error)throw known.error;
+   for(const row of rows)if(!row.play_id){const prior=(known.data||[]).find(p=>p.id===row.id&&p.game_id===row.game_id&&p.headline===row.headline&&p.kind===row.kind);if(prior)row.play_id=prior.play_id}
+  }
   if(!dryRun&&rows.length){const saved=await admin.from('nfl_highlight_clips').upsert(rows,{onConflict:'id'});if(saved.error)throw saved.error}
   if(events.length&&failed===events.length)throw Error('Highlight sources unavailable');
-  return Response.json({ok:true,dryRun,date:session.date,startDate:session.startDate,endDate:session.endDate,expiresAt:new Date(session.expiresAt).toISOString(),games:events.length,clips:rows.length,failed,failedBoards});
+  return Response.json({ok:true,dryRun,date:session.date,startDate:session.startDate,endDate:session.endDate,expiresAt:new Date(session.expiresAt).toISOString(),games:events.length,clips:rows.length,linked:rows.filter(row=>row.play_id).length,failed,failedBoards});
  }catch(error){console.error('game-highlights',error instanceof Error?error.message:'provider unavailable');return Response.json({error:'Highlight refresh unavailable'},{status:500})}
 });

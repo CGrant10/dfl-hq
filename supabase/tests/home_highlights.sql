@@ -19,6 +19,7 @@ do $$begin
  begin update public.nfl_highlight_clips set headline='forged';raise exception 'Browser can forge clips';exception when insufficient_privilege then null;end;
 end$$;
 reset role;
+
 set role authenticated;
 do $$begin if (select count(*) from public.nfl_highlight_clips)<>1 then raise exception 'Authenticated read leaks expiry';end if;end$$;
 reset role;
@@ -47,5 +48,18 @@ end$$;
 set role anon;
 do $$begin
  begin update public.nfl_highlight_clips set video_url=null;raise exception 'Browser can change video sources';exception when insufficient_privilege then null;end;
+end$$;
+reset role;
+
+\ir ../migrations/20261027002343_nfl_highlight_play_links.sql
+update public.nfl_highlight_clips set play_id='40112345' where id='3';
+do $$begin
+ if (select play_id from public.nfl_highlight_clips where id='3') is distinct from '40112345' then raise exception 'Play link not saved';end if;
+ begin update public.nfl_highlight_clips set play_id='https://evil.test';raise exception 'Non-numeric play link accepted';exception when check_violation then null;end;
+ if not(select relrowsecurity from pg_class where oid='public.nfl_highlight_clips'::regclass) then raise exception 'Play links disabled expiry RLS';end if;
+end$$;
+set role anon;
+do $$begin
+ begin update public.nfl_highlight_clips set play_id='999';raise exception 'Browser can redirect play links';exception when insufficient_privilege then null;end;
 end$$;
 reset role;

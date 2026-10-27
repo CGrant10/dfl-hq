@@ -1088,3 +1088,19 @@ check, 156 shared-reel checks and 96 Clubhouse checks pass. Evidence:
 `/workspace/dfl-highlight-review/` and `/workspace/dfl-clubhouse-live-review/`.
 See `docs/player-highlight-browser-validation-1487.md`. Native installed Safari
 and physical on-screen keyboard behavior remain unverified.
+
+## 1.488.0 — Replay studio and NFL game center
+
+Reviewed the actual Clubhouse Highlights grid, scope/player/game filters, NFL
+play-by-play and fantasy views, and shared replay viewer at 320/390 in Medicine
+Wheel Light and Dark. Reviewed short portrait, short landscape and constrained
+keyboard layouts. All new surfaces use shared ink, surface, line and accent
+tokens. Selected controls, NFL metadata, recorded-point labels and search retain
+4.5:1 contrast and 44px actions. Native clip panning works in both directions;
+reduced motion, interrupted dismissal, focus return and route cleanup pass.
+No additional themes or shield branding were introduced.
+
+Live phone push delivery and iOS native video/fullscreen rendering were not
+manually exercised; notification routing and expiry were checked without sending
+members test pushes. Provider availability and clip publication delay remain
+external limits.
