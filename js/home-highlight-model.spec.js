@@ -43,7 +43,8 @@ describe('verified publisher clip metadata',()=>{
  });
  it('requests correctly sized publisher posters instead of full-resolution media',()=>{
   expect(new URL(highlightPosterUrl(video().thumbnail)).searchParams.get('w')).toBe('640');
-  expect(new URL(highlightPosterUrl(video().thumbnail,192)).searchParams.get('h')).toBe('108');
+  expect(new URL(highlightPosterUrl(video().thumbnail,320)).searchParams.has('h')).toBe(false);
+  expect(new URL(highlightPosterUrl(video().thumbnail)).searchParams.has('scale')).toBe(false);
   expect(highlightPosterUrl('https://evil.test/track.jpg')).toBeNull();
  });
  it('uses real one-play metadata, canonical source links and the morning deadline',()=>{

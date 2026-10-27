@@ -82,11 +82,16 @@ with sync_playwright() as p:
     return Math.min(...[...root.querySelectorAll('.reel-list-copy strong,.reel-list-copy small,.reel-list-number,.reel-person span,.reel-person b,[data-reel-search]')].map(e=>{let p=e,bg;while(p){bg=rgb(getComputedStyle(p).backgroundColor);if(bg[3]===255)break;p=p.parentElement}const color=e.matches('input')?getComputedStyle(e,'::placeholder').color:getComputedStyle(e).color,a=lum(rgb(color)),b=lum(bg||[255,255,255,255]);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)}));
    }''')
    check(tag+' clip names, counts and search placeholders meet 4.5:1 contrast',browser_contrast>=4.5)
+   check(tag+' lower clip list has room for complete larger previews',sheet.locator('[data-reel-queue]').evaluate('e=>e.clientHeight>=220') and sheet.locator('.reel-list-poster').first.evaluate('e=>e.getBoundingClientRect().width>=112&&getComputedStyle(e.querySelector("img")).objectFit==="contain"'))
+   sheet.locator('[data-reel-queue]').evaluate('e=>e.scrollTop=0')
+   check(tag+' first preview image is fully visible in the lower list',sheet.locator('.reel-list-poster').first.evaluate('e=>{const p=e.getBoundingClientRect(),q=e.closest("ol").getBoundingClientRect();return p.top>=q.top&&p.bottom<=q.bottom}'))
    check(tag+' browser actions have 44px touch targets',sheet.locator('button,input,a').evaluate_all('es=>es.filter(e=>e.getClientRects().length).every(e=>e.getBoundingClientRect().height>=44)'))
    page.screenshot(path=str(OUT/f'{width}-{theme}-reel.png'))
    if width==390 and theme=='dark':
     for review_width,review_height in [(320,568),(844,390),(1280,800)]:
      page.set_viewport_size({'width':review_width,'height':review_height});page.wait_for_timeout(80)
+     sheet.locator('[data-reel-queue]').evaluate('e=>e.scrollTop=0')
+     check(f'{review_width}x{review_height} keeps a full preview image visible',sheet.locator('.reel-list-poster').first.evaluate('e=>{const p=e.getBoundingClientRect(),q=e.closest("ol").getBoundingClientRect();return p.top>=q.top&&p.bottom<=q.bottom}'))
      page.screenshot(path=str(OUT/f'browser-{review_width}x{review_height}.png'))
      if sheet.locator('[data-reel-queue]').evaluate('e=>e.clientHeight<78'):print('LAYOUT',page.evaluate('()=>[...document.querySelectorAll("dialog[open],.home-reel-stage,.home-reel-browser,.reel-clip-browser,.reel-game-label,.reel-search-row,[data-reel-players],[data-reel-queue]")].map(e=>[e.className,e.clientHeight,getComputedStyle(e).flex])'),flush=True)
      check(f'{review_width}x{review_height} clip browser stays usable',sheet.locator('[data-reel-queue]').evaluate('e=>e.clientHeight>=78') and sheet.locator('[data-reel-search]').is_visible() and sheet.evaluate('e=>e.scrollWidth<=e.clientWidth&&e.getBoundingClientRect().right<=innerWidth') and sheet.locator('[data-reel-next]').evaluate('e=>e.getBoundingClientRect().bottom<=e.closest("dialog").getBoundingClientRect().bottom'))
