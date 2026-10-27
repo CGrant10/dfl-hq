@@ -34,13 +34,21 @@ export async function runTradeWatch({admin,sleeper,capture,dryRun=false,now=Date
   if(work){
    const [users,rosters]=await Promise.all([sleeper(`/league/${leagueId}/users`),sleeper(`/league/${leagueId}/rosters`)]);
    if(!Array.isArray(users)||!users.length||!Array.isArray(rosters)||rosters.length!==Number(league.total_rosters)||new Set(rosters.map(r=>r.roster_id)).size!==rosters.length||rosters.some(r=>!Array.isArray(r.players)))throw Error('Incomplete Sleeper ownership data');
+   // Receipts reference the persisted Sleeper transaction. The trade-only
+   // watcher must create that parent itself, before grading or sending alerts.
+   const ledger=await admin.from('sleeper_transactions').upsert(trades.map(tx=>({
+    sleeper_transaction_id:String(tx.transaction_id),season,
+    week:tx.leg??transactionWeeks[String(tx.transaction_id)]??week,
+    type:tx.type||'',status:tx.status||'',details:tx,created_ms:tx.created??null,
+   })),{onConflict:'sleeper_transaction_id'});
+   if(ledger.error)throw ledger.error;
    tradeAlerts=await capture({admin,league,users,rosters,transactions,transactionWeeks,season,week});
   }
   const saved=await admin.from('sleeper_config').update({last_trade_watch_checked_at:checkedAt,last_trade_watch_error:''}).eq('id',1);
   if(saved.error)throw saved.error;
   return {ok:true,season,week,completedTrades:ids.length,tradeAlerts};
  }catch(error){
-  if(!dryRun)await admin.from('sleeper_config').update({last_trade_watch_error:String(error instanceof Error?error.message:error).slice(0,500)}).eq('id',1);
+  if(!dryRun)await admin.from('sleeper_config').update({last_trade_watch_error:String((error as any)?.message||error).slice(0,500)}).eq('id',1);
   throw error;
  }
 }
