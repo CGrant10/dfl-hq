@@ -11,8 +11,8 @@ const get = async (url: string) => {
   return response.json();
 };
 
-export async function captureScheduledTrades({admin, league, users, rosters, transactions, season, week, url, cronToken}: any) {
-  return captureTradeReceipts({transactions, currentRosters: rosters, season, week, database: admin,reviewUnsupported:true,
+export async function captureScheduledTrades({admin, league, users, rosters, transactions, season, week, url, cronToken, transactionWeeks={}}: any) {
+  return captureTradeReceipts({transactions, currentRosters: rosters, season, week, transactionWeeks, database: admin,reviewUnsupported:true,
     log: (message: string) => console.warn(message),
     loadAnalyzer: async () => {
       // Runs for missing receipts or one-time routed reviews. Existing graded

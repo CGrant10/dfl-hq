@@ -22,7 +22,7 @@ async function deliverPendingTradeAlerts(database, transactionIds, log, notifyTr
 }
 
 /** Shared by manual and scheduled sync; saved receipt values never change. */
-export async function captureTradeReceipts({ transactions = [], currentRosters = [], season, week, database, log = (_message) => {}, loadAnalyzer, notifyTradeAlert, buildSnapshot = buildTradeAlertSnapshot,reviewUnsupported=false, now = Date.now() } = {}) {
+export async function captureTradeReceipts({ transactions = [], currentRosters = [], season, week, database, log = (_message) => {}, loadAnalyzer, notifyTradeAlert, buildSnapshot = buildTradeAlertSnapshot,reviewUnsupported=false, transactionWeeks={}, now = Date.now() } = {}) {
   const complete = transactions.filter(transaction => classifyCompletedTrade(transaction))
     .sort((a, b) => completedAt(a)-completedAt(b));
   if (!complete.length) return { created: 0, notified: 0 };
@@ -61,12 +61,13 @@ export async function captureTradeReceipts({ transactions = [], currentRosters =
   const ownership = transactions.filter(transaction => transaction?.status === "complete")
     .sort((a, b) => completedAt(a)-completedAt(b));
   const state = preTradeRosterState({ previousRosters: [], currentRosters, transactions: ownership });
+  const receiptWeek=id=>{const candidate=Number(transactionWeeks[id]);return Number.isInteger(candidate)&&candidate>=1&&candidate<=18?candidate:week};
   const created = [];
   let backfilled = 0,reviewed=0;
   for (const transaction of ownership) {
     const transactionId = String(transaction.transaction_id);
     if(reviewIds.has(transactionId)){
-      const snapshot=buildSnapshot({transaction,season,week,rosterState:state,teams:analyzer.teams,pool:analyzer.pool});
+      const snapshot=buildSnapshot({transaction,season,week:receiptWeek(transactionId),rosterState:state,teams:analyzer.teams,pool:analyzer.pool});
       if(snapshot?.result&&!snapshot.result.projectionEvidence?.missing?.length){
         const {data,error}=await database.from('trade_alerts').update({routing_review:{...snapshot,reviewed_at:new Date(now).toISOString()}})
           .eq('sleeper_transaction_id',transactionId).is('routing_review',null).select('id');
@@ -74,7 +75,7 @@ export async function captureTradeReceipts({ transactions = [], currentRosters =
       }
     }
     if (missingIds.has(transactionId) && classifyCompletedTrade(transaction)) {
-      const snapshot = buildSnapshot({ transaction, season, week, rosterState: state, teams: analyzer.teams, pool: analyzer.pool });
+      const snapshot = buildSnapshot({ transaction, season, week:receiptWeek(transactionId), rosterState: state, teams: analyzer.teams, pool: analyzer.pool });
       if (snapshot) {
         /* Receipts from before this feature belong in Trade Wire, but must not
            impersonate new breaking news or send a surprise historical push. */

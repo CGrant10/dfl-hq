@@ -33,3 +33,7 @@ verify_jwt = false
 [functions.game-highlights]
 # The shared collector verifies the existing scheduler's secret header itself.
 verify_jwt = false
+
+# Trade checks use the same private scheduler token, independently of full syncs.
+[functions.trade-watch]
+verify_jwt = false

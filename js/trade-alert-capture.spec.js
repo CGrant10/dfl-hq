@@ -30,6 +30,9 @@ function fixture(saved = []) {
 const run=(f,over={})=>captureTradeReceipts({transactions:[transaction()],currentRosters,season:2026,week:5,now,...f,...over});
 
 describe('manual and scheduled trade capture',()=>{
+  it('retains the original transaction week during a rollover watch',async()=>{
+    const f=fixture();await run(f,{week:6,transactionWeeks:{'new-trade':5}});expect(f.rows[0].week).toBe(5);
+  });
   it('notifies a recent trade already recorded by the background ownership sync',async()=>{
     const f=fixture();const result=await run(f,{priorTransactions:[{sleeper_transaction_id:'new-trade',status:'complete'}]});
     expect(result).toMatchObject({created:1,backfilled:0,notified:1});
