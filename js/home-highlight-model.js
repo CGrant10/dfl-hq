@@ -60,5 +60,5 @@ export function activeHighlightClips(rows=[],now=Date.now()){
    ||!Number.isFinite(row.duration)||row.duration<3||row.duration>180)continue;
   unique.set(id,{...row,id,headline,video_url:highlightVideoUrl(row.video_url)});
  }
- return [...unique.values()].sort((a,b)=>Date.parse(a.published_at)-Date.parse(b.published_at)||a.id.localeCompare(b.id));
+ return [...unique.values()].sort((a,b)=>Date.parse(b.published_at)-Date.parse(a.published_at)||b.id.localeCompare(a.id,undefined,{numeric:true}));
 }

@@ -75,8 +75,13 @@ describe('verified publisher clip metadata',()=>{
   const clips=parse([video({timeRestrictions:{expirationDate:'2026-10-25T23:00:00Z'}})]);
   expect(clips[0].expires_at).toBe('2026-10-25T23:00:00.000Z');expect(activeHighlightClips(clips,Date.parse('2026-10-25T23:00:00Z'))).toEqual([]);
  });
- it('deduplicates the chronological reel and rejects corrupted or untrusted cached rows',()=>{
+ it('deduplicates the newest-first reel and rejects corrupted or untrusted cached rows',()=>{
   const clips=parse();expect(activeHighlightClips([...clips,...clips],now)).toHaveLength(1);
   for(const changes of [{source_url:'javascript:alert(1)'},{session_date:'2026-10-18'},{duration:-1},{expires_at:'2026-10-30T18:00:00Z'}])expect(activeHighlightClips([{...clips[0],...changes}],now)).toEqual([]);
  });
+});
+
+it('sorts verified clips newest first regardless of input order, with a stable numeric ID tie-break',()=>{
+ const first=parse()[0],older={...first,id:'90',source_url:'https://www.espn.com/video/clip/_/id/90',published_at:'2026-10-25T18:01:00Z'},newer={...older,id:'91',source_url:'https://www.espn.com/video/clip/_/id/91',published_at:'2026-10-25T18:02:00Z'},tie={...newer,id:'100',source_url:'https://www.espn.com/video/clip/_/id/100'};
+ expect(activeHighlightClips([older,tie,first,newer],now).map(c=>c.id)).toEqual(['100','91','90','123']);
 });

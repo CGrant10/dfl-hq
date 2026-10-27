@@ -1157,3 +1157,16 @@ Latest action uses existing accent/on-accent tokens and preserves older reading
 positions. Reduced motion disables loading motion and skips pane/clip effects.
 Native installed iOS/fullscreen and screen-reader behavior were not manually
 exercised; no claim of full accessibility compliance is made.
+
+## 1.494.0 — Replay layout repair and newest-first clips
+
+Replaced the stacked replay overrides with one responsive layout. Reviewed Watch,
+Browse, expanded search and the in-flow player gallery at 320/390 in Medicine
+Wheel Light/Dark, plus short portrait, landscape, desktop and keyboard bounds.
+Watch video proportions stay close to the actual wide footage; headline and
+44px navigation sit below it. The list has an explicit grid row so hidden filters
+cannot collapse it, including returning from an open gallery. Gallery content
+uses the drawer body instead of covering it. Shared tokens retain the contrast
+checks; safe-area insets and native controls are respected. No blur backdrop or
+ambient video copy remains. Native installed iOS and physical notched-device
+rendering were not manually tested.

@@ -1,6 +1,8 @@
 export function replaySnapSizes(height,width){
- const expanded=Math.min(96,Math.max(48,height*.16)),watch=Math.max(expanded,height-176);
- return [watch,Math.max(expanded,Math.min(watch,width*9/16+44,height*.4)),expanded];
+ const expanded=Math.min(96,Math.max(48,height*.16));
+ const watch=Math.max(expanded,Math.min(height-220,width*9/16+152));
+ const browse=Math.max(expanded,Math.min(watch-36,width*9/16+50,height*.4));
+ return [watch,browse,expanded];
 }
 export function replaySnapIndex(sizes,size,velocity=0){
  const projected=size+Math.max(-1.5,Math.min(1.5,velocity))*130;
