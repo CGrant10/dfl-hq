@@ -1,3 +1,4 @@
+import {loadNflInjuries} from './injury-report-data.js';
 import {powerRosterForecast} from './league-power-roster.js';
 import {buildPowerBoards} from './league-power-model.js';
 import {loadNflGameDay} from "./nfl-game-day.js";
@@ -85,7 +86,7 @@ async function fetchAnalyzerData({freshTrade=false,liveRefresh=false} = {}) {
       .catch(() => ({ data: [], fetchedAt: 0, stale: true })))),
     loadTrendingPlayers().catch(() => ({ adds: new Map(), drops: new Map(), fetchedAt: 0 })),
   ]) : Promise.resolve([{ data: [], fetchedAt: 0 }, [], { adds: new Map(), drops: new Map(), fetchedAt: 0 }]);
-  const [players, statsRes, currentStatsRes, projectionRes, matchupRes, [weeklyProjectionRes, recentStatsRes, trending], latestResults,expertRankings,powerRes] = await Promise.all([
+  const [players, statsRes, currentStatsRes, projectionRes, matchupRes, [weeklyProjectionRes, recentStatsRes, trending], latestResults,expertRankings,powerRes,injuryReport] = await Promise.all([
     loadPlayers({maxAgeMs:freshTrade?0:TRADE_SIGNALS_CACHE_MS}),
     loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
     loadSeasonStats(projectionSeason, { maxAgeMs:freshTrade?0:ANALYZER_CACHE_MS }).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
@@ -100,6 +101,7 @@ async function fetchAnalyzerData({freshTrade=false,liveRefresh=false} = {}) {
     liveWeek > 1 ? loadLatestLeagueResults(league.sleeper_league_id, projectionSeason, liveWeek).catch(() => null) : null,
     loadExpertRankings({season:projectionSeason,scoring:format},{force:freshTrade,maxAgeMs:ANALYZER_CACHE_MS}),
     db().from('league_power_publications').select('season,week,model_version,payload,published_at').eq('league_id',String(league.sleeper_league_id)).eq('season',projectionSeason).order('week',{ascending:true}),
+    loadNflInjuries({force:freshTrade}).catch(()=>null),
   ]);
   if(freshTrade&&liveWeek&&(!weeklyProjectionRes.fetchedAt||weeklyProjectionRes.stale))throw new Error('Could not verify current injuries. Try sharing again.');
   if(freshTrade&&(!currentStatsRes.fetchedAt||currentStatsRes.stale))throw new Error('Could not verify current player stats. Try sharing again.');
@@ -113,6 +115,7 @@ async function fetchAnalyzerData({freshTrade=false,liveRefresh=false} = {}) {
   if(finished.length)formWeeks.push(finished);
   const pool = buildPlayerPool({
     rosters: namedRosters,
+    injuryReport:injuryReport?.payload||null,
     players,
     previousStats: statsRes.data || {},
     currentStats: currentStatsRes.data || {},

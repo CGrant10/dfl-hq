@@ -1,3 +1,4 @@
+import {automaticTradePlayer} from './player-availability.js';
 // Shared by manual counteroffers and automatic suggestion balancing. This
 // generates candidates only; the caller must re-evaluate every legal roster.
 export function tradePackageEdits(state,pool,{lockedIds=[],maxPlayers=8}={}){
@@ -13,7 +14,7 @@ export function tradePackageEdits(state,pool,{lockedIds=[],maxPlayers=8}={}){
   rows.push({sends,destinations,changes:[...(state.changes||[]),change],proximity});
  };
  state.parties.forEach((owner,i)=>{
-  const available=owner.playerIds.map(String).filter(id=>!occupied.has(id)&&pool.has(id));
+  const available=owner.playerIds.map(String).filter(id=>!occupied.has(id)&&pool.has(id)&&automaticTradePlayer(pool.get(id)));
   for(const id of available)for(const to of state.parties.filter(t=>String(t.id)!==String(owner.id))){
    const sends=state.sends.map(ids=>[...ids]);sends[i].push(id);
    add(sends,{...state.destinations,[id]:String(to.id)},{type:'add',player:id,from:String(owner.id),to:String(to.id)});

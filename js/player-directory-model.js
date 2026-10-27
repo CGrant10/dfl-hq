@@ -3,9 +3,9 @@ export function compactPlayers(map){
  const out={};
  for(const [id,p] of Object.entries(map||{})){
   if(!p||typeof p!=='object')continue;
-  out[id]=p.n!==undefined?{n:p.n,p:p.p,fp:p.fp||[],t:p.t,i:p.i??null,s:p.s??null,pp:p.pp??null,is:p.is??null,nu:p.nu??null}:{
+  out[id]=p.n!==undefined?{n:p.n,p:p.p,fp:p.fp||[],t:p.t,i:p.i??null,s:p.s??null,pp:p.pp??null,is:p.is??null,nu:p.nu??null,...(p.injuryNotes?{injuryNotes:p.injuryNotes}:{})}:{
    n:p.full_name||`${p.first_name||''} ${p.last_name||''}`.trim()||id,p:p.position||'',fp:p.fantasy_positions||[],t:p.team||'FA',
-   i:p.injury_status||null,s:p.status||null,pp:p.practice_participation||null,is:p.injury_start_date||null,nu:p.news_updated||null,
+   i:p.injury_status||null,s:p.status||null,pp:p.practice_participation||null,is:p.injury_start_date||null,nu:p.news_updated||null,...(p.injury_notes?{injuryNotes:String(p.injury_notes).slice(0,512)}:{}),
   };
  }
  return out;

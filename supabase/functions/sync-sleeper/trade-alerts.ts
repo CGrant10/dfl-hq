@@ -18,7 +18,7 @@ export async function captureScheduledTrades({admin, league, users, rosters, tra
       // Runs for missing receipts or one-time routed reviews. Existing graded
       // receipts keep their original values; ordinary polls never fetch this model.
       const completedWeeks = Array.from({length: Math.max(0, Math.min(week - 1, 17))}, (_, i) => i + 1);
-      const [players, prior, current, market, availability, results, experts, currentWeekStats, nfl] = await Promise.all([
+      const [players, prior, current, market, availability, results, experts, currentWeekStats, nfl,injuryReport] = await Promise.all([
         get('https://api.sleeper.app/v1/players/nfl'),
         get(`https://api.sleeper.app/v1/stats/nfl/regular/${season - 1}`),
         get(`https://api.sleeper.app/v1/stats/nfl/regular/${season}`),
@@ -28,6 +28,7 @@ export async function captureScheduledTrades({admin, league, users, rosters, tra
         get('https://raw.githubusercontent.com/CGrant10/dfl-hq/main/data/expert-ros-ppr.json').catch(() => null),
         get(`https://api.sleeper.app/stats/nfl/${season}/${week}?season_type=regular`).catch(()=>[]),
         get(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${season}&seasontype=2&week=${week}`).catch(()=>null),
+        get('https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries').catch(()=>null),
       ]);
       if (!players || Array.isArray(players) || !prior || !current || !Array.isArray(market) || !market.length
         || !Array.isArray(availability) || !availability.length || results.some(r => !Array.isArray(r))) throw Error('Incomplete trade inputs');
@@ -44,7 +45,7 @@ export async function captureScheduledTrades({admin, league, users, rosters, tra
       const formWeeks=finished.length?[...results,finished]:results;
       const pool = buildPlayerPool({rosters: named, players, previousStats: prior, currentStats: current,
         projections: market, weeklyProjections: availability, recentStats: formWeeks.slice(-4), seasonWeeklyStats: formWeeks,
-        scoringSettings: league.scoring_settings, currentWeek: week, scoringFormat: 'ppr',
+        injuryReport,season,now,scoringSettings: league.scoring_settings, currentWeek: week, scoringFormat: 'ppr',
         expertRankings: assessExpertRankings(experts, {season, scoring: 'ppr', now} as any),
         dataSignals: {projections: signals, production: signals, availability: signals, weeklyResults: signals}} as any);
       return {state: 'ready', teams: named, pool};

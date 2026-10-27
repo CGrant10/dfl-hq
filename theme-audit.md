@@ -1250,3 +1250,13 @@ component regression, separately from actual Home curation. Real-data production
 assets show three cards at 269px in both themes without browser errors or
 horizontal overflow. Phone screenshots were inspected. Physical iOS frame
 pacing, OS-level text settings and full screen-reader behavior remain unverified.
+
+## 1.499.0 — Offensive fantasy updates and injured trade targets
+
+Functional data/model change only: Home Latest Updates filters relevant
+QB/RB/WR/TE entries and Trade automatic offers exclude reserve/unavailable
+players. Existing shared theme tokens and UI markup remain. Theme color checks
+pass. The production Trade fixture passes at 320/390/768 without overflow or
+page errors; no new visual state or color was introduced. Existing Medicine
+Wheel Light/Dark broadcast and Trade appearance audits remain applicable.
+Physical installed-device refresh and upstream injury estimates remain unverified.

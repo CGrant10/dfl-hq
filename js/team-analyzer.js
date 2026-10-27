@@ -1,3 +1,4 @@
+import {injuryAvailabilityIndex,playerAvailability,automaticTradePlayer} from './player-availability.js';
 import {intentionPlayerAllowed,offerManagerFit} from './trade-intentions-model.js';
 import {normalizeReceivePositions,receivePackageAllowed} from './trade-receive-controls.js';
 import {offerPlayerLimit} from './trade-package-limits.js';
@@ -74,7 +75,8 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
                                   projections = [], weeklyProjections = [], recentStats = [], seasonWeeklyStats = recentStats, trending = null, dataSignals = {},
                                   scoringSettings = null,
                                   currentWeek = 0, season = null, expertRankings = null,
-                                  scoringFormat = "ppr" } = {}) {
+                                  scoringFormat = "ppr", injuryReport=null, now=Date.now() } = {}) {
+  const injuryIndex=injuryAvailabilityIndex(injuryReport,{season,now});
   const projectionById = new Map((projections || []).map(row => [projectionId(row), row]));
   const weeklyById = new Map((weeklyProjections || []).map(row => [projectionId(row), row]));
   const recentById = recentProduction(recentStats, scoringSettings);
@@ -92,10 +94,15 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const weekly = weeklyById.get(id) || null;
     const weeklyMeta = weekly?.player || {};
     // An explicit healthy status from this week's feed clears an older injury.
-    const injury = weekly && Object.hasOwn(weekly,'injury_status') ? weekly.injury_status
+    const catalogInjury=meta?.i||meta?.injury_status;
+    const injury = ['IR','PUP'].includes(catalogInjury)?catalogInjury:weekly && Object.hasOwn(weekly,'injury_status') ? weekly.injury_status
       : Object.hasOwn(weeklyMeta,'injury_status') ? weeklyMeta.injury_status : meta?.i || meta?.injury_status;
     const availability = injuryProfile(injury,
       reserveIds.has(id) ? 'Injured Reserve' : weeklyMeta.status || meta?.s || meta?.status);
+    const seasonAvailability=playerAvailability({name:meta?.n||meta?.full_name||id,nflTeam:meta?.t||meta?.team,position,
+      injuryStatus:availability.injuryStatus,playerStatus:availability.playerStatus,injuryNotes:meta?.injury_notes||meta?.injuryNotes,
+      outForSeason:meta?.outForSeason,season_ending:meta?.season_ending,expectedReturnDate:meta?.expectedReturnDate},{index:injuryIndex,season,now});
+    if(seasonAvailability.outForSeason){availability.isOut=true;availability.missedGames=18;availability.valueFactor=0}
     const lastPoints = priorLine ? scorePlayer(priorLine, scoringSettings) : null;
     const projectedPoints = projection?.stats ? scorePlayer(projection.stats, scoringSettings) : null;
     const games = finite(priorLine?.gp);
@@ -142,7 +149,7 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const usageFactor=priorUsage>=2?Math.max(.95,Math.min(1.05,1+(recentUsage/priorUsage-1)*.1)):1;
     const forwardPerGame=pointForecast==null?null:pointForecast*usageFactor;
     const remainingGames = Math.max(0, 17 - currentGames);
-    const expectedPoints = currentGames > 0 && forwardPerGame != null
+    const expectedPoints = seasonAvailability.outForSeason ? (currentPoints||0) : currentGames > 0 && forwardPerGame != null
       ? currentPoints + forwardPerGame * Math.max(0, remainingGames - Math.min(remainingGames, availability.missedGames))
       : baselinePoints == null ? null : baselinePoints - (baselinePerGame || 0) * Math.min(17, availability.missedGames);
     const priorWindowGames = Math.max(0, currentGames - recentScores.length);
@@ -151,10 +158,10 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
       : baselinePerGame;
     const recentDelta = recentAverage != null && priorWindowAverage != null ? recentAverage - priorWindowAverage : null;
     const remainingWeeks = currentWeek > 0 ? Math.max(1, 19 - Math.min(18, currentWeek)) : 17;
-    const tradePerGame = forwardPerGame == null ? null
+    const tradePerGame = seasonAvailability.outForSeason ? 0 : forwardPerGame == null ? null
       : forwardPerGame * (1 - Math.min(remainingWeeks, availability.missedGames) / remainingWeeks);
     return {
-      id,
+      id,...seasonAvailability,
       name: meta?.n || meta?.full_name || id,
       position,
       nflTeam: meta?.t || meta?.team || "FA",
@@ -175,7 +182,7 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
       staleSignals: Object.entries(dataSignals).filter(([,v])=>v.stale).map(([key])=>key),
       recentDelta: finite(recentDelta),
       expectedPoints: finite(expectedPoints),
-      forwardPerGame: finite(forwardPerGame),
+      forwardPerGame: seasonAvailability.outForSeason?0:finite(forwardPerGame),
       tradePerGame: finite(tradePerGame),
       recentUsage:finite(recentUsage),priorUsage:finite(priorUsage),usageFactor:round(usageFactor,3),
       modelSource: projectedPoints != null ? 'projection' : currentPerGame != null ? 'current' : priorPace != null ? 'previous' : 'unrated',
@@ -278,14 +285,14 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
       oneQbValueFactor: player.position==='QB'?round(oneQbFactor(player),3):null,
       oneQbStarterBaseline: player.position==='QB'?round(qbStarterBaseline,2):null,
       valuationBasis: "position-and-flex-replacement",
-      expert,expertFeedStatus:expertRankings?.status||'Unavailable',expertSource:expertRankings?.source||'FantasyPros',expertUpdatedAt:expertRankings?.updatedAt||0,expertCount:expertRankings?.experts||0,expertWeight,
-      modelTradeValue:round(modelValue,2),modelPositionRank:modelRank?.rank||null,
+      expert,expertFeedStatus:expertRankings?.status||'Unavailable',expertSource:expertRankings?.source||'FantasyPros',expertUpdatedAt:expertRankings?.updatedAt||0,expertCount:expertRankings?.experts||0,expertWeight:player.outForSeason?0:expertWeight,
+      modelTradeValue:player.outForSeason?0:round(modelValue,2),modelPositionRank:modelRank?.rank||null,
       expertDisagreement:!!(expertWeight&&modelRank?.count>=12&&Math.abs(modelRank.rank-expert.positionRank)>Math.max(6,Math.min(modelRank.rank,expert.positionRank)*.5)),
       expertSplit:!!(expertWeight&&(expert.stdDev/Math.max(expert.rank,10)>.4||expert.maxRank-expert.minRank>Math.max(16,expert.rank*.8))),
       requiredResultSamples:Math.min(3,Math.max(0,currentWeek-1)),
       positionRank: positionRanks.get(player.id)?.rank || null,
       positionCount: positionRanks.get(player.id)?.count || null,
-      tradeValue: Math.max(1, Math.min(100, Math.round(modelValue*(1-expertWeight)+(expertValue||0)*expertWeight))),
+      tradeValue: player.outForSeason?0:Math.max(1, Math.min(100, Math.round(modelValue*(1-expertWeight)+(expertValue||0)*expertWeight))),
     });
   }
   // Actual unrostered projections supply optional roster-slot replacements.
@@ -977,7 +984,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
   const anchors = (playerIds?.length ? playerIds : [playerId]).filter(Boolean).map(String);
   const sendRequired = [...new Set((sendAnchorIds ?? (anchorId === String(mine.id) ? anchors : [])).map(String))];
   const receiveRequired = [...new Set((receiveAnchorIds ?? (anchorId !== String(mine.id) ? anchors : [])).map(String))];
-  if (!receivePackageAllowed([...sendRequired,...receiveRequired],pool,allowedReceive)) return [];
+  if (![...sendRequired,...receiveRequired].every(id=>automaticTradePlayer(pool.get(String(id))))||!receivePackageAllowed([...sendRequired,...receiveRequired],pool,allowedReceive)) return [];
   if (sendRequired.some(id => !mine.playerIds.map(String).includes(id))) return [];
   if (anchors.length && !anchorTeam) return [];
   const partners = partnerId
@@ -985,10 +992,10 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     : anchorId !== String(mine.id) && anchorTeam ? [anchorTeam] : teams.filter(team => String(team.id) !== String(mine.id));
   const allowedShapes = tradeShapes(offerPlayerLimit(maxPlayers, sendRequired, receiveRequired), shapes).filter(([send,receive])=>goal!=='consolidate'||send>receive);
   const possibilities = [],compactPossibilities=[],supported=new Map();
-  const minePlayers = sortedPlayers(mine.playerIds.filter(id=>intentionPlayerAllowed(mine,id,intentions,sendRequired)&&receivePackageAllowed([id],pool,allowedReceive)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
+  const minePlayers = sortedPlayers(mine.playerIds.filter(id=>automaticTradePlayer(pool.get(String(id)))&&intentionPlayerAllowed(mine,id,intentions,sendRequired)&&receivePackageAllowed([id],pool,allowedReceive)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
   for (const other of partners) {
     if (receiveRequired.some(id => !other.playerIds.map(String).includes(id))) continue;
-    const theirs = sortedPlayers(other.playerIds.filter(id=>intentionPlayerAllowed(other,id,intentions,receiveRequired)&&receivePackageAllowed([id],pool,allowedReceive)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
+    const theirs = sortedPlayers(other.playerIds.filter(id=>automaticTradePlayer(pool.get(String(id)))&&intentionPlayerAllowed(other,id,intentions,receiveRequired)&&receivePackageAllowed([id],pool,allowedReceive)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
     if(intent==='steal')compactPossibilities.push(...compactStealCandidates(minePlayers,theirs,pool,allowedShapes,sendRequired,receiveRequired,supported).map(candidate=>({other,...candidate})));
     for (const [sendCount, receiveCount] of allowedShapes) {
       const ratios=intent==='steal'?[.65,.8,1]:[.9,1,1.1];
@@ -1005,7 +1012,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
   }
   const evaluateCandidate = candidate => {
     // Refinement can add or replace players outside the original candidate pool.
-    if (!receivePackageAllowed([...candidate.sendA,...candidate.sendB],pool,allowedReceive)) return null;
+    if (![...candidate.sendA,...candidate.sendB].every(id=>automaticTradePlayer(pool.get(String(id))))||!receivePackageAllowed([...candidate.sendA,...candidate.sendB],pool,allowedReceive)) return null;
     if(candidate.sendA.some(id=>!intentionPlayerAllowed(mine,id,intentions,sendRequired))||candidate.sendB.some(id=>!intentionPlayerAllowed(candidate.other,id,intentions,receiveRequired)))return null;
     const result = evaluateTrade({ teamA: mine, teamB: candidate.other, sendA: candidate.sendA, sendB: candidate.sendB, pool });
     if (!result) return null;
@@ -1045,13 +1052,13 @@ export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlay
   sendAnchorIds = [], receiveAnchorIds = [], sendCount = "any", receiveCount = "any", intent = "aggressive", limit = 96,goal="best",horizon='season',weekSchedules=[],intentions={},receivePositions } = {}) {
   pool = tradePlayerPool(pool);
   const allowedReceive = normalizeReceivePositions(receivePositions);
-  if (!allowedReceive.length || !receivePackageAllowed([...sendAnchorIds,...receiveAnchorIds],pool,allowedReceive)) return [];
+  if (!allowedReceive.length || !receivePackageAllowed([...sendAnchorIds,...receiveAnchorIds],pool,allowedReceive)||![...sendAnchorIds,...receiveAnchorIds].every(id=>automaticTradePlayer(pool.get(String(id))))) return [];
   if (parties.length < 3 || parties.length > 8 || new Set(parties.map(t => String(t.id))).size !== parties.length) return [];
   const cap = offerPlayerLimit(maxPlayers, sendAnchorIds, receiveAnchorIds, parties.length);
   const choices = parties.map((team, index) => {
     const required = index === 0 ? sendAnchorIds : index === parties.length - 1 ? receiveAnchorIds : [];
     if (required.some(id => !team.playerIds.map(String).includes(String(id)))) return [];
-    const ranked = sortedPlayers(team.playerIds.filter(id=>intentionPlayerAllowed(team,id,intentions,required)
+    const ranked = sortedPlayers(team.playerIds.filter(id=>automaticTradePlayer(pool.get(String(id)))&&intentionPlayerAllowed(team,id,intentions,required)
       &&receivePackageAllowed([id],pool,allowedReceive)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
     const players = ranked.slice(0, 8);
     for (const id of required) { const player = ranked.find(p => String(p.id) === String(id)); if (player && !players.includes(player)) players.push(player); }
@@ -1074,7 +1081,7 @@ export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlay
   }
   const usable=beam.map(candidate => {
     const result = evaluateMultiTeamTrade({ teams: parties, sends: candidate.sends, pool });
-    if (!result || !receivePackageAllowed(candidate.sends.flat(),pool,allowedReceive) || result.projectionEvidence?.missing?.length || result.fairness < 40 || result.weeklyDeltas.some(n => n < -2.5)
+    if (!result || !candidate.sends.flat().every(id=>automaticTradePlayer(pool.get(String(id))))||!receivePackageAllowed(candidate.sends.flat(),pool,allowedReceive) || result.projectionEvidence?.missing?.length || result.fairness < 40 || result.weeklyDeltas.some(n => n < -2.5)
       || result.rosterImpacts.some(n => n < -2.25) || result.usefulIncoming.some(ids => !ids.length)) return null;
     const tier=tradeSuggestionTier({...result, fairness:result.fairness,valueToA:result.values[0],valueToB:result.outgoingValues[0],
       rosterImpactA:result.rosterImpacts[0],rosterImpactB:Math.min(...result.rosterImpacts.slice(1)),
