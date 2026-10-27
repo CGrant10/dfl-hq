@@ -92,7 +92,7 @@ with sync_playwright() as p:
    page.locator('[data-team-reel-scope="league"]').click();page.wait_for_function('document.querySelectorAll("[data-home-reel-clip]").length===3')
    check(tag+' League clips stay inside the selected NFL week',page.locator('[data-home-reel-clip]').count()==3)
    check(tag+' scope switches reuse the same fresh clip metadata',page.evaluate('f.clipReads')==reads_before_scope)
-   check(tag+' highlights use two-column game groups',page.locator('.reel-game-group').count()==2 and page.locator('.home-reel-grid').first.evaluate('e=>getComputedStyle(e).gridTemplateColumns.split(" ").length===2'))
+   check(tag+' highlights use larger responsive game groups',page.locator('.reel-game-group').count()==2 and page.locator('.home-reel-grid').first.evaluate('e=>getComputedStyle(e).gridTemplateColumns.split(" ").length===1'))
    page.screenshot(path=str(OUT/f'{width}-{mode}-league-grid.png'))
    # Real touch input: the page's delegated swipe must not consume this strip.
    page.evaluate("document.querySelector('.home-reel-players').scrollLeft=0")
