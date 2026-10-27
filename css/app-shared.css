@@ -4382,7 +4382,7 @@ html[data-ui-motion="off"] #home-wrap .bx-dragging :is(.bx-home-art,.bx-editoria
 #view .clubhouse-nfl-scoreboard li strong { font:600 15px/1.3 var(--font-display); }
 #view .clubhouse-nfl-scoreboard li span { color:var(--body-text); font:500 12px/1.4 var(--font-display); }
 @media(max-width:600px) {
- #view .clubhouse-command-center .clubhouse-tabs { display:flex; overflow-x:auto; scrollbar-width:none; }
+ #view .clubhouse-command-center .clubhouse-tabs { display:flex; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
  #view .clubhouse-command-center .clubhouse-tabs > button { flex:1 0 auto; padding-inline:12px; }
  #view [data-clubhouse-leaders] .gd-league-board > .gameday-players { grid-template-columns:minmax(0,1fr); }
 }

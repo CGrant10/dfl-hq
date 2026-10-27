@@ -1104,3 +1104,7 @@ Live phone push delivery and iOS native video/fullscreen rendering were not
 manually exercised; notification routing and expiry were checked without sending
 members test pushes. Provider availability and clip publication delay remain
 external limits.
+
+The compiled app was also reviewed with real publisher posters/video and league
+data. Its app-wide Pulse styling keeps all six Clubhouse tabs on one native
+scrolling row; both themes are covered with those global attributes enabled.

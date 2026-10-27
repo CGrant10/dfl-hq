@@ -66,10 +66,11 @@ with sync_playwright() as p:
    page.evaluate('''async mode=>{
     (await import('/js/theme.js')).pinMode(mode);const m=await import('/js/members.js');m.selectMember(f.members[0]);
     const clips=await(await fetch('/tools/fixtures/home-highlight-clips.json')).json();f.clips=[{...clips[0],play_id:'401873011981'},clips[1],{...clips[0],id:'990001',game_id:'401900001',headline:'Jayden Daniels runs for a 30-yard touchdown',game_label:'WAS · NYG',source_url:'https://www.espn.com/video/clip/_/id/990001'}];
-    f.page=await import('/js/pages/clubhouse.js');await f.page.render(document.getElementById('view'));
+    f.page=await import('/js/pages/clubhouse.js');document.getElementById('view').dataset.pulseSystem='1';document.getElementById('view').dataset.pageSystem='1';await f.page.render(document.getElementById('view'));
    }''',mode)
    tag=f'{width}px {mode}';page.wait_for_selector('.gd-lineup-comparison',timeout=20000)
    check(tag+' one Clubhouse offers Matchups, Highlights and Leaders',page.locator('[data-clubhouse-tab]').count()==6 and page.locator('.gameday-watch').count()==0)
+   check(tag+' app-wide styling keeps Clubhouse tabs on one scrolling row',page.locator('.clubhouse-tabs').evaluate('e=>getComputedStyle(e).flexWrap==="nowrap"&&e.clientHeight<=50&&e.scrollWidth>e.clientWidth'))
    check(tag+' live matchup keeps both starting lineups side by side',page.locator('[data-clubhouse-matchup="1"] [data-gameday-player]').count()>=3)
    check(tag+' hides highlight loading until its tab is opened',page.evaluate('f.clipReads===0'))
    page.locator('#clubhouse-tab-highlights').click()

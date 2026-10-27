@@ -50,7 +50,7 @@ open the requested game's play-by-play with a notice.
 - Shared reel browser: 157 checks, including 320/390 light/dark, 320×568,
   844×390, desktop, constrained visual viewport, focus, search/media identity,
   reopening during exit, expiry and cleanup.
-- Actual Clubhouse page: 156 checks across 320/390 light/dark, including real
+- Actual Clubhouse page: 160 checks across 320/390 light/dark, including real
   CDP touch gestures in both directions, grouped grids, game/player search,
   full NFL play-by-play, fantasy, 44px actions, 4.5:1 text, exact clip links,
   missing-video fallback, rapid scope changes and no league writes.
@@ -71,3 +71,9 @@ collector has persisted those 30 links. Existing rows retain their Tuesday
 06:00 America/Chicago expiry. Collector v5 and notification sender v16 are
 backward compatible with the previous frontend; the live-play worker is released
 after the new frontend so it cannot emit an unsupported video target.
+
+A compiled-app smoke test against real read-only league/NFL data verified 48
+clips in 12 game groups, loaded publisher posters, 1920px native video playback,
+39 player filters, 168 NFL plays, 20 fantasy box-score rows, exact play/video
+opening and media cleanup, with no page errors. App-wide Pulse styling is
+included in the Clubhouse harness; the six tabs stay on one scrolling row.
