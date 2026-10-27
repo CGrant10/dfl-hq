@@ -1211,3 +1211,19 @@ scroll margin. This prevents the live Clubhouse context bar from covering the
 NFL heading after a shortcut jump. The 320/390 Light/Dark mobile matrix and
 public real-data arrival are rechecked; no colors or motion timings change.
 Physical installed-device rendering remains unverified.
+
+
+## 1.497.0 — Broadcast story cards and independent trade watch
+
+Reviewed award, Chip Eater, injury, two/three-team trade, rivalry, spotlight,
+percentage and long-name cards at 320/390/768 in Medicine Wheel Light/Dark.
+Secondary slides now share a bordered surface, accent marker, deliberate image
+baseline and bottom action. The first illustrated card and its artwork remain.
+Cards use shared background, line, text and accent tokens; no new palette is
+introduced. Headings remain at least 28px and supporting copy at least 15px.
+The 52-case composition check includes action/kicker bounds, complete award art,
+text separation, no horizontal overflow, stable rotation and reduced motion.
+The existing visibility/timer checks pass in both themes. Screenshots in
+`docs/broadcast-polish-1497/` were inspected. Full Home/Trade browser checks and
+read-only public verification are recorded in the release note. Physical iOS
+frame pacing and full assistive-technology compliance remain unverified.

@@ -38,7 +38,7 @@ with sync_playwright() as p:
     slide=page.locator('.bx-layer>.bx-slide').last
     metrics=slide.evaluate('''e=>{
      const rect=e.getBoundingClientRect(),transport=e.closest('.bx-stage').querySelector('.bx-controls').getBoundingClientRect();
-     const elements=[...e.querySelectorAll('h2,.bx-award-copy,.bx-editorial-illustration,.bx-trade-side,.injury-player,.bx-rivalry-pair,.bx-stat-metric,.bx-result-scores')].filter(n=>n.getClientRects().length);
+     const elements=[...e.querySelectorAll('h2,.bx-award-copy,.bx-editorial-illustration,.bx-trade-side,.injury-player,.bx-rivalry-pair,.bx-stat-metric,.bx-result-scores,.bx-story-action,.bx-kicker')].filter(n=>n.getClientRects().length);
      const within=elements.every(n=>{const r=n.getBoundingClientRect();return r.left>=rect.left-1&&r.right<=rect.right+1&&r.bottom<=transport.top+1});
      const copy=e.querySelector('.bx-award-copy')?.getBoundingClientRect(),art=e.querySelector('.bx-editorial-illustration')?.getBoundingClientRect();
      const overlap=copy&&art&&copy.left<art.right-1&&art.left<copy.right-1&&copy.top<art.bottom-1&&art.top<copy.bottom-1;
