@@ -2,6 +2,11 @@ import {footballPlays,footballTeam,candidatePlay} from './live-football-model.js
 const clean=value=>String(value||'').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim().slice(0,500);
 const name=value=>clean(value).normalize('NFKD').replace(/\p{M}/gu,'').replace(/\s+(jr|sr|ii|iii|iv)\.?$/i,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 export const nflGameId=value=>/^\d{1,24}$/.test(String(value||''))?String(value):'';
+export function nflFantasySides(rows=[],sides=[]){
+ const teams=sides.map(side=>({...side,code:footballTeam(side.code)})).sort((a,b)=>Number(a.home)-Number(b.home));
+ if(teams.length!==2||teams.some(side=>!side.code)||teams[0].code===teams[1].code)return [];
+ return teams.map(side=>({...side,players:rows.filter(player=>footballTeam(player.nflTeam)===side.code)}));
+}
 export function nflCenterGames(payload,season,week){
  if(Number(payload?.season?.year)!==Number(season)||Number(payload?.week?.number)!==Number(week)||Number(payload?.season?.type)!==2)return [];
  return (payload.events||[]).flatMap(event=>{

@@ -4412,6 +4412,22 @@ html[data-ui-motion="off"] #home-wrap .bx-dragging :is(.bx-home-art,.bx-editoria
 #view [data-clubhouse-leaders] .gd-league-controls [role="group"] button { min-height:44px; min-width:44px; padding:8px; font:600 13px/1.3 var(--font-display); }
 #view [data-clubhouse-leaders] .gd-league-controls > label { font:500 13px/1.3 var(--font-display); }
 
+/* Bring the NFL viewing options forward, with compact week controls. */
+#view .clubhouse-command-center .clubhouse-nfl-shortcuts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:0 0 14px; }
+#view .clubhouse-command-center .clubhouse-nfl-shortcuts button { display:flex; align-items:center; justify-content:center; gap:8px; min-width:0; min-height:52px; margin:0; padding:10px 8px; border:1px solid var(--line); border-radius:8px; background:var(--bg-2); color:var(--text); font:700 14px/1.2 var(--font-display); }
+#view .clubhouse-command-center .clubhouse-nfl-shortcuts svg { flex:none; width:18px; height:18px; color:var(--accent); }
+#view .clubhouse-command-center .clubhouse-nfl-shortcuts button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+#view .clubhouse-command-center .clubhouse-context.card { margin:0 0 10px; padding:0 0 8px; background:transparent; border:0; border-bottom:1px solid var(--line); box-shadow:none; border-radius:0; }
+#view .clubhouse-command-center .clubhouse-week-picker { display:grid; grid-template-columns:minmax(72px,1fr) minmax(90px,1fr) auto; gap:8px; margin:0; }
+#view .clubhouse-command-center .clubhouse-week-picker label { display:grid; gap:4px; min-width:0; color:var(--body-text); font:500 12px/1.3 var(--font-display); }
+#view .clubhouse-command-center .clubhouse-week-picker select { min-height:44px; margin:0; padding:8px; font-size:16px; }
+#view .clubhouse-command-center .clubhouse-context-links { display:flex; align-items:center; flex-wrap:wrap; gap:4px 16px; margin:4px 0 0; }
+#view .clubhouse-command-center .clubhouse-context-links a { display:inline-flex; align-items:center; min-height:44px; margin:0; color:var(--body-text); font:500 12px/1.3 var(--font-display); }
+@media(max-width:360px) { #view .clubhouse-command-center .clubhouse-nfl-shortcuts button { gap:5px; font-size:13px; } }
+#view .clubhouse-command-center [role="tabpanel"] { scroll-margin-top:calc(var(--topbar-h,44px) + 16px); }
+
+#view .clubhouse-command-center .clubhouse-archive-action { display:flex; align-items:center; align-self:end; justify-content:center; min-width:48px; min-height:44px; padding:4px; color:var(--body-text); font:600 12px/1.3 var(--font-display); }
+
 
 /* Source: css/ui-motion.css */
 /* One restrained interaction language. The live score geometry stays fixed. */
@@ -6736,3 +6752,31 @@ html[data-ui-motion="off"] .home-reel-screen[data-reel-loading]::after { animati
 .nfl-latest { position:sticky; z-index:4; bottom:12px; display:block; width:fit-content; min-height:44px; margin:0 auto 12px; padding:10px 16px; border:1px solid var(--line); border-radius:24px; background:var(--accent-fill); color:var(--on-accent); font:700 14px/1.3 var(--font-display); box-shadow:0 4px 14px color-mix(in srgb,var(--text) 12%,transparent); }
 .nfl-latest[hidden] { display:none; }
 @container (max-height:620px) { .home-reel-player .reel-up-next { display:none; } }
+
+/* The two NFL sides stay together, including on a phone. */
+.nfl-center-score[hidden] { display:none; }
+.nfl-center-modes { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; margin:8px 0 12px; padding:4px; border:1px solid var(--line); border-radius:8px; background:var(--bg-2); }
+.nfl-center-modes button { padding:8px 6px; border:1px solid transparent; border-radius:5px; font-weight:600; }
+.nfl-center-modes button[aria-pressed="true"] { border-color:var(--accent); background:var(--bg); color:var(--text); }
+.nfl-center-fantasy { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:12px; }
+.nfl-fantasy-side { min-width:0; }
+.nfl-fantasy-team { display:flex; align-items:center; gap:6px; min-height:56px; padding:8px 6px; border-block:1px solid var(--line); background:var(--bg-2); }
+.nfl-fantasy-team>img { flex:none; width:26px; height:26px; object-fit:contain; }
+.nfl-fantasy-team>div { min-width:0; }
+.nfl-fantasy-team h3 { margin:0; color:var(--text); font:700 16px/1.2 var(--font-display); }
+#view [data-nfl-game-center] .nfl-fantasy-team h3 { font:700 16px/1.2 var(--font-display); }
+.nfl-fantasy-team small { font-size:11px; }
+.nfl-fantasy-team>b { margin-left:auto; color:var(--text); font:700 23px/1.1 var(--font-display); font-variant-numeric:tabular-nums; }
+.nfl-center-fantasy .nfl-fantasy-player { display:block; padding:10px 6px 12px; border-bottom:1px solid var(--line); }
+.nfl-center-fantasy .nfl-fantasy-player-head :is(strong,button) { display:flex; align-items:center; width:100%; min-height:44px; margin:0; padding:0; border:0; border-radius:0; background:transparent; color:var(--text); font:700 14px/1.3 var(--font-display); text-align:left; overflow-wrap:anywhere; }
+#view [data-nfl-game-center] .nfl-fantasy-player-head :is(strong,button) { font:700 14px/1.3 var(--font-display); }
+.nfl-fantasy-value { display:flex; align-items:center; justify-content:space-between; gap:6px; margin:4px 0 7px; }
+.nfl-fantasy-value>small { min-width:0; font-size:11px; overflow-wrap:anywhere; }
+.nfl-fantasy-value>span { flex:none; text-align:right; }
+.nfl-fantasy-value b { display:block; color:var(--text); font:700 24px/1.1 var(--font-display); font-variant-numeric:tabular-nums; }
+.nfl-fantasy-value span>small { font-size:11px; }
+.nfl-center-fantasy .nfl-fantasy-owner { margin:0 0 6px; color:var(--body-text); font-size:12px; overflow-wrap:anywhere; }
+.nfl-center-fantasy .nfl-fantasy-player p { margin:0; font-size:13px; line-height:1.45; overflow-wrap:anywhere; }
+.nfl-center-fantasy .nfl-fantasy-player[data-nfl-your-player] { border-left:0; border-top:2px solid var(--accent); padding-inline:6px; background:color-mix(in srgb,var(--accent) 5%,transparent); }
+.nfl-fantasy-side .nfl-center-empty { padding:12px 6px; }
+@media(max-width:360px) { .nfl-center-fantasy { gap:8px; } .nfl-fantasy-team { padding-inline:4px; gap:4px; } .nfl-fantasy-team>img { width:22px; height:22px; } .nfl-fantasy-team>b { font-size:21px; } }

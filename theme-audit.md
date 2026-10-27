@@ -1180,3 +1180,14 @@ game labels and duration stay legible. The active tile uses shared accent tokens
 a Playing badge and aria-pressed. Buttons retain 44px targets, focus and contrast
 checks pass, and changing the layout preserves native video. Physical iOS remains
 unverified.
+
+## 1.496.0 — Clubhouse NFL viewing and team stat columns
+
+Reviewed the Clubhouse entry, Play-by-play/Fantasy stats shortcuts, compact
+season/week/archive controls, prominent mode switch and paired NFL team stats at
+320/390 in Medicine Wheel Light/Dark. Team headers identify away/home, players
+stay under the correct NFL code, full names wrap and recorded point values stay
+legible. The replay viewer uses the same two columns. Shared tokens and native
+NFL logos retain identity; contrast and 44px controls pass. Shortcut scrolling
+respects motion settings and keyboard activation places focus on the NFL heading.
+No physical iOS or screen-reader compliance claim is made.
