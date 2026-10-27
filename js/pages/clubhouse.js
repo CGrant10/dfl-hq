@@ -53,7 +53,16 @@ export async function render(view){
   stopLive=mountMatchupLive(view,model,threadIds,active,{onUpdate:center.update,onError:center.fail,onStop:()=>{nflCenter.stop();teamReel.stop();center.stop()}});
   wirePageDisclosures(view);
   wireClubhouseTabs(view,initialTab);
-  for(const button of view.querySelectorAll('[data-clubhouse-nfl-open]'))button.addEventListener('click',event=>{nflCenter.open(button.dataset.clubhouseNflOpen);const panel=view.querySelector('#clubhouse-panel-nfl'),smooth=readPageChoice('gameday-motion',['on','off'],'on')==='on'&&!matchMedia('(prefers-reduced-motion: reduce)').matches;panel.scrollIntoView({block:'start',behavior:smooth?'smooth':'instant'});if(event.detail===0){const heading=panel.querySelector('h2');heading.tabIndex=-1;heading.focus({preventScroll:true})}});
+  for(const button of view.querySelectorAll('[data-clubhouse-nfl-open]'))button.addEventListener('click',async event=>{
+   const ready=nflCenter.open(button.dataset.clubhouseNflOpen),pending=new AbortController();let interrupted=false;
+   for(const type of ['wheel','touchmove','pointerdown','keydown'])document.addEventListener(type,()=>{interrupted=true},{passive:true,signal:pending.signal});
+   try{await ready}catch{return}finally{pending.abort()}
+   const panel=view.querySelector('#clubhouse-panel-nfl'),selectedMode=panel?.querySelector('[data-nfl-center-mode][aria-pressed="true"]');
+   if(!active()||interrupted||!panel||panel.hidden||document.activeElement?.closest('#clubhouse-panel-nfl')||selectedMode&&selectedMode.dataset.nflCenterMode!==button.dataset.clubhouseNflOpen)return;
+   const smooth=readPageChoice('gameday-motion',['on','off'],'on')==='on'&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
+   panel.scrollIntoView({block:'start',behavior:smooth?'smooth':'instant'});
+   if(event.detail===0){const heading=panel.querySelector('h2');heading.tabIndex=-1;heading.focus({preventScroll:true})}
+  });
   if(initialTab==='highlights'&&/^\d{1,24}$/.test(params.get('clip')||'')){void teamReel.openClip(params.get('clip')).then(opened=>{if(!active()||opened)return;const notice=document.createElement('p');notice.className='nfl-center-status';notice.setAttribute('role','status');notice.textContent='This video is no longer available. The game’s plays are still here.';view.querySelector('#clubhouse-panel-nfl .clubhouse-section').prepend(notice);view.querySelector('#clubhouse-tab-nfl').click()})}
   const remember=()=>writeViewMemory(currentMember()?.id,'clubhouse-choice',{season:selected.season,week:selected.week,tab:activeTab(view)});
   remember();view.addEventListener('click',event=>{if(event.target.closest('[data-clubhouse-tab]'))remember()});view.addEventListener('keydown',event=>{if(event.target.closest('[data-clubhouse-tab]'))queueMicrotask(remember)});

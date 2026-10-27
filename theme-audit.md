@@ -1191,3 +1191,14 @@ legible. The replay viewer uses the same two columns. Shared tokens and native
 NFL logos retain identity; contrast and 44px controls pass. Shortcut scrolling
 respects motion settings and keyboard activation places focus on the NFL heading.
 No physical iOS or screen-reader compliance claim is made.
+
+
+## 1.496.1 — Loaded NFL shortcut arrival
+
+Repeated the 320/390 Light/Dark Clubhouse review with an explicit viewport check
+for shortcut arrival. The shortcut now waits for the initial NFL content before
+scrolling, so a short loading panel cannot clamp the destination below the fold.
+Wheel, touch, pointer and keyboard activity while loading cancel the pending
+jump; changing views or leaving the page also prevents it. Existing motion
+preferences, keyboard focus and shared theme tokens remain in use. Native iOS
+and assistive-technology behavior remain unverified.
