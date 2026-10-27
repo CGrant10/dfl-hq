@@ -1,3 +1,5 @@
+import {broadcastEditionKey} from './broadcast-edition.js';
+import {renderBroadcastBrief} from './broadcast-brief.js';
 /* =====================================================================
    broadcast-stage.js - the big screen
    ---------------------------------------------------------------------
@@ -440,6 +442,7 @@ function renderStoryItem(item, { editorial = false } = {}) {
 }
 
 export function renderItem(item, options = {}) {
+ if(options.wide&&!item?.homeFeature)return renderBroadcastBrief(item);
  const html=renderStoryItem(item,options);
  return options.editorial&&!item?.homeFeature?html.replace('class="bx-slide','class="bx-slide bx-story-edition'):html;
 }
@@ -457,7 +460,7 @@ export function renderItem(item, options = {}) {
  * motion, not an announcement. The dots carry the state for anyone
  * navigating by keyboard, and each slide's link text says where it goes.
  */
-export function renderStage(deck, { editorial = false } = {}) {
+export function renderStage(deck, { editorial = false, wide = false } = {}) {
   const items = deck || [];
   const first = items[0];
   /* The station ident. OUTSIDE the layer on purpose: it belongs to the
@@ -465,9 +468,9 @@ export function renderStage(deck, { editorial = false } = {}) {
      rotation - a logo that flickers back in every six seconds is the
      thing that makes a broadcast package look cheap. */
   return `
-    <section class="bx-stage" data-bx-stage${editorial ? ' data-presentation="editorial"' : ''}>
+    <section class="bx-stage" data-bx-stage data-bx-count="${items.length}"${editorial ? ' data-presentation="editorial"' : ''}${wide?' data-bx-format="wide"':''}>
       ${editorial ? '<span class="bx-editorial-label">League broadcast</span><span class="bx-page-count" aria-hidden="true">1 of '+items.length+'</span>' : '<span class="bx-ident" aria-hidden="true">DFL<i>HQ</i></span>'}
-      <div class="bx-layer" data-bx-layer aria-live="off" aria-atomic="true">${renderItem(first, { editorial })}</div>
+      <div class="bx-layer" data-bx-layer aria-live="off" aria-atomic="true">${renderItem(first, { editorial,wide })}</div>
       ${items.length > 1 ? arrows(editorial) + controls(items) : ""}
     </section>`;
 }
@@ -630,7 +633,10 @@ export function startStage(root, deck, { refresh } = {}) {
   if (document.hidden) soft.add('hidden');
 
   const layer = root.querySelector("[data-bx-layer]");
-  const editorial = root.dataset.presentation === "editorial";
+  const editorial = root.dataset.presentation === "editorial",wide=root.dataset.bxFormat==='wide';
+  const finishedKey='dfl.broadcast.finished-edition';let editionFinished=false;
+  if(wide){try{editionFinished=sessionStorage.getItem(finishedKey)===broadcastEditionKey(items)}catch{}if(editionFinished)userPaused=true}
+
   const depth = mountBroadcastDepth(root);
   let layoutFrame = 0;
   let layoutKey = "";
@@ -667,6 +673,7 @@ export function startStage(root, deck, { refresh } = {}) {
     const slide = [...layer.children].find(el => !el.classList.contains("bx-leaving"));
     if (!slide) return;
     fitHeadlines(slide);
+    if(wide){const scale=Math.max(1,parseFloat(getComputedStyle(document.documentElement).fontSize)/16),height=Math.ceil(Math.max(items.length>1?248:208,Math.min(340,root.clientWidth/1.65+(items.length>1?52:8)))*scale);if(root.style.height!==`${height}px`)root.style.height=`${height}px`;return}
     if (!editorial) return;
     const min = parseFloat(getComputedStyle(root).getPropertyValue("--bx-min-height"));
     if (!min) return;
@@ -722,7 +729,7 @@ export function startStage(root, deck, { refresh } = {}) {
     clear();
     if (!running()) return;
     const dwell = items[i]?.dwell || DWELL_FALLBACK;
-    timer = setTimeout(() => { go(i + 1); }, dwell);
+    timer = setTimeout(() => {if(wide&&i===items.length-1){editionFinished=true;try{sessionStorage.setItem(finishedKey,broadcastEditionKey(items))}catch{}setPaused(true);return}go(i + 1);}, dwell);
   }
 
   function paint(drag = null) {
@@ -747,7 +754,7 @@ export function startStage(root, deck, { refresh } = {}) {
     */
     for (const stale of layer.querySelectorAll(".bx-leaving")) stale.remove();
     const outgoing = layer.querySelector('.bx-slide:not(.bx-preview)');
-    if (!drag) layer.insertAdjacentHTML("beforeend", renderItem(items[i], { editorial: root.dataset.presentation === "editorial" }));
+    if (!drag) layer.insertAdjacentHTML("beforeend", renderItem(items[i], { editorial: root.dataset.presentation === "editorial",wide }));
     const slide = drag?.preview || layer.lastElementChild;
     slide?.classList.remove('bx-preview');
     slide?.removeAttribute('inert');
@@ -893,7 +900,7 @@ export function startStage(root, deck, { refresh } = {}) {
   };
 
   const onClick = (e) => {
-    if (e.target.closest("[data-bx-pause]")) { setPaused(!userPaused); return; }
+    if (e.target.closest("[data-bx-pause]")) {const replay=wide&&userPaused&&i===items.length-1;editionFinished=false;setPaused(!userPaused);if(replay)go(0);return;}
     const arrow = e.target.closest("[data-bx-step]");
     if (arrow) { step(Number(arrow.dataset.bxStep)); return; }
     const dot = e.target.closest("[data-bx-go]");
@@ -1070,7 +1077,7 @@ export function startStage(root, deck, { refresh } = {}) {
       if(direction!==dragging.direction) {
         dragging.preview?.remove();
         const index=((i+direction)%items.length+items.length)%items.length;
-        layer.insertAdjacentHTML('beforeend',renderItem(items[index],{editorial}));
+        layer.insertAdjacentHTML('beforeend',renderItem(items[index],{editorial,wide}));
         dragging.preview=layer.lastElementChild; dragging.direction=direction;
         dragging.preview.classList.add('bx-preview','bx-dragging');
         dragging.preview.setAttribute('inert',''); dragging.preview.setAttribute('aria-hidden','true');
@@ -1131,16 +1138,15 @@ export function startStage(root, deck, { refresh } = {}) {
     const fresh = (next || []).slice();
     if (!fresh.length) return;
     const currentItem = items[i];
-    const currentId = items[i]?.id;
-    const same = fresh.length === items.length &&
-      fresh.every((it, n) => it.id === items[n]?.id && it.headline === items[n]?.headline &&
-        JSON.stringify(it.sides || null) === JSON.stringify(items[n]?.sides || null));
+    const currentId = items[i]?.id??items[i]?.key;
+    const same = wide?broadcastEditionKey(fresh)===broadcastEditionKey(items):fresh.length===items.length&&fresh.every((it,n)=>sameStageItem(it,items[n]));
+    if(wide&&editionFinished&&!same){editionFinished=false;userPaused=reduced();paintButton()}
     items = fresh;
     scheduleLayout();
     if (same) return;                       // nothing moved; leave the DOM alone
-    const found = fresh.findIndex((it) => it.id === currentId);
+    const found = fresh.findIndex((it) => currentId!=null?(it.id??it.key)===currentId:sameStageItem(it,currentItem));
     const currentUnchanged = found >= 0 && sameStageItem(currentItem, fresh[found]);
-    i = found >= 0 ? found : 0;
+    i = found >= 0 ? found : wide?Math.min(i,fresh.length-1):0;
     rebuildDots();
     /* Adding or reordering OTHER cards must not replay the active slide's
        entrance. That was the home-page shutter during async startup. */
@@ -1149,6 +1155,7 @@ export function startStage(root, deck, { refresh } = {}) {
   }
 
   function rebuildDots() {
+    root.dataset.bxCount=String(items.length);
     const pageCount = root.querySelector('.bx-page-count');
     if (pageCount) pageCount.textContent = `${i + 1} of ${items.length}`;
     const wrap = root.querySelector("[data-bx-controls]");

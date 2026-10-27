@@ -1,3 +1,4 @@
+import {dailyBroadcast} from '../daily-broadcast.js';
 import {mountHomeHighlights} from '../home-highlights.js';
 import {powerRankingsMarkup,powerRankingsLoading,mountPowerRankings} from '../league-power-ui.js';
 import {homeWeekReceipt,mountHomeWeekFlow} from '../home-week-flow.js';
@@ -672,7 +673,7 @@ export async function render(view) {
     if(stage&&host.querySelector('[data-bx-stage]')){stage.update(ordered);return;}
     try { stage?.stop(); } catch {}
     host.classList.remove("is-loading");
-    host.innerHTML = renderStage(ordered, { editorial: true });
+    host.innerHTML = renderStage(ordered, { editorial: true,wide:true });
     const root = host.querySelector("[data-bx-stage]");
     if (root) stage = startStage(root, ordered, { refresh });
     finishLoadingContent(host);
@@ -766,7 +767,7 @@ export async function render(view) {
 
     /* What the dashboard carried that nothing else does: the completed-trade
        verdict and the auto-scout. Both go to the stage as slides. */
-    const extras = [homeLeagueStory(completedReport,{history:got?.error?[]:got?.matchups||[],season:analysis?.projectionSeason,week:analysis?.liveWeek,meSleeperId:myMember?.sleeper_user_id}),playoffPictureSlide(pulse?.stakes, myMember?.sleeper_user_id), tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
+    const extras = [homeLeagueStory(completedReport,{editionDate:dailyBroadcast().date,history:got?.error?[]:got?.matchups||[],season:analysis?.projectionSeason,week:analysis?.liveWeek,meSleeperId:myMember?.sleeper_user_id}),playoffPictureSlide(pulse?.stakes, myMember?.sleeper_user_id), tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
     if (extras.length) {
       liveSlides = extras;
     }

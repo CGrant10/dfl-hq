@@ -22,6 +22,9 @@ on:
       - 'js/arena/stadium-crowd*'
       - 'js/arena/stadium-feedback*'
       - 'tools/capture-broadcast-art-direction.py'
+      - 'tools/capture-broadcast-wide.py'
+      - 'js/broadcast-brief.js'
+      - 'js/broadcast-edition*'
       - 'supabase/migrations/*arena*'
       - 'supabase/migrations/*stadium*'
       - 'supabase/tests/*arena*'
@@ -242,6 +245,7 @@ jobs:
         run: python tools/capture-finish-stories.py
       - name: Check story-specific broadcast compositions
         run: python tools/capture-broadcast-art-direction.py
+      - run: python tools/capture-broadcast-wide.py
       - name: Check award artwork spacing
         run: python tools/capture-award-review.py
       - name: Check broadcast first-read timing

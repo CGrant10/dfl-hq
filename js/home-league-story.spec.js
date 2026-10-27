@@ -8,6 +8,13 @@ const report={final:true,season:2026,week:5,games:[game(),game('c','d',115,95)]}
 const receipt=(week,a='a',b='b',left=120,right=90,season=2026)=>({season,week,user1:a,user2:b,score1:left,score2:right});
 const options={season:2026,week:6};
 describe('supporting Home league stories',()=>{
+ it('rotates verified matchups across Chicago editions without changing scores or including the member game',()=>{
+  const reports={...report,games:[game('a','b'),game('c','d',115,95),game('e','f',110,105)]};
+  const results=[27,28,29,30].map(day=>homeLeagueStory(reports,{...options,meSleeperId:'a',editionDate:`2026-10-${day}`}));
+  expect(new Set(results.map(s=>s.sides.map(t=>t.name).join('|'))).size).toBe(2);
+  for(const story of results){expect(story.sides.every(s=>!['Current a','Current b'].includes(s.name))).toBe(true);expect(story.sides.every(s=>['115.00','95.00','110.00','105.00'].includes(s.score))).toBe(true);expect(story.kicker).toContain('WEEK 5')}
+  expect(homeLeagueStory(reports,{...options,editionDate:'2026-10-27'})).toEqual(homeLeagueStory(reports,{...options,editionDate:'2026-10-27'}));
+ });
  it('falls back to the verified weekly result with sparse history',()=>{
   expect(homeLeagueStory(report,options)).toEqual(weeklyHeadlineSlide(report,options));
  });

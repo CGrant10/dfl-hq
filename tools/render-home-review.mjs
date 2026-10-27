@@ -110,7 +110,8 @@ const rivalry = homeRivalryStory({ uid: 'u1', members: [{ sleeper_user_id: 'u2',
   { user1: 'u2', user2: 'u1', score1: 126.2, score2: 111.8, season: 2025, week: 5 },
 ] } });
 const leagueFile = homeLeagueFile({ rivalry, fact: { id:'fixture:nailbiter',kind:'nailbiter', headline: 'The smallest margin still gets the win.', detail: 'Archive stories rotate here from the DFL matchup records.' }, facts:[{id:'fixture:title',kind:'title',headline:'Jack-HAMMER’s championship season.',detail:'A title remembered in the league record book.'},{id:'fixture:high',kind:'high',headline:'The week the scoreboard caught fire.',detail:'A record score from the DFL archive.'},{id:'fixture:close',kind:'nailbiter',headline:'Another close call.',detail:'A finish separated by a fraction of a point.'}] });
-const deck = homeBroadcastDeck([
+// Keep every presentation in this visual fixture; actual Home curation is tested separately.
+const deck = [homeBroadcastDeck([],{now:new Date('2026-10-05T12:00:00Z')})[0],
   { id: 'fixture:news', treatment: 'announcement', kicker: 'League news', headline: 'The league gets the last word.', subtitle: 'The weekly recap is here.', body: 'Weekly awards, matchup conversations and the stories everyone will be talking about.', href: '#/clubhouse', temporal: 'recent' },
   { id: 'fixture:champion', treatment: 'champion', kicker: '2025 · League champion', headline: 'Klutch Sports Group', subtitle: 'The defending champion returns for the anniversary season.', image: 'assets/dfl-daily-champion.webp?review=broadcast-only', temporal: 'historical' },
   { id: 'fixture:chip', treatment: 'champion', variant: 'chip', kicker: '2025 · Chip Eater', headline: 'Dream Enders', subtitle: 'Last place. One very hot chip.', temporal: 'historical', href: '#/history' },
@@ -128,7 +129,7 @@ const deck = homeBroadcastDeck([
   { id:'fixture:archive-record',kind:'record',storyKind:'nailbiter',treatment:'stat',figure:0.04000001,headline:'Won by 0.04',subtitle:'Klutch Sports Group — azhee28 102.00 – 101.96 Waddle Waddle — Brandooooo24 · 2025 Week 3',href:'#/history',temporal:'historical' },
   { id: 'fixture:injury', treatment: 'injuries', available: true, page: 1, pages: 3, total: 6, players: [{ sleeperId: '7564', name: 'Ja’Marr Chase', position: 'WR', nflTeam: 'CIN', owner: 'Klutch Sports Group', tag: 'Questionable', availability: 'Game-time decision', tone: 'questionable' }, { sleeperId: '1466', name: 'Travis Kelce', position: 'TE', nflTeam: 'KC', owner: 'Dream Enders', tag: 'Out', availability: 'Will not play', tone: 'out' }], temporal: 'none' },
   homeLeagueStory({final:true,season:2026,week:5,games:[{winner:{uid:'rival-a',name:'The Bayou Bombers',value:130.60},loser:{uid:'rival-b',name:'The Bastards of the Very Long Championship Team Name',value:130}}]},{season:2026,week:6,history:[3,4].map(week=>({season:2026,week,user1:'rival-a',user2:'rival-b',score1:120,score2:110}))}),
-], { week: 5, now: new Date('2026-10-05T12:00:00Z') });
+];
 let html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 html = html.replace(/<div id="splash"[\s\S]*?<\/div><span class="sp-sweep"[^>]*><\/span><\/div>/, '');
@@ -217,7 +218,7 @@ html = html.replace('</body>', `<script type="module">
   window.reviewInjuryPanel=mountHomeInjuryPanel(document.querySelector('.home-injury-panel'),{getReport:()=>window.reviewInjuryReport});window.reviewInjuryPanel.update();
   window.reviewStage = startStage(document.querySelector('[data-bx-stage]'), deck);
   if (window.reviewHoldInitialStage) window.reviewStage.suspend('initial-review', true);
-  window.reviewSetEdition = edition => window.reviewStage.update(homeBroadcastDeck(deck.filter(item=>!item.homeFeature),{week:5,edition:edition||{},now:new Date('2026-10-05T12:00:00Z')}));
+  window.reviewSetEdition = edition => window.reviewStage.update(deck);
   window.reviewVfx = mountScoreVfx(document.querySelector('[data-home-live-slot]'));
   mountSeasonNavigation();
   document.querySelector('#tabbar [data-route="home"]').classList.add('on');

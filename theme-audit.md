@@ -1227,3 +1227,26 @@ The existing visibility/timer checks pass in both themes. Screenshots in
 `docs/broadcast-polish-1497/` were inspected. Full Home/Trade browser checks and
 read-only public verification are recorded in the release note. Physical iOS
 frame pacing and full assistive-technology compliance remain unverified.
+
+
+## 1.498.0 — Widescreen Home broadcast and short editions
+
+Reviewed the actual wide format in Medicine Wheel Light/Dark at 320/390/768:
+90 composition cases include the daily opener, complete award figures, long
+team names, two/three-team trade previews, injuries, rivalry, exact score pairs,
+percentage/record metrics, Auto Scout and anniversary. The phone stage measures
+248px at 320 and 269px at 390; content windows are wider than their height.
+Shared theme tokens preserve contrast, and rem-based type responds to larger
+text. Whole-card links and 44px transport controls remain; full trade routing is
+available through the existing receipt and accessible preview label. Long trade
+team captions use a deliberate two-line preview, with the complete name retained
+in the DOM and receipt. Award names stay complete; house art is contained.
+
+Native forward/back swipes, one-pass autoplay, session completion memory,
+explicit replay, refreshes with new activity, larger-text scaling and reduced
+motion pass. The existing below-fold first-dwell/visibility checks also pass in
+both themes. The visual fixture explicitly retains every full-card variant for
+component regression, separately from actual Home curation. Real-data production
+assets show three cards at 269px in both themes without browser errors or
+horizontal overflow. Phone screenshots were inspected. Physical iOS frame
+pacing, OS-level text settings and full screen-reader behavior remain unverified.
