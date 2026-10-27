@@ -1112,3 +1112,14 @@ scrolling row; both themes are covered with those global attributes enabled.
 1.488.1 retains those styles and clears stale search text when returning from
 NFL play-by-play to a video. The same four mobile/theme combinations pass the
 expanded 164-check Clubhouse harness.
+
+## 1.489.0 — Larger replay browser and complete posters
+
+Reviewed the replay viewer at 320/390 in Medicine Wheel Light and Dark, plus
+320×568, 844×390, desktop and the constrained keyboard viewport. Phone browsing
+gets at least 55% of the content area, larger uncropped poster frames and a
+compact filter row. Confirmed full preview images fit inside the lower scroll
+area, the score strip and playback controls remain usable, and text/actions
+retain contrast and 44px targets. Shared theme tokens are unchanged. The reel
+and Clubhouse browser harnesses pass 170 and 164 checks. Native iOS fullscreen
+was not manually exercised.

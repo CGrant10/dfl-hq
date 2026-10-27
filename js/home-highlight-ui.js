@@ -3,7 +3,7 @@ import {playerPortrait} from './player-presentation.js';
 import {highlightThumbnail} from './home-highlight-model.js';
 export function highlightPosterUrl(value,width=640){
  const source=highlightThumbnail(value);if(!source)return null;
- const url=new URL('https://a.espncdn.com/combiner/i');url.searchParams.set('img',source);url.searchParams.set('w',String(width));url.searchParams.set('h',String(Math.round(width*9/16)));url.searchParams.set('scale','crop');return url.href;
+ const url=new URL('https://a.espncdn.com/combiner/i');url.searchParams.set('img',source);url.searchParams.set('w',String(width));return url.href;
 }
 const duration=n=>`${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`;
 export function reelPlayersMarkup(players=[],selected='',total=0,prefix='home'){
@@ -22,5 +22,5 @@ export function homeHighlightMarkup(clips,now=Date.now(),{title='Weekend highlig
 }
 export function reelQueueMarkup(clips,selected){
  if(!clips.length)return '<li class="reel-search-empty"><strong>No matching clips</strong><button type="button" class="linkbtn" data-reel-clear>Clear filters</button></li>';
- return clips.map((clip,index)=>`<li id="reel-queue-${clip.id}"><button type="button" data-reel-choose="${clip.id}" aria-pressed="${clip.id===selected}" aria-label="Clip ${index+1}: ${esc(clip.headline)}"><span class="reel-list-poster"><img src="${esc(highlightPosterUrl(clip.thumbnail_url,192))}" alt="" loading="lazy" decoding="async"><span>${duration(clip.duration)}</span></span><span class="reel-list-copy"><strong>${esc(clip.headline)}</strong><small>${esc(clip.game_label)} · ${clip.kind==='touchdown'?'TD':'Big play'}${clip.id===selected?' · Playing':''}</small></span><span class="reel-list-number" aria-hidden="true">${index+1}</span></button></li>`).join('');
+ return clips.map((clip,index)=>`<li id="reel-queue-${clip.id}"><button type="button" data-reel-choose="${clip.id}" aria-pressed="${clip.id===selected}" aria-label="Clip ${index+1}: ${esc(clip.headline)}"><span class="reel-list-poster"><img src="${esc(highlightPosterUrl(clip.thumbnail_url,320))}" alt="" loading="lazy" decoding="async"><span>${duration(clip.duration)}</span></span><span class="reel-list-copy"><strong>${esc(clip.headline)}</strong><small>${esc(clip.game_label)} · ${clip.kind==='touchdown'?'TD':'Big play'}${clip.id===selected?' · Playing':''}</small></span><span class="reel-list-number" aria-hidden="true">${index+1}</span></button></li>`).join('');
 }

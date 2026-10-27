@@ -8,7 +8,7 @@
 .home-reel-cards li { min-width:0; scroll-snap-align:start; }
 .home-reel-cards button { display:grid; gap:6px; width:100%; padding:0; border:0; background:transparent; color:var(--text); text-align:left; cursor:pointer; }
 .home-reel-poster { position:relative; display:block; overflow:hidden; aspect-ratio:16/9; border-radius:8px; background:var(--bg-3); }
-.home-reel-poster img { display:block; width:100%; height:100%; object-fit:cover; }
+.home-reel-poster img { display:block; width:100%; height:100%; object-fit:contain; }
 .home-reel-play,.home-reel-duration { position:absolute; display:grid; place-items:center; color:var(--on-accent); background:var(--accent-fill); }
 .home-reel-play { inset:auto auto 10px 10px; width:36px; height:36px; border-radius:50%; font-size:13px; }
 .home-reel-play svg { width:16px; height:16px; }
@@ -38,7 +38,7 @@
 .home-reel-screen video { display:block; width:100%; height:100%; object-fit:contain; }
 .home-reel-source-link { display:inline-flex; align-items:center; justify-content:center; gap:4px; color:var(--accent); font:600 12px/1.3 var(--font-display); }
 .home-reel-source-play { position:relative; display:block; width:100%; height:100%; overflow:hidden; }
-.home-reel-source-play img { display:block; width:100%; height:100%; object-fit:cover; }
+.home-reel-source-play img { display:block; width:100%; height:100%; object-fit:contain; }
 .home-reel-source-play svg,.home-reel-source-link svg { width:16px; height:16px; flex:none; }
 .home-reel-source-play span { gap:6px; position:absolute; left:12px; bottom:12px; display:flex; align-items:center; min-height:44px; padding:8px 12px; border-radius:5px; background:var(--accent-fill); color:var(--on-accent); font:600 14px/1.3 var(--font-display); }
 .home-reel-player-copy { padding:10px 14px 2px; }
@@ -55,10 +55,10 @@
 .home-reel-browser .home-reel-players:empty { display:none; }
 .home-reel-queue { position:relative; flex:1; min-height:0; margin:0; padding:0 12px 12px; list-style:none; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; }
 .home-reel-queue li { min-width:0; }
-.home-reel-queue button[data-reel-choose] { display:grid; grid-template-columns:84px minmax(0,1fr) 18px; align-items:center; gap:8px; width:100%; min-height:78px; margin:0; padding:10px 6px; border:0; border-left:3px solid transparent; border-bottom:1px solid var(--line); border-radius:0; background:transparent; color:var(--text); text-align:left; }
+.home-reel-queue button[data-reel-choose] { display:grid; grid-template-columns:clamp(112px,32vw,132px) minmax(0,1fr) 18px; align-items:center; gap:8px; width:100%; min-height:92px; margin:0; padding:8px 4px; border:0; border-left:3px solid transparent; border-bottom:1px solid var(--line); border-radius:0; background:transparent; color:var(--text); text-align:left; }
 .home-reel-queue button[aria-pressed="true"] { border-left-color:var(--accent); background:color-mix(in srgb,var(--accent) 7%,transparent); }
 .reel-list-poster { position:relative; display:block; aspect-ratio:16/9; overflow:hidden; border-radius:5px; background:var(--bg-3); }
-.reel-list-poster img { display:block; width:100%; height:100%; object-fit:cover; }
+.reel-list-poster img { display:block; width:100%; height:100%; object-fit:contain; }
 .reel-list-poster > span { position:absolute; right:3px; bottom:3px; padding:2px 3px; border-radius:2px; background:var(--accent-fill); color:var(--on-accent); font:600 10px/1 var(--font-display); }
 .reel-list-copy { display:grid; gap:4px; min-width:0; }
 .reel-list-copy strong { font:600 13px/1.3 var(--font-display); overflow-wrap:anywhere; }
@@ -193,3 +193,30 @@
 [data-clubhouse-nfl-center]>.nfl-center-picker { position:sticky; top:calc(var(--topbar-h,44px) + 4px); z-index:3; background:var(--bg); border-bottom:1px solid var(--line); }
 .nfl-center-fantasy button { min-height:44px; max-width:100%; white-space:normal; overflow-wrap:anywhere; }
 .reel-grid-filters input::placeholder { color:var(--body-text); opacity:1; }
+
+/* Keep the lower browser useful without shrinking the clip previews. */
+@media(max-width:700px) {
+ .home-reel-player { width:calc(100vw - 12px); height:calc(var(--dialog-viewport-height,100dvh) - 12px); max-height:calc(var(--dialog-viewport-height,100dvh) - 12px); border-radius:10px; }
+ .home-reel-stage { flex:0 1 auto; min-height:0; max-height:45%; overflow-y:auto; }
+ .home-reel-browser { flex:1 0 55%; }
+ .home-reel-player-copy { padding:4px 12px; }
+ .home-reel-player-copy h3 { margin:4px 0; font-size:15px; line-height:1.25; }
+ .reel-now-row { display:none; }
+ .home-reel-player-controls { padding:4px 12px 8px; }
+ .reel-clip-browser { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-rows:auto auto minmax(0,1fr); }
+ .reel-game-label { display:grid; margin:4px 6px 4px 12px; gap:0; font-size:0; }
+ .reel-game-label select { font-size:13px; }
+ .reel-search-row { padding:4px 12px 4px 0; gap:2px; }
+ .reel-search-row input { padding-inline:6px; }
+ .reel-search-row button { font-size:11px; }
+ .reel-clip-browser>.home-reel-players,.reel-clip-browser>.home-reel-queue { grid-column:1/-1; }
+ .home-reel-browser .home-reel-players { padding-block:2px; }
+}
+@container (max-height:460px) {
+ .home-reel-view:has([data-reel-search]:focus) .home-reel-browser { flex:1; }
+ .home-reel-view:has([data-reel-search]:focus) .reel-clip-browser { display:flex; }
+ .home-reel-view:has([data-reel-search]:focus) .reel-search-row { padding:8px 12px; }
+}
+@media(max-width:700px) and (min-height:651px) {
+ .home-reel-screen { max-height:min(180px,calc(45cqh - 180px)); }
+}
