@@ -1108,3 +1108,7 @@ external limits.
 The compiled app was also reviewed with real publisher posters/video and league
 data. Its app-wide Pulse styling keeps all six Clubhouse tabs on one native
 scrolling row; both themes are covered with those global attributes enabled.
+
+1.488.1 retains those styles and clears stale search text when returning from
+NFL play-by-play to a video. The same four mobile/theme combinations pass the
+expanded 164-check Clubhouse harness.
