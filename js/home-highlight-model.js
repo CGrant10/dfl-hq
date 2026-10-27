@@ -11,7 +11,7 @@ function centralHour(key,hour){
 export function highlightSession(now=Date.now()){
  const local=parts(now),date=local.hour<6?dayShift(dateKey(local),-1):dateKey(local);
  const weekday=new Date(date+'T12:00:00Z').getUTCDay(),startDate=dayShift(date,-((weekday+3)%7));
- const opensAt=centralHour(startDate,6),expiresAt=centralHour(dayShift(startDate,5),6);
+ const opensAt=centralHour(startDate,6),expiresAt=centralHour(dayShift(startDate,7),6);
  return {date,startDate,endDate:dayShift(startDate,4),opensAt,expiresAt,nextOpensAt:centralHour(dayShift(startDate,7),6),active:now>=opensAt&&now<expiresAt,label:'Weekend'};
 }
 export const highlightGameDate=at=>Number.isFinite(at)?dateKey(parts(at)):null;
