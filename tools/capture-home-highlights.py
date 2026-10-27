@@ -109,8 +109,12 @@ with sync_playwright() as p:
    page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open');page.locator('[data-home-reel-open]').click()
    check(tag+' reopening the reel resets playback and the clip list to the start',sheet.locator('[data-reel-count]').inner_text()=='1 / 11' and sheet.locator('[data-reel-previous]').is_disabled() and sheet.locator('[data-reel-queue]').evaluate('e=>e.scrollTop===0'))
    if width==390 and theme=='dark':
-    sheet.locator('[data-reel-close]').click();page.wait_for_timeout(40);page.evaluate('f.c.openClip(f.rows[1].id)');page.wait_for_timeout(350)
+    sheet.locator('[data-reel-close]').click();page.wait_for_timeout(40)
+    check('dismissal pauses immediately and preserves the video frame until the exit completes',sheet.locator('video').evaluate('e=>e.paused&&e.hasAttribute("src")'))
+    page.evaluate('f.c.openClip(f.rows[1].id)');page.wait_for_timeout(350)
     check('reopening during dismissal cancels the old exit without stopping the new clip',sheet.evaluate('e=>e.open') and sheet.locator('[data-reel-choose][aria-pressed="true"]').get_attribute('data-reel-choose')==page.evaluate('f.rows[1].id') and sheet.locator('video').evaluate('e=>!e.paused&&e.hasAttribute("src")'))
+    page.evaluate('f.c.close();f.c.openClip(f.rows[0].id)');page.wait_for_timeout(150)
+    check('a queued native close event cannot stop a freshly reopened clip',sheet.evaluate('e=>e.open') and sheet.locator('video').evaluate('e=>!e.paused&&e.hasAttribute("src")'))
    page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open');page.evaluate('f.fail=true;f.c.refresh()');page.wait_for_timeout(100)
    check(tag+' a failed refresh retains current unexpired clips',page.locator('[data-home-reel-clip]').count()==8)
    page.locator('[data-home-reel-open]').click();page.evaluate('document.querySelector(".home-reel-player video").dispatchEvent(new Event("error"))')

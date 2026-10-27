@@ -77,3 +77,18 @@ clips in 12 game groups, loaded publisher posters, 1920px native video playback,
 39 player filters, 168 NFL plays, 20 fantasy box-score rows, exact play/video
 opening and media cleanup, with no page errors. App-wide Pulse styling is
 included in the Clubhouse harness; the six tabs stay on one scrolling row.
+
+### 1.488.1 follow-up
+
+Opening a video from the viewer's game center clears the previous clip-search
+text as well as its filter state. The complete Clubhouse harness now passes 164
+checks, including search → NFL play → exact video. The public 1.488.0 smoke test
+also passed against real data: 49 clips across 13 game groups, 41 player filters,
+full NFL play-by-play, 20 fantasy rows, native video and cleanup with no errors.
+Backend workers are deployed: game-highlights v5, send-notification v16 and
+live-football v4. No member test push was sent.
+
+The 1.488.1 dismissal also holds the paused current video frame during its exit
+instead of flashing back to the poster. Media is released at completion, or
+immediately on route departure. The shared reel harness passes 159 checks,
+including interrupted dismissal and reopen.
