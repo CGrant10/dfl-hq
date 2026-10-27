@@ -29,3 +29,22 @@ describe('scheduled trade alert integration',()=>{
     fetch.mockResolvedValue(Response.json({ok:true,messageId:46}));expect(await captureScheduledTrades(f.options)).toMatchObject({notified:1});
   });
 });
+
+it('uses the same current injury evidence when the server grades a newly synced trade',async()=>{
+ const rows=[];
+ const admin={from:()=>({select:columns=>({in:(_key,ids)=>columns==='sleeper_transaction_id'?Promise.resolve({data:rows.filter(r=>ids.includes(r.sleeper_transaction_id)),error:null}):{eq:()=>({is:async()=>({data:rows.filter(r=>r.breaking_active&&!r.notification_message_id),error:null})})}}),insert:row=>({select:()=>({single:async()=>{rows.push({id:1,breaking_active:true,notification_message_id:null,...row});return{data:rows[0],error:null}}})}),update:patch=>({eq:()=>({is:async()=>{Object.assign(rows[0],patch);return{error:null}}})})})};
+ const projections=[{player_id:'dead',stats:{rec:300,adp_ppr:1}},{player_id:'healthy',stats:{rec:120,adp_ppr:30}}];
+ vi.stubGlobal('fetch',vi.fn(async url=>{
+  if(url.endsWith('/send-notification'))return Response.json({ok:true,messageId:123});
+  if(url.endsWith('/players/nfl'))return Response.json({dead:{full_name:'Receiver',position:'WR',team:'BUF',injury_status:'IR',status:'Inactive'},healthy:{full_name:'Healthy receiver',position:'WR',team:'MIA',status:'Active'}});
+  if(url.includes('/projections/'))return Response.json(projections);
+  if(url.endsWith('/nfl/injuries'))return Response.json({injuries:[{injuries:[{date:'2026-10-26T10:00:00Z',status:'Injured Reserve',details:{returnDate:'2027-02-15'},athlete:{displayName:'Receiver',position:{abbreviation:'WR'},team:{abbreviation:'BUF'}}}]}]});
+  if(url.includes('/v1/stats/nfl/regular/'))return Response.json({});
+  if(url.includes('/stats/nfl/2026/'))return Response.json([]);
+  if(url.includes('/scoreboard?'))return Response.json({events:[]});
+  if(url.includes('expert-ros-ppr.json'))return Response.json(null);
+  throw Error('Unexpected fixture request: '+url);
+ }));
+ const result=await captureScheduledTrades({admin,league:{scoring_settings:{rec:1}},users:[{user_id:'one',display_name:'Alpha'},{user_id:'two',display_name:'Bravo'}],rosters:[{roster_id:1,owner_id:'one',players:['healthy']},{roster_id:2,owner_id:'two',players:['dead']}],transactions:[{transaction_id:'season-ended',type:'trade',status:'complete',roster_ids:[1,2],adds:{dead:2,healthy:1},drops:{dead:1,healthy:2},created:Date.now()}],season:2026,week:8,url:'https://example.test',cronToken:'fixture-cron-token'});
+ expect(result).toMatchObject({created:1,notified:1});expect(rows[0].result.valueToA).toBeGreaterThan(0);expect(rows[0].result.valueToB).toBe(0);expect(rows[0].result.projectionEvidence.players.find(p=>p.id==='dead')).toMatchObject({outForSeason:true,availabilitySource:'ESPN'});
+});

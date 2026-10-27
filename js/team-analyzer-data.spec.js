@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock('./injury-report-data.js',()=>({loadNflInjuries:vi.fn(async()=>({payload:{injuries:[]},checkedAt:1}))}));
 
 const mocks = vi.hoisted(() => {
   const tableRows = {

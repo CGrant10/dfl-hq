@@ -70,7 +70,7 @@ export function buildWeeklyPool(rows = [], scoringSettings = null, {players=new 
     const gameStatus = nfl?.key==='live'?'live':nfl?.key==='final'?'final':row.game_status || row.game?.status || row.metadata?.game_status || "";
     pool.set(id, {
       id,
-      position,
+      position,rostered:!!known,outForSeason:!!known?.outForSeason,
       name: known?.name||[meta.first_name, meta.last_name].filter(Boolean).join(" ") || id,
       team,
       opponent,
@@ -87,7 +87,7 @@ export function buildWeeklyPool(rows = [], scoringSettings = null, {players=new 
       hasGame: nfl ? true : games == null ? Boolean(opponent) : games > 0,
     });
   }
-  for(const [id,p] of players)if(!pool.has(id))pool.set(id,{id,name:p.name,position:p.position,team:p.nflTeam,points:null,hasGame:null,scheduleKnown:false,injuryStatus:p.injuryStatus,isOut:!!p.isOut||OUT_STATUSES.has(String(p.injuryStatus)),isRisky:!p.isOut&&(!!p.isRisky||RISKY_STATUSES.has(String(p.injuryStatus)))});
+  for(const [id,p] of players)if(!pool.has(id))pool.set(id,{id,rostered:true,outForSeason:!!p.outForSeason,name:p.name,position:p.position,team:p.nflTeam,points:null,hasGame:null,scheduleKnown:false,injuryStatus:p.injuryStatus,isOut:!!p.isOut||OUT_STATUSES.has(String(p.injuryStatus)),isRisky:!p.isOut&&(!!p.isRisky||RISKY_STATUSES.has(String(p.injuryStatus)))});
   return pool;
 }
 

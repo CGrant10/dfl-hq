@@ -2,7 +2,7 @@ import {tradeSuggestionTier} from './team-analyzer.js';
 import {evaluateTradeDeal} from './trade-workspace.js';
 import {tradeConfidence} from './trade-confidence.js';
 
-const availability = player => JSON.stringify([player?.injuryStatus || '', player?.playerStatus || '', !!player?.isOut, !!player?.isRisky, player?.nflTeam || player?.team || '']);
+const availability = player => JSON.stringify([player?.injuryStatus || '', player?.playerStatus || '', !!player?.isOut, !!player?.isRisky,!!player?.outForSeason,player?.automaticTradeEligible, player?.nflTeam || player?.team || '']);
 export function recheckTradeOffer(deal, previousPool, teams, pool) {
   const parties = deal.parties.map(party => teams.find(team => String(team.id) === String(party.id)));
   if (parties.some(party => !party) || deal.sends.some((ids, index) => ids.some(id =>
