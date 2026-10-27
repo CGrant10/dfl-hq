@@ -5,7 +5,7 @@ from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
 from playwright.sync_api import sync_playwright
 ROOT=Path(__file__).resolve().parents[1];OUT=Path(os.environ.get('DFL_HIGHLIGHTS_REVIEW_DIR',ROOT.parent/'dfl-highlights-review'));OUT.mkdir(parents=True,exist_ok=True)
 head=(ROOT/'index.html').read_text().split('</head>')[0]+'</head>'
-html=head+'''<body><main id="view" class="view" style="padding:16px"><h1>Clubhouse</h1><button class="btn" id="other">Other matchup</button><div id="highlights"></div></main><script type="module">
+html=head+'''<body><main id="view" class="view" data-pulse-system="1" data-page-system="1" style="padding:16px"><h1>Clubhouse</h1><button class="btn" id="other">Other matchup</button><div id="highlights"></div></main><script type="module">
 import {mountMatchupHighlights} from './js/matchup-highlights.js';import {savedMoments} from './js/game-day-moments-model.js';import {footballMomentRows} from './js/football-moments.js';import {shareFootballMoment} from './js/football-moment-share.js';import {saveMode} from './js/theme.js';import {reviewTextContrast} from './tools/home-review-contrast.js';
 window.theme=saveMode;window.contrast=()=>reviewTextContrast(document.querySelector('.gd-moment-recap[open]')||document.querySelector('#view'));window.motion=true;window.isActive=true;window.fail=false;window.selected='7';window.reads=[];window.held=false;window.release=null;
 const wr={id:'7564',name:'Ja’Marr Chase',position:'WR',nflTeam:'CIN',role:'receiver',points:32.2},qb={id:'6770',name:'Joe Burrow',position:'QB',nflTeam:'CIN',role:'passer',points:25.1};
@@ -36,6 +36,8 @@ with sync_playwright() as p:
    page=c.new_page();page.on('pageerror',lambda e:errors.append(str(e)));page.goto(base+'/highlights-review.html#/clubhouse?season=2026&week=7&tab=matchups&matchup=7&moment=nfl:999:100:1');page.wait_for_function('ready');page.evaluate('theme',theme);page.evaluate('document.fonts.ready');page.wait_for_timeout(300);tag=f'{theme}/{width}'
    sheet=page.locator('.gd-moment-recap');frame=sheet.locator('.moment-recap-frame:visible')
    check(tag+' alert fetches and opens the exact older play',sheet.evaluate('e=>e.open') and 'TOUCHDOWN' in frame.inner_text() and page.evaluate('reads.some(r=>r.eventKey==="nfl:999:100:1")') and sheet.locator('[data-recap-go="0"]').get_attribute('aria-pressed')=='true')
+   check(tag+' long play detail is tucked away until requested',not frame.locator('.moment-play-details').evaluate('e=>e.open'))
+   frame.locator('.moment-play-details>summary').click()
    check(tag+' verified play has real player, yards, quarter, clock and description',all(x in frame.inner_text() for x in ['Ja’Marr Chase','42','Q3 · 4:12','Joe Burrow pass']) and 'Fantasy points' not in frame.inner_text())
    check(tag+' play frame and controls fit mobile',sheet.evaluate('e=>{const r=e.getBoundingClientRect(),f=e.querySelector("footer").getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&f.bottom<=innerHeight&&e.scrollWidth<=e.clientWidth}') and frame.locator('[data-recap-share]').evaluate('e=>e.offsetHeight>=44'))
    check(tag+' readable themed highlight',not page.evaluate('contrast().failures'))
@@ -44,6 +46,7 @@ with sync_playwright() as p:
    check(tag+' shares through existing clean and photo chooser',page.locator('.dfl-share-preview button[data-share-style="clean"]').is_visible() and page.locator('.dfl-share-preview #dfl-share-player option').count()==2 and page.locator('.dfl-share-preview canvas').evaluate('e=>e.width>=1000&&e.height>=1000'))
    page.locator('button[data-share-style="photo"]').click();page.wait_for_function('document.querySelector(".dfl-share-preview canvas")?.dataset.shareStyle==="photo"');page.locator('[data-share-close]').click();sheet.locator('[data-recap-close]').click();page.wait_for_function('!document.querySelector(".gd-moment-recap").open')
    page.evaluate('void refresh()');page.wait_for_timeout(150);check(tag+' closing an alert does not reopen it on refresh',not sheet.evaluate('e=>e.open'));check(tag+' alert close returns focus to the recap button',page.locator('[data-highlights-recap]').evaluate('e=>e===document.activeElement'))
+   check(tag+' highlights lead with readable player names and separate outcomes',page.locator('.moment-summary-copy>strong').evaluate_all('es=>es.every(e=>parseFloat(getComputedStyle(e).fontSize)>=17)') and page.locator('.moment-summary-label').count()>0)
    check(tag+' compact highlight list fits and has useful portraits',page.locator('[data-highlight]').count()==3 and page.locator('.matchup-highlights').evaluate('e=>e.scrollWidth<=e.clientWidth') and page.locator('[data-highlight] .dfl-player-portrait').count()==2)
    page.evaluate('model.completed=true;void refresh()');page.wait_for_timeout(180);page.locator('[data-highlights-recap]').click();page.wait_for_timeout(280);sheet.locator('[data-recap-go]').last.click();page.wait_for_timeout(300)
    check(tag+' postgame frame uses actual finals and top starter',all(x in frame.inner_text() for x in ['121.40','119.20','32.20 pts','Ja’Marr Chase','Last saved lead change']) and 'barely survived' in frame.inner_text())
@@ -62,7 +65,12 @@ with sync_playwright() as p:
    check(tag+' reduced motion opens the chosen highlight without running animations',sheet.evaluate('e=>e.open&&e.getAnimations({subtree:true}).length===0'))
    sheet.locator('[data-recap-close]').click();page.wait_for_timeout(250);page.set_viewport_size({'width':320,'height':480});page.locator('[data-highlight]').first.click();page.wait_for_timeout(270)
    check(tag+' short phone keeps recap controls accessible while content scrolls',sheet.evaluate('e=>{const f=e.querySelector("footer").getBoundingClientRect(),d=e.querySelector(".moment-recap-deck");return f.bottom<=innerHeight&&f.top>=0&&d.scrollHeight>d.clientHeight&&e.scrollWidth<=e.clientWidth}'))
-   page.evaluate('live.stop()');check(tag+' teardown removes the recap and listeners',page.locator('.gd-moment-recap').count()==0);c.close()
+   page.evaluate('live.stop()');check(tag+' teardown removes the recap and listeners',page.locator('.gd-moment-recap').count()==0)
+   page.set_viewport_size({'width':width,'height':844})
+   page.evaluate('''async()=>{const {mountMomentRecap}=await import('/js/moment-recap.js');const {savedMoments}=await import('/js/game-day-moments-model.js');const row={id:900,league_id:'fixture',season:2026,week:7,matchup_id:7,roster_id:1,player_id:'7564',kind:'surge',captured_at:new Date().toISOString(),data:{points:24.83,delta:8.12}};window.scoreRecap=mountMomentRecap({getMotion:()=>false});scoreRecap.open(savedMoments([row],model),'7')}''')
+   score_sheet=page.locator('.gd-moment-recap[open]');check(tag+' point updates use short honest labels without sync jargon',all(text in score_sheet.inner_text() for text in ['Points added','+8.12','16.71','24.83']) and 'sync' not in score_sheet.inner_text().lower() and 'touchdown' not in score_sheet.inner_text().lower())
+   page.screenshot(path=str(OUT/f'points-{theme}-{width}.png'));page.evaluate('scoreRecap.stop()')
+   c.close()
  check('no browser errors',not errors)
  browser.close()
 server.shutdown()

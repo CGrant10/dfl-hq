@@ -67,6 +67,8 @@ on:
       - 'js/home-highlight*'
       - 'js/highlight-play-link*'
       - 'js/nfl-game-center*'
+      - 'js/nfl-play-presentation*'
+      - 'js/moment-summary-ui.js'
       - 'js/clubhouse-nfl.js'
       - 'js/highlight-browse*'
       - 'js/home-matchup-preview.js'

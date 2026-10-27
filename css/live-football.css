@@ -36,3 +36,5 @@ html[data-ui-motion="off"] [data-nfl-play],html[data-ui-motion="off"] .nfl-toast
 @keyframes nfl-red-beacon{0%,100%{opacity:.55}50%{opacity:1}}
 html[data-ui-motion="off"] .nfl-red-badge::before{animation:none!important}
 @media(prefers-reduced-motion:reduce){.nfl-red-badge::before{animation:none!important}}
+
+.nfl-toast-player b{font-size:18px;line-height:1.25}.nfl-play-toast>p{font-size:14px;line-height:1.4}.nfl-toast-video{grid-column:1/-1}

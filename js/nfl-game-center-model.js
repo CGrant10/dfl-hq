@@ -1,4 +1,4 @@
-import {footballPlays,footballTeam} from './live-football-model.js';
+import {footballPlays,footballTeam,candidatePlay} from './live-football-model.js';
 const clean=value=>String(value||'').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim().slice(0,500);
 const name=value=>clean(value).normalize('NFKD').replace(/\p{M}/gu,'').replace(/\s+(jr|sr|ii|iii|iv)\.?$/i,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 export const nflGameId=value=>/^\d{1,24}$/.test(String(value||''))?String(value):'';
@@ -19,7 +19,7 @@ export function nflCenterPlays(summary){
   if(!nflGameId(play.id)||!clean(play.text))continue;
   const previous=unique.get(String(play.id));unique.set(String(play.id),{...previous,...play});
  }
- return [...unique.values()].sort((a,b)=>Number(a.sequenceNumber||a.id)-Number(b.sequenceNumber||b.id)).map(play=>({id:String(play.id),text:clean(play.text),period:Number(play.period?.number)||null,clock:clean(play.clock?.displayValue),score:play.scoringPlay===true,home:typeof play.homeScore==='number'?play.homeScore:null,away:typeof play.awayScore==='number'?play.awayScore:null,big:Number(play.statYardage)>=20,voided:/no play|overturned|reversed|nullified/i.test(play.text)}));
+ return [...unique.values()].sort((a,b)=>Number(a.sequenceNumber||a.id)-Number(b.sequenceNumber||b.id)).map(play=>({id:String(play.id),text:clean(play.text),typeId:String(play.type?.id||''),typeLabel:clean(play.type?.text),yards:typeof play.statYardage==='number'&&Number.isFinite(play.statYardage)?play.statYardage:null,period:Number(play.period?.number)||null,clock:clean(play.clock?.displayValue),score:play.scoringPlay===true,home:typeof play.homeScore==='number'?play.homeScore:null,away:typeof play.awayScore==='number'?play.awayScore:null,big:play.scoringPlay!==true&&candidatePlay(play),voided:/no play|overturned|reversed|nullified/i.test(play.text)}));
 }
 // Keep official NFL stat lines alongside actual Sleeper points. No estimated
 // PPR totals: conversions and unusual scoring must survive intact.

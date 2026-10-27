@@ -313,9 +313,9 @@ def check_matchup_interactions(page):
         fail=false;points=10;button.click();await until(()=>!button.disabled);check(value.textContent==='10.00'&&button.textContent==='Refresh scores'&&!button.hasAttribute('aria-busy'),'Retry did not recover');
         const beforeCatchup=calls;points=12;window.dispatchEvent(new Event('online'));window.dispatchEvent(new Event('online'));
         await until(()=>calls===beforeCatchup+1&&!button.disabled);check(value.textContent==='12.00','Clubhouse did not catch up on reconnect');
-        const panel=document.createElement('div');panel.id='clubhouse-panel-matchups';panel.hidden=true;region.append(panel);
+        const panel=document.createElement('div');panel.id='clubhouse-panel-matchups';panel.hidden=true;const leaders=document.createElement('div');leaders.id='clubhouse-panel-leaders';leaders.hidden=true;region.append(panel,leaders);
         const beforeHidden=calls;window.dispatchEvent(new Event('online'));await new Promise(r=>setTimeout(r,120));check(calls===beforeHidden,'Hidden matchup panel refreshed');
-        panel.hidden=false;region.dispatchEvent(new CustomEvent('dfl:clubhouse-tab',{detail:{tab:'matchups'}}));await until(()=>calls===beforeHidden+1&&!button.disabled);panel.remove();
+        panel.hidden=false;region.dispatchEvent(new CustomEvent('dfl:clubhouse-tab',{detail:{tab:'matchups'}}));await until(()=>calls===beforeHidden+1&&!button.disabled);panel.remove();leaders.remove();
 
         const preview=region.querySelector('[data-chat-preview]');await until(()=>preview.dataset.talkState==='empty');check(preview.textContent.includes('No replies yet.')&&!preview.textContent.includes('0 REPLIES'),'Quiet conversation is noisy');
         reply={body:'<img src=x onerror=alert(1)> '+('Long reply '.repeat(24)),members:{display_name:'<b>The Boys</b>'}};replyCount=2;button.click();await until(()=>!button.disabled&&preview.dataset.talkState==='active');check(!preview.querySelector('img,b')&&preview.querySelector('.clubhouse-talk-author').textContent==='<b>The Boys</b>'&&preview.querySelector('.clubhouse-talk-body span').textContent.endsWith('…')&&preview.textContent.includes('2 REPLIES'),'Reply preview lost safe content or metadata');window.reviewActiveTalkHTML=region.innerHTML;
@@ -712,9 +712,9 @@ def check_watch_score_strip(page):
         assert recap.locator('h2').evaluate('e=>e===document.activeElement')
         assert recap.locator('.moment-recap-frame:visible > small').text_content()=='Lead change'
         recap.locator('[data-recap-next]').click()
-        assert 'since the previous sync' in recap.inner_text()
+        assert 'Points added' in recap.inner_text()
         page.evaluate('watchStripFixture.watch.redraw()')
-        assert recap.is_visible() and 'since the previous sync' in recap.inner_text()
+        assert recap.is_visible() and 'Points added' in recap.inner_text()
         page.keyboard.press('Escape')
         page.wait_for_function('!document.querySelector(".gd-moment-recap[open]")')
         assert page.locator('.gameday-watch[open]').count()==1

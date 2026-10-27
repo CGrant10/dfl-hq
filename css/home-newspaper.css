@@ -422,6 +422,7 @@ body:has(#view[data-route="home"]) {
 #home-wrap .home-brief-grid span { font-size: 13px; }
 #home-wrap .home-tuesday-receipt strong { font: 700 15px/1.4 var(--home-ui-font); }
 #home-wrap :is(.home-tuesday-receipt span,.home-signal-changes em,.home-pickem-card span) { font-size: 13px; line-height: 1.5; }
+#home-wrap .home-signal-changes>span strong { font-size:15px; line-height:1.3; }
 #home-wrap .home-league-snapshot > h2 { margin-bottom: 12px; }
 #home-wrap .home-league-snapshot .fp-snap { padding-block: 4px 12px; border-bottom: 0; }
 #home-wrap .fp-snap small { font-size: var(--home-meta-size); }

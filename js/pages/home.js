@@ -177,7 +177,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
         </div>
         <a class="home-text-action" href="#/stakes"><span>Playoff race</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>
         ${report ? `<aside class="home-tuesday-receipt"><div><small>LAST WEEK · FINAL</small><strong>${esc(report.title)}</strong><span>${esc(report.highlights?.[0]?.title || "League receipts ready")} · ${esc(report.highlights?.[0]?.detail || "")}</span></div><a class="btn small" href="#/clubhouse?season=${report.season}&amp;week=${report.week}">Open &amp; share recap</a></aside>` : ""}
-        ${changes.length ? `<aside class="home-signal-changes"><small>CHANGED SINCE LAST SYNC</small>${changes.slice(0, 3).map(change => `<span class="is-${change.impact}"><strong>${esc(change.name)}</strong><em>${esc(change.detail)}</em></span>`).join("")}</aside>` : ""}
+        ${changes.length ? `<aside class="home-signal-changes"><small>LATEST UPDATES</small>${changes.slice(0, 3).map(change => `<span class="is-${change.impact}"><strong>${esc(change.name)}</strong><em>${esc(change.detail)}</em></span>`).join("")}</aside>` : ""}
       </section>
       <section id="home-week-panel-picks" class="home-outlook-block home-outlook-games" role="tabpanel" aria-labelledby="home-week-tab-picks" data-week-panel="picks" hidden><div class="home-outlook-title"><h3>${predictions.length} matchups</h3></div>
         <div>${firstGames.map(gameRow).join("") || `<p class="home-outlook-empty">Matchups will appear when Sleeper publishes the slate.</p>`}</div>

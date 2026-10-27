@@ -1,5 +1,5 @@
+import {momentSummaryMarkup} from './moment-summary-ui.js';
 import {esc} from './ui.js';
-import {playerPortrait} from './player-presentation.js';
 import {loadGameDayMoments} from './game-day-moments.js';
 import {mountMomentRecap} from './moment-recap.js';
 import {matchupStory} from './matchup-story.js';
@@ -8,7 +8,7 @@ import {patchGameDay} from './game-day-dom.js';
 
 export function matchupHighlightsHtml(state,gameId,{final=false}={}){
  const items=(state.items||[]).filter(m=>m.matchupId===String(gameId));
- return `<section class="matchup-highlights" aria-label="Matchup highlights"><header><h3>${final?'Final story':'Matchup highlights'}</h3>${items.length||final?'<button type="button" class="linkbtn" data-highlights-recap>Play recap →</button>':''}</header>${items.length?`<ol>${items.slice(0,3).map(m=>`<li><button type="button" data-highlight="${esc(m.eventKey||m.key)}">${m.player?playerPortrait(m.player):'<span class="moment-mini-mark" aria-hidden="true">↗</span>'}<span><strong>${esc(m.title||(m.kind==='lead'?'Lead change':m.kind==='surge'?'Scoring surge':'Big day'))}</strong><span>${esc(m.text)}</span></span></button></li>`).join('')}</ol>`:''}${state.message?`<p role="status">${esc(state.message)}</p>`:!items.length?`<p role="status">${state.busy?'Loading highlights…':state.error?'Highlights unavailable.':'No saved highlights yet.'}</p>`:''}${state.error||state.message?'<button type="button" class="linkbtn" data-highlights-retry>Retry highlights</button>':''}${state.more?`<button type="button" class="linkbtn" data-highlights-more${state.busy?' disabled':''}>Earlier highlights</button>`:''}</section>`;
+ return `<section class="matchup-highlights" aria-label="Matchup highlights"><header><h3>${final?'Final story':'Matchup highlights'}</h3>${items.length||final?'<button type="button" class="linkbtn" data-highlights-recap>Play recap →</button>':''}</header>${items.length?`<ol>${items.slice(0,3).map(m=>`<li><button type="button" data-highlight="${esc(m.eventKey||m.key)}">${momentSummaryMarkup(m)}</button></li>`).join('')}</ol>`:''}${state.message?`<p role="status">${esc(state.message)}</p>`:!items.length?`<p role="status">${state.busy?'Loading highlights…':state.error?'Highlights unavailable.':'No saved highlights yet.'}</p>`:''}${state.error||state.message?'<button type="button" class="linkbtn" data-highlights-retry>Retry highlights</button>':''}${state.more?`<button type="button" class="linkbtn" data-highlights-more${state.busy?' disabled':''}>Earlier highlights</button>`:''}</section>`;
 }
 
 export function mountMatchupHighlights(root,{getModel,getGame,getPlayers=()=>({}),getHost,getMotion=()=>true,active=()=>root.isConnected,load=loadGameDayMoments}={}){
