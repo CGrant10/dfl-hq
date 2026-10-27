@@ -1123,3 +1123,14 @@ area, the score strip and playback controls remain usable, and text/actions
 retain contrast and 44px targets. Shared theme tokens are unchanged. The reel
 and Clubhouse browser harnesses pass 170 and 164 checks. Native iOS fullscreen
 was not manually exercised.
+
+## 1.490.0 — Clearer live headlines and scoring moments
+
+Reviewed saved scoring recaps, verified NFL plays, the NFL game-center feed,
+Clubhouse leaders and fantasy summaries at 320/390 in Medicine Wheel Light and
+Dark. Names lead at 15–17px, outcomes get their own line and larger numbers,
+while team/time metadata remains secondary. Native disclosures keep complete
+play logs available without a wall of text. Point changes use “Points added”;
+Home uses “Latest updates.” The existing theme tokens, 44px actions, focus
+return, reduced motion and contrast checks remain intact. This includes the
+app-wide Pulse styling. Native iOS rendering was not manually exercised.

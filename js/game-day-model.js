@@ -37,7 +37,7 @@ export function gameDayHighlights(model,previous=null){
  const highlights=[];
  for(const g of model.games){const old=previous?.leaders?.[g.id];if(old&&g.leader&&g.leader!==old){const leader=g.sides.find(t=>t.roster===g.leader);highlights.push({key:`lead:${g.id}:${g.leader}`,kind:'lead',text:`${leader.name} moves ahead · ${g.sides.map(t=>t.score.toFixed(2)).join(' – ')}`})}}
  for(const p of model.starters){if(p.points===null)continue;const old=previous?.points?.[`${p.roster}:${p.id}`];
-  if(finite(old)&&p.points-Number(old)>=6)highlights.push({key:`jump:${p.id}:${p.points}`,kind:'surge',text:`${p.name}: +${(p.points-Number(old)).toFixed(2)} fantasy points since the last check · ${p.owner}`});
+  if(finite(old)&&p.points-Number(old)>=6)highlights.push({key:`jump:${p.id}:${p.points}`,kind:'surge',text:`${p.name}: +${(p.points-Number(old)).toFixed(2)} pts · ${p.owner}`});
   if(p.points>=20&&(!finite(old)||Number(old)<20))highlights.push({key:`big:${p.id}`,kind:'big',text:`Big day: ${p.name} has ${p.points.toFixed(2)} points · ${p.owner}`});
  }
  return highlights.slice(0,3);

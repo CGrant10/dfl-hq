@@ -23,7 +23,7 @@ Object.assign(f.catalog,{'1':{n:'Tyler Shough',p:'QB',t:'NO',s:'Active'},'2':{n:
 Object.values(f.catalog).forEach(p=>p.fp=[]);
 f.rows=[[1,['1'],['1','2']],[2,['4','3'],['3','4']],[3,['5'],['5']],[4,['0','0','6'],['6']]].map(([roster_id,starters,players])=>({roster_id,matchup_id:Math.ceil(roster_id/2),starters,players,points:100+roster_id,players_points:{'1':22,'2':7,'3':30,'4':12,'5':24,'6':3}}));
 f.week={season:2026,week:7,leagueId:'fixture',completed:false,voteClosesAt:'2026-10-29T12:00:00Z',games:[1,2].map(n=>({matchup_id:n,user1:String(n*2-1),user2:String(n*2),roster1:n*2-1,roster2:n*2,score1:100+n*2-1,score2:100+n*2})),threads:[],votes:[]};
-f.event=(id,teams)=>({id,date:'2026-10-25T17:00:00Z',status:{period:3,type:{state:'in',description:'Live',shortDetail:'Q3 8:20'}},competitions:[{competitors:teams.map(abbreviation=>({team:{abbreviation},score:'14'}))}]});
+f.event=(id,teams)=>({id,date:'2026-10-25T17:00:00Z',status:{period:3,type:{state:'in',description:'Live',shortDetail:'Q3 8:20'}},competitions:[{competitors:teams.map((abbreviation,i)=>({team:{abbreviation},score:'14',homeAway:i===0?'home':'away'}))}]});
 f.board={season:{year:2026,type:2},week:{number:7},events:[f.event('401873011',['NO','PIT']),f.event('401900001',['WAS','NYG'])]};
 const table=name=>name==='members'?f.members:name==='nfl_player_directory'?{players:f.catalog,fetched_at:new Date().toISOString()}:name==='nfl_highlight_clips'?f.clips||[]:name==='sleeper_leagues'?[{season:2026,sleeper_league_id:'fixture'}]:[];
 const rpc=name=>name==='clubhouse_week_index'?[{season:2026,week:7,completed:false},{season:2026,week:6,completed:true}]:name==='clubhouse_week_data'?f.week:name==='nfl_live_week'?[]:null;
@@ -61,7 +61,7 @@ with sync_playwright() as p:
     if data is not None:return r.fulfill(content_type='application/json',body=json.dumps(data),headers={'Access-Control-Allow-Origin':'*'})
     return r.abort()
    f_rows=[{'roster_id':i,'matchup_id':(i+1)//2,'starters':['1'] if i==1 else ['4','3'] if i==2 else ['5'] if i==3 else ['0','0','6'],'players':['1','2'] if i==1 else ['3','4'] if i==2 else [str(i+2)],'points':100+i,'players_points':{'1':22,'2':7,'3':30,'4':12,'5':24,'6':3}} for i in range(1,5)]
-   f_board={'season':{'year':2026,'type':2},'week':{'number':7},'events':[{'id':id,'date':'2026-10-25T17:00:00Z','status':{'period':3,'type':{'state':'in','description':'Live','shortDetail':'Q3 8:20'}},'competitions':[{'competitors':[{'team':{'abbreviation':t},'score':'14'} for t in teams]}]} for id,teams in [('401873011',['NO','PIT']),('401900001',['WAS','NYG'])]]}
+   f_board={'season':{'year':2026,'type':2},'week':{'number':7},'events':[{'id':id,'date':'2026-10-25T17:00:00Z','status':{'period':3,'type':{'state':'in','description':'Live','shortDetail':'Q3 8:20'}},'competitions':[{'competitors':[{'team':{'abbreviation':t},'score':'14','homeAway':'home' if i==0 else 'away'} for i,t in enumerate(teams)]}]} for id,teams in [('401873011',['NO','PIT']),('401900001',['WAS','NYG'])]]}
    c.route('**/*',route);page=c.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.clock.install(time=datetime(2026,10,26,20,tzinfo=timezone.utc));page.goto(base+'/clubhouse-review.html#/clubhouse?tab=matchups',wait_until='domcontentloaded')
    page.evaluate('''async mode=>{
     (await import('/js/theme.js')).pinMode(mode);const m=await import('/js/members.js');m.selectMember(f.members[0]);
@@ -111,6 +111,9 @@ with sync_playwright() as p:
    page.locator('[data-home-reel-game]').select_option('');page.locator('[data-home-reel-search]').fill('Metcalf');check(tag+' grid search finds the requested player',page.locator('[data-home-reel-clip]').count()==1);page.locator('[data-home-reel-search]').fill('')
    page.locator('#clubhouse-tab-nfl').click();page.wait_for_selector('[data-nfl-center-game] option[value="401873011"]',state='attached');page.wait_for_selector('.nfl-center-plays li',timeout=15000)
    check(tag+' NFL game center shows the full play-by-play',page.locator('.nfl-center-plays li').count()>100)
+   page.locator('[data-nfl-center-filter]').select_option('big');check(tag+' big plays show full names and a clear larger result',page.locator('.nfl-center-plays [data-play-kind="big-play"]').count()>0 and page.locator('.nfl-center-plays [data-play-kind="big-play"] h4').evaluate_all('es=>es.every(e=>parseFloat(getComputedStyle(e).fontSize)>=17)'))
+   play=page.locator('.nfl-center-plays [data-play-kind="big-play"]').first;check(tag+' full play descriptions stay collapsed until tapped',not play.locator('details').evaluate('e=>e.open'));play.locator('summary').click();check(tag+' full NFL description remains available',play.locator('details p').is_visible());play.locator('summary').click()
+   page.screenshot(path=str(OUT/f'{width}-{mode}-nfl-big-plays.png'))
    page.locator('[data-nfl-center-filter]').select_option('scoring');check(tag+' NFL scoring filter is precise',page.locator('.nfl-center-plays li').count()>2 and page.locator('.nfl-center-plays li').count()<20)
    page.locator('[data-nfl-center-mode="fantasy"]').click();check(tag+' fantasy overview identifies your players and league scoring',page.locator('[data-nfl-your-player]').count()>0 and 'League' in page.locator('.nfl-center-fantasy').inner_text())
    page.wait_for_timeout(220);page.screenshot(path=str(OUT/f'{width}-{mode}-nfl-fantasy.png'))

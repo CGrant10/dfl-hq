@@ -13,7 +13,7 @@ export function savedMoments(rows,model,players={}){
   }
   if(r.kind==='lead'){const scores=game.sides.map(t=>number(r.data?.scores?.[t.roster]));if(scores.length!==2||scores.some(s=>s==null)||scores[game.sides.indexOf(side)]<=scores[1-game.sides.indexOf(side)])return[];text=`${side.name} moves ahead · ${scores.map(s=>s.toFixed(2)).join(' – ')}`}
   else if(r.kind==='big'&&number(r.data?.points)>=20)text=`${name}: ${number(r.data.points).toFixed(2)} points · ${side.name}`;
-  else if(r.kind==='surge'&&number(r.data?.delta)>=6)text=`${name}: +${number(r.data.delta).toFixed(2)} fantasy points since the previous sync · ${side.name}`;
+  else if(r.kind==='surge'&&number(r.data?.delta)>=6)text=`${name} · +${number(r.data.delta).toFixed(2)} pts · ${side.name}`;
   else return[];
   const meta=players[r.player_id],lineup=side.lineup.find(p=>p.id===String(r.player_id));
   const points=number(r.data?.points),delta=number(r.data?.delta);
@@ -23,3 +23,11 @@ export function savedMoments(rows,model,players={}){
  }).sort((a,b)=>b.at-a.at||Number(b.key)-Number(a.key));
 }
 import {footballMomentKey,footballMomentLabel} from './football-moments.js';
+
+export function momentSummary(moment){
+ const facts=moment.recap,play=facts?.play,passing=facts?.players?.length>0&&facts.players.every(p=>p.role==='passer'),known=n=>typeof n==='number'&&Number.isFinite(n);
+ const label=play?(moment.kind==='touchdown'?(passing?'TD pass':'Touchdown'):'Big play'):moment.kind==='surge'?'Points added':moment.kind==='lead'?'Takes the lead':'Big day';
+ const value=play&&known(play.yards)?`${play.yards} yd`:moment.kind==='surge'&&known(facts?.delta)?`+${facts.delta.toFixed(2)}`:known(facts?.points)?facts.points.toFixed(2):'';
+ const name=moment.player?.name||moment.team?.team_name||moment.title||label,owner=moment.team?.team_name;
+ return {name,label,value,unit:play?'':value?'pts':'',detail:owner&&owner!==name?owner:moment.kind==='lead'&&facts?.sides?.length===2?facts.sides.map(s=>known(s.points)?s.points.toFixed(2):'—').join(' – '):''};
+}
