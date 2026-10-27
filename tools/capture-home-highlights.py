@@ -130,8 +130,11 @@ with sync_playwright() as p:
    page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open')
    page.evaluate('f.rows=f.playableRows;f.c.refresh()');page.wait_for_timeout(100)
    page.emulate_media(reduced_motion='reduce');page.locator('[data-home-reel-open]').click();check(tag+' reduced motion opens directly without running entrance effects',sheet.evaluate('e=>!e.getAnimations().length'))
+   for at in ['2026-10-27T11:00:00Z','2026-10-28T22:00:00Z','2026-10-29T10:59:00Z']:
+    page.evaluate('at=>{f.time(Date.parse(at));f.c.refresh()}',at);page.wait_for_timeout(100)
+    check(tag+' retains the open reel and playback source at '+at,sheet.evaluate('e=>e.open') and sheet.locator('video').evaluate('e=>e.hasAttribute("src")') and page.locator('[data-home-reel-clip]').count()==8)
    page.evaluate('f.expiringVideo=document.querySelector(".home-reel-player video");f.fail=false;f.time(Date.parse(f.rows[0].expires_at)-100);f.c.refresh()');page.wait_for_function('!document.querySelector("[data-home-reel-open]")&&!document.querySelector(".home-reel-player").open')
-   check(tag+' morning expiry removes the Home reel and closes an open clip',page.locator('[data-home-reel-clip]').count()==0 and page.evaluate('f.expiringVideo.paused&&!f.expiringVideo.hasAttribute("src")'))
+   check(tag+' Thursday morning expiry removes the Home reel and closes an open clip',page.locator('[data-home-reel-clip]').count()==0 and page.evaluate('f.expiringVideo.paused&&!f.expiringVideo.hasAttribute("src")'))
    page.evaluate('f.c.refresh()');page.wait_for_timeout(100);check(tag+' expired cached clips cannot reappear after refresh',page.locator('[data-home-reel-open]').count()==0)
    page.evaluate('f.c.stop();f.time(Date.parse("2026-10-25T22:00:00Z"));f.hold=true;f.c=f.mount()');page.wait_for_function('typeof f.release==="function"');page.evaluate('f.c.stop();f.active=false;f.release()');page.wait_for_timeout(100)
    check(tag+' late responses do not revive a stopped Home reel',page.locator('[data-home-reel-open]').count()==0 and page.locator('.home-reel-player').count()==0)
