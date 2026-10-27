@@ -4,6 +4,8 @@ import {footballNotificationDrafts} from '../../../js/live-football-notification
 import {MATCHUP_MOMENTS_FILTER} from '../../../js/matchup-moments.js';
 import {leagueHealth} from '../../../js/league-health.js';
 import {footballMomentRows} from '../../../js/football-moments.js';
+import {gameHighlightClips} from '../../../js/home-highlight-model.js';
+import {highlightPlayMatch} from '../../../js/highlight-play-link.js';
 const TOKEN_HASH='c7429c5c8cfd182e13e7f1b537b0f671b0b99dcb004b19f8580b960f8f957091';
 let playerRaw:any=null,playerCache:any=null,playerAt=0,playerPending:Promise<any>|null=null;
 const get=async(url:string)=>{const response=await fetch(url,{headers:{'User-Agent':'DFL-HQ-Live-Football/1.0'},signal:AbortSignal.timeout(10000)});if(!response.ok)throw Error(`NFL provider ${response.status}`);return response.json()};
@@ -35,6 +37,8 @@ Deno.serve(async request=>{
   const [rosters,rows,members,opted]=await Promise.all([get(`https://api.sleeper.app/v1/league/${league.league_id}/rosters`),get(`https://api.sleeper.app/v1/league/${league.league_id}/matchups/${week}`),admin.from('members').select('id,sleeper_user_id'),admin.from('push_subscriptions').select('member_id').eq('enabled',true).contains('categories',MATCHUP_MOMENTS_FILTER)]);
   if(members.error||opted.error)throw members.error||opted.error;
   const health=leagueHealth({league,state,rosters,rows,week});if(!health.ok)throw Error('Live roster health check failed');
+  const videoClips:any[]=[];
+  try{const videos=await admin.from('nfl_highlight_clips').select('*').gt('expires_at',new Date(now).toISOString()).in('game_id',games.map((game:any)=>game.id));if(!videos.error)videoClips.push(...videos.data||[])}catch{/* Video availability must not delay a live play alert. */}
   const feeds=await pool<any,any>(games,3,async game=>{
    const summary=await get(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${game.id}`);
    if(String(summary.header?.id)!==game.id||Number(summary.header?.season?.year||season)!==season)throw Error('NFL summary scope mismatch');
@@ -47,12 +51,17 @@ Deno.serve(async request=>{
    const players=enriched.length?await playerIndex():new Map(),details=new Map(enriched.map(play=>[String(play.id),play]));
    const missing=[...new Set<string>(enriched.flatMap(play=>(play.participants||[]).filter((p:any)=>['passer','receiver','rusher','scorer'].includes(p.type)).map((p:any)=>footballAthleteId(p.athlete))).filter((id:string)=>id&&!players.has(id)))];
    await pool<string,void>(missing,3,async id=>{const profile=await get(`https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${season}/athletes/${id}?lang=en&region=us`);if(String(profile.id)!==id)return;const match=footballProfileMatch(profile,playerRaw,game);if(match)players.set(id,match)});
-   const plays=raw.map(play=>footballPlay(details.get(String(play.id))||play,game,players)).filter(Boolean);
+   const plays:any[]=raw.map(play=>footballPlay(details.get(String(play.id))||play,game,players)).filter(Boolean);
+   const event=(scoreboard.events||[]).find((event:any)=>String(event.id)===game.id);
+   const names=(summary.boxscore?.players||[]).flatMap((team:any)=>(team.statistics||[]).flatMap((group:any)=>(group.athletes||[]).map((row:any)=>row.athlete?.displayName).filter(Boolean)));
+   const available=gameHighlightClips(summary,event,{now}).flatMap((clip:any)=>{const play_id=highlightPlayMatch(clip,plays,names);return play_id?[{...clip,play_id}]:[]});
+   if(available.length&&!dryRun){try{const saved=await admin.from('nfl_highlight_clips').upsert(available,{onConflict:'id'});if(!saved.error)videoClips.push(...available)}catch{/* Continue with saved videos or the regular play alert. */}}
+   for(const play of plays){const clip=videoClips.find(c=>c.game_id===game.id&&c.play_id===play.id&&c.video_url);if(clip)play.clipId=clip.id}
    if(dryRun)return {game_id:game.id,snapshot:game,plays,fetched_at:new Date(now).toISOString(),dryRun:true};
    const capture=await admin.rpc('capture_nfl_live_game',{p_game:game,p_plays:plays,p_seen:raw.map(play=>String(play.id))});if(capture.error)throw capture.error;return capture.data;
   });
   if(!feeds.length)throw Error('All live game providers unavailable');
-  const drafts=footballNotificationDrafts({season,week,feeds,rows,rosters,members:members.data||[],optedMemberIds:(opted.data||[]).map(row=>Number(row.member_id)),now});
+  const drafts=footballNotificationDrafts({season,week,feeds,rows,rosters,members:members.data||[],optedMemberIds:(opted.data||[]).map(row=>Number(row.member_id)),clips:videoClips,now});
   if(dryRun)return Response.json({ok:true,dryRun,season,week,games:feeds.map(feed=>({id:feed.game_id,redZone:feed.snapshot.redZone,plays:feed.plays.length,verified:feed.plays.filter((p:any)=>p.kind).length})),drafts:[],wouldCapture:feeds.length});
   const moments=footballMomentRows({leagueId:String(league.league_id),season,week,feeds,rows,now});
   if(moments.length){const saved=await admin.from('gameday_moments').upsert(moments,{onConflict:'league_id,season,week,event_key',ignoreDuplicates:true});if(saved.error)throw saved.error}

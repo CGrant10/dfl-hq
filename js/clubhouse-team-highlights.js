@@ -14,7 +14,7 @@ export function mountClubhouseTeamHighlights(root,{getModel,getGame,active=()=>r
  const contextKey=()=>JSON.stringify([getModel()?.season,getModel()?.week,currentMember()?.id,scope,scope==='matchup'?getGame()?.id:null,scope==='league'?[]:players().map(p=>[p.id,p.name,p.nflTeam]).sort()]);
  const title=()=>scope==='mine'?"Your team’s highlights":scope==='matchup'?'Matchup highlights':'Weekend highlights';
  const empty=()=>scope==='mine'&&!currentMember()?'Choose your profile to see your team’s clips.':'No clips available for this week right now.';
- const reel=mountHomeHighlights(slot,{active:()=>!stopped&&active(),title,getPlayers:()=>scope==='league'?getModel()?.games.flatMap(game=>game.sides.flatMap(side=>[...side.lineup,...side.bench]))||[]:players(),markup:(clips,now,browse)=>homeHighlightMarkup(clips,now,{...browse,title:title(),eyebrow:scope==='mine'?own()?.name||'YOUR TEAM':scope==='matchup'?'THIS MATCHUP':'AROUND THE LEAGUE',emptyText:empty()}),load:async()=>{
+ const reel=mountHomeHighlights(slot,{active:()=>!stopped&&active(),title,getContext:getModel,getPlayers:()=>getModel()?.games.flatMap(game=>game.sides.flatMap(side=>[...side.lineup,...side.bench].map(p=>({...p,owner:side.name,isMine:String(side.memberId)===String(currentMember()?.id)}))))||[],markup:(clips,now,browse)=>homeHighlightMarkup(clips,now,{...browse,layout:'grid',title:title(),eyebrow:scope==='mine'?own()?.name||'YOUR TEAM':scope==='matchup'?'THIS MATCHUP':'AROUND THE LEAGUE',emptyText:empty()}),load:async()=>{
   const model=getModel(),requested=contextKey();if(!model)return [];
   const [rows,nfl]=await Promise.all([metadata(),model.events?.length?null:loadNfl(model.season,model.week)]);
   if(stopped||requested!==contextKey())return [];
@@ -29,5 +29,5 @@ export function mountClubhouseTeamHighlights(root,{getModel,getGame,active=()=>r
  const click=event=>{const button=event.target.closest('[data-team-reel-scope]');if(button){scope=button.dataset.teamReelScope;sync()}};
  const tab=event=>{if(event.detail?.tab!=='highlights')reel.close();else{sync();void reel.refresh()}};
  root.addEventListener('click',click);root.addEventListener('dfl:clubhouse-context',sync);root.addEventListener('dfl:clubhouse-tab',tab);sync();
- return {stop(){stopped=true;reel.stop();root.removeEventListener('click',click);root.removeEventListener('dfl:clubhouse-context',sync);root.removeEventListener('dfl:clubhouse-tab',tab)}};
+ return {async openClip(id){scope='league';sync();await reel.refresh();if(stopped||!active())return false;return reel.openClip(id)},stop(){stopped=true;reel.stop();root.removeEventListener('click',click);root.removeEventListener('dfl:clubhouse-context',sync);root.removeEventListener('dfl:clubhouse-tab',tab)}};
 }

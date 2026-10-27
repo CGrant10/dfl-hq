@@ -87,6 +87,8 @@ with sync_playwright() as p:
    if width==390 and theme=='dark':
     for review_width,review_height in [(320,568),(844,390),(1280,800)]:
      page.set_viewport_size({'width':review_width,'height':review_height});page.wait_for_timeout(80)
+     page.screenshot(path=str(OUT/f'browser-{review_width}x{review_height}.png'))
+     if sheet.locator('[data-reel-queue]').evaluate('e=>e.clientHeight<78'):print('LAYOUT',page.evaluate('()=>[...document.querySelectorAll("dialog[open],.home-reel-stage,.home-reel-browser,.reel-clip-browser,.reel-game-label,.reel-search-row,[data-reel-players],[data-reel-queue]")].map(e=>[e.className,e.clientHeight,getComputedStyle(e).flex])'),flush=True)
      check(f'{review_width}x{review_height} clip browser stays usable',sheet.locator('[data-reel-queue]').evaluate('e=>e.clientHeight>=78') and sheet.locator('[data-reel-search]').is_visible() and sheet.evaluate('e=>e.scrollWidth<=e.clientWidth&&e.getBoundingClientRect().right<=innerWidth') and sheet.locator('[data-reel-next]').evaluate('e=>e.getBoundingClientRect().bottom<=e.closest("dialog").getBoundingClientRect().bottom'))
      page.screenshot(path=str(OUT/f'browser-{review_width}x{review_height}.png'))
     page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(80)
@@ -106,6 +108,9 @@ with sync_playwright() as p:
    sheet.locator('[data-reel-choose]').last.click();page.wait_for_function('document.querySelector("[data-reel-queue]").scrollTop>0')
    page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open');page.locator('[data-home-reel-open]').click()
    check(tag+' reopening the reel resets playback and the clip list to the start',sheet.locator('[data-reel-count]').inner_text()=='1 / 11' and sheet.locator('[data-reel-previous]').is_disabled() and sheet.locator('[data-reel-queue]').evaluate('e=>e.scrollTop===0'))
+   if width==390 and theme=='dark':
+    sheet.locator('[data-reel-close]').click();page.wait_for_timeout(40);page.evaluate('f.c.openClip(f.rows[1].id)');page.wait_for_timeout(350)
+    check('reopening during dismissal cancels the old exit without stopping the new clip',sheet.evaluate('e=>e.open') and sheet.locator('[data-reel-choose][aria-pressed="true"]').get_attribute('data-reel-choose')==page.evaluate('f.rows[1].id') and sheet.locator('video').evaluate('e=>!e.paused&&e.hasAttribute("src")'))
    page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open');page.evaluate('f.fail=true;f.c.refresh()');page.wait_for_timeout(100)
    check(tag+' a failed refresh retains current unexpired clips',page.locator('[data-home-reel-clip]').count()==8)
    page.locator('[data-home-reel-open]').click();page.evaluate('document.querySelector(".home-reel-player video").dispatchEvent(new Event("error"))')

@@ -528,7 +528,7 @@ export async function render(view) {
     if(slot&&slot.innerHTML!==markup){slot.innerHTML=markup;slot.hidden=!markup;}
     weekFlow.update(homeEdition);
   };
-  homeHighlightReel=mountHomeHighlights(view.querySelector('[data-home-highlights-slot]'),{active:()=>mine===generation&&view.isConnected&&location.hash.startsWith('#/home'),getPlayers:()=>homeEdition.model?.games.flatMap(game=>game.sides.flatMap(side=>[...side.lineup,...side.bench]))||[]});deferredStops.push(homeHighlightReel.stop);
+  homeHighlightReel=mountHomeHighlights(view.querySelector('[data-home-highlights-slot]'),{getContext:()=>homeEdition.model,active:()=>mine===generation&&view.isConnected&&location.hash.startsWith('#/home'),getPlayers:()=>homeEdition.model?.games.flatMap(game=>game.sides.flatMap(side=>[...side.lineup,...side.bench]))||[]});deferredStops.push(homeHighlightReel.stop);
   deferredStops.push(mountHomeMatchupPreview(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,onModel:edition=>{homeEdition=edition;homeHighlightReel?.updatePlayers();updateWeekFlow();refreshEdition?.();requestAnimationFrame(()=>requestAnimationFrame(startAnalysis))},active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
   // Archive stories load independently of the live weekly model.
   lorePromise.then(got => {
