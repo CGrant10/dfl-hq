@@ -1,0 +1,8 @@
+import {esc} from './ui.js';
+import {team,teamLogoUrl} from './nfl-teams.js';
+import {nflFantasySides} from './nfl-game-center-model.js';
+export function nflFantasyMarkup(rows,teams,{uid,loading=false,error=false}={}){
+ const sides=nflFantasySides(rows,teams);
+ if(!sides.length)return loading?'':'<p class="nfl-center-empty">Choose an NFL game to see player stats.</p>';
+ return `<div class="nfl-center-fantasy">${sides.map(side=>`<section class="nfl-fantasy-side" id="${uid}-fantasy-${esc(side.code)}" aria-labelledby="${uid}-team-${esc(side.code)}"><header class="nfl-fantasy-team"><img src="${esc(teamLogoUrl(side.code))}" alt="" width="28" height="28" loading="lazy" decoding="async" onerror="this.hidden=true"><div><h3 id="${uid}-team-${esc(side.code)}" aria-label="${esc(team(side.code)?.name||side.code)}">${esc(side.code)}</h3><small>${side.home?'Home':'Away'}</small></div><b>${esc(side.score??'—')}</b></header><div class="nfl-fantasy-players">${side.players.map(p=>`<article class="nfl-fantasy-player" id="${uid}-fantasy-player-${esc(p.id)}" ${p.isMine?'data-nfl-your-player':''}><div class="nfl-fantasy-player-head">${p.playerId?`<button type="button" class="linkbtn" data-player-card="${esc(p.playerId)}">${esc(p.name)}</button>`:`<strong>${esc(p.name)}</strong>`}</div><div class="nfl-fantasy-value"><small>${esc([p.nflTeam,p.position].filter(Boolean).join(' · '))}</small><span><b>${p.points===null?'—':p.points.toFixed(1)}</b><small>${p.league?'League':'PPR'}</small></span></div>${p.owner?`<small class="nfl-fantasy-owner">${esc(p.isMine?'Your team':p.owner)}</small>`:''}<p>${esc(p.line)}</p></article>`).join('')||(!loading?`<p class="nfl-center-empty">${error?'Stats unavailable.':'No player stats yet.'}</p>`:'')}</div></section>`).join('')}</div>`;
+}
