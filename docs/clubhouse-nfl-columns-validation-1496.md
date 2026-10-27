@@ -36,3 +36,14 @@ mobile browser matrix adds a loaded-heading viewport assertion in all four
 phone/theme combinations (204 checks passed); all 38 live-feed checks also pass.
 Release/theme/name/type/build checks passed. Both-theme screenshots were inspected.
 No live league records are changed.
+
+
+### 1.496.2 sticky-header clearance
+
+The real-data screenshot exposed the compact Clubhouse bar covering a few pixels
+of the NFL title. The panel scroll margin now reuses the shared measured compact
+header position and height. A real-data browser probe using the local production
+assets passes a stronger assertion: the title clears the visible sticky bar by
+at least 8px. NE/CHI shows 20 players and 180 plays with correct columns, team
+membership and game selection. The mobile Light/Dark matrix is repeated before
+merging; the published build is checked after deployment.

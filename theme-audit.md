@@ -1202,3 +1202,12 @@ Wheel, touch, pointer and keyboard activity while loading cancel the pending
 jump; changing views or leaving the page also prevents it. Existing motion
 preferences, keyboard focus and shared theme tokens remain in use. Native iOS
 and assistive-technology behavior remain unverified.
+
+
+## 1.496.2 — Sticky-header shortcut clearance
+
+NFL shortcut destinations now include the shared compact-header height in their
+scroll margin. This prevents the live Clubhouse context bar from covering the
+NFL heading after a shortcut jump. The 320/390 Light/Dark mobile matrix and
+public real-data arrival are rechecked; no colors or motion timings change.
+Physical installed-device rendering remains unverified.
