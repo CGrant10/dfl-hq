@@ -2,25 +2,30 @@ import {describe,it,expect,vi} from 'vitest';
 import {runTradeWatch} from '../supabase/functions/trade-watch/handler.ts';
 const now=Date.parse('2026-10-27T18:00:00Z');
 const trade={transaction_id:'deal-1',type:'trade',status:'complete',roster_ids:[1,2],adds:{a:2,b:1},drops:{a:1,b:2},created:now-60000};
-function fixture({saved=[],rows=[trade],enabled=true,claim=true}={}){
- const writes=[],config={sleeper_league_id:'league',auto_sync_enabled:enabled};
- const admin={from:table=>({select:()=>({eq:()=>({single:async()=>({data:config,error:null})}),in:async()=>({data:saved,error:null})}),update:patch=>{
+function fixture({saved=[],rows=[trade],enabled=true,claim=true,ledgerError=null}={}){
+ const writes=[],ledger=new Map(),upserts=[],config={sleeper_league_id:'league',auto_sync_enabled:enabled};
+ const admin={from:table=>({upsert:async(rows,options)=>{if(table!=='sleeper_transactions')throw Error('Unexpected table');upserts.push({rows,options});if(ledgerError)return{error:ledgerError};for(const row of rows)ledger.set(row.sleeper_transaction_id,row);return{error:null}},select:()=>({eq:()=>({single:async()=>({data:config,error:null})}),in:async()=>({data:saved,error:null})}),update:patch=>{
   writes.push(patch);const q={eq:()=>q,or:()=>q,select:async()=>({data:claim?[{id:1}]:[],error:null}),then:(a,b)=>Promise.resolve({error:null}).then(a,b)};return q;
  }})};
  const sleeper=vi.fn(async path=>path==='/state/nfl'?{season:'2026',week:8}:path==='/league/league'?{season:'2026',settings:{leg:8},total_rosters:2}:path.endsWith('/transactions/7')?[]:path.endsWith('/transactions/8')?rows:path.endsWith('/users')?[{user_id:'a'},{user_id:'b'}]:path.endsWith('/rosters')?[{roster_id:1,players:['b']},{roster_id:2,players:['a']}]:null);
- const capture=vi.fn(async()=>({created:1,notified:1}));
- return {admin,sleeper,capture,writes,now};
+ const capture=vi.fn(async({transactions})=>{
+  // Match the production FK, rather than accepting receipts for absent parents.
+  if(transactions.filter(t=>t.type==='trade'&&t.status==='complete').some(t=>!ledger.has(String(t.transaction_id))))throw {code:'23503',message:'Trade receipt requires a saved transaction'};
+  return{created:1,notified:1};
+ });
+ return {admin,sleeper,capture,writes,ledger,upserts,now};
 }
 describe('independent Sleeper trade watch',()=>{
  it('detects a completed trade between games without a full sync',async()=>{
   const f=fixture();expect(await runTradeWatch(f)).toMatchObject({ok:true,week:8,tradeAlerts:{created:1,notified:1}});
+  expect(f.upserts).toEqual([{rows:[{sleeper_transaction_id:'deal-1',season:2026,week:8,type:'trade',status:'complete',details:trade,created_ms:trade.created}],options:{onConflict:'sleeper_transaction_id'}}]);
   expect(f.capture).toHaveBeenCalledWith(expect.objectContaining({transactions:[trade],transactionWeeks:{'deal-1':8},season:2026,week:8}));
   expect(f.sleeper.mock.calls.every(([path])=>!path.includes('matchups')&&!path.includes('projections'))).toBe(true);
   expect(f.writes.at(-1)).toMatchObject({last_trade_watch_checked_at:new Date(now).toISOString(),last_trade_watch_error:''});
  });
  it('avoids roster, analyzer and notification work for already delivered trades',async()=>{
   const f=fixture({saved:[{sleeper_transaction_id:'deal-1',breaking_active:true,notification_message_id:12}]});
-  expect(await runTradeWatch(f)).toMatchObject({tradeAlerts:{created:0,notified:0}});expect(f.capture).not.toHaveBeenCalled();expect(f.sleeper.mock.calls.some(([path])=>/rosters|users/.test(path))).toBe(false);
+  expect(await runTradeWatch(f)).toMatchObject({tradeAlerts:{created:0,notified:0}});expect(f.capture).not.toHaveBeenCalled();expect(f.upserts).toEqual([]);expect(f.sleeper.mock.calls.some(([path])=>/rosters|users/.test(path))).toBe(false);
  });
  it('retries a receipt whose phone notification has not succeeded',async()=>{
   const f=fixture({saved:[{sleeper_transaction_id:'deal-1',breaking_active:true,notification_message_id:null}]});await runTradeWatch(f);expect(f.capture).toHaveBeenCalledOnce();
@@ -30,10 +35,10 @@ describe('independent Sleeper trade watch',()=>{
  });
  it('covers the previous week at rollover and deduplicates overlapping provider rows',async()=>{
   const f=fixture(),load=f.sleeper.getMockImplementation();f.sleeper.mockImplementation(path=>path.endsWith('/transactions/7')?Promise.resolve([{...trade,transaction_id:'older'},trade]):load(path));await runTradeWatch(f);
-  expect(f.capture.mock.calls[0][0]).toMatchObject({transactionWeeks:{older:7,'deal-1':8}});expect(f.capture.mock.calls[0][0].transactions).toHaveLength(2);
+  expect(f.capture.mock.calls[0][0]).toMatchObject({transactionWeeks:{older:7,'deal-1':8}});expect(f.capture.mock.calls[0][0].transactions).toHaveLength(2);expect(f.ledger.get('older').week).toBe(7);expect(f.ledger.size).toBe(2);
  });
  it('dry run is strictly read-only, including no lock, receipt or push',async()=>{
-  const f=fixture();expect(await runTradeWatch({...f,dryRun:true})).toMatchObject({dryRun:true,workPending:true,weeks:[7,8]});expect(f.writes).toEqual([]);expect(f.capture).not.toHaveBeenCalled();
+  const f=fixture();expect(await runTradeWatch({...f,dryRun:true})).toMatchObject({dryRun:true,workPending:true,weeks:[7,8]});expect(f.writes).toEqual([]);expect(f.upserts).toEqual([]);expect(f.capture).not.toHaveBeenCalled();
  });
  it('respects the existing automatic-sync switch and overlapping run claim',async()=>{
   const off=fixture({enabled:false});expect(await runTradeWatch(off)).toMatchObject({skipped:'disabled'});expect(off.sleeper).not.toHaveBeenCalled();
@@ -45,4 +50,15 @@ describe('independent Sleeper trade watch',()=>{
  it('rejects old-season and incomplete ownership before creating receipts',async()=>{
   for(const scenario of ['old','roster']){const f=fixture(),load=f.sleeper.getMockImplementation();f.sleeper.mockImplementation(path=>path==='/league/league'&&scenario==='old'?Promise.resolve({season:'2025'}):path.endsWith('/rosters')?Promise.resolve([]):load(path));await expect(runTradeWatch(f)).rejects.toThrow();expect(f.capture).not.toHaveBeenCalled()}
  });
+ it('does not grade or notify if saving the parent transaction fails, and preserves a readable retry error',async()=>{
+  const error={code:'42501',message:'Transaction ledger write rejected'},f=fixture({ledgerError:error});
+  await expect(runTradeWatch(f)).rejects.toBe(error);expect(f.capture).not.toHaveBeenCalled();
+  expect(f.writes.at(-1).last_trade_watch_error).toBe(error.message);
+ });
+ it('upserts the same parent on retries without duplicates or changing its provider details',async()=>{
+  const f=fixture();await runTradeWatch(f);await runTradeWatch(f);
+  expect(f.ledger.size).toBe(1);expect(f.ledger.get('deal-1').details).toEqual(trade);
+  expect(f.upserts).toHaveLength(2);
+ });
+
 });
