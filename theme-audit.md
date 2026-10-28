@@ -1289,3 +1289,21 @@ Existing Trade mobile/browser checks pass. Selected screenshots were inspected
 and saved in `docs/activity-center-1501/`. The core player-card and bet-slip
 connected animations remain. Physical installed-device motion, screen-reader
 behavior and OS banners remain unverified; no test pushes were sent.
+# 1.502.0 — Connected viewing and compact trade actions
+
+Reviewed actual mobile screenshots in Medicine Wheel Light and Dark at
+320/390/768: replay dock, independent expanded viewer, compact generated-offer
+actions and personal postgame receipt. Evidence:
+`docs/connected-viewing-1502/`. Reused theme tokens for every new surface,
+border, selected action, text and outline. No extra theme picker options or
+retired brand colors added. New trade actions share the existing 44px Analyze
+row; Keep player also retains a 44px summary. Recap portraits are explicitly
+contained, with hidden initials after image load and a fallback without images.
+Existing Home/video and NFL suites verify secondary-label contrast in both
+themes. Both modes retain clear selected controls and no horizontal overflow.
+
+`pnpm themes` and full theme tests pass. Isolated browser checks cover native
+scroll, media continuity, reduced motion, Back choices, phone targets and
+cleanup. Existing optional haptics are respected; physical device haptics,
+screen-reader speech and physical iOS/Android video decoder continuity remain
+unverified. Fixture media is representative. No production test sends or writes.

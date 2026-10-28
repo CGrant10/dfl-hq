@@ -1,3 +1,4 @@
+import {tradeOfferKey,availableTradeOffers,tradeOfferAnchors} from '../trade-offer-actions.js';
 import {normalizeReceivePositions,setReceivePositions,receivePositionsMarkup} from '../trade-receive-controls.js';
 import {createTradeIntentions} from '../trade-intentions-ui.js';
 import {tradeAssessment} from '../trade-assessment.js';
@@ -52,7 +53,7 @@ export {completedTradeMarkup} from '../trade-receipt-ui.js';
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
 const shapeLabel = offer => `${offer.sendA.length} FOR ${offer.sendB.length}`;
-const offerKey=offer=>JSON.stringify([offer.parties?.map(p=>String(p.id))||[String(offer.other?.id??'')],offer.sends||[offer.sendA,offer.sendB],offer.destinations||null]);
+const offerKey=tradeOfferKey;
 const tierCopy = {
   fair: { title: "Fair", call: "FAIR SHOT" },
   aggressive: { title: "Aggressive", call: "WORTH A TEXT" },
@@ -82,14 +83,18 @@ function offerSummary(offer,pool){
  return `<div class="tb-offer-summary" aria-label="Trade balance, lineup impact and risk"><strong class="tb-offer-fit">${esc(tradeLineupFitLabel(deltas))}</strong><dl><div><dt>Price balance</dt><dd>${Math.round(a.fairness)}%</dd></div><div><dt>You · pts/wk</dt><dd class="${deltas[0]<0?'is-down':'is-up'}">${signed(deltas[0])}</dd></div><div><dt>${offer.parties?'Group balance':'Them · pts/wk'}</dt><dd>${offer.parties?offer.fairness+'%':signed(deltas[1])}</dd></div></dl><span class="tb-offer-horizon">${esc(window)} · projected</span>${a.flags.length?`<span class="tb-offer-risk">${esc(a.flags.join(' · '))}</span>`:''}${p.requiredDropsA?.length?`<span class="tb-offer-risk">Drop: ${esc(p.requiredDropsA.map(id=>pool.get(String(id))?.name||id).join(', '))}</span>`:''}${offer.managerFit?.notes?.length?`<div class="tb-manager-fit">${offer.managerFit.notes.map(note=>`<span>${esc(note)}</span>`).join('')}</div>`:''}${p.openSlotsA?`<span class="tb-offer-risk">${p.openSlotsA} open roster spot${p.openSlotsA===1?'':'s'}</span>`:''}</div>`;
 }
 
+function offerControls(offer,pool){
+ const pins=offer.parties?'':`<details class="tb-offer-pin"><summary>Keep player</summary><div>${[['send',offer.sendA],['receive',offer.sendB]].flatMap(([side,ids])=>ids.map(id=>`<button type="button" data-tb-pin="${esc(id)}" data-pin-side="${side}">Keep ${esc(pool.get(String(id))?.name||id)}</button>`)).join('')}</div></details>`;
+ return `<div class="tb-card-actions"><button type="button" data-tb-pass>Pass</button><button type="button" data-tb-save>Save</button>${pins}</div>`;
+}
 function offerMarkup(offer, pool) {
-  if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerSummary(offer,pool)}<button type="button" class="tb-offer-analyze" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze trade <span aria-hidden="true">→</span></button></article>`;
+  if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerSummary(offer,pool)}<footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze trade <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer></article>`;
   const call = tradeAssessment(offer).price.headline.toUpperCase();
   return `<article class="tb-offer" data-offer-key="${esc(offerKey(offer))}">
     <header><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<strong>${esc(teamName(offer.other))}</strong></small><span>${shapeLabel(offer)}</span><b>${call}</b></header>
     <div class="tb-offer-flow">${offerPackage(offer.sendA,pool,'YOU SEND')}${offerPackage(offer.sendB,pool,'YOU GET')}</div>
     ${offerSummary(offer,pool)}
-    <button type="button" class="tb-offer-analyze" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(','))}" data-send-b="${esc(offer.sendB.join(','))}" data-weekly-delta="${Number(offer.weeklyDeltaA)||0}">Analyze trade <span aria-hidden="true">→</span></button>
+    <footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(','))}" data-send-b="${esc(offer.sendB.join(','))}" data-weekly-delta="${Number(offer.weeklyDeltaA)||0}">Analyze trade <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer>
   </article>`;
 }
 
@@ -172,10 +177,11 @@ function tradeLab(team, teams, pool, shop) {
     receivePositions,goal:shop.goal||"best",horizon:shop.horizon||'season',weekSchedules:shop.weekSchedules||[],maxPlayers,sendAnchorIds:shop.sendAnchors,receiveAnchorIds:shop.receiveAnchors,sendCount,receiveCount,intent,
     limit:allPartners?132:96,shapes:shapeKeys};
   const result=shop.findOffers(cacheKey,query);
-  const intentCount = tier => result.countErrors?.[tier] ? '?' : result.counts?.[tier] ?? '…';
+  const passedCount=tier=>(result.offers||[]).filter(o=>o.tier===tier&&!availableTradeOffers([o],shop.passedOffers,team.id).length).length;
+  const intentCount = tier => result.countErrors?.[tier] ? '?' : result.counts?.[tier] == null?'…':Math.max(0,result.counts[tier]-passedCount(tier));
   const intentLabel = (tier, label) => result.countErrors?.[tier] ? `${label}: count unavailable. Tap to retry.`
-    : result.counts?.[tier] == null ? `${label}: finding offers` : `${label}: ${result.counts[tier]} generated offers`;
-  const allOffers=result.offers||[],searching=result.state==='loading',failed=result.state==='error';
+    : result.counts?.[tier] == null ? `${label}: finding offers` : `${label}: ${intentCount(tier)} available offers`;
+  const allOffers=availableTradeOffers(result.offers||[],shop.passedOffers,team.id),searching=result.state==='loading',failed=result.state==='error';
   const tierOffers = allOffers.filter(offer => offer.tier === intent);
   const closestOffers=closestTradeOffers(allOffers,intent),closestTier=closestOffers[0]?.tier;
   const representedTeams = new Set(tierOffers.map(offer => String(offer.other?.id??''))).size;
@@ -221,10 +227,10 @@ function tradeLab(team, teams, pool, shop) {
         : `<section data-tb-receive-targets><header><small>PLAYERS I WANT</small></header><div class="tb-anchor-chips">${anchorChips(shop.receiveAnchors, pool, "receive")}</div><select aria-label="Add a player you want to receive" data-tb-add-anchor="receive">${anchorOptions(theirPlayers, shop.receiveAnchors, "Add player…")}</select></section>`}
     </div>
     ${receivePositionsMarkup(receivePositions)}
-    <div class="tb-intent" aria-label="Offer type"><span>SHOW ME</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "Fair"], ["aggressive", "Aggressive"], ["steal", "Steal"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" aria-pressed="${intent === value}" aria-label="${intentLabel(value,label)}" class="${intent === value ? "is-active" : ""}"><span>${label}</span><span class="tb-intent-count" data-tb-intent-count>(${intentCount(value)})</span></button>`).join("")}</div></div>
+    <div class="tb-intent" aria-label="Offer type"><span>SHOW ME</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "Fair"], ["aggressive", "Aggressive"], ["steal", "Steal"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" aria-pressed="${intent === value}" aria-label="${esc(intentLabel(value,label))}" class="${intent === value ? "is-active" : ""}"><span>${label}</span><span class="tb-intent-count" data-tb-intent-count>(${intentCount(value)})</span></button>`).join("")}</div></div>
     <section class="tb-layout-section" data-tb-offers tabindex="-1">
       <h2 class="section-title">Generated offers<span class="count">${searching?'Finding offers…':failed?'Try again':closestOffers.length?`${closestOffers.length} alternatives`:`Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}`}</span></h2>
-      <div class="tb-offers-card" aria-busy="${searching}">
+      <div class="tb-offers-card" aria-busy="${searching}">${shop.lastPassed?'<div class="tb-pass-status" role="status">Offer passed <button type="button" class="linkbtn" data-tb-undo-pass>Undo</button></div>':''}
         ${searching?'<p class="tb-search-status" role="status">Finding offers…</p><div class="tb-search-placeholder" aria-hidden="true"><i></i><i></i><i></i></div>':failed?'<p class="tb-search-status" role="status">Couldn’t find offers.</p><button type="button" class="btn ghost small" data-tb-retry>Try again</button>':`
         ${tierOffers.length || !closestOffers.length ? `<div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, true, tierOffers.length)}</div>` : ""}
         ${tierOffers.length ? "" : `<div class="ta-empty" role="status">${esc(receivePositions.length?tradeOfferEmptyCopy(intent, shop.receiveAnchors.map(id=>pool.get(String(id))?.position),allOffers):'Select a position to find offers.')}${tradeSearchRestricted(shop)?`<button type="button" class="btn ghost small" data-tb-reset-search>Reset search · all teams</button>`:""}</div>`}
@@ -268,18 +274,19 @@ function page(data, tradeAlerts = []) {
     setupOpen:false,goal:"best",horizon:'season',maxPlayers: 8, sendCount: "any", receiveCount: "any", intent: "fair", visibleCount: OFFER_BATCH_SIZE,
     openTiers: new Set(["fair"]), mode:"offers", customOpen: false, sharedAudit: [] };
   const draftKey = `trade:${data.projectionSeason}`;
-  const saved = restoreTradeDraft(readViewMemory(me?.id, draftKey), data.teams, routeTeam);
+  const returning=document.getElementById('view')?.dataset.routeReturning==='true',visitDraft=`${draftKey}:visit:${history.state?.dflRouteVisit?.id||'current'}`;
+  const saved = restoreTradeDraft(readViewMemory(me?.id, returning?visitDraft:draftKey), data.teams, routeTeam);
   if (saved) { selectedId = saved.selectedId; Object.assign(trade, saved.trade); Object.assign(shop, saved.shop); }
   // A new visit shops the whole league. Keep the manual draft separately;
   // an explicit incoming target link can still narrow the search below.
-  resetTradeSearch(shop);
-  if(params.get('room')==='1')shop.mode='room';
+  if(!returning||!saved)resetTradeSearch(shop);
+  if(!returning&&params.get('room')==='1')shop.mode='room';
   const target = params.get('target'), partner = data.teams.find(t => String(t.id) === params.get('partner'));
-  if (target && partner && String(partner.id) !== String(selectedId) && partner.playerIds.map(String).includes(target)) {
+  if (!returning && target && partner && String(partner.id) !== String(selectedId) && partner.playerIds.map(String).includes(target)) {
     shop.partnerId = partner.id; shop.memberIds = []; shop.anchorPartnerId = partner.id;
     shop.receiveAnchors = [target]; shop.sendAnchors = []; shop.sendCount = 'any'; shop.receiveCount = 'any';shop.mode='offers';shop.customOpen=false;shop.refineOpen=true;shop.setupOpen=true;
   }
-  saveDraft = () => writeViewMemory(me?.id, draftKey, tradeDraft({ selectedId, trade, shop }));
+  saveDraft = () => {const snapshot=tradeDraft({selectedId,trade,shop});writeViewMemory(me?.id,draftKey,snapshot);writeViewMemory(me?.id,visitDraft,snapshot)};
 
   return {
     markup: `<div class="ta-report td-page" data-td-body></div>${completedTradeMarkup(tradeAlerts, selectedTransactionId)}`,
@@ -335,7 +342,7 @@ function page(data, tradeAlerts = []) {
         const next=template.content.querySelector('[data-tb-offers]');
         if(preservePrevious&&next.querySelector('.tb-offers-card[aria-busy="true"]')&&old.querySelector('.tb-offer')){
           old.setAttribute('aria-busy','true');
-          old.querySelectorAll('[data-td-load-offer]').forEach(button=>button.disabled=true);
+          old.querySelectorAll('[data-td-load-offer],[data-tb-pass],[data-tb-save],[data-tb-pin]').forEach(button=>button.disabled=true);
           if(!old.querySelector('[data-ti-search-status]')){const status=document.createElement('p');status.className='tb-search-status';status.dataset.tiSearchStatus='';status.setAttribute('role','status');status.textContent='Updating offers…';old.querySelector('.tb-offers-card')?.prepend(status);}
           return;
         }
@@ -517,6 +524,23 @@ function page(data, tradeAlerts = []) {
         if (summary) summary.textContent = value;
       });
       body.addEventListener("click", async event => {
+        const offerAction=event.target.closest('[data-tb-pass],[data-tb-save],[data-tb-pin],[data-tb-undo-pass]');
+        if(offerAction){
+          if(offerAction.hasAttribute('data-tb-undo-pass')){shop.passedOffers=(shop.passedOffers||[]).filter(key=>key!==shop.lastPassed);shop.lastPassed=null;paintOffers({preservePrevious:false});saveDraft?.();return;}
+          const card=offerAction.closest('[data-offer-key]'),offer=shop.offerState?.offers?.find(o=>offerKey(o)===card?.dataset.offerKey);if(!offer)return;
+          if(offerAction.hasAttribute('data-tb-pass')){
+            shop.lastPassed=`${selectedId}:${offerKey(offer)}`;shop.passedOffers=[...new Set([...(shop.passedOffers||[]),shop.lastPassed])].slice(-300);
+            const y=scrollY;paintOffers({preservePrevious:false});window.scrollTo({top:y,behavior:'instant'});body.querySelector('[data-tb-undo-pass]')?.focus({preventScroll:true});saveDraft?.();return;
+          }
+          if(offerAction.hasAttribute('data-tb-pin')){const anchors=tradeOfferAnchors(offer,offerAction.dataset.tbPin,offerAction.dataset.pinSide);if(anchors){shop.passedOffers=[...new Set([...(shop.passedOffers||[]),`${selectedId}:${offerKey(offer)}`])].slice(-300);Object.assign(shop,anchors);refreshOffers();saveDraft?.();body.querySelector('[data-tb-offers]')?.focus({preventScroll:true});}return;}
+          const parties=offer.parties||[data.teams.find(t=>String(t.id)===String(selectedId)),offer.other],candidate=evaluateTradeDeal(parties,offer.sends||[offer.sendA,offer.sendB],data.pool,offer.destinations);
+          if(!candidate){toast('Rosters changed. Refresh offers.',true);return;}
+          const row=savedTradeProposal(candidate),fingerprint=r=>JSON.stringify([r.teamIds,r.sends,r.destinations]);
+          if(proposals.some(r=>fingerprint(r)===fingerprint(row))){toast('Already in saved deals');return;}
+          if(proposals.length>=3){toast('Three deals saved. Remove one from Saved deals first.',true);return;}
+          const next=[...proposals,row];if(!writeTradeProposals(me?.id,data.projectionSeason,next)){toast('Could not save on this device. Try again.',true);return;}
+          proposals=next;body.querySelector('[data-td-proposals-slot]').innerHTML=proposalsMarkup(proposals,data.teams,data.pool,proposalsOpen);offerAction.textContent='Saved';offerAction.disabled=true;toast('Deal saved on this device');return;
+        }
         const preset=event.target.closest('[data-tb-receive-preset]');
         if(preset){updateReceivePositions(preset.dataset.tbReceivePreset==='all'?normalizeReceivePositions():['RB','WR']);return;}
         if(event.target.closest('[data-td-negotiate]')){

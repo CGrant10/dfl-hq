@@ -1,3 +1,4 @@
+import {mountPersonalPostgame} from '../personal-postgame.js';
 import {mountClubhouseNfl} from '../clubhouse-nfl.js';
 import {mountClubhouseTeamHighlights} from '../clubhouse-team-highlights.js';
 import {mountClubhouseCenter} from '../clubhouse-center.js';
@@ -45,12 +46,13 @@ export async function render(view){
    <div id="clubhouse-panel-highlights" role="tabpanel" aria-labelledby="clubhouse-tab-highlights" ${initialTab==='highlights'?'':'hidden'}><section class="card clubhouse-section clubhouse-team-reel"><div class="clubhouse-reel-scopes" role="group" aria-label="Whose highlight clips"><button type="button" class="linkbtn" data-team-reel-scope="mine" aria-pressed="true">Your team</button><button type="button" class="linkbtn" data-team-reel-scope="matchup" aria-pressed="false">This matchup</button><button type="button" class="linkbtn" data-team-reel-scope="league" aria-pressed="false">League</button></div><div data-clubhouse-reel-slot data-home-highlights-slot></div></section></div>
    <div id="clubhouse-panel-nfl" role="tabpanel" aria-labelledby="clubhouse-tab-nfl" ${initialTab==='nfl'?'':'hidden'}><section class="card clubhouse-section"><div class="clubhouse-heading"><div><small>WEEK ${model.week} · ${model.season}</small><h2>NFL game center</h2></div></div><div data-clubhouse-nfl-center></div></section></div>
    <div id="clubhouse-panel-leaders" role="tabpanel" aria-labelledby="clubhouse-tab-leaders" ${initialTab==='leaders'?'':'hidden'}><section class="card clubhouse-section"><div data-clubhouse-leaders><p role="status">Loading player scores…</p></div><div data-clubhouse-nfl-scoreboard></div></section></div>
-   <div id="clubhouse-panel-recap" role="tabpanel" aria-labelledby="clubhouse-tab-recap" ${initialTab==='recap'?'':'hidden'}><section class="card clubhouse-section"><div class="clubhouse-heading"><div><small>WEEK ${model.week} · ${model.season}</small><h2>Week in review</h2></div><span class="clubhouse-status">${model.completed?'Final receipts':'In progress'}</span></div><div data-clubhouse-recap>${recapHtml(model)}</div></section><div data-recap-advice></div><section class="card clubhouse-section" data-recap-calls><p role="status">Loading prediction receipts…</p></section></div>
+   <div id="clubhouse-panel-recap" role="tabpanel" aria-labelledby="clubhouse-tab-recap" ${initialTab==='recap'?'':'hidden'}><div data-personal-postgame hidden></div><section class="card clubhouse-section"><div class="clubhouse-heading"><div><small>WEEK ${model.week} · ${model.season}</small><h2>Week in review</h2></div><span class="clubhouse-status">${model.completed?'Final receipts':'In progress'}</span></div><div data-clubhouse-recap>${recapHtml(model)}</div></section><div data-recap-advice></div><section class="card clubhouse-section" data-recap-calls><p role="status">Loading prediction receipts…</p></section></div>
   </div>`;
   const center=mountClubhouseCenter(view,model,{active,autoFinish:!params.has('archive')&&latest?.season===model.season&&latest?.week===model.week});
   const teamReel=mountClubhouseTeamHighlights(view,{getModel:center.getModel,getGame:center.getGame,active});
   const nflCenter=mountClubhouseNfl(view,{getModel:center.getModel,active,onClip:async id=>{view.querySelector('#clubhouse-tab-highlights').click();return teamReel.openClip(id)}});
-  stopLive=mountMatchupLive(view,model,threadIds,active,{onUpdate:center.update,onError:center.fail,onStop:()=>{nflCenter.stop();teamReel.stop();center.stop()}});
+  const postgame=mountPersonalPostgame(view,{getModel:center.getModel,active});
+  stopLive=mountMatchupLive(view,model,threadIds,active,{onUpdate:center.update,onError:center.fail,onStop:()=>{postgame.stop();nflCenter.stop();teamReel.stop();center.stop()}});
   wirePageDisclosures(view);
   wireClubhouseTabs(view,initialTab);
   for(const button of view.querySelectorAll('[data-clubhouse-nfl-open]'))button.addEventListener('click',async event=>{

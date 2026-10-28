@@ -1,3 +1,4 @@
+import {readJourneyChoice,writeJourneyChoice} from './journey-memory.js';
 import {mountHomeHighlights} from './home-highlights.js';
 import {loadHomeHighlights} from './home-highlight-data.js';
 import {homeHighlightMarkup} from './home-highlight-ui.js';
@@ -7,7 +8,8 @@ import {currentMember} from './members.js';
 
 export function mountClubhouseTeamHighlights(root,{getModel,getGame,active=()=>root.isConnected,load=loadHomeHighlights,loadNfl=loadNflGameDay}={}){
  const slot=root.querySelector('[data-clubhouse-reel-slot]');if(!slot)return {stop(){}};
- let scope=currentMember()?'mine':'matchup',stopped=false,key='',cached=null,pending=null;
+ const route=new URLSearchParams(location.hash.split('?')[1]||''),journey=readJourneyChoice(root,'reel-scope'),returning=!!root.closest('[data-route-returning="true"]');
+ let scope=['mine','matchup','league'].includes(journey?.scope)?journey.scope:route.has('player')?'league':currentMember()?'mine':'matchup',stopped=false,key='',cached=null,pending=null;
  const metadata=()=>{if(cached&&Date.now()-cached.at<30000)return Promise.resolve(cached.rows);if(pending)return pending;pending=load().then(rows=>{cached={at:Date.now(),rows};return rows}).finally(()=>{pending=null});return pending};
  const own=()=>getModel()?.games.find(game=>game.isMine)?.sides.find(side=>String(side.memberId)===String(currentMember()?.id));
  const players=()=>{const sides=scope==='mine'?[own()].filter(Boolean):getGame()?.sides||[];return sides.flatMap(side=>[...(side.lineup||[]),...(side.bench||[])])};
@@ -26,8 +28,9 @@ export function mountClubhouseTeamHighlights(root,{getModel,getGame,active=()=>r
   for(const button of root.querySelectorAll('[data-team-reel-scope]'))button.setAttribute('aria-pressed',String(button.dataset.teamReelScope===scope));
   const next=contextKey();if(next!==key){key=next;reel.reset();if(!root.querySelector('#clubhouse-panel-highlights')?.hidden)void reel.refresh()}else reel.updatePlayers();
  };
- const click=event=>{const button=event.target.closest('[data-team-reel-scope]');if(button){scope=button.dataset.teamReelScope;sync()}};
+ const click=event=>{const button=event.target.closest('[data-team-reel-scope]');if(button){scope=button.dataset.teamReelScope;writeJourneyChoice('reel-scope',{scope});sync()}};
  const tab=event=>{if(event.detail?.tab!=='highlights')reel.close();else{sync();void reel.refresh()}};
  root.addEventListener('click',click);root.addEventListener('dfl:clubhouse-context',sync);root.addEventListener('dfl:clubhouse-tab',tab);sync();
+ if(route.has('player')&&!returning){writeJourneyChoice('reel-scope',{scope});void reel.refresh().then(()=>{if(!stopped&&scope==='league')reel.filterPlayer(route.get('player'),route.get('query')||'')});}
  return {async openClip(id){scope='league';sync();await reel.refresh();if(stopped||!active())return false;return reel.openClip(id)},stop(){stopped=true;reel.stop();root.removeEventListener('click',click);root.removeEventListener('dfl:clubhouse-context',sync);root.removeEventListener('dfl:clubhouse-tab',tab)}};
 }
