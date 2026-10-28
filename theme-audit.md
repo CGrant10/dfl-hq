@@ -1327,3 +1327,17 @@ Public data was inspected read-only; all browser league mutations and sends
 were blocked or replaced with isolated fixtures. Physical phone frame pacing,
 OS haptics and screen-reader speech remain unverified. Portraits and recorded
 play examples in the evidence use representative fixtures.
+# 1.504.0 — wide broadcast and Home hierarchy
+
+Reviewed actual Home/broadcast components at 320/390/768px in the Light and
+Dark Medicine Wheel defaults. Champion and Chip Eater use contained house art
+with separate copy; results, transactions, metrics, injuries, rivalry, news,
+archive, scout and season slides pass the wide gallery's bounds and text
+contrast checks. Controls use shared theme tokens and 44px targets; the quiet
+transport strip preserves contrast over opener artwork. Active segments remain
+visible in long editions. Home jump labels use current body-text tokens and
+measure 11.95:1 Light / 14.13:1 Dark. Keyboard focus, 125% text, long award
+names, Motion off and reduced motion reviewed. No new theme entries or legacy
+accent colors. `pnpm themes` and full `pnpm check` passed. Physical-device
+frame timing and VoiceOver remain unverified. Evidence:
+[broadcast-polish-1504.md](docs/broadcast-polish-1504.md).

@@ -17,4 +17,17 @@ describe('wide broadcast previews',()=>{
   const html=renderBroadcastBrief({kind:'league-story',headline:'Keep the receipt.',figure:'131.22',sides:[{name:'North',score:'131.22'},{name:'South',score:'0.00'}]});
   expect(html.match(/131\.22/g)).toHaveLength(1);expect(html).toContain('<b>0.00</b>');expect(html).toContain('North');expect(html).toContain('South');
  });
+ it('labels only a known final football margin, including a real zero score',()=>{
+  const item={kind:'league-story',temporal:'final',sides:[{name:'North',score:'0.26',up:true},{name:'South',score:'0.00'}],href:'#/clubhouse?week=7'};
+  expect(renderBroadcastBrief(item)).toContain('<b>0.26</b> pt margin');
+  for(const temporal of ['live','upcoming'])expect(renderBroadcastBrief({...item,temporal})).not.toContain('pt margin');
+  for(const score of [null,undefined,'',NaN])expect(renderBroadcastBrief({...item,sides:[item.sides[0],{name:'South',score}]})).not.toContain('pt margin');
+  expect(renderBroadcastBrief({...item,kind:'golf'})).not.toContain('pt margin');
+ });
+ it('keeps the sourced transaction balance and label beside the exact receipt action',()=>{
+  const item={kind:'trade',figure:'78%',href:'#/trade?tx=exact',tradeStory:{balanceLabel:'group balance',packages:[{teamName:'North',players:[]},{teamName:'South',players:[]},{teamName:'West',players:[]}]}};
+  const html=renderBroadcastBrief(item);
+  expect(html).toContain('<b>78%</b> group balance');expect(html).toContain('href="#/trade?tx=exact"');
+  expect(renderBroadcastBrief({...item,figure:null})).not.toContain('group balance');
+ });
 });

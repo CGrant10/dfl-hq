@@ -1,5 +1,5 @@
 /* Room for the broadcast without shrinking team names or hiding useful scores. */
-#home-wrap{padding-top:16px;--home-section-gap:30px}
+#home-wrap{padding-top:16px;--home-section-gap:24px}
 #home-wrap>.home-newspaper-masthead{margin-bottom:6px;padding-bottom:6px;gap:3px 14px}
 #home-wrap .home-newspaper-name h1{font-size:clamp(27px,8vw,32px);line-height:1.1}
 #home-wrap .home-frontpage{gap:16px}
@@ -22,11 +22,20 @@
 #home-wrap .home-league-story.is-featured p{font-size:14px;line-height:1.45}
 #home-wrap .home-league-story.is-featured .home-story-chevron{position:absolute;right:0;bottom:22px}
 #home-wrap .home-league-story:not(.is-featured){padding-block:14px}
-#home-wrap .home-week-desk{margin-top:28px}
+#home-wrap .home-week-desk{margin-top:20px}
 #home-wrap .home-league-desk{padding-top:6px}
 #home-wrap .home-banter{margin-top:32px}
 #home-wrap [data-gameday-chirp]:empty{display:none}
 #home-wrap [data-gameday-chirp] .dfl-chirp{margin-top:12px;border-left:2px solid var(--accent);padding-left:10px}
+/* Section jumps are actions, with readable ink in every palette. */
+#home-wrap .home-newspaper-sections{margin-top:8px;padding-block:4px;border-top:0;border-bottom:1px solid var(--line-soft)}
+#home-wrap .home-newspaper-sections button{min-height:44px;color:var(--body-text);font-weight:600;border-radius:6px}
+#home-wrap .home-newspaper-sections button:hover{color:var(--text);background:var(--hover)}
+#home-wrap .home-newspaper-sections button:active{color:var(--accent)}
+#home-wrap .home-newspaper-sections button:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
+#home-wrap .home-frontpage>.home-broadcast{border:0;border-radius:10px}
+#home-wrap :is(.home-week-desk,.home-league-desk,.home-league-file)>header{margin-bottom:12px}
+#home-wrap :is(.home-weekly-clubhouse small,.home-outlook-title small){color:var(--muted)}
 @media(min-width:800px){#home-wrap .home-league-stories{display:grid;grid-template-columns:1.2fr 1fr;gap:0 24px}#home-wrap .home-league-story.is-featured{grid-column:1;grid-row:1 / span 3;border:0}#home-wrap .home-league-story:not(.is-featured){grid-column:2}#home-wrap .home-league-story.is-featured .home-story-art{height:190px}}
 @media(min-width:1000px){#home-wrap .home-frontpage{gap:24px}}
 html[data-matchup-transition]::view-transition-group(*){animation-duration:300ms;animation-timing-function:cubic-bezier(.2,.75,.25,1)}
