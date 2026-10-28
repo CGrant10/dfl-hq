@@ -42,6 +42,10 @@ different composition for each story type.
   delayed-data guards. Background updates do not reshuffle a scrolled visit.
 - `capture-home-score-review.py`: 18 checks including native/fallback paths,
   touch fling at 4x CPU, score changes, modal cleanup and motion settings.
+- The broader highlights browser review now scopes its preview count/clicks
+  to the actual highlights list. The collapsed timeline has a separate Open
+  moment control using the same recap action and must not be counted as a
+  fourth preview tile. No application behavior was changed for this fix.
 
 Browser reviews use actual production components with isolated league fixtures
 and blocked external backend access. Fixture portraits are stand-ins, not
