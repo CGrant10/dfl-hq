@@ -2,6 +2,7 @@ import { readPageChoice } from './page-disclosure.js';
 import {mountTabScrollCues} from './tab-scroll-cues.js';
 import {mountPageScrollMotion} from './page-scroll-motion.js';
 import {mountSwipeTabs} from './swipe-tabs.js';
+import {mountDisclosureMotion} from './disclosure-motion.js';
 
 const easing = 'cubic-bezier(.2,.75,.25,1)';
 const running = new Set();
@@ -171,9 +172,10 @@ export function mountPageMotion(root) {
   const stopPageScroll=mountPageScrollMotion(root,{animate:animateUi,cancel:cancelUiMotion});
   const stopSwipe=mountPageSwipeTabs(root);
   root.dataset.uiPolished = '1';
-  const states = new Map(), pending = new Map(), userDetails = new WeakSet(), receiptOrigins = new WeakMap();
+  const states = new Map(), pending = new Map(), userDetails = new WeakSet();
   let stopped = false, frame = null, intent = null;
   const current = () => !stopped && root.isConnected;
+  const receipts=mountDisclosureMotion(root,{selector:'.td-alert-receipt',getMotion:()=>readPageChoice('gameday-motion',['on','off'],'on')!=='off',active:current});
   const reveal = node => { if (visible(node) && !node.dataset.uiSwipeSettling) animateUi(node, [{ opacity: .45 }, { opacity: 1 }], { duration: 180 }); };
   const drain = () => {
     for (const [selector, expires] of pending) {
@@ -252,14 +254,9 @@ export function mountPageMotion(root) {
     recordIntent(event);
     if (button?.matches('[data-tb-view-offers]')) { pending.set('[data-tb-offers]', performance.now() + 15000); schedule(); }
     const summary = event.target.closest?.('summary');
-    if (summary?.parentElement.tagName === 'DETAILS') {
+    if (summary?.parentElement.tagName === 'DETAILS'&&!summary.parentElement.matches('.td-alert-receipt')) {
       const details = summary.parentElement;
       userDetails.add(details);
-      if (details.matches('.td-alert-receipt')) {
-        const height = details.getBoundingClientRect().height;
-        cancelUiMotion(details);
-        receiptOrigins.set(details, height);
-      }
     }
     const fold = event.target.closest?.('.dfl-fold');
     if (fold) requestAnimationFrame(() => {
@@ -272,14 +269,6 @@ export function mountPageMotion(root) {
     const details = event.target;
     if (!current() || !details.matches?.('details') || !userDetails.has(details)) return;
     userDetails.delete(details);
-    if (details.matches('.td-alert-receipt')) {
-      cancelUiMotion(details);
-      if (details.open && visible(details)) animateUi(details, [
-        { height:`${receiptOrigins.get(details) || details.querySelector('summary').offsetHeight}px` },
-        { height:`${details.offsetHeight}px` },
-      ], { duration:260 });
-      receiptOrigins.delete(details);
-    }
     if (!details.open || details.closest('.clubhouse-command-center')) return;
     for (const child of details.children) if (child.tagName !== 'SUMMARY') reveal(child);
   };
@@ -314,6 +303,7 @@ export function mountPageMotion(root) {
     });
   }
   return () => {
+    receipts.stop();
     stopScrollCues();
     stopPageScroll();
     stopSwipe();

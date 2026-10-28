@@ -1,0 +1,109 @@
+/* Matchup first; supporting information stays quieter and opens on demand. */
+#view[data-route="clubhouse"] .clubhouse-command-center {
+ --clubhouse-control-radius:8px;
+}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-header {
+ padding:4px 0 12px; margin:0 0 12px; border:0;
+}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-header h1 {font-size:26px; letter-spacing:.015em}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-status {font-size:12px; color:var(--body-text)}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-context.card {
+ padding:0 0 12px; margin:0 0 8px; border:0; border-bottom:1px solid var(--line-soft);
+ border-radius:0; background:transparent; box-shadow:none;
+}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-nfl-shortcuts {gap:8px; margin-bottom:12px}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-nfl-shortcuts button {
+ min-height:46px; padding:8px 10px; border-radius:var(--clubhouse-control-radius);
+ background:var(--bg-2); font-size:14px;
+}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-section.card {
+ padding:0; border:0; border-radius:0; background:transparent; box-shadow:none;
+}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-tabs {margin-bottom:16px}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-heading {align-items:center; margin-bottom:8px}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-heading h2 {font:700 18px/1.2 var(--font-display); letter-spacing:.01em}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-heading small {color:var(--body-text); font-size:10px; letter-spacing:.06em}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-toolbar {
+ display:flex; flex-wrap:nowrap; align-items:center; gap:6px; margin:0 0 10px;
+}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-toolbar [data-matchup-freshness] {
+ flex:1; min-width:0; color:var(--body-text); font-size:11px; line-height:1.3;
+}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-toolbar button {
+ flex:none; width:auto; min-height:44px; min-width:44px; padding:7px 8px; font:600 12px/1.3 var(--font-display);
+ border-radius:var(--clubhouse-control-radius); color:var(--body-text); background:transparent;
+}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-scoreboard-grid {margin:0 0 18px; gap:10px}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-scoreboard-game {
+ padding:10px 12px; gap:8px; border-radius:var(--clubhouse-control-radius); border-color:var(--line);
+ background:var(--bg-2); box-shadow:none; transform:none;
+}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-scoreboard-game[aria-pressed="true"] {
+ border-color:var(--accent); box-shadow:inset 0 2px var(--accent); background:var(--bg-2);
+}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-scoreboard-game:focus-visible {outline-offset:-3px}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-mini-team {grid-template-columns:22px minmax(0,1fr) auto; gap:7px}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-mini-team .dfl-team-mark {width:22px; height:22px; border-radius:6px; border-bottom:2px solid var(--team-accent,var(--accent))}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-mini-team>span:not(.dfl-team-mark) {font-size:12px; line-height:1.25}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-mini-team>b {font-size:16px}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-focus>small {margin-bottom:6px; padding-bottom:6px; color:var(--body-text)}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-card {
+ padding:16px 0 0; border:0; border-top:1px solid var(--line); background:transparent; box-shadow:none;
+}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-card>header {padding-bottom:10px; margin-bottom:0}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-game-teams {
+ padding:18px 10px; gap:24px; margin-bottom:12px; border-color:var(--line-soft); border-radius:12px;
+ background:radial-gradient(ellipse at 0 0,color-mix(in srgb,var(--clubhouse-left,var(--accent)) 9%,transparent),transparent 65%),
+ radial-gradient(ellipse at 100% 0,color-mix(in srgb,var(--clubhouse-right,var(--accent)) 9%,transparent),transparent 65%),var(--bg-2);
+}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-game-side {min-width:0; gap:8px}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-game-side>.clubhouse-team-mark {
+ width:48px; height:48px; border-radius:12px; outline:1px solid color-mix(in srgb,var(--team-accent,var(--accent)) 45%,var(--line)); outline-offset:3px; box-shadow:none;
+}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-name {min-height:56px; min-width:0; align-content:start}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-name strong {font-size:16px; line-height:1.2; letter-spacing:0; text-transform:none; overflow-wrap:anywhere}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-name>small {font-size:11px; color:var(--body-text)}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-game-side>b {font-size:40px; letter-spacing:-.025em; font-variant-numeric:tabular-nums}
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-summary {margin:4px 0 16px; color:var(--body-text); font-size:14px; line-height:1.4}
+#view[data-route="clubhouse"] .clubhouse-command-center :is(.matchup-highlights,.gd-lineup-comparison) {margin-block:20px}
+#view[data-route="clubhouse"] .clubhouse-command-center :is(.matchup-highlights,.gd-lineup-comparison)>:is(header,h3) {margin-bottom:12px}
+#view[data-route="clubhouse"] .clubhouse-command-center :is(.matchup-timeline,.banter-memory,.clubhouse-position-stats,.gd-compare-bench) {
+ margin:12px 0; border-block:1px solid var(--line-soft); background:transparent;
+}
+#view[data-route="clubhouse"] .clubhouse-command-center :is(.matchup-timeline,.banter-memory,.clubhouse-position-stats,.gd-compare-bench)>summary {
+ display:flex; align-items:center; gap:10px; min-height:48px; padding:10px 0; color:var(--text); font:600 15px/1.3 var(--font-display); list-style:none;
+}
+#view[data-route="clubhouse"] .clubhouse-command-center :is(.matchup-timeline,.banter-memory,.clubhouse-position-stats,.gd-compare-bench)>summary::-webkit-details-marker {display:none}
+#view[data-route="clubhouse"] .clubhouse-command-center :is(.matchup-timeline,.banter-memory)>summary::after {
+ content:''; flex:none; width:6px; height:6px; margin:0 3px 0 auto; border:0; border-right:1.5px solid currentColor; border-bottom:1.5px solid currentColor;
+ transform:rotate(45deg); transition:transform 220ms cubic-bezier(.22,.75,.25,1);
+}
+#view[data-route="clubhouse"] .clubhouse-command-center :is(.matchup-timeline,.banter-memory)[open]>summary::after {transform:rotate(225deg)}
+#view[data-route="clubhouse"] .clubhouse-command-center :is(.matchup-timeline,.banter-memory)>summary>b {margin-left:auto; font-size:12px; font-weight:500; color:var(--body-text)}
+
+#view[data-route="clubhouse"] .clubhouse-command-center :is(.timeline-rail button,.multigame-card) {border-radius:var(--clubhouse-control-radius)}
+
+/* Game groups frame the clips; individual previews don't need extra boxes. */
+#view[data-route="clubhouse"] .clubhouse-command-center .home-highlight-reel>header {align-items:center; margin-bottom:16px}
+#view[data-route="clubhouse"] .clubhouse-command-center .home-highlight-reel h2 {font-size:22px; letter-spacing:-.01em}
+#view[data-route="clubhouse"] .clubhouse-command-center .reel-game-group {margin-top:24px}
+#view[data-route="clubhouse"] .clubhouse-command-center .reel-game-group h3 {font-size:16px; padding-bottom:10px; border-color:var(--line-soft)}
+#view[data-route="clubhouse"] .clubhouse-command-center .home-reel-grid {gap:20px 12px}
+#view[data-route="clubhouse"] .clubhouse-command-center .home-reel-grid button {gap:7px; align-content:start; height:100%}
+#view[data-route="clubhouse"] .clubhouse-command-center .home-reel-grid strong {font:700 15px/1.25 var(--font-display); -webkit-line-clamp:3; text-wrap:pretty}
+#view[data-route="clubhouse"] .clubhouse-command-center .home-reel-poster {border:1px solid var(--line-soft); border-radius:8px}
+#view[data-route="clubhouse"] .clubhouse-command-center .home-reel-kind {font-size:10px; font-weight:600; letter-spacing:.035em}
+#view[data-route="clubhouse"] .clubhouse-command-center .home-reel-duration {padding:4px 6px; color:var(--text); background:var(--bg-2); border:1px solid var(--line); font-size:11px}
+#view[data-route="clubhouse"] .clubhouse-command-center :is(.reel-grid-filters input,.reel-grid-filters select,.reel-person,.clubhouse-reel-scopes button) {border-radius:var(--clubhouse-control-radius)}
+
+/* Match the existing Book/Trade control scale without changing their layout. */
+#view[data-route="clubhouse"] .clubhouse-command-center :is(button,a,summary):focus-visible {outline:2px solid var(--accent); outline-offset:2px}
+#view[data-route="clubhouse"] .clubhouse-command-center :is(.btn,.linkbtn) {min-height:44px; border-radius:var(--clubhouse-control-radius)}
+#view[data-route="clubhouse"] .clubhouse-command-center :is(button,summary)[data-ui-pressed="true"] {background-color:var(--hover)}
+@media(max-width:600px) {
+ #view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-scoreboard-grid {grid-auto-flow:column; grid-auto-columns:min(78vw,262px); grid-template-columns:none; overflow-x:auto; padding:3px 2px 10px; scroll-snap-type:x proximity; overscroll-behavior-x:contain; scrollbar-width:thin}
+ #view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-scoreboard-game {scroll-snap-align:start; height:100%}
+}
+@media(min-width:800px) {#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-scoreboard-grid {grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce) {#view[data-route="clubhouse"] .clubhouse-command-center summary::after {transition:none}}
+html[data-ui-motion="off"] #view[data-route="clubhouse"] .clubhouse-command-center summary::after {transition:none}

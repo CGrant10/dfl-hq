@@ -1341,3 +1341,19 @@ names, Motion off and reduced motion reviewed. No new theme entries or legacy
 accent colors. `pnpm themes` and full `pnpm check` passed. Physical-device
 frame timing and VoiceOver remain unverified. Evidence:
 [broadcast-polish-1504.md](docs/broadcast-polish-1504.md).
+
+# 1.505.0 — Clubhouse reading and reversible disclosures
+
+Reviewed the actual Clubhouse in Light and Dark at 320/390px, including the
+compact native matchup rail, selected team/score hierarchy, team portrait
+accents, clip grids, NFL plays/stats, filters and controls. Disclosure motion
+was reviewed at 320/390/768px in both defaults, with keyboard navigation, rapid
+reversal, live content, summary anchoring, resize, hidden tabs, Motion off,
+reduced motion and teardown. Text contrast checks pass in the actual Clubhouse
+fixture. Existing Power and Trade reviews also pass. Native grid expansion
+retains its intrinsic heights with a shared 260ms rhythm. All new UI colors
+use theme tokens; explicit team colors remain identity accents. No theme-picker
+entries or retired red/white/blue UI colors were added. `pnpm themes` and
+`pnpm check` pass; bundle remains 90 modules, three startup / four Home.
+Physical iPhone frame pacing and VoiceOver were not measured. Screenshots and
+limits: [clubhouse-polish-1505.md](docs/clubhouse-polish-1505.md).
