@@ -726,8 +726,8 @@ function ticketCard(b,marketMap,outcomeMap){
   return `<article id="sb-ticket-${esc(b.id)}" data-ticket-id="${esc(b.id)}" data-ticket-status="${esc(b.status)}" class="card sb-ticket${multi?" is-entry":""}">
     <div class="card-title-row">
       <div>
-        <small class="sb-ticket-kicker">${multi?`${legs.length}-pick entry`:esc(legs[0].market||"DFL Sportsbook")}</small>
-        <strong>${multi?fmtOdds(b.odds_american):esc(legs[0].label||"Ticket")}</strong>
+        <small class="sb-ticket-kicker">${multi?`${legs.length}-pick entry`:"Single"}</small>
+        <strong>${fmtOdds(b.odds_american)}</strong>
       </div>
       <span class="pill ${STATUS_PILL[b.status]||''}${pendingResult?` sb-result-pill is-${entryResult}`:''}"${pendingResult?' aria-label="'+label+'; grading pending"':''}>${esc(label)}</span>
     </div>
@@ -927,11 +927,10 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
     </div>
     <p class="sb-slip-available"><span data-slip-balance>${num(available)}</span> SIN available &middot; Return includes your stake</p>
     <p id="sb-slip-error" role="status"></p>
-    </div><footer class="sb-slip-footer"><button type="submit" class="btn sb-slip-submit">Review bet</button></footer>
+    </div><footer class="sb-slip-footer"><div class="sb-slip-totals"><span>Stake<b data-footer-stake>—</b></span><span>Est. return<b data-footer-return>—</b></span></div><button type="submit" class="btn sb-slip-submit">Review bet</button></footer>
   </form>`;
   view.append(dialog);
 
-  dialog._bookBalanceChanged=balance=>{available=balance;dialog.querySelector('[data-slip-balance]').textContent=num(balance);};
   const form=dialog.querySelector("form"),input=form.elements.stake;
   const submit=dialog.querySelector('[type="submit"]'),status=dialog.querySelector("#sb-slip-error");
   let reviewed=false,busy=false;
@@ -942,6 +941,18 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
   dialog.querySelector("[data-close]").addEventListener("click",close);
   dialog.addEventListener("cancel",event=>{event.preventDefault();close()});
 
+  const updateAmounts=()=>{
+    reviewed=false;
+    const combined=combineOdds(picks.map(o=>Number(o.odds_american)));
+    dialog.querySelector("[data-combined]").textContent=combined===null?"—":fmtOdds(combined);
+    const stake=parseStake(input.value,available);
+    const payout=stake===null?null:entryReturn(stake,picks.map(o=>Number(o.odds_american)));
+    dialog.querySelector("[data-return]").textContent=payout===null?"—":`${num(payout)} SIN`;
+    dialog.querySelector('[data-footer-stake]').textContent=stake===null?'—':`${num(stake)} SIN`;
+    dialog.querySelector('[data-footer-return]').textContent=payout===null?'—':`${num(payout)} SIN`;
+    submit.textContent=picks.length===1?"Review bet":`Review ${picks.length}-pick entry`;
+    status.textContent=picks.length>1?"Every pick has to land.":"";
+  };
   const paint=()=>{
     reviewed=false;
     dialog.querySelector("[data-picks]").innerHTML=picks.map((o,i)=>`
@@ -951,13 +962,7 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
         <strong class="sb-slip-pick-odds" data-price="${o.id}">${fmtOdds(o.odds_american)}</strong>
         ${picks.length>1?`<button type="button" class="sb-slip-drop" data-drop="${o.id}" aria-label="Remove ${esc(o.label)}">&times;</button>`:""}
       </li>`).join("");
-    const combined=combineOdds(picks.map(o=>Number(o.odds_american)));
-    dialog.querySelector("[data-combined]").textContent=combined===null?"—":fmtOdds(combined);
-    const stake=parseStake(input.value,available);
-    const payout=stake===null?null:entryReturn(stake,picks.map(o=>Number(o.odds_american)));
-    dialog.querySelector("[data-return]").textContent=payout===null?"—":`${num(payout)} SIN`;
-    submit.textContent=picks.length===1?"Review bet":`Review ${picks.length}-pick entry`;
-    status.textContent=picks.length>1?"Every pick has to land.":"";
+    updateAmounts();
     dialog.querySelectorAll("[data-drop]").forEach(btn=>btn.addEventListener("click",()=>{
       const id=String(btn.dataset.drop);
       picks=picks.filter(o=>String(o.id)!==id);
@@ -966,7 +971,8 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
       paint();
     }));
   };
-  input.addEventListener("input",()=>{slipStake=input.value;paint()});
+  dialog._bookBalanceChanged=balance=>{available=balance;dialog.querySelector('[data-slip-balance]').textContent=num(balance);updateAmounts();};
+  input.addEventListener("input",()=>{slipStake=input.value;updateAmounts()});
   paint();
   const drag=mountSheetDrag(dialog,{handle:dialog.querySelector(".sb-slip-head"),canDismiss:()=>!busy,dismiss:close});
   stopSlipDrag=()=>drag.stop();

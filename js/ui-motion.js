@@ -175,7 +175,7 @@ export function mountPageMotion(root) {
   const states = new Map(), pending = new Map(), userDetails = new WeakSet();
   let stopped = false, frame = null, intent = null;
   const current = () => !stopped && root.isConnected;
-  const receipts=mountDisclosureMotion(root,{selector:'.td-alert-receipt',getMotion:()=>readPageChoice('gameday-motion',['on','off'],'on')!=='off',active:current});
+  const receipts=mountDisclosureMotion(root,{selector:'.td-alert-receipt,.tb-offer-preview,.td-other-impact,.td-lineup-preview,.td-bench-preview',getMotion:()=>readPageChoice('gameday-motion',['on','off'],'on')!=='off',active:current});
   const reveal = node => { if (visible(node) && !node.dataset.uiSwipeSettling) animateUi(node, [{ opacity: .45 }, { opacity: 1 }], { duration: 180 }); };
   const drain = () => {
     for (const [selector, expires] of pending) {
@@ -254,7 +254,7 @@ export function mountPageMotion(root) {
     recordIntent(event);
     if (button?.matches('[data-tb-view-offers]')) { pending.set('[data-tb-offers]', performance.now() + 15000); schedule(); }
     const summary = event.target.closest?.('summary');
-    if (summary?.parentElement.tagName === 'DETAILS'&&!summary.parentElement.matches('.td-alert-receipt')) {
+    if (summary?.parentElement.tagName === 'DETAILS'&&!summary.parentElement.matches('.td-alert-receipt,.tb-offer-preview,.td-other-impact,.td-lineup-preview,.td-bench-preview')) {
       const details = summary.parentElement;
       userDetails.add(details);
     }

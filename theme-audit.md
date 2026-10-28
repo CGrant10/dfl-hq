@@ -1357,3 +1357,18 @@ entries or retired red/white/blue UI colors were added. `pnpm themes` and
 `pnpm check` pass; bundle remains 90 modules, three startup / four Home.
 Physical iPhone frame pacing and VoiceOver were not measured. Screenshots and
 limits: [clubhouse-polish-1505.md](docs/clubhouse-polish-1505.md).
+
+# 1.506.0 — Trade comparisons and Sportsbook tickets
+
+Reviewed compact offer cards, native expanding starter comparisons and explicit
+three-team transfer destinations in Light/Dark at mobile widths, with 320/390/768px
+browser coverage, keyboard input, 200% root text, exact Back restoration, Keep
+controls, Motion off and reduced motion. Reviewed the Book's ruled slip list,
+pinned matching totals and confirmation controls at 320/390/430px, plus live and
+settled ticket states and exported results. Existing semantic hit/miss/push colors
+remain distinct; team identity accents remain explicit. New text, button, surface,
+line and selected colors use shared tokens. No theme choices or retired crest
+colors were added. `pnpm themes` and the production checks pass; the bundle remains
+90 modules with three startup / four Home. No production writes were made.
+Physical phone frame timing and screen-reader announcements remain unverified.
+Evidence: [trade-book-polish-1506.md](docs/trade-book-polish-1506.md).
