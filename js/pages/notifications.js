@@ -1,17 +1,20 @@
-import { currentMember } from "../members.js";
-import { esc, toast } from "../ui.js";
-import { DEFAULT_NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORIES, NOTIFICATION_PRESETS, timeAgo } from "../notification-core.js";
-import { clearInbox, disablePush, dismissNotifications, enablePush, inbox, markRead, pushCapability, pushPreferences, saveSubscription, testNotification } from "../notifications.js";
-import { ensureStylesheet } from "../lazy-css.js";
-
-const labelFor = id => NOTIFICATION_CATEGORIES.find(([key]) => key === id)?.[1] || "League";
-
+import {currentMember} from '../members.js';
+import {esc,toast} from '../ui.js';
+import {DEFAULT_NOTIFICATION_CATEGORIES,NOTIFICATION_CATEGORIES,NOTIFICATION_PRESETS,timeAgo} from '../notification-core.js';
+import {clearInbox,disablePush,dismissNotifications,enablePush,inbox,markRead,pushCapability,pushPreferences,saveSubscription,testNotification} from '../notifications.js';
+import {ensureStylesheet} from '../lazy-css.js';
+import {loadActivityContext} from '../activity-center-data.js';
+import {activityFiltersMarkup,activityListMarkup} from '../activity-center-ui.js';
+import {mountMobileSheet} from '../mobile-sheet.js';
+import {confirmSheet} from '../confirm-sheet.js';
+let generation=0,settingsSheet=null;
+export function leave(){generation++;leaveHandlers?.();leaveHandlers=null;settingsSheet?.stop();settingsSheet?.dialog.remove();settingsSheet=null}
 export function settingsMarkup(state) {
   const capability = pushCapability();
   const active = state?.enabled && !!state?.subscription;
   const selected = new Set(state?.categories || DEFAULT_NOTIFICATION_CATEGORIES);
   const delivery = active ? state.failureCount > 0
-    ? `<p class="notify-delivery is-warn"><b>Needs attention</b><span>The last push failed. Send a test to refresh this phone's connection.</span></p>`
+    ? `<p class="notify-delivery is-warn"><b>Needs attention</b><span>The last delivery failed. Turn notifications off and on to reconnect.</span></p>`
     : state.lastSuccessAt
       ? `<p class="notify-delivery is-good"><b>Delivery confirmed</b><span>${esc(timeAgo(state.lastSuccessAt))} · ${esc(state.deviceLabel || "this device")}</span></p>`
       : `<p class="notify-delivery"><b>Ready on this device</b><span>${esc(state.deviceLabel || "This phone")} · waiting for its first delivered alert</span></p>` : "";
@@ -19,7 +22,7 @@ export function settingsMarkup(state) {
     <div class="notify-setup-copy">
       <small>THIS DEVICE</small>
       <h2>${active ? "Notifications are on" : "Never miss league business"}</h2>
-      <p>${active ? "This phone can receive alerts even when DFL HQ is closed." : esc(capability.reason || "Enable lock-screen alerts for this device. Other phones keep their own setting.")}</p>
+      <p>${active ? "Get alerts while DFL HQ is closed." : esc(capability.reason || "Get lock-screen alerts on this device.")}</p>
     </div>
     ${delivery}
     ${capability.installRequired ? `<div class="notify-install"><strong>Install first</strong><span>Share <b>→</b> Add to Home Screen, then open DFL HQ from its icon.</span></div>` : ""}
@@ -27,7 +30,7 @@ export function settingsMarkup(state) {
       <button class="btn ${active ? "ghost" : ""}" type="button" data-push-toggle="${active ? "off" : "on"}">${active ? "Turn off on this device" : "Enable notifications"}</button>
       ${active ? `<button class="btn ghost" type="button" data-push-test>Send a test</button>` : ""}
     </div>
-    ${active ? `<p class="muted tiny notify-test-hint">A test arrives after five seconds. Lock the phone or switch to another app before it does &mdash; Android will not interrupt you with a banner for the app you are already looking at.</p>` : ""}` : ""}
+    ${active ? `<p class="muted tiny notify-test-hint">Test arrives in five seconds. Switch apps to check the banner.</p>` : ""}` : ""}
     ${active ? `<fieldset class="notify-categories"><legend>What should reach this phone?</legend>
       <div class="notify-presets"><button type="button" data-notify-preset="essential">Essential</button><button type="button" data-notify-preset="gameday">Game day</button><button type="button" data-notify-preset="all">Everything</button></div>
       ${NOTIFICATION_CATEGORIES.map(([id, label, description]) => `<label><input type="checkbox" value="${id}" ${selected.has(id) ? "checked" : ""}><span><strong>${esc(label)}</strong><small>${esc(description || "")}</small></span></label>`).join("")}
@@ -35,103 +38,74 @@ export function settingsMarkup(state) {
   </section>`;
 }
 
-function inboxMarkup(rows) {
-  if (!rows.length) return `<div class="notify-empty"><strong>You’re all caught up.</strong><span>Replies, mentions, commissioner notes, trades and reminders will collect here.</span></div>`;
-  return `<div class="notification-list">${rows.map(row => `
-    <div class="notification-item">
-      <a class="notification-row ${row.is_read ? "" : "is-unread"}" href="${esc(row.target_url || "#/home")}" data-notification-id="${row.id}">
-        <span class="notification-dot" aria-hidden="true"></span>
-        <span class="notification-copy"><small>${esc(row.target_url?.startsWith("#/wall?post=")?"The Wall":labelFor(row.category))} · ${esc(timeAgo(row.created_at))}</small><strong>${esc(row.title)}</strong><span>${esc(row.body)}</span></span>
-        <span class="notification-arrow" aria-hidden="true">›</span>
-      </a>
-      <button type="button" class="notification-delete" data-delete-notification="${row.id}" aria-label="Delete ${esc(row.title)}">&times;</button>
-    </div>`).join("")}</div>`;
+
+export async function render(view){
+ leave();const request=++generation,member=currentMember();
+ await ensureStylesheet('css/notifications.css');if(request!==generation)return;
+ if(!member){view.innerHTML='<header class="notification-head"><div><small>DFL HQ</small><h1>Activity</h1></div></header><section class="card profile-entry"><h2>Your league inbox</h2><button type="button" class="btn" data-open-profile>Choose your profile</button></section>';return}
+ const current=()=>request===generation&&view.isConnected&&String(currentMember()?.id)===String(member.id);
+ view.innerHTML='<header class="notification-head"><div><small>DFL HQ</small><h1>Activity</h1></div></header><div class="activity-loading" role="status">Loading league activity…</div>';
+ let rows,context,filter='all';
+ try{rows=await inbox();if(!current())return;context=await loadActivityContext(rows,{memberId:member.id})}
+ catch{if(!current())return;view.innerHTML='<header class="notification-head"><h1>Activity</h1></header><div class="notify-empty"><strong>Your inbox couldn’t load.</strong><button type="button" class="btn" data-retry-inbox>Retry</button></div>';view.querySelector('[data-retry-inbox]').onclick=()=>render(view);return}
+ if(!current())return;
+ view.innerHTML=`<header class="notification-head"><div><small>DFL HQ</small><h1>Activity</h1><p data-activity-count></p></div><button type="button" class="btn ghost small" data-activity-settings aria-haspopup="dialog">Settings</button></header>${activityFiltersMarkup(rows)}<div class="activity-toolbar"><button class="linkbtn" type="button" data-read-all>Mark all read</button><button class="linkbtn" type="button" data-clear-all>Clear inbox</button></div><section class="notification-inbox" aria-label="League activity" data-activity-list></section><p class="sr-only" role="status" data-activity-announcement></p>`;
+ const paint=()=>{
+  view.querySelector('[data-activity-list]').innerHTML=activityListMarkup(rows,context,filter);
+  const unread=rows.filter(r=>!r.is_read).length;
+  view.querySelector('[data-activity-count]').textContent=unread?`${unread} unread`:'All caught up';
+  view.querySelector('[data-read-all]').disabled=!unread;view.querySelector('[data-clear-all]').disabled=!rows.length;
+  const badge=view.querySelector('[data-activity-filter="unread"] b');if(badge)badge.textContent=unread;
+ };
+ paint();
+ view.querySelector('[data-activity-settings]').onclick=e=>openSettings(e.currentTarget);
+ async function openSettings(source){
+  if(settingsSheet)return;
+  const dialog=document.createElement('dialog');dialog.className='notification-settings-sheet';dialog.setAttribute('aria-labelledby','notify-settings-title');
+  dialog.innerHTML='<header><h2 id="notify-settings-title">Notification settings</h2><button type="button" data-settings-close>Close</button></header><div data-sheet-body><p role="status">Checking this device…</p></div>';
+  document.body.append(dialog);let busy=false,prefs=null;
+  const sheet=mountMobileSheet(dialog,{canDismiss:()=>!busy,onClosed:()=>{sheet.stop();dialog.remove();if(settingsSheet?.dialog===dialog)settingsSheet=null}});
+  settingsSheet={...sheet,dialog};sheet.open({source});dialog.querySelector('[data-settings-close]').onclick=()=>sheet.close();
+  const body=dialog.querySelector('[data-sheet-body]');
+  const draw=()=>{body.innerHTML=settingsMarkup(prefs)};
+  const refresh=async()=>{try{prefs=await pushPreferences();if(current()&&dialog.open)draw()}catch{if(dialog.open)body.innerHTML='<p role="status">Device settings are unavailable.</p><button type="button" class="btn" data-settings-retry>Retry</button>'}};
+  dialog.addEventListener('click',async event=>{
+   const toggle=event.target.closest('[data-push-toggle]'),test=event.target.closest('[data-push-test]'),preset=event.target.closest('[data-notify-preset]');
+   if(event.target.closest('[data-settings-retry]'))return refresh();
+   if(busy||!current()||!toggle&&!test&&!preset)return;
+   const button=toggle||test||preset;busy=true;button.disabled=true;
+   try{
+    if(toggle){await(toggle.dataset.pushToggle==='off'?disablePush():enablePush());if(current())toast('Notification settings saved');await refresh()}
+    else if(test){button.textContent='Sending in 5 seconds…';await testNotification(5000);if(current())toast('Test sent to this device')}
+    else if(prefs?.subscription){const categories=NOTIFICATION_PRESETS[preset.dataset.notifyPreset]||DEFAULT_NOTIFICATION_CATEGORIES;await saveSubscription(prefs.subscription,categories);prefs.categories=categories;if(dialog.open)draw();toast('Notification preferences saved')}
+   }catch(error){if(current())toast(error.message||'Could not save settings',true)}
+   finally{busy=false;if(button.isConnected){button.disabled=false;if(test)button.textContent='Send a test'}}
+  });
+  dialog.addEventListener('change',async event=>{
+   if(!event.target.matches('.notify-categories input')||!prefs?.subscription||busy)return;
+   const previous=prefs.categories,categories=[...dialog.querySelectorAll('.notify-categories input:checked')].map(i=>i.value);
+   busy=true;dialog.querySelectorAll('.notify-categories input').forEach(i=>i.disabled=true);
+   try{await saveSubscription(prefs.subscription,categories);prefs.categories=categories;toast('Notification preferences saved')}
+   catch(error){prefs.categories=previous;if(dialog.open)draw();toast(error.message||'Could not save preferences',true)}
+   finally{busy=false;dialog.querySelectorAll('.notify-categories input').forEach(i=>i.disabled=false)}
+  });
+  await refresh();
+ }
+ view.addEventListener('click',async event=>{
+  if(!current())return;
+  const tab=event.target.closest('[data-activity-filter]');
+  if(tab){filter=tab.dataset.activityFilter;view.querySelectorAll('[data-activity-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b===tab)));paint();view.querySelector('[data-activity-announcement]').textContent=`Showing ${tab.textContent.trim()} activity`;return}
+  const link=event.target.closest('[data-notification-id]');if(link){void markRead([Number(link.dataset.notificationId)]).catch(()=>{});return}
+  const remove=event.target.closest('[data-delete-notification]'),read=event.target.closest('[data-read-all]'),clear=event.target.closest('[data-clear-all]');
+  if(!remove&&!read&&!clear)return;
+  const button=remove||read||clear;if(!clear)button.disabled=true;
+  try{
+   if(clear){const accepted=await confirmSheet({title:'Clear your inbox?',message:`Remove these ${rows.length} notices from your copy of the inbox.`,action:'Clear inbox',source:button});if(!accepted||!current())return;button.disabled=true;await clearInbox();rows=[]}
+   else if(read){await markRead(rows.filter(r=>!r.is_read).map(r=>r.id));rows=rows.map(r=>({...r,is_read:true}))}
+   else{const id=Number(remove.dataset.deleteNotification);await dismissNotifications([id]);rows=rows.filter(r=>Number(r.id)!==id)}
+   if(current()){paint();view.querySelector('[data-activity-announcement]').textContent=remove?'Notification dismissed':read?'All activity marked read':'Inbox cleared';view.querySelector('[data-activity-filter][aria-pressed="true"]').focus({preventScroll:true})}
+  }catch(error){if(current())toast(error.message||'Could not update your inbox',true)}
+  finally{if(button.isConnected)button.disabled=false}
+ },{signal:(()=>{const c=new AbortController();leaveHandlers=()=>c.abort();return c.signal})()});
 }
-
-export async function render(view) {
-  await ensureStylesheet("css/notifications.css");
-  const member = currentMember();
-  if (!member) {
-    view.innerHTML = `<header class="page-head"><h1>Notifications</h1></header><section class="card profile-entry"><h2>Your league inbox</h2><p>Choose your league profile to see your mentions, replies and updates.</p><button type="button" class="btn" data-open-profile>Choose your profile</button></section>`;
-    return;
-  }
-  let rows = [], preferences = null, deviceError = "";
-  try {
-    /* Preferences may repair an older device enrollment. A device setup
-       failure should not hide the member's existing inbox. */
-    try { preferences = await pushPreferences(); }
-    catch { deviceError = "Device notification settings are unavailable. Your inbox is still here; check your connection and try again."; }
-    rows = await inbox();
-  } catch (err) {
-    view.innerHTML = `<h1>Notifications</h1><div class="card"><div class="card-body"><p>We could not load your inbox. Check your connection and try again.</p><button class="btn" type="button" data-retry-inbox>Retry</button></div></div>`;
-    view.querySelector("[data-retry-inbox]")?.addEventListener("click", () => render(view));
-    return;
-  }
-  view.innerHTML = `<header class="notification-head"><div><small>DFL HQ</small><h1>Notifications</h1><p>${esc(member.display_name)} · your league inbox</p></div><div class="notification-head-actions">${rows.some(r => !r.is_read) ? `<button class="btn ghost small" type="button" data-read-all>Mark all read</button>` : ""}${rows.length ? `<button class="btn ghost small" type="button" data-clear-all>Clear all</button>` : ""}</div></header>${deviceError ? `<p class="card-body" role="status">${esc(deviceError)}</p>` : ""}${settingsMarkup(preferences)}<p class="muted tiny">Wall replies and @mentions appear in your inbox even without push enabled. Turn on The Wall above for phone alerts that open the conversation.</p><section class="notification-inbox"><div class="notification-section-title"><h2>Inbox</h2><span>${rows.length} recent</span></div>${inboxMarkup(rows)}</section>`;
-
-  view.querySelector("[data-push-toggle]")?.addEventListener("click", async e => {
-    const btn = e.currentTarget;
-    btn.disabled = true;
-    try {
-      if (btn.dataset.pushToggle === "off") await disablePush();
-      else await enablePush();
-      toast(btn.dataset.pushToggle === "off" ? "Notifications turned off on this device" : "Notifications enabled on this device");
-      render(view);
-    } catch (err) { toast(err.message || "Could not change notifications", true); btn.disabled = false; }
-  });
-
-  view.querySelector("[data-push-test]")?.addEventListener("click", async e => {
-    const btn = e.currentTarget;
-    btn.disabled = true;
-    let left = 5;
-    btn.textContent = `Sending in ${left}…`;
-    const tick = setInterval(() => { left -= 1; if (left > 0) btn.textContent = `Sending in ${left}…`; }, 1000);
-    try {
-      await testNotification(5000);
-      toast("Test sent to this device");
-    } catch (err) { toast(err.message || "Could not send a test", true); }
-    finally { clearInterval(tick); btn.textContent = "Send a test"; btn.disabled = false; }
-  });
-
-  view.querySelector(".notify-categories")?.addEventListener("change", async e => {
-    const box = e.target.closest('input[type="checkbox"]');
-    if (!box || !preferences?.subscription) return;
-    const categories = [...view.querySelectorAll('.notify-categories input:checked')].map(input => input.value);
-    try { await saveSubscription(preferences.subscription, categories); toast("Notification preferences saved"); }
-    catch (err) { toast(err.message || "Could not save preferences", true); }
-  });
-  view.querySelectorAll("[data-notify-preset]").forEach(button => button.addEventListener("click", async () => {
-    if (!preferences?.subscription) return;
-    const categories = NOTIFICATION_PRESETS[button.dataset.notifyPreset] || DEFAULT_NOTIFICATION_CATEGORIES;
-    view.querySelectorAll('.notify-categories input[type="checkbox"]').forEach(input => { input.checked = categories.includes(input.value); });
-    button.disabled = true;
-    try { await saveSubscription(preferences.subscription, categories); toast(`${button.textContent} notifications selected`); }
-    catch (err) { toast(err.message || "Could not save preferences", true); }
-    finally { button.disabled = false; }
-  }));
-
-  view.querySelector("[data-read-all]")?.addEventListener("click", async e => {
-    e.currentTarget.disabled = true;
-    try { await markRead(rows.filter(r => !r.is_read).map(r => r.id)); render(view); }
-    catch (err) { toast(err.message || "Could not mark notifications read", true); e.currentTarget.disabled = false; }
-  });
-
-  view.querySelector("[data-clear-all]")?.addEventListener("click", async e => {
-    if (!confirm(`Clear all ${rows.length} notification${rows.length === 1 ? "" : "s"} from your inbox? This only clears your copy.`)) return;
-    e.currentTarget.disabled = true;
-    try { await clearInbox(); render(view); }
-    catch (err) { toast(err.message || "Could not clear your inbox", true); e.currentTarget.disabled = false; }
-  });
-
-  view.querySelectorAll("[data-delete-notification]").forEach(button => button.addEventListener("click", async e => {
-    e.preventDefault();
-    e.stopPropagation();
-    button.disabled = true;
-    try { await dismissNotifications([Number(button.dataset.deleteNotification)]); render(view); }
-    catch (err) { toast(err.message || "Could not delete that notification", true); button.disabled = false; }
-  }));
-
-  view.querySelectorAll("[data-notification-id]").forEach(link => link.addEventListener("click", () => {
-    void markRead([Number(link.dataset.notificationId)]).catch(() => {});
-  }));
-}
+let leaveHandlers=null;

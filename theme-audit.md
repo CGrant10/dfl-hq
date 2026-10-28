@@ -1272,3 +1272,20 @@ The fixture covers no overflow/content overlap, entry ordering, no reshuffle on
 background refresh, and guards for late data after pointer/scroll/focus activity.
 Selected screenshots are in `docs/home-rhythm-1500/`. Real installed-phone frame
 pacing and full screen-reader behavior remain unverified.
+
+## 1.501.0 — Activity center and mobile utility sheets
+
+Reviewed Activity, two/three-team package previews, actual balance including
+zero, clip poster/fallback, cashed/missed tickets, filters and Settings at
+320/390/768 in Medicine Wheel Light/Dark. Shared tokens provide surfaces, borders,
+text and accent; Book result colors use the existing semantic `--ok` and danger
+ink tokens. Player images are explicitly contained in portrait frames with
+initials fallbacks. Sheet headers/dismiss controls are 44px, and whole activity
+cards remain links with separate dismiss buttons. No redundant theme entries.
+
+Real controller fixtures cover header drag, native body scrolling, visual
+viewport/keyboard bounds, Escape/backdrop, reduced motion and focus restoration.
+Existing Trade mobile/browser checks pass. Selected screenshots were inspected
+and saved in `docs/activity-center-1501/`. The core player-card and bet-slip
+connected animations remain. Physical installed-device motion, screen-reader
+behavior and OS banners remain unverified; no test pushes were sent.

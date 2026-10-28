@@ -31,14 +31,14 @@ begin
       case new.status when 'won' then 'You won ' || coalesce(new.payout, new.potential_payout, 0) || ' SIN. Your bankroll has been paid.'
         when 'lost' then 'That ticket did not hit. The result and every leg are ready in My Bets.'
         else 'The ticket was voided and ' || new.stake || ' SIN was returned to your bankroll.' end,
-      'sportsbook', '#/sportsbook', 'members', array[new.member_id]::bigint[]
+      'sportsbook', '#/sportsbook?product=book&ticket=' || new.id::text, 'members', array[new.member_id]::bigint[]
     );
   end if;
   return new;
 end;
 $$;
 
-revoke all on function public.notify_settled_sportsbook_ticket() from public;
+revoke all on function public.notify_settled_sportsbook_ticket() from public, anon, authenticated;
 
 drop trigger if exists sportsbook_ticket_notification on public.sportsbook_bets;
 create trigger sportsbook_ticket_notification

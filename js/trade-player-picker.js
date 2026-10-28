@@ -1,8 +1,8 @@
 import { esc } from './ui.js';
 import {createTradeConnection} from './trade-connected-motion.js';
 import { playerIdentity } from './player-presentation.js';
-import { fitDialogToViewport } from './dialog-viewport.js';
-import { animateUi, cancelUiExit, cancelUiMotion, exitUi } from './ui-motion.js';
+import {mountMobileSheet} from './mobile-sheet.js';
+import { cancelUiExit, cancelUiMotion } from './ui-motion.js';
 
 const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 export function filterTradePlayers(rows, query = '', position = 'all') {
@@ -16,23 +16,24 @@ export function focusTradePicker(select) {
   (select?.previousElementSibling?.matches('[data-trade-picker]') ? select.previousElementSibling : select)?.focus({ preventScroll:true });
 }
 
-let dialog, active, position = 'all';
+let dialog, active, sheet, position = 'all';
 const connection=createTradeConnection();
 function setup() {
   if (dialog) return;
   dialog = document.createElement('dialog');
   dialog.className = 'trade-player-picker';
   dialog.setAttribute('aria-labelledby', 'trade-picker-title');
-  dialog.innerHTML = '<header><div><small data-picker-context></small><h2 id="trade-picker-title" tabindex="-1" autofocus>Add a player</h2></div><button type="button" class="linkbtn" data-picker-close>Close</button></header><div class="trade-picker-search"><label class="sr-only" for="trade-picker-search">Search players or teams</label><input id="trade-picker-search" type="search" placeholder="Search players or teams…" autocomplete="off"><div class="trade-picker-positions" aria-label="Filter by position"></div><p role="status" data-picker-count></p></div><div class="trade-picker-list" data-picker-list></div>';
+  dialog.innerHTML = '<header><div><small data-picker-context></small><h2 id="trade-picker-title" tabindex="-1" autofocus>Add a player</h2></div><button type="button" class="linkbtn" data-picker-close>Close</button></header><div class="trade-picker-search"><label class="sr-only" for="trade-picker-search">Search players or teams</label><input id="trade-picker-search" type="search" placeholder="Search players or teams…" autocomplete="off"><div class="trade-picker-positions" aria-label="Filter by position"></div><p role="status" data-picker-count></p></div><div class="trade-picker-list" data-picker-list data-sheet-body></div>';
   document.body.append(dialog);
-  const dismiss = (options = {}) => {connection.cancel();exitUi(dialog, () => dialog.close(), options)};
+  sheet=mountMobileSheet(dialog,{restoreFocus:()=>{if(active)focusTradePicker(active.select.isConnected?active.select:active.root.querySelector(active.selector))}});
+  const dismiss = (options = {}) => {connection.cancel();sheet.close(options)};
   dialog.querySelector('[data-picker-close]').onclick = () => dismiss();
-  dialog.addEventListener('cancel', event => { event.preventDefault(); dismiss(); });
+
   // A populated search input consumes Escape to clear itself in Chromium.
   // The sheet uses the same one-press dismissal as the other DFL dialogs.
-  dialog.addEventListener('keydown', event => { if (event.key === 'Escape') { event.preventDefault(); dismiss(); } });
+
   dialog.addEventListener('click', event => {
-    if (event.target === dialog) { dismiss(); return; }
+
     const filter = event.target.closest('[data-picker-position]');
     if (filter) { position = filter.dataset.pickerPosition; draw(); return; }
     const choice = event.target.closest('[data-picker-player]');
@@ -54,7 +55,7 @@ function setup() {
   dialog.addEventListener('close', () => {
     if (dialog.open) return;
     cancelUiExit(dialog); cancelUiMotion(dialog);
-    if (active) focusTradePicker(active.select.isConnected ? active.select : active.root.querySelector(active.selector));
+
     active = null;
   });
   window.addEventListener('hashchange', () => { connection.cancel();if (dialog.open) dismiss({ immediate:true }); });
@@ -89,9 +90,7 @@ function open(select, root, pool, teams) {
   const positions = [...new Set(rows.map(row => row.player.position).filter(Boolean))].sort((a,b) => ['QB','RB','WR','TE','K','DEF'].indexOf(a) - ['QB','RB','WR','TE','K','DEF'].indexOf(b));
   dialog.querySelector('.trade-picker-positions').innerHTML = ['all', ...positions].map(pos => `<button type="button" data-picker-position="${esc(pos)}" aria-pressed="${pos === 'all'}">${pos === 'all' ? 'All' : esc(pos)}</button>`).join('');
   draw();
-  dialog.showModal(); fitDialogToViewport(dialog);
-  dialog.querySelector('h2').focus({ preventScroll:true });
-  animateUi(dialog, [{ opacity:0, transform:'translateY(14px)' }, { opacity:1, transform:'translateY(0)' }], { duration:220 });
+  sheet.open({source:select.previousElementSibling});
 }
 export function mountTradePlayerPickers(root, pool, teams) {
   for (const select of root.querySelectorAll('select[data-tb-add-anchor],select[data-tb-league-target]')) {

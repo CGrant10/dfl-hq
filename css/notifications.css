@@ -28,3 +28,72 @@
 .notify-delivery b{color:var(--text)}.notify-delivery span{color:var(--muted)}
 .notify-delivery.is-good{border-color:color-mix(in srgb,var(--success) 38%,var(--control-line))}.notify-delivery.is-good b{color:var(--success)}
 .notify-delivery.is-warn{border-color:color-mix(in srgb,var(--danger) 42%,var(--control-line))}.notify-delivery.is-warn b{color:var(--danger)}
+
+/* League activity leads; device controls live in the same shared utility sheet. */
+.notification-head{align-items:center;padding-block:8px 12px}
+.notification-head h1{font:700 1.875rem/1.1 var(--font-display);letter-spacing:0}
+.notification-head p{font-size:.8125rem}
+.activity-filters{position:relative;display:flex;gap:16px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line);margin-bottom:4px;overscroll-behavior-x:contain}
+.activity-filters button{flex:none;min-height:44px;padding:10px 2px;background:none;border:0;color:var(--body-text);font:600 .875rem/1.3 var(--font-body);white-space:nowrap}
+.activity-filters button[aria-pressed=true]{color:var(--accent)}
+.activity-filters b{font-size:.75rem}
+.activity-toolbar{display:flex;justify-content:space-between;gap:12px;padding-block:2px 8px}
+.activity-toolbar button{min-height:44px;font-size:.8125rem}
+.notification-inbox{margin-top:0}
+.activity-list{display:grid;gap:12px}
+.activity-item{position:relative;min-width:0;border:1px solid var(--line);border-radius:12px;background:var(--bg-2);overflow:hidden}
+.activity-item.is-unread{border-color:color-mix(in srgb,var(--accent) 42%,var(--line))}
+.activity-card{display:block;padding:14px 16px;color:var(--text);text-decoration:none;min-width:0}
+.activity-card:focus-visible{outline:2px solid var(--accent);outline-offset:-3px;border-radius:12px}
+.activity-meta{display:flex;align-items:center;gap:8px;padding-right:30px;color:var(--body-text);font:500 .75rem/1.3 var(--font-body)}
+.activity-meta>small{font-size:inherit;color:var(--accent)}
+.activity-meta time{margin-left:auto;white-space:nowrap}
+.activity-unread i{display:block;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.activity-card h2{margin:10px 0;font:700 1.125rem/1.25 var(--font-display);overflow-wrap:anywhere}
+.activity-card>p{margin:8px 0;color:var(--body-text);font:.875rem/1.4 var(--font-body);overflow-wrap:anywhere}
+.activity-action{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);color:var(--accent);font:600 .8125rem/1.3 var(--font-body)}
+.activity-dismiss{position:absolute;right:4px;top:0;width:44px;height:44px;border:0;background:none;color:var(--body-text);font-size:22px;cursor:pointer}
+.activity-trade{display:grid;grid-template-columns:repeat(var(--activity-parties,2),minmax(0,1fr));gap:12px}
+.activity-trade>div{min-width:0}
+.activity-trade small{display:block;overflow-wrap:anywhere;font:.75rem/1.3 var(--font-body);color:var(--body-text);margin-bottom:8px}
+.activity-trade>div>span{display:flex;align-items:center;gap:6px;margin-top:6px;min-width:0}
+.activity-trade .dfl-player-portrait{flex:none;width:28px;height:28px;min-width:28px;border-radius:7px}
+.activity-trade b{font:600 .8125rem/1.25 var(--font-body);overflow-wrap:anywhere}
+.activity-trade em{font-style:normal;font-size:.75rem;color:var(--body-text)}
+.activity-result{display:flex;align-items:baseline;gap:7px;margin-top:12px;font-size:.75rem;color:var(--body-text)}
+.activity-result strong{font:700 1.25rem/1 var(--font-display);color:var(--text);font-variant-numeric:tabular-nums}
+.activity-clip{display:grid;grid-template-columns:112px minmax(0,1fr);column-gap:12px;align-content:center;min-width:0}
+.activity-clip>span{position:relative;grid-row:1 / span 2;aspect-ratio:16/9;overflow:hidden;border-radius:7px;background:var(--bg-3)}
+.activity-clip img{width:100%;height:100%;object-fit:cover}
+.activity-clip i{position:absolute;inset:0;display:grid;place-items:center;color:var(--text);font-style:normal;text-shadow:0 1px 4px #000}
+.activity-clip strong{font:.875rem/1.3 var(--font-body);overflow-wrap:anywhere}
+.activity-clip small{color:var(--body-text);font-size:.75rem;margin-top:4px}
+.activity-players{display:flex;gap:8px}
+.activity-ticket>strong{display:block;font:700 1.375rem/1.2 var(--font-display)}
+.activity-ticket[data-result=won]>strong{color:var(--ok)}
+.activity-ticket[data-result=lost]>strong{color:var(--danger-ink,var(--danger))}
+.activity-ticket dl{display:flex;gap:32px;margin:12px 0}
+.activity-ticket dt{color:var(--body-text);font-size:.75rem}
+.activity-ticket dd{margin:3px 0 0;font:700 1.125rem/1.2 var(--font-display);font-variant-numeric:tabular-nums}
+.activity-ticket>small{color:var(--body-text);font-size:.75rem}
+.notification-settings-sheet .notify-setup{padding:0;border:0;background:none;box-shadow:none;overflow:visible}
+.notification-settings-sheet .notify-setup::before{content:none}
+.notification-settings-sheet .notify-setup-copy>small{display:none}
+.notification-settings-sheet .notify-setup-copy h2{font-size:1rem}
+.notification-settings-sheet .notify-setup-copy p,.notification-settings-sheet .notify-test-hint{font-size:.8125rem;line-height:1.4}
+.activity-loading{min-height:200px;padding:24px 0;color:var(--body-text)}
+@media(max-width:380px){.activity-card{padding:12px}.activity-trade{gap:8px}.activity-trade>div>span{align-items:flex-start}.activity-trade .dfl-player-portrait{width:22px;height:22px;min-width:22px}.activity-clip{grid-template-columns:96px minmax(0,1fr)}}
+
+.activity-clip:not(:has(>span))>*{grid-column:1/-1}
+
+.activity-card .dfl-player-portrait{position:relative;display:inline-grid;place-items:center;overflow:hidden;isolation:isolate;flex:none;width:32px;height:32px;min-width:32px;margin:0;border-radius:7px;background:var(--bg-3)}
+.activity-card .dfl-player-portrait i{font:700 .6875rem/1 var(--font-body);font-style:normal;color:var(--body-text)}
+.activity-card .dfl-player-portrait img{position:absolute;inset:0;display:block;width:100%;height:100%;max-width:100%;object-fit:cover;opacity:0}
+.activity-card .dfl-player-portrait.has-photo img{opacity:1}
+.activity-card .dfl-player-portrait.has-photo i{visibility:hidden}
+.activity-card h2{text-transform:none;letter-spacing:0}
+.activity-action svg{width:16px;height:16px;flex:none}
+.activity-trade .dfl-player-portrait{width:28px;height:28px;min-width:28px}
+@media(max-width:380px){.activity-trade .dfl-player-portrait{width:22px;height:22px;min-width:22px}.activity-trade>div>span{align-items:flex-start}}
+
+.notification-settings-sheet .notify-delivery.is-good b{color:var(--ok)}
