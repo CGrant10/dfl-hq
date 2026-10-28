@@ -673,7 +673,16 @@ export function startStage(root, deck, { refresh } = {}) {
     const slide = [...layer.children].find(el => !el.classList.contains("bx-leaving"));
     if (!slide) return;
     fitHeadlines(slide);
-    if(wide){const scale=Math.max(1,parseFloat(getComputedStyle(document.documentElement).fontSize)/16),height=Math.ceil(Math.max(items.length>1?248:208,Math.min(340,root.clientWidth/1.65+(items.length>1?52:8)))*scale);if(root.style.height!==`${height}px`)root.style.height=`${height}px`;return}
+    if(wide){
+      const scale=Math.max(1,parseFloat(getComputedStyle(document.documentElement).fontSize)/16),height=Math.ceil(Math.max(items.length>1?248:208,Math.min(340,root.clientWidth/1.65+(items.length>1?52:8)))*scale);
+      root.toggleAttribute('data-bx-large-text',scale>1.05);
+      if(root.style.height!==`${height}px`)root.style.height=`${height}px`;
+      const dot=root.querySelector('[aria-current="true"]'),dots=dot?.parentElement;
+      // Keep the active segment visible when a large edition needs a rail.
+      // Only the rail moves; scrollIntoView would also move the Home page.
+      if(dot&&dots&&dots.scrollWidth>dots.clientWidth)dots.scrollLeft=dot.offsetLeft-dots.offsetLeft-dots.clientWidth/2+dot.offsetWidth/2;
+      return;
+    }
     if (!editorial) return;
     const min = parseFloat(getComputedStyle(root).getPropertyValue("--bx-min-height"));
     if (!min) return;

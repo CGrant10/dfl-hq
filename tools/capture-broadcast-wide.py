@@ -46,6 +46,9 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/f'wide-{mode}-{width}-{i}.png'))
     assert metrics['within'] and metrics['separated'] and metrics['artContained'] and not metrics['overflow'],(mode,width,i,metrics)
     assert metrics['headFont']>=18,(mode,width,i,'headline too small',metrics)
+    targets=stage.locator('[data-bx-step],[data-bx-pause],[data-bx-go]').evaluate_all('nodes=>nodes.every(n=>n.getBoundingClientRect().width>=43.5&&n.getBoundingClientRect().height>=43.5)')
+    assert targets,(mode,width,i,'small transport target')
+    assert stage.locator('[aria-current="true"]').evaluate('''n=>{const a=n.getBoundingClientRect(),r=n.parentElement.getBoundingClientRect();return a.left>=r.left-1&&a.right<=r.right+1}'''),(mode,width,i,'active segment hidden in rail')
     assert metrics['height']<=(290 if width<700 else 350),(mode,width,i,'too tall',metrics)
     if i:assert metrics['cardWidth']>metrics['cardHeight']*1.3,(mode,width,i,'not wide',metrics)
     if height is None:height=metrics['height']
