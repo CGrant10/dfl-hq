@@ -31,7 +31,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  const scope=`clubhouse-matchup-${week.season}-${week.week}`;
  const make=(data={})=>({...buildGameDay({week,members:week.members,memberId:currentMember()?.id,rows:week.games.flatMap(g=>[g.left,g.right].map(t=>({roster_id:t.roster,points:t.score,starters:[]}))),...data,...(slots?{rosterPositions:slots}:{})}),recordArchive:week.recordArchive??null});
  model=make();
- const requested=new URLSearchParams(location.hash.split('?')[1]||'').get('matchup');
+ const routeParams=new URLSearchParams(location.hash.split('?')[1]||''),requested=routeParams.get('matchup')||model.games.find(g=>g.sides.some(s=>String(s.roster)===routeParams.get('roster')))?.id;
  let selected=model.games.find(g=>g.id===requested)?.id||readPageChoice(scope,model.games.map(g=>g.id),(model.games.find(g=>g.isMine)||model.games[0])?.id);
  const selectedGame=()=>model.games.find(g=>g.id===selected),cardOf=id=>root.querySelector(`[data-clubhouse-matchup="${CSS.escape(id)}"] .clubhouse-matchup-card`);
  const football=mountLiveFootball(root,{getModel:()=>model,getGameId:()=>selected,getHost:()=>cardOf(selected)?.querySelector('[data-clubhouse-lineup]'),getMotion:()=>motion,active:()=>current()&&!root.querySelector('#clubhouse-panel-matchups')?.hidden});

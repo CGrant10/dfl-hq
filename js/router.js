@@ -326,6 +326,7 @@ async function renderRoutePage({ retry = false, visit } = {}) {
   delete view.dataset.pulseSystem;
   delete view.dataset.routeGliding;
   view.dataset.route = name;
+  view.dataset.routeReturning = String(visit.kind === "back");
   view.classList.remove("page-in");
   view.toggleAttribute("data-page-system", standardPageRoutes.has(name));
   view.classList.add("is-route-loading");

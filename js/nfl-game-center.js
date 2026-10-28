@@ -1,3 +1,4 @@
+import {readJourneyChoice,writeJourneyChoice} from './journey-memory.js';
 import {nflFantasyMarkup} from './nfl-fantasy-ui.js';
 import {nflPlayNameIndex,nflPlayPresentation} from './nfl-play-presentation.js';
 import {esc} from './ui.js';
@@ -11,8 +12,10 @@ import {loadWeeklyStats} from './sleeper.js';
 import {footballTeam} from './live-football-model.js';
 let serial=0;
 export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,getClips=()=>[],onClip=(_id)=>{},loadBoard=loadNflGameDay,loadSummary=loadNflGameSummary,loadStats=loadWeeklyStats,initialGame='',initialPlay='',embedded=false,initialMode='plays',onGameChange=(_id)=>{}}={}){
+ const memoryKey=embedded?'nfl-replay':'nfl-center',saved=readJourneyChoice(root,memoryKey);
+ if(saved){initialGame=nflGameId(saved.game)?saved.game:initialGame;initialMode=['plays','fantasy'].includes(saved.mode)?saved.mode:initialMode}
  const uid=`nfl-center-${++serial}`;root.dataset.nflGameCenter='';root.dataset.noSwipe='';
- let stopped=false,games=[],gameId=initialGame,mode=initialMode,filter='all',summary=null,weekly=[],checked=0,error=false,loading=false,token=0,timer=null,scope='',focusPlay=initialPlay;
+ let stopped=false,games=[],gameId=initialGame,mode=initialMode,filter=['all','scoring','big'].includes(saved?.filter)?saved.filter:'all',summary=null,weekly=[],checked=0,error=false,loading=false,token=0,timer=null,scope='',focusPlay=initialPlay;
  const current=()=>!stopped&&root.isConnected&&active()&&!document.hidden;
  const online=()=>navigator.onLine!==false;
  const final=()=>game()?.state==='post'&&summary?.header?.competitions?.[0]?.status?.type?.state==='post';
@@ -20,8 +23,9 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
  let nameSource=null,nameIndex=[],pendingPlays=new Set();
  const scroller=root.closest('.reel-game-browser')||document.scrollingElement;
  const atLatest=()=>{const first=root.querySelector('.nfl-center-plays li[id]');return !first||first.getBoundingClientRect().top>=(scroller===document.scrollingElement?0:scroller.getBoundingClientRect().top)-24};
- const latestNotice=()=>{const button=root.querySelector('[data-nfl-latest]');if(button){button.hidden=!pendingPlays.size||mode!=='plays';button.textContent=`${pendingPlays.size} new ${pendingPlays.size===1?'play':'plays'} · Latest ↑`}};
- const reading=()=>{if(mode==='plays'&&atLatest()&&pendingPlays.size){pendingPlays.clear();latestNotice()}};
+ const latestNotice=()=>{const button=root.querySelector('[data-nfl-latest]');if(button){button.hidden=mode!=='plays'||!pendingPlays.size&&atLatest();const label=`Back to ${game()?.state==='in'?'live':'latest'}${pendingPlays.size?' · '+pendingPlays.size+' new '+(pendingPlays.size===1?'play':'plays'):''}`;if(button.textContent!==label)button.textContent=label}};
+ const reading=()=>{if(mode==='plays'&&atLatest())pendingPlays.clear();latestNotice()};
+ const remember=()=>writeJourneyChoice(memoryKey,{game:gameId,mode,filter});
  const names=()=>{if(summary!==nameSource){nameSource=summary;nameIndex=nflPlayNameIndex(summary)}return nameIndex};
  const clips=()=>activeHighlightClips(getClips()).filter(c=>c.game_id===gameId);
  function paint(){
@@ -51,14 +55,14 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
   }catch{if(request===token&&current())error=true}
   finally{if(request===token&&current()){loading=false;paint();if(reset)root.querySelector('[data-nfl-center-body]')?.scrollTo(0,0);if(focusPlay){root.querySelector('[data-nfl-focused-play]')?.scrollIntoView({block:'nearest'});focusPlay=''}schedule()}}
  }
- const change=event=>{if(event.target.matches('[data-nfl-center-game]'))selectGame(event.target.value);if(event.target.matches('[data-nfl-center-filter]')){filter=event.target.value;paint()}};
- const click=event=>{if(event.target.closest('[data-nfl-latest]')){pendingPlays.clear();latestNotice();const first=root.querySelector('.nfl-center-plays li[id]');if(first){const edge=scroller===document.scrollingElement?0:scroller.getBoundingClientRect().top,inset=(root.querySelector('.nfl-center-picker')?.clientHeight||0)+56;scroller.scrollTop=Math.max(0,scroller.scrollTop+first.getBoundingClientRect().top-edge-inset)}return;}const modeButton=event.target.closest('[data-nfl-center-mode]');if(modeButton&&mode!==modeButton.dataset.nflCenterMode){mode=modeButton.dataset.nflCenterMode;paint();animateUi(root.querySelector('[data-nfl-center-body]'),[{opacity:.5,transform:'translateY(4px)'},{opacity:1,transform:'none'}],{duration:180})}if(event.target.closest('[data-nfl-center-refresh]'))void refresh({force:true});const clip=event.target.closest('[data-nfl-center-clip]');if(clip)onClip(clip.dataset.nflCenterClip)};
- function selectGame(id,play=''){if(!nflGameId(id))return;focusPlay=play;if(id!==gameId){gameId=id;summary=null;checked=0;error=false;filter='all';pendingPlays.clear();onGameChange(id)}void refresh({reset:true,force:true})}
+ const change=event=>{if(event.target.matches('[data-nfl-center-game]'))selectGame(event.target.value);if(event.target.matches('[data-nfl-center-filter]')){filter=event.target.value;remember();paint()}};
+ const click=event=>{if(event.target.closest('[data-nfl-latest]')){pendingPlays.clear();root.querySelector('[data-nfl-latest]').hidden=true;const first=root.querySelector('.nfl-center-plays li[id]');if(first){const edge=scroller===document.scrollingElement?0:scroller.getBoundingClientRect().top,inset=(root.querySelector('.nfl-center-picker')?.clientHeight||0)+56;scroller.scrollTop=Math.max(0,scroller.scrollTop+first.getBoundingClientRect().top-edge-inset)}return;}const modeButton=event.target.closest('[data-nfl-center-mode]');if(modeButton&&mode!==modeButton.dataset.nflCenterMode){mode=modeButton.dataset.nflCenterMode;remember();paint();animateUi(root.querySelector('[data-nfl-center-body]'),[{opacity:.5,transform:'translateY(4px)'},{opacity:1,transform:'none'}],{duration:180})}if(event.target.closest('[data-nfl-center-refresh]'))void refresh({force:true});const clip=event.target.closest('[data-nfl-center-clip]');if(clip)onClip(clip.dataset.nflCenterClip)};
+ function selectGame(id,play=''){if(!nflGameId(id))return;focusPlay=play;if(id!==gameId){gameId=id;summary=null;checked=0;error=false;filter='all';pendingPlays.clear();onGameChange(id)}remember();void refresh({reset:true,force:true})}
  const suspend=()=>{token++;clearTimeout(timer);loading=false};
  const wake=()=>{if(current()){suspend();void refresh({force:true})}};
  const visibility=()=>{if(document.hidden)suspend();else wake()};
  const offline=()=>{suspend();if(current())paint()};
  const events=[['visibilitychange',visibility,document],['online',wake,window],['offline',offline,window],['focus',wake,window],['pageshow',wake,window],['pagehide',suspend,window]];
  scroller.addEventListener('scroll',reading,{passive:true});root.addEventListener('change',change);root.addEventListener('click',click);for(const [event,handler,target] of events)target.addEventListener(event,handler);paint();const ready=refresh();
- return {ready,setMode(next){if(!['plays','fantasy'].includes(next)||next===mode)return;mode=next;paint();scroller.scrollTop=0},refresh:()=>refresh({force:true}),selectGame,pause:suspend,stop(){stopped=true;suspend();scroller.removeEventListener('scroll',reading);root.removeEventListener('change',change);root.removeEventListener('click',click);for(const [event,handler,target] of events)target.removeEventListener(event,handler)}};
+ return {ready,setMode(next){if(!['plays','fantasy'].includes(next)||next===mode)return;mode=next;remember();paint();if(scroller!==document.scrollingElement)scroller.scrollTop=0},refresh:()=>refresh({force:true}),selectGame,pause:suspend,stop(){stopped=true;suspend();scroller.removeEventListener('scroll',reading);root.removeEventListener('change',change);root.removeEventListener('click',click);for(const [event,handler,target] of events)target.removeEventListener(event,handler)}};
 }
