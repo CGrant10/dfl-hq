@@ -28,10 +28,25 @@ with sync_playwright() as p:
     assert metrics['inside'] and metrics['button'] and metrics['strip'] and not metrics['overflow'],(mode,width,count,metrics)
     button.click();page.wait_for_selector('.sb-slip[open]');page.wait_for_timeout(350)
     assert page.locator('.sb-slip-pick').count()==count,(mode,width,count,'review opened wrong picks')
+    assert page.locator('[data-footer-return]').inner_text()==page.locator('[data-return]').inner_text()
+    assert page.locator('.sb-slip-totals').evaluate('e=>{const r=e.getBoundingClientRect(),f=e.closest("footer").getBoundingClientRect();return r.top>=f.top&&r.bottom<=f.bottom&&r.bottom<=innerHeight}')
+    assert page.locator('.sb-slip-picks').evaluate('e=>e.scrollHeight<=e.clientHeight+1'), 'Nested pick scrolling returned'
+    if count==6:
+     page.evaluate('window.firstSlipPick=document.querySelector(".sb-slip-pick")')
+     page.locator('.sb-slip input[name="stake"]').fill('75')
+     assert page.evaluate('firstSlipPick===document.querySelector(".sb-slip-pick")'), 'Typing rebuilt the pick list'
+     assert page.locator('[data-footer-stake]').inner_text()=='75 SIN'
+     assert page.locator('[data-footer-return]').inner_text()==page.locator('[data-return]').inner_text()
     page.locator('.sb-slip-submit').click();assert 'Confirm' in page.locator('.sb-slip-submit').inner_text()
     assert page.evaluate('rpcCalls')==0,'Review placed a wager'
     if count==6:
+     page.locator('.sb-slip-content').evaluate('e=>e.scrollTop=0')
      page.screenshot(path=str(OUT/f'slip-review-{mode}-{width}.png'))
+    if count==6:
+     page.locator('.sb-slip').evaluate('e=>e._bookBalanceChanged(50)')
+     assert page.locator('[data-footer-stake]').inner_text()=='—' and page.locator('[data-footer-return]').inner_text()=='—'
+     assert 'Review' in page.locator('.sb-slip-submit').inner_text()
+     assert page.evaluate('rpcCalls')==0
     page.locator('.sb-slip [data-close]').click();page.wait_for_function('!document.querySelector("dialog[open]")')
     assert button.evaluate('e=>e===document.activeElement'),'Review did not restore focus'
     checks.append({'mode':mode,'width':width,'picks':count,**metrics,'reviewAndConfirm':True})

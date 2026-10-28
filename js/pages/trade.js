@@ -8,6 +8,7 @@ import {sleeperAction} from '../sleeper-links.js';
 import {createTradeNegotiation} from '../trade-negotiation-ui.js';
 import {tradeLineupFitLabel} from '../trade-suggestion-quality.js';
 import {createTradeConnection} from '../trade-connected-motion.js';
+import {offerLineupMarkup} from '../trade-offer-preview.js';
 import {tradeDecisionMarkup} from '../trade-decision-ui.js';
 import {loadTradeWeekSchedules} from '../trade-weekly-outlook.js';
 import {lineupPreviewsFor} from '../trade-workspace.js';
@@ -82,20 +83,21 @@ function offerPackage(ids,pool,label,routing=null){
 function offerSummary(offer,pool){
  const p=tradePerspective(offer),a=tradeAssessment(p),deltas=offer.windowDeltas||offer.weeklyDeltas||[a.weeklyA,a.weeklyB];
  const window=offer.windowWeeks?.length?`Weeks ${offer.windowWeeks[0]}–${offer.windowWeeks.at(-1)}`:'Rest of season';
- return `<div class="tb-offer-summary" aria-label="Trade balance, lineup impact and risk"><strong class="tb-offer-fit">${esc(tradeLineupFitLabel(deltas))}</strong><dl><div><dt>Price balance</dt><dd>${Math.round(a.fairness)}%</dd></div><div><dt>You · pts/wk</dt><dd class="${deltas[0]<0?'is-down':'is-up'}">${signed(deltas[0])}</dd></div><div><dt>${offer.parties?'Group balance':'Them · pts/wk'}</dt><dd>${offer.parties?offer.fairness+'%':signed(deltas[1])}</dd></div></dl><span class="tb-offer-horizon">${esc(window)} · projected</span>${a.flags.length?`<span class="tb-offer-risk">${esc(a.flags.join(' · '))}</span>`:''}${p.requiredDropsA?.length?`<span class="tb-offer-risk">Drop: ${esc(p.requiredDropsA.map(id=>pool.get(String(id))?.name||id).join(', '))}</span>`:''}${offer.managerFit?.notes?.length?`<div class="tb-manager-fit">${offer.managerFit.notes.map(note=>`<span>${esc(note)}</span>`).join('')}</div>`:''}${p.openSlotsA?`<span class="tb-offer-risk">${p.openSlotsA} open roster spot${p.openSlotsA===1?'':'s'}</span>`:''}</div>`;
+ return `<div class="tb-offer-summary" aria-label="Trade balance, lineup impact and risk"><dl><div><dt>Price balance</dt><dd>${Math.round(a.fairness)}%</dd></div><div><dt>You · pts/wk</dt><dd class="${deltas[0]<0?'is-down':'is-up'}">${signed(deltas[0])}</dd></div><div><dt>${offer.parties?'Group balance':'Them · pts/wk'}</dt><dd>${offer.parties?offer.fairness+'%':signed(deltas[1])}</dd></div></dl><span class="tb-offer-horizon">${esc(window)} · projected</span>${a.flags.length?`<span class="tb-offer-risk">${esc(a.flags.join(' · '))}</span>`:''}${p.requiredDropsA?.length?`<span class="tb-offer-risk">Drop: ${esc(p.requiredDropsA.map(id=>pool.get(String(id))?.name||id).join(', '))}</span>`:''}${offer.managerFit?.notes?.length?`<div class="tb-manager-fit">${offer.managerFit.notes.map(note=>`<span>${esc(note)}</span>`).join('')}</div>`:''}${p.openSlotsA?`<span class="tb-offer-risk">${p.openSlotsA} open roster spot${p.openSlotsA===1?'':'s'}</span>`:''}</div>`;
 }
 
 function offerControls(offer,pool){
- const pins=offer.parties?'':`<details class="tb-offer-pin"><summary>Keep player</summary><div>${[['send',offer.sendA],['receive',offer.sendB]].flatMap(([side,ids])=>ids.map(id=>`<button type="button" data-tb-pin="${esc(id)}" data-pin-side="${side}">Keep ${esc(pool.get(String(id))?.name||id)}</button>`)).join('')}</div></details>`;
+ const pins=offer.parties?'':`<details class="tb-offer-pin"><summary aria-label="Keep a player in the search">Keep</summary><div>${[['send',offer.sendA],['receive',offer.sendB]].flatMap(([side,ids])=>ids.map(id=>`<button type="button" data-tb-pin="${esc(id)}" data-pin-side="${side}">Keep ${esc(pool.get(String(id))?.name||id)}</button>`)).join('')}</div></details>`;
  return `<div class="tb-card-actions"><button type="button" data-tb-pass>Pass</button><button type="button" data-tb-save>Save</button>${pins}</div>`;
 }
+const offerPreview=offer=>`<details class="tb-offer-preview"><summary><span>Lineup changes<small>${esc(tradeLineupFitLabel(offer.windowDeltas||offer.weeklyDeltas||[offer.weeklyDeltaA,offer.weeklyDeltaB]))}</small></span><i aria-hidden="true"></i></summary><div data-offer-lineup></div></details>`;
 function offerMarkup(offer, pool) {
-  if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerSummary(offer,pool)}<footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze trade <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer></article>`;
+  if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerSummary(offer,pool)}${offerPreview(offer)}<footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze trade <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer></article>`;
   const call = tradeAssessment(offer).price.headline.toUpperCase();
   return `<article class="tb-offer" data-offer-key="${esc(offerKey(offer))}">
     <header><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<strong>${esc(teamName(offer.other))}</strong></small><span>${shapeLabel(offer)}</span><b>${call}</b></header>
     <div class="tb-offer-flow">${offerPackage(offer.sendA,pool,'YOU SEND')}${offerPackage(offer.sendB,pool,'YOU GET')}</div>
-    ${offerSummary(offer,pool)}
+    ${offerSummary(offer,pool)}${offerPreview(offer)}
     <footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(','))}" data-send-b="${esc(offer.sendB.join(','))}" data-weekly-delta="${Number(offer.weeklyDeltaA)||0}">Analyze trade <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer>
   </article>`;
 }
@@ -298,8 +300,8 @@ function page(data, tradeAlerts = []) {
     wire(view) {
       stopOffers?.();
       const body = view.querySelector("[data-td-body]");
-      let catalog,activeOfferKey=null,stopDesk=()=>{},stopPickers=()=>{};
-      const connection=createTradeConnection();
+      let catalog,activeOfferKey=null,offerReturn=null,pendingReturn=null,stopDesk=()=>{},stopPickers=()=>{};
+      const connection=createTradeConnection(),openPreviews=new Set();
       let stopped=false;
       const current=()=>!stopped&&view.isConnected;
       stopOffers=()=>{stopped=true;shop.intentStamp=(shop.intentStamp||0)+1;connection.stop();stopDesk();stopPickers();catalog.stop();negotiation.stop();intentions.stop();};
@@ -309,7 +311,23 @@ function page(data, tradeAlerts = []) {
       const negotiation=createTradeNegotiation({member:me,getData:()=>data,getDeal:()=>deal,
         onEdit:next=>{if(next){selectedId=next.parties[0].id;applyTradeDeal(trade,next);}shop.mode='manual';shop.customOpen=true;draw();body.querySelector('.td-custom')?.scrollIntoView({block:'start',behavior:'instant'});body.querySelector('.td-working-as select')?.focus({preventScroll:true});},
         onRoom:()=>{shop.mode='room';shop.customOpen=false;draw();body.querySelector('[data-tr-host]')?.scrollIntoView({block:'start',behavior:'instant'});}});
-      const wireOfferTiers=scope=>{scope.querySelectorAll(".tb-supporting").forEach(d=>{d.open=!!shop.openPackages?.has(d.dataset.pageDetail)});scope.querySelectorAll('[data-tb-tier]').forEach(section=>section.addEventListener('toggle',()=>{
+      const restoreOfferPosition=()=>{
+        if(!pendingReturn||shop.mode!=='offers')return false;
+        const card=body.querySelector(`[data-offer-key="${CSS.escape(pendingReturn.key)}"]`);
+        if(!card&&body.querySelector('.tb-offers-card[aria-busy="true"]'))return false;
+        const target=card||body.querySelector('[data-tb-offers]');
+        if(target){window.scrollBy({top:target.getBoundingClientRect().top-(card?pendingReturn.top:80),behavior:'instant'});connection.play(pendingReturn.origins,target);(card?.querySelector('[data-td-load-offer]')||target)?.focus({preventScroll:true});}
+        pendingReturn=null;return true;
+      };
+      const fillOfferPreview=(details,opening=details.open)=>{
+        const key=details.closest('[data-offer-key]')?.dataset.offerKey;
+        if(opening){
+          openPreviews.add(key);
+          const slot=details.querySelector('[data-offer-lineup]');
+          if(!slot.childElementCount){const offer=shop.offerState?.offers?.find(o=>offerKey(o)===key);if(offer)slot.innerHTML=offerLineupMarkup(offer,data.teams.find(t=>String(t.id)===String(selectedId)),data.pool);}
+        }else openPreviews.delete(key);
+      };
+      const wireOfferTiers=scope=>{scope.querySelectorAll('.tb-offer-preview').forEach(details=>{if(openPreviews.has(details.closest('[data-offer-key]').dataset.offerKey)){details.open=true;fillOfferPreview(details);}});scope.querySelectorAll(".tb-supporting").forEach(d=>{d.open=!!shop.openPackages?.has(d.dataset.pageDetail)});scope.querySelectorAll('[data-tb-tier]').forEach(section=>section.addEventListener('toggle',()=>{
         if(!current()||!body.contains(section))return;
         const tier=section.dataset.tbTier;
         if(section.open)shop.openTiers.add(tier);else shop.openTiers.delete(tier);
@@ -318,7 +336,11 @@ function page(data, tradeAlerts = []) {
       const paintOffers=({countsOnly=false,updateControls=false,preservePrevious=true}={})=>{
         if(!current()||shop.mode!=='offers')return;
         const old=body.querySelector('[data-tb-offers]');if(!old)return;
-        const focused=old.contains(document.activeElement);
+        const focused=old.contains(document.activeElement),focusNode=focused?document.activeElement:null;
+        const anchor=[...old.querySelectorAll('[data-offer-key]')].find(node=>{const r=node.getBoundingClientRect();return r.bottom>80&&r.top<innerHeight-70});
+        const anchorKey=anchor?.dataset.offerKey,anchorTop=anchor?.getBoundingClientRect().top;
+        const focusKey=focusNode?.closest('[data-offer-key]')?.dataset.offerKey;
+        const focusAction=focusNode?.matches('summary')?'.tb-offer-preview>summary':focusNode?.matches('[data-tb-generate]')?'[data-tb-generate]':focusNode?.matches('[data-tb-show-all]')?'[data-tb-show-all]':null;
         const template=document.createElement('template');
         template.innerHTML=tradeLab(data.teams.find(t=>String(t.id)===String(selectedId))||data.teams[0],data.teams,data.pool,shop);
         if(updateControls){
@@ -353,7 +375,11 @@ function page(data, tradeAlerts = []) {
         }
         next.classList.add('tb-offers-ready');
         old.replaceWith(next);wireOfferTiers(next);
-        if(focused)next.focus({preventScroll:true});
+        if(!restoreOfferPosition()){
+          const retained=anchorKey&&next.querySelector(`[data-offer-key="${CSS.escape(anchorKey)}"]`);
+          if(retained)window.scrollBy({top:retained.getBoundingClientRect().top-anchorTop,behavior:'instant'});
+          if(focused){const card=focusKey?next.querySelector(`[data-offer-key="${CSS.escape(focusKey)}"]`):next;(focusAction?card?.querySelector(focusAction):null)?.focus({preventScroll:true});if(!next.contains(document.activeElement))next.focus({preventScroll:true});}
+        }
       };
       const newCatalog=()=>createTradeOfferCatalog({search:createTradeOfferSearch({teams:data.teams,pool:data.pool}),
         onChange:({tier})=>{if(current())paintOffers({countsOnly:tier!==shop.intent});}});
@@ -363,6 +389,7 @@ function page(data, tradeAlerts = []) {
          deal the reader is looking at rather than re-deriving one. */
       let deal = null,proposals=readTradeProposals(me?.id,data.projectionSeason),proposalsOpen=false,transactionScrolled=false;
       body.addEventListener('toggle',event=>{
+        if(event.target.matches('.tb-offer-preview')&&body.contains(event.target))fillOfferPreview(event.target);
         if(event.target.matches('.tb-supporting')&&body.contains(event.target)){shop.openPackages||=new Set();if(event.target.open)shop.openPackages.add(event.target.dataset.pageDetail);else shop.openPackages.delete(event.target.dataset.pageDetail);}
         if(event.target.matches('.td-proposals'))proposalsOpen=event.target.open;
         if(event.target.matches('.trade-scout')){shop.scoutOpen=event.target.open;if(event.target.open)saveScoutBaseline(me?.id,data.projectionSeason,scoutSnapshot(data.teams,data.pool));else body.querySelector('[data-tb-scout]')?.focus({preventScroll:true});saveDraft?.();}
@@ -530,6 +557,9 @@ function page(data, tradeAlerts = []) {
         if (summary) summary.textContent = value;
       });
       body.addEventListener("click", async event => {
+        // Fill before the outer disclosure controller measures its destination.
+        const previewSummary=event.target.closest('.tb-offer-preview>summary');
+        if(previewSummary){fillOfferPreview(previewSummary.parentElement,true);return;}
         if(event.target.closest('[data-tb-scout]')){shop.scoutOpen=true;shop.mode='offers';shop.customOpen=false;draw();const panel=body.querySelector('.trade-scout');panel?.scrollIntoView({block:'nearest',behavior:'instant'});panel?.querySelector('summary')?.focus({preventScroll:true});return;}
 
         const offerAction=event.target.closest('[data-tb-pass],[data-tb-save],[data-tb-pin],[data-tb-undo-pass]');
@@ -580,7 +610,20 @@ function page(data, tradeAlerts = []) {
           return;
         }
         const modeButton=event.target.closest('[data-td-mode]');
-        if(modeButton){if(modeButton.dataset.tdMode==='offers')negotiation.clearEdit();if(modeButton.dataset.tdMode==='manual'&&!trade.sends.some(ids=>ids.size)&&shop.partnerId&&shop.partnerId!=='all'){trade.memberIds=[shop.partnerId,...shop.memberIds];trade.sends=[new Set(shop.sendAnchors),...trade.memberIds.map((_,i)=>new Set(i===trade.memberIds.length-1?shop.receiveAnchors:[]))];trade.destinations={};}const origins=connection.capture(body.querySelector('[data-td-verdict]'));shop.mode=modeButton.dataset.tdMode;shop.customOpen=shop.mode==='manual';draw();const returning=!shop.customOpen&&activeOfferKey?body.querySelector(`[data-offer-key="${CSS.escape(activeOfferKey)}"]`):null;if(returning){returning.scrollIntoView({block:'center',behavior:'instant'});connection.play(origins,returning);returning.querySelector('[data-td-load-offer]')?.focus({preventScroll:true})}else body.querySelector(shop.customOpen?'.td-working-as select':`[data-td-mode="${shop.mode}"]`)?.focus({preventScroll:true});return;}
+        if(modeButton){
+          if(modeButton.dataset.tdMode==='offers')negotiation.clearEdit();
+          if(modeButton.dataset.tdMode==='manual'&&!trade.sends.some(ids=>ids.size)&&shop.partnerId&&shop.partnerId!=='all'){
+            trade.memberIds=[shop.partnerId,...shop.memberIds];
+            trade.sends=[new Set(shop.sendAnchors),...trade.memberIds.map((_,i)=>new Set(i===trade.memberIds.length-1?shop.receiveAnchors:[]))];trade.destinations={};
+          }
+          const origins=connection.capture(body.querySelector('[data-td-verdict]'));
+          shop.mode=modeButton.dataset.tdMode;shop.customOpen=shop.mode==='manual';
+          pendingReturn=shop.mode==='offers'&&offerReturn?{...offerReturn,origins}:null;
+          draw();
+          if(pendingReturn)restoreOfferPosition();
+          else body.querySelector(shop.customOpen?'.td-working-as select':`[data-td-mode="${shop.mode}"]`)?.focus({preventScroll:true});
+          return;
+        }
         if(event.target.closest('[data-td-compare]')){if(shop.mode==='room'){shop.mode='offers';draw();}proposalsOpen=true;const slot=body.querySelector('[data-td-proposals-slot]');slot.innerHTML=proposalsMarkup(proposals,data.teams,data.pool,true);slot.scrollIntoView({block:'start',behavior:'instant'});return;}
         if(event.target.closest('[data-td-save-proposal]')){
           if(!deal)return;const row=savedTradeProposal(deal),fingerprint=r=>JSON.stringify([r.teamIds,r.sends,r.destinations]),existing=proposals.findIndex(r=>fingerprint(r)===fingerprint(row));
@@ -683,11 +726,11 @@ function page(data, tradeAlerts = []) {
           paintOffers({preservePrevious:false});saveDraft?.();
           return;
         }
-        if (event.target.closest("[data-tb-show-all]")) { shop.visibleCount = Number.MAX_SAFE_INTEGER; draw(); return; }
-        if (event.target.closest("[data-tb-generate]")) { shop.visibleCount += OFFER_BATCH_SIZE; draw(); return; }
+        if (event.target.closest("[data-tb-show-all]")) { shop.visibleCount = Number.MAX_SAFE_INTEGER; paintOffers({preservePrevious:false}); return; }
+        if (event.target.closest("[data-tb-generate]")) { shop.visibleCount += OFFER_BATCH_SIZE; paintOffers({preservePrevious:false}); return; }
         const button = event.target.closest("[data-td-load-offer]");
         if (!button) return;
-        negotiation.clearEdit();const sourceCard=button.closest(".tb-offer"),origins=connection.capture(sourceCard);activeOfferKey=sourceCard?.dataset.offerKey||null;
+        negotiation.clearEdit();const sourceCard=button.closest(".tb-offer"),origins=connection.capture(sourceCard);activeOfferKey=sourceCard?.dataset.offerKey||null;offerReturn=sourceCard?{key:activeOfferKey,top:sourceCard.getBoundingClientRect().top}:null;
         const auditInput = { season: data.projectionSeason, week: data.liveWeek, teamId: selectedId, partnerId: button.dataset.partner,
           sendA: (button.dataset.sendA || "").split(",").filter(Boolean), sendB: (button.dataset.sendB || "").split(",").filter(Boolean),
           weeklyDelta: button.dataset.weeklyDelta };
