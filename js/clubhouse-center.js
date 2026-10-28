@@ -1,3 +1,4 @@
+import {banterMemoryMarkup} from './banter-memory-ui.js';
 import {leaguePanel} from './game-day-panels.js';
 import {esc} from './ui.js';
 import {mountPlayerWeekDetails} from './player-week-details.js';
@@ -62,6 +63,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   }
   syncLeadMarkers(card,model,selected);
 
+  let memory=card.querySelector('[data-banter-memory]');if(!memory){memory=document.createElement('div');memory.dataset.banterMemory='';card.querySelector('[data-clubhouse-lineup]')?.before(memory)}if(memory)patchGameDay(memory,banterMemoryMarkup(model,game,{history:week.chirpHistory||[],trades:week.memoryTrades||[]}));
   const lineup=card.querySelector('[data-clubhouse-lineup]');if(lineup)patchGameDay(lineup,'<div data-football-panel></div>'+(last?matchupLineupHtml(game,{completed:model.completed}):'<p class="clubhouse-stat-status">Checking the starting lineups…</p>'));
   const records=card.querySelector('[data-clubhouse-records]');if(records)patchGameDay(records,recordChasesMarkup(model,game));recordWatch.update();
   const teamStats=card.querySelector('[data-clubhouse-team-stats]');if(teamStats)patchGameDay(teamStats,last?clubhouseTeamStatsHtml(game,model.completed):'');

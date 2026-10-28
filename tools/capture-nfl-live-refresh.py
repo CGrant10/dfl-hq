@@ -28,7 +28,7 @@ with sync_playwright() as p:
    const f=window.f={reads:0,boardReads:0,forces:[],summary,state:'in',active:true,fail:false,hold:false,hidden:false,online:true,extra:[]};
    Object.defineProperty(document,'hidden',{configurable:true,get:()=>f.hidden});Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>f.online});
    f.add=()=>f.extra.push({id:String(999999900000+f.extra.length),sequenceNumber:String(999999900000+f.extra.length),text:'A.Rodgers pass deep left to D.Metcalf for 29 yards.',type:{id:'24',text:'Pass Reception'},statYardage:29,period:{number:4},clock:{displayValue:'2:00'}});
-   f.center=mountNflGameCenter(document.getElementById('feed'),{getContext:()=>({season:2026,week:7,players:[]}),active:()=>f.active,loadStats:async()=>({data:[]}),loadBoard:async()=>{f.boardReads++;return {payload:{season:{year:2026,type:2},week:{number:7},events:[{id:'401873011',date:'2026-10-25T17:00:00Z',status:{type:{state:f.state,shortDetail:f.state==='post'?'Final':'Q4 2:00'}},competitions:[{competitors:[{team:{abbreviation:'NO'},homeAway:'home',score:'10'},{team:{abbreviation:'PIT'},homeAway:'away',score:'16'}]}]}]}}},loadSummary:async(_game,_season,options)=>{f.reads++;f.forces.push(options.force);if(f.hold)await new Promise(r=>f.release=r);if(f.fail)throw Error('Provider offline');const data=structuredClone(summary);data.header.competitions[0].status.type.state=f.state;data.drives.current={plays:[...f.extra]};return {summary:data,fetchedAt:Date.now()}}});
+   f.center=mountNflGameCenter(document.getElementById('feed'),{watchOthers:()=>f.pendingOthers===true,liveOthers:()=>f.liveOthers===true,getContext:()=>({season:2026,week:7,players:[]}),active:()=>f.active,loadStats:async()=>({data:[]}),loadBoard:async()=>{f.boardReads++;return {payload:{season:{year:2026,type:2},week:{number:7},events:[{id:'401873011',date:'2026-10-25T17:00:00Z',status:{type:{state:f.state,shortDetail:f.state==='post'?'Final':'Q4 2:00'}},competitions:[{competitors:[{team:{abbreviation:'NO'},homeAway:'home',score:'10'},{team:{abbreviation:'PIT'},homeAway:'away',score:'16'}]}]}]}}},loadSummary:async(_game,_season,options)=>{f.reads++;f.forces.push(options.force);if(f.hold)await new Promise(r=>f.release=r);if(f.fail)throw Error('Provider offline');const data=structuredClone(summary);data.header.competitions[0].status.type.state=f.state;data.drives.current={plays:[...f.extra]};return {summary:data,fetchedAt:Date.now()}}});
    f.video=document.querySelector('video');await f.video.play();
   }''',theme)
   pg.wait_for_selector('.nfl-center-plays h4');count=pg.locator('.nfl-center-plays li').count();tag=theme+' live feed'
@@ -65,6 +65,13 @@ with sync_playwright() as p:
   check(tag+' switching back resumes automatic updates',pg.evaluate('f.reads')==before+1)
   pg.evaluate('f.state="post";f.add()');pg.clock.run_for(10020);before=pg.evaluate('f.reads');pg.clock.run_for(60000)
   check(tag+' captures the final play then stops polling a finished game',pg.evaluate('f.reads')==before)
+  pg.evaluate('f.pendingOthers=true;f.liveOthers=false;f.center.refresh()');pg.clock.run_for(20);before=pg.evaluate('f.reads');pg.clock.run_for(30020)
+  check(tag+' keeps checking upcoming pinned games after the featured game finishes',pg.evaluate('f.reads')==before+1)
+  pg.evaluate('f.liveOthers=true;f.center.refresh()');pg.clock.run_for(20);before=pg.evaluate('f.reads');pg.clock.run_for(10020)
+  check(tag+' follows a different pinned live game at the live cadence',pg.evaluate('f.reads')==before+1)
+  pg.evaluate('f.pendingOthers=false;f.liveOthers=false;f.center.refresh()');pg.clock.run_for(20);before=pg.evaluate('f.reads');pg.clock.run_for(40000)
+  check(tag+' stops the shared desk once every pinned game is finished',pg.evaluate('f.reads')==before)
+
   pg.locator('[data-nfl-center-mode="plays"]').click();pg.screenshot(path=str(OUT/(theme+'-updated-feed.png')))
   pg.evaluate('f.center.stop();dispatchEvent(new Event("online"));dispatchEvent(new Event("focus"))');pg.clock.run_for(30000)
   check(tag+' teardown removes timers and reconnect listeners',pg.evaluate('f.reads')==before and not errors)

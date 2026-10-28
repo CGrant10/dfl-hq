@@ -1307,3 +1307,23 @@ scroll, media continuity, reduced motion, Back choices, phone targets and
 cleanup. Existing optional haptics are respected; physical device haptics,
 screen-reader speech and physical iOS/Android video decoder continuity remain
 unverified. Fixture media is representative. No production test sends or writes.
+
+# 1.503.0 — DFL network experience
+
+Inspected actual 320/390/768 screenshots in Medicine Wheel Light and Dark:
+three-game Sunday desk, selected timeline moments, DFL memory receipts,
+compact Scout packages, weekly awards, final whistle and trade receipt reader.
+Evidence is in `docs/dfl-network-1503/`. New surfaces use shared text, border,
+background, accent and semantic gain tokens; no retired blue/red palette or
+additional theme options. No shield artwork is used in these cards.
+
+Verified readable selected states, full team names, 44px controls, native clip
+and timeline browsing, independent details, no horizontal page overflow and
+reduced-motion static event markers. The Scout action preserves the default
+phone offer fold. Finals retain their existing shared reveal and truthful scores.
+`pnpm themes`, relevant theme tests and the complete release check pass.
+
+Public data was inspected read-only; all browser league mutations and sends
+were blocked or replaced with isolated fixtures. Physical phone frame pacing,
+OS haptics and screen-reader speech remain unverified. Portraits and recorded
+play examples in the evidence use representative fixtures.

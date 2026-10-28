@@ -11,7 +11,7 @@ import {animateUi} from './ui-motion.js';
 import {loadWeeklyStats} from './sleeper.js';
 import {footballTeam} from './live-football-model.js';
 let serial=0;
-export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,getClips=()=>[],onClip=(_id)=>{},loadBoard=loadNflGameDay,loadSummary=loadNflGameSummary,loadStats=loadWeeklyStats,initialGame='',initialPlay='',embedded=false,initialMode='plays',onGameChange=(_id)=>{}}={}){
+export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,getClips=()=>[],onClip=(_id)=>{},loadBoard=loadNflGameDay,loadSummary=loadNflGameSummary,loadStats=loadWeeklyStats,initialGame='',initialPlay='',embedded=false,initialMode='plays',onGameChange=(_id)=>{},onBoard=(_payload,_selected)=>{},watchOthers=()=>false,liveOthers=()=>false}={}){
  const memoryKey=embedded?'nfl-replay':'nfl-center',saved=readJourneyChoice(root,memoryKey);
  if(saved){initialGame=nflGameId(saved.game)?saved.game:initialGame;initialMode=['plays','fantasy'].includes(saved.mode)?saved.mode:initialMode}
  const uid=`nfl-center-${++serial}`;root.dataset.nflGameCenter='';root.dataset.noSwipe='';
@@ -39,7 +39,7 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
   latestNotice();
   if(anchor?.isConnected&&!latest)scroller.scrollTop+=anchor.getBoundingClientRect().top-top;else if(latest)scroller.scrollTop=scrollTop;
  }
- function schedule(){clearTimeout(timer);if(current()&&online()&&!final())timer=setTimeout(()=>void refresh(),game()?.state==='in'?10000:30000)}
+ function schedule(){clearTimeout(timer);if(current()&&online()&&(!final()||watchOthers()))timer=setTimeout(()=>void refresh(),game()?.state==='in'||liveOthers()?10000:30000)}
  async function refresh({reset=false,force=false}={}){
   if(!current()||loading&&!reset)return;clearTimeout(timer);if(!online()){paint();return;}const context=getContext();if(!context?.season||!context.week)return;
   const key=`${context.season}:${context.week}`;if(key!==scope){pendingPlays.clear();scope=key;games=[];summary=null;weekly=[];checked=0;gameId=initialGame;reset=true}
@@ -47,6 +47,7 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
   try{
    const board=await loadBoard(context.season,context.week,{force});if(request!==token||!current())return;
    games=nflCenterGames(board.payload,context.season,context.week);if(!games.some(g=>g.id===gameId)){gameId=(games.find(g=>g.state==='in')||games[0])?.id||'';summary=null;pendingPlays.clear();onGameChange(gameId)}
+   onBoard(board.payload,gameId);
    const selected=game();if(selected){
     const stats=Promise.resolve().then(()=>loadStats(context.season,context.week,{maxAgeMs:20000})).catch(()=>null);
     const result=await loadSummary(selected,context.season,{force});if(request!==token||!current()||gameId!==selected.id)return;const before=summary?new Set(nflCenterPlays(summary).map(p=>p.id)):null,following=mode==='plays'&&atLatest();if(before&&!following)for(const play of nflCenterPlays(result.summary))if(!before.has(play.id))pendingPlays.add(play.id);if(following)pendingPlays.clear();summary=result.summary;checked=result.fetchedAt;

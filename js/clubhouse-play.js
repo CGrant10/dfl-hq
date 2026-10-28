@@ -1,3 +1,4 @@
+import {loadTradeAlerts,tradeAlertViewModel} from './trade-alerts.js';
 import {buildRecordArchive} from './record-chases-model.js';
 import {matchupChirpHtml,clubhouseChirp} from './matchup-chirp-ui.js';
 import {db} from './supabase.js';
@@ -11,6 +12,8 @@ import {rivalryShareFact} from './rivalry-story-model.js';
 export async function mountRivalries(view,model,active=()=>view.isConnected){
  try{const [lore,calls]=await Promise.all([loadLore(),loadRivalryCalls(model.season,model.week).catch(()=>null)]);if(!active())return;
   model.chirpHistory=lore.matchups;model.recordArchive=buildRecordArchive(lore,{season:model.season,week:model.week});view.dispatchEvent(new CustomEvent('dfl:record-archive-ready',{detail:{season:model.season,week:model.week,archive:model.recordArchive}}));
+  // Recent trade receipts enrich the file independently; history never waits on them.
+  void loadTradeAlerts({limit:12}).then(trades=>{if(!active())return;model.memoryTrades=trades.map(tradeAlertViewModel).filter(Boolean);view.dispatchEvent(new CustomEvent('dfl:record-archive-ready',{detail:{season:model.season,week:model.week,archive:model.recordArchive}}))}).catch(()=>{});
   for(const game of model.games){const chirp=view.querySelector(`[data-matchup-chirp="${game.matchup_id}"]`);if(chirp)chirp.innerHTML=matchupChirpHtml(clubhouseChirp(game,model));const host=view.querySelector(`[data-rivalry="${game.matchup_id}"]`);if(!host)continue;
    const input={history:lore.matchups,left:game.left,right:game.right,season:model.season,week:model.week,completed:model.completed,calls:(calls||[]).filter(c=>Number(c.matchup_id)===Number(game.matchup_id)),members:model.members};
    const storyMarkup=rivalryStoryHtml(input,{callsAvailable:calls!==null}),fact=rivalryShareFact(input);

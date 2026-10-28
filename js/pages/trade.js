@@ -1,3 +1,5 @@
+import {tradeOpportunities,scoutSnapshot,readScoutBaseline,saveScoutBaseline} from '../trade-opportunities.js';
+import {tradeOpportunitiesMarkup} from '../trade-opportunities-ui.js';
 import {tradeOfferKey,availableTradeOffers,tradeOfferAnchors} from '../trade-offer-actions.js';
 import {normalizeReceivePositions,setReceivePositions,receivePositionsMarkup} from '../trade-receive-controls.js';
 import {createTradeIntentions} from '../trade-intentions-ui.js';
@@ -127,8 +129,8 @@ function anchorOptions(players, selected, label) {
   pages. They are the same question asked in either direction, so they are now
   the same page: propose above, judge below.
 */
-function tradeBoardHeader(mode='offers',leagueId=null){
- return `<div class="tb-head-row page-identity"><header class="tb-head"><small>DFLYZER</small><h1>${mode==='room'?'Deal Room':mode==='manual'?'Check a trade':'Trade Board'}</h1></header><div class="td-external-tools">${sleeperAction(leagueId,'trades',{label:'Sleeper'})}<a class="btn ghost small" href="#/trade?receipts=1">Receipts</a></div></div><div class="td-entry-actions" aria-label="Trade tools"><button type="button" data-td-mode="offers" aria-pressed="${mode==='offers'}">Find offers</button><button type="button" data-td-mode="manual" aria-pressed="${mode==='manual'}">Check a trade</button><button type="button" data-td-mode="room" aria-pressed="${mode==='room'}">Deal room</button><button type="button" data-td-compare aria-label="Compare saved deals">Saved deals</button></div><div data-ti-host></div>`;
+function tradeBoardHeader(mode='offers',leagueId=null,scoutCount=null){
+ return `<div class="tb-head-row page-identity"><header class="tb-head"><small>DFLYZER</small><h1>${mode==='room'?'Deal Room':mode==='manual'?'Check a trade':'Trade Board'}</h1></header><div class="td-external-tools">${sleeperAction(leagueId,'trades',{label:'Sleeper'})}<a class="btn ghost small" href="#/trade?receipts=1">Receipts</a></div></div><div class="td-entry-actions" aria-label="Trade tools"><button type="button" data-td-mode="offers" aria-pressed="${mode==='offers'}">Find offers</button><button type="button" data-tb-scout>Scout${scoutCount==null?'':' ('+scoutCount+')'}</button><button type="button" data-td-mode="manual" aria-pressed="${mode==='manual'}">Check a trade</button><button type="button" data-td-mode="room" aria-pressed="${mode==='room'}">Deal room</button><button type="button" data-td-compare aria-label="Compare saved deals">Saved deals</button></div><div data-ti-host></div>`;
 }
 
 function tradeLab(team, teams, pool, shop) {
@@ -182,6 +184,7 @@ function tradeLab(team, teams, pool, shop) {
   const intentLabel = (tier, label) => result.countErrors?.[tier] ? `${label}: count unavailable. Tap to retry.`
     : result.counts?.[tier] == null ? `${label}: finding offers` : `${label}: ${intentCount(tier)} available offers`;
   const allOffers=availableTradeOffers(result.offers||[],shop.passedOffers,team.id),searching=result.state==='loading',failed=result.state==='error';
+  const opportunities=tradeOpportunities(allOffers,{mine:team,pool,intentions:shop.intentions,previous:shop.scoutBaseline});shop.scoutCount=searching?null:opportunities.length;
   const tierOffers = allOffers.filter(offer => offer.tier === intent);
   const closestOffers=closestTradeOffers(allOffers,intent),closestTier=closestOffers[0]?.tier;
   const representedTeams = new Set(tierOffers.map(offer => String(offer.other?.id??''))).size;
@@ -200,7 +203,7 @@ function tradeLab(team, teams, pool, shop) {
     .filter(count => count >= minimum && count < maxPlayers - shop.memberIds.length)
     .map(count => `<option value="${count}" ${String(selected) === String(count) ? "selected" : ""}>${count}</option>`).join("")}`;
   return `<section class="tb-board">
-    ${tradeBoardHeader(shop.mode,shop.leagueId)}
+    ${tradeBoardHeader(shop.mode,shop.leagueId,shop.scoutCount)}
     <details class="tb-workbench-card tb-setup" aria-label="Trade workbench"${shop.setupOpen?' open':''}>
       <summary class="tb-setup-summary"><span><small>TRADE SEARCH</small><strong>${esc(teamName(team))} <i aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5h12m-3-3 3 3-3 3M14 11H2m3-3-3 3 3 3"/></svg></i><span class="sr-only"> with </span> ${esc(allPartners?'All teams':multi?`${parties.length-1} teams`:teamName(partner))}</strong><em>${shop.sendAnchors.length||'Any'} to send · ${shop.receiveAnchors.length||'Any'} to get · Up to ${maxPlayers} players</em></span><b>Edit search</b></summary><div class="tb-setup-body">
         <div class="tb-team-choices">
@@ -230,7 +233,7 @@ function tradeLab(team, teams, pool, shop) {
     <div class="tb-intent" aria-label="Offer type"><span>SHOW ME</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "Fair"], ["aggressive", "Aggressive"], ["steal", "Steal"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" aria-pressed="${intent === value}" aria-label="${esc(intentLabel(value,label))}" class="${intent === value ? "is-active" : ""}"><span>${label}</span><span class="tb-intent-count" data-tb-intent-count>(${intentCount(value)})</span></button>`).join("")}</div></div>
     <section class="tb-layout-section" data-tb-offers tabindex="-1">
       <h2 class="section-title">Generated offers<span class="count">${searching?'Finding offers…':failed?'Try again':closestOffers.length?`${closestOffers.length} alternatives`:`Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}`}</span></h2>
-      <div class="tb-offers-card" aria-busy="${searching}">${shop.lastPassed?'<div class="tb-pass-status" role="status">Offer passed <button type="button" class="linkbtn" data-tb-undo-pass>Undo</button></div>':''}
+      ${tradeOpportunitiesMarkup(opportunities,{loading:searching,open:shop.scoutOpen})}<div class="tb-offers-card" aria-busy="${searching}">${shop.lastPassed?'<div class="tb-pass-status" role="status">Offer passed <button type="button" class="linkbtn" data-tb-undo-pass>Undo</button></div>':''}
         ${searching?'<p class="tb-search-status" role="status">Finding offers…</p><div class="tb-search-placeholder" aria-hidden="true"><i></i><i></i><i></i></div>':failed?'<p class="tb-search-status" role="status">Couldn’t find offers.</p><button type="button" class="btn ghost small" data-tb-retry>Try again</button>':`
         ${tierOffers.length || !closestOffers.length ? `<div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, true, tierOffers.length)}</div>` : ""}
         ${tierOffers.length ? "" : `<div class="ta-empty" role="status">${esc(receivePositions.length?tradeOfferEmptyCopy(intent, shop.receiveAnchors.map(id=>pool.get(String(id))?.position),allOffers):'Select a position to find offers.')}${tradeSearchRestricted(shop)?`<button type="button" class="btn ghost small" data-tb-reset-search>Reset search · all teams</button>`:""}</div>`}
@@ -286,6 +289,7 @@ function page(data, tradeAlerts = []) {
     shop.partnerId = partner.id; shop.memberIds = []; shop.anchorPartnerId = partner.id;
     shop.receiveAnchors = [target]; shop.sendAnchors = []; shop.sendCount = 'any'; shop.receiveCount = 'any';shop.mode='offers';shop.customOpen=false;shop.refineOpen=true;shop.setupOpen=true;
   }
+  shop.scoutBaseline=readScoutBaseline(me?.id,data.projectionSeason);
   saveDraft = () => {const snapshot=tradeDraft({selectedId,trade,shop});writeViewMemory(me?.id,draftKey,snapshot);writeViewMemory(me?.id,visitDraft,snapshot)};
 
   return {
@@ -338,6 +342,7 @@ function page(data, tradeAlerts = []) {
           button.querySelector('[data-tb-intent-count]').textContent=next.querySelector('[data-tb-intent-count]').textContent;
           button.setAttribute('aria-label',next.getAttribute('aria-label'));
         });
+        const scoutButton=body.querySelector('[data-tb-scout]');if(scoutButton)scoutButton.textContent=shop.scoutCount==null?'Scout':`Scout (${shop.scoutCount})`;
         if(countsOnly)return;
         const next=template.content.querySelector('[data-tb-offers]');
         if(preservePrevious&&next.querySelector('.tb-offers-card[aria-busy="true"]')&&old.querySelector('.tb-offer')){
@@ -360,6 +365,7 @@ function page(data, tradeAlerts = []) {
       body.addEventListener('toggle',event=>{
         if(event.target.matches('.tb-supporting')&&body.contains(event.target)){shop.openPackages||=new Set();if(event.target.open)shop.openPackages.add(event.target.dataset.pageDetail);else shop.openPackages.delete(event.target.dataset.pageDetail);}
         if(event.target.matches('.td-proposals'))proposalsOpen=event.target.open;
+        if(event.target.matches('.trade-scout')){shop.scoutOpen=event.target.open;if(event.target.open)saveScoutBaseline(me?.id,data.projectionSeason,scoutSnapshot(data.teams,data.pool));else body.querySelector('[data-tb-scout]')?.focus({preventScroll:true});saveDraft?.();}
         if(event.target.matches('.tb-setup')){shop.setupOpen=event.target.open;saveDraft?.();}
         if(event.target.matches('.tb-refine')){shop.refineOpen=event.target.open;saveDraft?.();}
       },true);
@@ -524,6 +530,8 @@ function page(data, tradeAlerts = []) {
         if (summary) summary.textContent = value;
       });
       body.addEventListener("click", async event => {
+        if(event.target.closest('[data-tb-scout]')){shop.scoutOpen=true;shop.mode='offers';shop.customOpen=false;draw();const panel=body.querySelector('.trade-scout');panel?.scrollIntoView({block:'nearest',behavior:'instant'});panel?.querySelector('summary')?.focus({preventScroll:true});return;}
+
         const offerAction=event.target.closest('[data-tb-pass],[data-tb-save],[data-tb-pin],[data-tb-undo-pass]');
         if(offerAction){
           if(offerAction.hasAttribute('data-tb-undo-pass')){shop.passedOffers=(shop.passedOffers||[]).filter(key=>key!==shop.lastPassed);shop.lastPassed=null;paintOffers({preservePrevious:false});saveDraft?.();return;}
