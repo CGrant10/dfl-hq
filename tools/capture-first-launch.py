@@ -60,9 +60,11 @@ with sync_playwright() as p:
    check('a missing compact cache falls back to the provider',page.evaluate('rawReads===2&&fallback["1"].p==="QB"'))
    page.evaluate("import('./js/sleeper.js').then(async m=>{await m.clearSleeperAnalysisCache();window.openCache=caches.open;caches.open=async()=>{throw Error('Storage unavailable')};try{window.noStorage=await m.loadPlayers({maxAgeMs:0})}finally{caches.open=openCache}})");page.wait_for_function('window.noStorage')
    check('unavailable phone storage does not prevent player loading',page.evaluate('rawReads===3&&noStorage["1"].n==="Player 0"'))
+  # The viewing edition lasts through Wednesday, but NFL clip dates are
+  # Thursday through Monday. Keep sample games inside that valid window.
   page.evaluate("""async()=>{
    const {highlightSession}=await import('./js/home-highlight-model.js'),rows=await(await fetch('./tools/fixtures/home-highlight-clips.json')).json(),s=highlightSession();
-   window.launchHighlightRows=rows.map(row=>({...row,video_url:null,session_date:s.active?s.date:s.startDate,published_at:new Date(Date.now()-60000).toISOString(),expires_at:new Date(s.expiresAt).toISOString()}));
+   window.launchHighlightRows=rows.map(row=>({...row,video_url:null,session_date:s.startDate,published_at:new Date(Date.now()-60000).toISOString(),expires_at:new Date(s.expiresAt).toISOString()}));
   }""")
   if not page.evaluate("import('./js/home-highlight-model.js').then(m=>m.highlightSession().active)"):
    check(tag+' hides the weekend reel between editions',page.locator('[data-home-reel-open]').count()==0)
