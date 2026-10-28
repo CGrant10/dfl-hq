@@ -118,6 +118,9 @@ on:
       - 'js/arena/replay-share*'
       - 'tools/capture-premium-actions.py'
       - 'tools/capture-player-card-motion.py'
+      - 'tools/capture-player-card-finish.py'
+      - 'css/player-card-reading.css'
+      - 'js/player-card-summary.js'
       - 'tools/capture-score-scroll-review.py'
       - 'js/player-compare*'
       - 'js/moment-recap*'
@@ -268,6 +271,7 @@ jobs:
         run: |
           node tools/render-sheet-review.mjs
           python tools/capture-player-card-motion.py
+          python tools/capture-player-card-finish.py
           python tools/capture-sheet-review.py
           python tools/capture-sportsbook-slip-review.py
       - name: Check live fantasy results and shared ticket marks

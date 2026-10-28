@@ -1,3 +1,4 @@
+import {playerGameHeadline} from './player-card-summary.js';
 import {esc} from './ui.js';
 import {playerFormHtml} from './player-form.js';
 import {playerGame,playerGameGroups,playerGameShareSpec} from './player-game-model.js';
@@ -23,6 +24,7 @@ export function mountPlayerGameExplorer(root,model,{initialWeek,getMotion=()=>tr
   for(const [i,dot]of [...root.querySelectorAll('.player-form-dot')].entries())dot.classList.toggle('is-selected',Number(weeks().filter(w=>typeof w.points==='number'&&Number.isFinite(w.points))[i]?.week)===selected);
   const score=root.querySelector('.gameday-spotlight-score > span'),status=root.querySelector('.gameday-spotlight-score > span:last-child');
   if(score&&game){const stamp=JSON.stringify([game.week,game.points,game.state]);if(score.dataset.scoreStamp!==stamp){score.innerHTML=`${thermalScore(game.points,playerScoreTemperature({...model.player,points:game.points,state:game.current?model.state:game.points!==null&&game.opponent?'final':'unknown',afterHalftime:model.afterHalftime}),{tag:'strong'})}<small>Fantasy points</small>`;score.dataset.scoreStamp=stamp}status.textContent=`${game.state} · Week ${game.week}`;}
+  const line=root.querySelector('[data-player-game-line]');if(line){const text=playerGameHeadline(game,model.player.position);if(line.textContent!==text)line.textContent=text;line.hidden=!text;}
   const time=root.querySelector('.gameday-stat-time');if(time){const at=game?.stats?.updatedAt;time.hidden=!at;if(at){time.dateTime=new Date(at).toISOString();time.textContent='Stats · '+new Date(at).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});}}
   const host=root.querySelector('[data-player-game-details]');if(host){const stamp=JSON.stringify([game?.week,game?.opponent,game?.stats,game?.rawStats,game?.points===null||game?.state==='Yet to play']);if(stamp!==lastDetails){cancelGroups();patchGameDay(host,playerGameDetailsHtml(game));lastDetails=stamp;}if(announce)host.querySelector('[data-player-game-announcement]').textContent=slider?.getAttribute('aria-valuetext')||'';}
  };

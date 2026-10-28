@@ -8,7 +8,7 @@ class Handler(SimpleHTTPRequestHandler):
  def __init__(self,*a,**kw):super().__init__(*a,directory=str(ROOT),**kw)
  def log_message(self,*a):pass
 server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start();base=f'http://127.0.0.1:{server.server_port}/'
-model={'player':{'id':'7564','name':'Ja’Marr Chase','position':'WR','nflTeam':'CIN'},'leagueId':'1286077564572037120','season':2026,'week':6,'points':29,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'owner':None,'ownerLabel':'Fixture team','myRosterId':1,'recent':[{'week':4,'points':12,'opponent':'BAL','gameTeam':'CIN','rawStats':{'rec':6,'rec_yd':60,'rec_td':0},'stats':{'items':[]}}, {'week':5,'points':31,'opponent':'CLE','gameTeam':'CIN','rawStats':{'rec':8,'rec_tgt':12,'rec_yd':170,'rec_td':1},'stats':{'items':[]}}, {'week':6,'points':29,'opponent':'PIT','gameTeam':'CIN','rawStats':{'rec':9,'rec_yd':140,'rec_td':1,'rush_att':1,'rush_yd':0},'stats':{'items':[]}}],'stats':{'items':[],'updatedAt':None}}
+model={'player':{'id':'7564','name':'Ja’Marr Chase','position':'WR','nflTeam':'CIN'},'leagueId':'1286077564572037120','season':2026,'week':6,'points':29,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'owner':None,'ownerLabel':'Fixture team','myRosterId':1,'recent':[{'week':4,'points':12,'opponent':'BAL','gameTeam':'CIN','rawStats':{'rec':6,'rec_yd':60,'rec_td':0},'stats':{'items':[]}}, {'week':5,'points':31,'opponent':'CLE','gameTeam':'CIN','rawStats':{'rec':8,'rec_tgt':12,'rec_yd':170,'rec_td':1},'stats':{'items':[]}}, {'week':6,'points':29,'opponent':'PIT','gameTeam':'CIN','rawStats':{'rec':9,'rec_yd':140,'rec_td':1,'rush_att':1,'rush_yd':0},'stats':{'items':[]}}],'stats':{'items':[],'updatedAt':None},'seasonAverage':{'value':23.2,'games':5,'stale':False}}
 checks=[]
 def check(name,ok):
  assert ok,name
@@ -35,8 +35,11 @@ with sync_playwright() as p:
   for width in [320,390]:
    page.set_viewport_size({'width':width,'height':844});open_card();name=f'{theme}/{width}'
    check(name+' defaults to the current game and exact score',score.text_content()=='29.00' and sheet.locator('[data-player-game-week="6"]').get_attribute('aria-pressed')=='true')
+   check(name+' first view shows real season PPR reference',sheet.locator('.player-card-season-average strong').inner_text()=='23.2' and 'Season PPR/g' in sheet.locator('.player-card-season-average').inner_text())
+   check(name+' primary actions precede deeper stats',sheet.locator('.player-card-primary').evaluate('e=>e.getBoundingClientRect().top<document.querySelector(".player-card-recent").getBoundingClientRect().top') and not sheet.locator('.player-card-more').evaluate('e=>e.open'))
    page.evaluate('window.callsBefore=window.cardCalls');game(5)
    check(name+' week selection updates points and opponent together',score.text_content()=='31.00' and 'CLE' in sheet.locator('[data-player-game-details]').text_content())
+   check(name+' headline follows the selected box score',sheet.locator('[data-player-game-line]').inner_text()=='8 rec · 170 yd · 1 TD')
    slider.focus();slider.press('Home');check(name+' keyboard selects the earliest recorded week',score.text_content()=='12.00' and slider.get_attribute('aria-valuenow')=='1')
    slider.press('End');check(name+' keyboard returns to the current week',score.text_content()=='29.00' and slider.get_attribute('aria-valuenow')=='3')
    # Real touch input must scrub horizontally while leaving vertical scrolling native.

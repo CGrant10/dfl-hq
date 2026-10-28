@@ -16,11 +16,22 @@ export function connectPortrait(source, target, { motion = true, duration = 280,
   Object.assign(overlay.style, { position:'fixed', inset:'auto', margin:'0', padding:'0', pointerEvents:'none', overflow:'hidden', boxSizing:'border-box',
     left:`${to.left}px`, top:`${to.top}px`, width:`${to.width}px`, height:`${to.height}px`, background:style.background, color:style.color, border:style.border, borderRadius:style.borderRadius, transformOrigin:'top left' });
   const photo = portrait.querySelector('img');
-  if (photo?.complete && photo.naturalWidth) {
-    const image = document.createElement('img'); image.src = photo.currentSrc || photo.src; image.alt = '';
+  let pendingImage=null,photoReady=null;
+  if (photo?.src) {
+    const image = document.createElement('img'),ready=photo.complete&&photo.naturalWidth;
+    image.alt = '';
     Object.assign(image.style, { display:'block', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top' });
     if (portrait.classList.contains('is-team')) Object.assign(image.style, { objectFit:'contain', padding:'10px', boxSizing:'border-box' });
-    overlay.append(image);
+    if(!ready){
+      // A late headshot fades into the travelling portrait at its current size.
+      // It cannot move the card, replay the flight or survive its cancellation.
+      const fallback=document.createElement('span');fallback.textContent=portrait.querySelector('i')?.textContent||'';
+      Object.assign(overlay.style,{display:'grid',placeItems:'center',font:style.font});
+      fallback.style.gridArea='1 / 1';image.style.gridArea='1 / 1';image.style.opacity='0';overlay.append(fallback);
+      pendingImage=image;photoReady=()=>{if(stopped)return;image.style.opacity='1';const fade=animateUi(image,[{opacity:0},{opacity:1}],{duration:160,motion});if(fade)fade.finished.then(()=>fallback.remove(),()=>{});else fallback.remove();};
+      image.addEventListener('load',photoReady,{once:true});
+    }
+    image.src=photo.currentSrc||photo.src;overlay.append(image);
   } else {
     overlay.textContent = portrait.querySelector('i')?.textContent || '';
     Object.assign(overlay.style, { display:'grid', placeItems:'center', font:style.font });
@@ -35,7 +46,7 @@ export function connectPortrait(source, target, { motion = true, duration = 280,
   const sourceVisibility = portrait.style.visibility;
   let stopped = false,settle;
   const finished=new Promise(resolve=>settle=resolve);
-  const stop = () => { if (stopped) return; stopped = true; settle(false);cancelUiMotion(overlay); overlay.remove(); target.style.visibility = visibility; if (hideSource) portrait.style.visibility = sourceVisibility;
+  const stop = () => { if (stopped) return; stopped = true; settle(false);if(pendingImage)pendingImage.removeEventListener('load',photoReady);cancelUiMotion(overlay); overlay.remove(); target.style.visibility = visibility; if (hideSource) portrait.style.visibility = sourceVisibility;
     window.removeEventListener('resize',stop);window.removeEventListener('scroll',stop,true);window.removeEventListener('dfl:ui-motion-change',stop);window.visualViewport?.removeEventListener('resize',stop);document.removeEventListener('visibilitychange',stop);
   };
   stop.position=()=>!stopped&&overlay.isConnected?overlay.getBoundingClientRect():null;

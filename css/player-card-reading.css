@@ -1,0 +1,43 @@
+/* Stable sheet geometry keeps data/image arrivals out of the portrait flight. */
+body .dfl-player-card { height:min(760px,calc(100dvh - 24px),var(--dialog-viewport-height,calc(100dvh - 24px))); background:var(--bg-2); border:1px solid var(--line); }
+body .dfl-player-card [data-player-card-body] { flex:1 1 auto; padding-top:12px; }
+.dfl-player-card .player-card-heading { min-width:0; }
+.dfl-player-card [data-player-card-origin] { display:block; color:var(--body-text); font:500 .6875rem/1.4 var(--font-body); }
+.dfl-player-card [data-player-card-origin][hidden] { display:none; }
+.dfl-player-card .player-card-heading h2 { margin:2px 0 0; font:700 1rem/1.3 var(--font-display); letter-spacing:0; }
+body .dfl-player-card .player-card-hero { padding:12px; gap:6px 12px; border:1px solid var(--line); border-radius:10px; box-shadow:none; background:var(--bg-2); }
+body .dfl-player-card .player-card-hero .dfl-player-portrait { align-self:start; }
+body .dfl-player-card .player-card-hero .dfl-player-copy strong { font-size:1.375rem; line-height:1.2; }
+body .dfl-player-card .player-card-hero .dfl-player-copy small { font-size:.75rem; }
+body .dfl-player-card .player-card-owner { gap:2px; }
+body .dfl-player-card .player-card-owner small { font:500 .625rem/1.4 var(--font-body); letter-spacing:.04em; }
+body .dfl-player-card .player-card-owner :is(a,strong) { font:600 .8125rem/1.4 var(--font-body); }
+body .dfl-player-card .player-card-availability { margin-top:6px; padding-block:8px; border:0; }
+body .dfl-player-card .gameday-spotlight-score { display:flex; justify-content:space-between; gap:12px; padding:8px 0 4px; border:0; }
+body .dfl-player-card .gameday-spotlight-score>span:last-child { color:var(--body-text); font:500 .75rem/1.4 var(--font-body); }
+body .dfl-player-card .gameday-spotlight-score>span>small { color:var(--body-text); font:500 .6875rem/1.4 var(--font-body); }
+.player-card-week-summary { min-height:56px; box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; gap:8px 14px; flex-wrap:wrap; padding:4px 0 12px; }
+.player-card-week-summary [data-player-game-line] { flex:1 1 140px; margin:0; color:var(--text); font:600 .8125rem/1.5 var(--font-body); overflow-wrap:anywhere; }
+.player-card-week-summary [hidden] { display:none; }
+.player-card-season-average[hidden] { display:grid; visibility:hidden; }
+.player-card-season-average { min-width:5.25rem; flex:none; display:grid; gap:2px; text-align:right; }
+.player-card-season-average strong { font:700 1.125rem/1.3 var(--font-body); font-variant-numeric:tabular-nums; }
+.player-card-season-average small { color:var(--body-text); font:500 .625rem/1.4 var(--font-body); }
+body .dfl-player-card .player-card-primary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:0 0 12px; border:0; }
+body .dfl-player-card .player-card-primary>.linkbtn { display:flex; align-items:center; justify-content:center; min-height:44px; padding:6px 8px; border:1px solid var(--line); border-radius:8px; color:var(--text); background:transparent; text-decoration:none; font:600 .8125rem/1.3 var(--font-body); overflow-wrap:anywhere; }
+body .dfl-player-card .player-card-primary>[aria-pressed=true] { border-color:var(--accent); color:var(--accent); background:color-mix(in srgb,var(--accent) 7%,transparent); }
+body .dfl-player-card .player-card-recent { padding-top:10px; border-top:1px solid var(--line); }
+body .dfl-player-card .player-form-chart { height:72px; }
+body .dfl-player-card .player-game-week-list>button { min-height:60px; }
+body .dfl-player-card .player-game-heading { gap:8px 12px; flex-wrap:wrap; }
+body .dfl-player-card .player-game-heading .linkbtn { font:600 .75rem/1.4 var(--font-body); }
+.player-card-more { margin:8px 0 0; border:0; border-top:1px solid var(--line); }
+.player-card-more>summary { display:flex; align-items:center; justify-content:space-between; min-height:48px; padding:8px 0; list-style:none; cursor:pointer; color:var(--text); font:600 .8125rem/1.4 var(--font-body); }
+.player-card-more>summary::-webkit-details-marker { display:none; }
+.player-card-more>summary i { width:7px; height:7px; margin-right:5px; border:solid var(--body-text); border-width:0 1.5px 1.5px 0; transform:rotate(45deg); transition:transform 200ms ease; }
+.player-card-more[open]>summary i { transform:rotate(225deg); }
+body .dfl-player-card .player-card-tools { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 12px; padding:0; border:0; }
+body .dfl-player-card .player-card-tools>.linkbtn { min-width:0; min-height:44px; padding:6px 0; color:var(--text); font:500 .8125rem/1.4 var(--font-body); overflow-wrap:anywhere; }
+body .dfl-player-card :is(button,a,summary):focus-visible { outline-offset:-2px; }
+html[data-ui-motion=off] .player-card-more>summary i { transition:none; }
+@media(prefers-reduced-motion:reduce){.player-card-more>summary i{transition:none}}

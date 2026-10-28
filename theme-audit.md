@@ -1372,3 +1372,17 @@ colors were added. `pnpm themes` and the production checks pass; the bundle rema
 90 modules with three startup / four Home. No production writes were made.
 Physical phone frame timing and screen-reader announcements remain unverified.
 Evidence: [trade-book-polish-1506.md](docs/trade-book-polish-1506.md).
+
+# 1.507.0 — Shared player-card reading and continuity
+
+Reviewed the shared player card in Light and Dark at 320/390/600px, including
+complete names, selected-game headlines, optional season PPR average, primary
+Compare/Watch controls, secondary tools, thermal scores, game scrubbing and box
+scores. 200% root text, focus states, delayed/missing images and late-average
+layout continuity were checked. The original portrait-first and connected-close
+reviews and native sheet gestures pass. All new UI colors use shared tokens;
+NFL identity accents and existing hot/cold status effects remain meaningful.
+No theme-picker options or retired crest colors were added. `pnpm themes` and
+`pnpm check` pass. No production member, trade, wager or push was created.
+Physical device frame pacing and screen readers remain unverified. Evidence:
+[player-card-polish-1507.md](docs/player-card-polish-1507.md).
