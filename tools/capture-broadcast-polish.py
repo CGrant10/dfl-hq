@@ -50,6 +50,8 @@ with sync_playwright() as p:
    checks.append({'theme':mode,'width':width,'sectionContrast':contrast['minimum'],'keyboardFocus':True})
   # Larger system text must preserve full award names and separate art zones.
   page.set_viewport_size({'width':320,'height':844})
+  # Exercise the fallback that retains an inert outgoing slide until 600ms.
+  page.add_style_tag(content='.bx-leaving {transition:none!important}')
   page.evaluate('''()=>{
    reviewStage.stop();document.documentElement.style.fontSize='20px';
    window.polishLong=[{treatment:'champion',kicker:'2025 · League champion',headline:'The Bastards of the Very Long Championship Team Name'},reviewDeck[0]];
@@ -57,7 +59,9 @@ with sync_playwright() as p:
    window.reviewStage=polishStart(document.querySelector('[data-bx-stage]'),polishLong);reviewStage.suspend('polish-review',true);
   }''')
   stage=page.locator('[data-bx-stage]');stage.scroll_into_view_if_needed();page.wait_for_timeout(450)
-  assert stage.locator('.bx-brief-award').evaluate('''e=>{const a=e.querySelector('h2').getBoundingClientRect(),b=e.querySelector('.bx-brief-art').getBoundingClientRect(),f=e.querySelector('.bx-brief-action').getBoundingClientRect(),r=e.getBoundingClientRect();return a.right<=b.left+1&&f.bottom<=r.bottom+1&&e.querySelector('h2').scrollWidth<=e.querySelector('h2').clientWidth+1}''')
+  # The outgoing award can remain for the 600ms transition backstop.
+  # Measure the active slide, just as the wide gallery does.
+  assert stage.locator('.bx-brief-award:not(.bx-leaving)').evaluate('''e=>{const a=e.querySelector('h2').getBoundingClientRect(),b=e.querySelector('.bx-brief-art').getBoundingClientRect(),f=e.querySelector('.bx-brief-action').getBoundingClientRect(),r=e.getBoundingClientRect();return a.right<=b.left+1&&f.bottom<=r.bottom+1&&e.querySelector('h2').scrollWidth<=e.querySelector('h2').clientWidth+1}''')
   stage.screenshot(path=str(OUT/f'large-text-award-{mode}.png'))
   page.evaluate("document.documentElement.style.fontSize=''")
   # Motion off also disables the new reveal and progress; keyboard still works.
