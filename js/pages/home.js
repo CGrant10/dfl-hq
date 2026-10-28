@@ -1,4 +1,5 @@
-import {dailyBroadcast} from '../daily-broadcast.js';
+import {mountHomeRhythm} from '../home-rhythm.js';
+import {createHomeMomentEdition} from '../home-moment-stories.js';
 import {mountHomeHighlights} from '../home-highlights.js';
 import {powerRankingsMarkup,powerRankingsLoading,mountPowerRankings} from '../league-power-ui.js';
 import {homeWeekReceipt,mountHomeWeekFlow} from '../home-week-flow.js';
@@ -55,7 +56,7 @@ import { buildNextMove } from "../next-move.js";
 import { teamPortrait } from "../team-presentation.js";
 import { startAssembly } from "../scroll-assembly.js";
 import { currentMatchupWeek, nextMoveSlide, playoffPictureSlide, tradeAlertSlide } from "../home-slides.js";
-import {homeLeagueStory} from '../home-lead-story.js';
+
 import { buildLeagueStakes } from "../league-stakes.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity } from "../player-presentation.js";
@@ -425,7 +426,8 @@ export async function render(view) {
     THE ORDER IS THE EDIT.
 
     The personal matchup and lineup action lead, then the broadcast.
-    Forecasts expand within Your week; standings and league news follow.
+    On entry, planning/receipts lead before or after games; highlights lead live.
+    This priority stays fixed for the visit. Standings and league news follow.
     The compact injury preview follows Around the league.
     Archive stories come after current information, then the Wall closes.
     Draft, League Feed and the Wall still load as the reader approaches them.
@@ -450,9 +452,9 @@ export async function render(view) {
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
     </section>
     </div>
-    <div data-home-highlights-slot></div>
     ${homeSectionLinks()}
-    <section class="home-week-desk" aria-label="Your week">
+    <div data-home-rhythm-flow>
+    <section class="home-week-desk" data-home-rhythm-part="week" aria-label="Your week">
     <div data-home-week-flow>
     ${disclosure("home-week","Plan your week","",`<div data-home-report-slot data-content-state="loading" aria-busy="true">${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`).replace('data-page-detail="home-week"','data-page-detail="home-week" data-home-week-part="plan"')}
     <div data-home-recap-slot data-home-week-part="recap" hidden></div>
@@ -460,6 +462,8 @@ export async function render(view) {
     <div data-home-pickem-slot></div>
     ${homeLeagueTools()}
     </section>
+    <div data-home-highlights-slot data-home-rhythm-part="highlights"></div>
+    </div>
     <section class="home-league-desk" aria-label="Around the league">
     <div data-home-rankings-slot data-content-state="loading" aria-busy="true">${powerRankingsLoading()}</div>
     ${announcements.data?.[0] ? `<section class="home-weekly-clubhouse card"><div><small>LEAGUE NEWS</small><h2>${esc(announcements.data[0].title)}</h2><p>${esc(String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news.").slice(0,160))}</p></div><button type="button" class="linkbtn home-text-action" data-open-home-news><span>Read league news</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button></section>` : ""}
@@ -521,13 +525,16 @@ export async function render(view) {
     })};
   }).catch(err => { console.warn("Completed week report unavailable", err); return null; });
   let homeEdition = {}, refreshEdition = null, homeCompletedReport = null, homeHighlightReel = null;
+  const rhythm=mountHomeRhythm(view.querySelector("#home-wrap"));
+  const momentEdition=createHomeMomentEdition({scope:String(leagues.data?.[0]?.sleeper_league_id||"dfl")});
   const weekFlow=mountHomeWeekFlow(view.querySelector(".home-week-desk"));
-  deferredStops.push(()=>weekFlow.stop());
+  deferredStops.push(()=>{rhythm.stop();weekFlow.stop()});
   const updateWeekFlow=()=>{
     const slot=view.querySelector("[data-home-recap-slot]");
     const markup=homeWeekReceipt({model:homeEdition.model,report:homeCompletedReport});
     if(slot&&slot.innerHTML!==markup){slot.innerHTML=markup;slot.hidden=!markup;}
-    weekFlow.update(homeEdition);
+    const phase=rhythm.update(homeEdition);
+    if(phase?.layoutAllowed)weekFlow.update(homeEdition,{phase});
   };
   homeHighlightReel=mountHomeHighlights(view.querySelector('[data-home-highlights-slot]'),{getContext:()=>homeEdition.model,active:()=>mine===generation&&view.isConnected&&location.hash.startsWith('#/home'),getPlayers:()=>homeEdition.model?.games.flatMap(game=>game.sides.flatMap(side=>[...side.lineup,...side.bench]))||[]});deferredStops.push(homeHighlightReel.stop);
   deferredStops.push(mountHomeMatchupPreview(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,onModel:edition=>{homeEdition=edition;homeHighlightReel?.updatePlayers();updateWeekFlow();refreshEdition?.();requestAnimationFrame(()=>requestAnimationFrame(startAnalysis))},active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
@@ -652,7 +659,7 @@ export async function render(view) {
     ]);
     custom = fresh;
     golfDayNow = day;
-    return homeBroadcastDeck(build(day), {week:homeBroadcastWeek,edition:homeEdition,coveredTrade:coveredTrade()});
+    return curateEdition(build(day));
   };
 
   const updateInjuries=async()=>{
@@ -663,11 +670,15 @@ export async function render(view) {
   document.addEventListener('visibilitychange',updateInjuries);
   deferredStops.push(()=>{clearInterval(injuryTimer);document.removeEventListener('visibilitychange',updateInjuries)});
 
+  const curateEdition=deck=>{
+    const moment=momentEdition.update({edition:homeEdition,report:homeCompletedReport,meSleeperId:myMember?.sleeper_user_id});
+    return homeBroadcastDeck([moment,...deck.filter(item=>item.generator!=="weeklyHeadline"&&item.generator!=="leagueMoment")].filter(Boolean),{week:homeBroadcastWeek,edition:homeEdition,coveredTrade:coveredTrade()});
+  };
   const startHomeStage = deck => {
     if (mine !== generation || !view.isConnected) return;
     const host = view.querySelector(".home-broadcast");
     if (!host) return;
-    const ordered = homeBroadcastDeck(deck, {week: homeBroadcastWeek, edition: homeEdition,coveredTrade:coveredTrade()});
+    const ordered = curateEdition(deck);
     const chirp=view.querySelector("[data-gameday-chirp]");
     if(chirp)chirp.hidden=!!ordered[0]?.storyKey?.startsWith("rivalry:");
     if(stage&&host.querySelector('[data-bx-stage]')){stage.update(ordered);return;}
@@ -767,7 +778,7 @@ export async function render(view) {
 
     /* What the dashboard carried that nothing else does: the completed-trade
        verdict and the auto-scout. Both go to the stage as slides. */
-    const extras = [homeLeagueStory(completedReport,{editionDate:dailyBroadcast().date,history:got?.error?[]:got?.matchups||[],season:analysis?.projectionSeason,week:analysis?.liveWeek,meSleeperId:myMember?.sleeper_user_id}),playoffPictureSlide(pulse?.stakes, myMember?.sleeper_user_id), tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
+    const extras = [playoffPictureSlide(pulse?.stakes, myMember?.sleeper_user_id), tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
     if (extras.length) {
       liveSlides = extras;
     }

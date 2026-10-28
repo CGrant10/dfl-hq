@@ -86,5 +86,5 @@ export function mountHomeWeekFlow(root,{win=window,doc=document}={}){
  };
  const schedule=()=>{if(frame===null&&!stopped)frame=win.requestAnimationFrame(apply)};
  win.addEventListener('scroll',schedule,{passive:true});host.addEventListener('focusout',schedule);
- return {update(edition){pending=homeWeekPhase(edition);schedule()},stop(){stopped=true;if(frame!==null)win.cancelAnimationFrame(frame);win.removeEventListener('scroll',schedule);host.removeEventListener('focusout',schedule);plan?.removeEventListener('toggle',toggle)}};
+ return {update(edition,{phase=null}={}){pending=phase||homeWeekPhase(edition);schedule()},stop(){stopped=true;if(frame!==null)win.cancelAnimationFrame(frame);win.removeEventListener('scroll',schedule);host.removeEventListener('focusout',schedule);plan?.removeEventListener('toggle',toggle)}};
 }

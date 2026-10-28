@@ -1260,3 +1260,15 @@ pass. The production Trade fixture passes at 320/390/768 without overflow or
 page errors; no new visual state or color was introduced. Existing Medicine
 Wheel Light/Dark broadcast and Trade appearance audits remain applicable.
 Physical installed-device refresh and upstream injury estimates remain unverified.
+
+## 1.500.0 — Week-aware Home entry and league moments
+
+Reviewed Home's pregame/live/aftermath section priorities at 320/390/768 in
+Medicine Wheel Light/Dark, including long team names and the compact bench,
+close-finish and blowout broadcast variants. Existing shared colors, typography,
+44px transport actions and wide-card treatment are reused; no palette or custom
+color was added. The first illustrated daily card and Wall-last ordering remain.
+The fixture covers no overflow/content overlap, entry ordering, no reshuffle on
+background refresh, and guards for late data after pointer/scroll/focus activity.
+Selected screenshots are in `docs/home-rhythm-1500/`. Real installed-phone frame
+pacing and full screen-reader behavior remain unverified.

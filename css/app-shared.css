@@ -6160,6 +6160,12 @@ html[data-ui-motion="off"] #home-wrap .bx-slide *,html[data-ui-motion="off"] #ho
 #home-wrap .bx-brief-value strong{font-size:clamp(1.375rem,calc(10rem / var(--bx-digits,3)),2.75rem)}
 #home-wrap .bx-brief-phase{font-weight:500;text-transform:capitalize;white-space:nowrap}
 
+/* Small phones retain full result names without crowding the card action. */
+@media(max-width:380px){
+ #home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-result{gap:4px;padding-block:8px}
+ #home-wrap .bx-brief-result .bx-brief-scores strong{font-size:.8125rem;line-height:1.2}
+}
+
 
 /* Source: css/player-compare.css */
 .dfl-player-compare {width:min(620px,calc(100vw - 24px));max-width:calc(100vw - 24px);height:min(760px,86dvh,var(--dialog-viewport-height,86dvh));max-height:var(--dialog-viewport-height,86dvh);padding:0;overflow:hidden;border-radius:14px;color:var(--text);background:var(--bg);top:var(--dialog-viewport-top,0px);bottom:var(--dialog-viewport-bottom,0px);}
