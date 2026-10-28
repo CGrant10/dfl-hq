@@ -1,3 +1,6 @@
+import {animateUi} from './ui-motion.js';
+import {timelineMarkup} from './matchup-timeline.js';
+import {loadHomeHighlights} from './home-highlight-data.js';
 import {momentSummaryMarkup} from './moment-summary-ui.js';
 import {esc} from './ui.js';
 import {loadGameDayMoments} from './game-day-moments.js';
@@ -13,17 +16,17 @@ export function matchupHighlightsHtml(state,gameId,{final=false}={}){
 
 export function mountMatchupHighlights(root,{getModel,getGame,getPlayers=()=>({}),getHost,getMotion=()=>true,active=()=>root.isConnected,load=loadGameDayMoments}={}){
  let stopped=false,scope='',checked=0,lastWanted=null,token=0,state={items:[],busy:false,error:false,message:'',cursor:null,more:false};
- const consumed=new Set();
+ const consumed=new Set();let timelineFilter='all',timelineSelected='',clips=[],clipsScope='';
  const recap=mountMomentRecap({getMotion,returnFocus:()=>getHost()?.querySelector('[data-highlights-recap]'),getContext:()=>({season:getModel()?.season,week:getModel()?.week}),getFinish:()=>matchupStory(getModel(),getGame(),state.items)});
  const current=()=>!stopped&&root.isConnected&&active();
- const paint=()=>{const host=getHost();if(host&&current())patchGameDay(host,matchupHighlightsHtml(state,getGame()?.id,{final:!!matchupStory(getModel(),getGame(),state.items)}))};
+ const paint=()=>{const host=getHost();if(host&&current())patchGameDay(host,matchupHighlightsHtml(state,getGame()?.id,{final:!!matchupStory(getModel(),getGame(),state.items)})+timelineMarkup(state.items,getGame(),{filter:timelineFilter,selected:timelineSelected,model:getModel(),clips}))};
  const route=()=>{const params=new URLSearchParams(location.hash.split('?')[1]||''),m=getModel();return params.get('matchup')===String(getGame()?.id)&&Number(params.get('season'))===m?.season&&Number(params.get('week'))===m?.week&&isFootballMomentKey(params.get('moment'))?params.get('moment'):null};
  const open=(startKey=null)=>recap.open(state.items,getGame()?.id,{startKey});
  const update=async({force=false,earlier=false}={})=>{
   if(!current())return;
   const model=getModel(),game=getGame();if(!model||!game)return;
   const nextScope=JSON.stringify([model.leagueId,model.season,model.week,game.id]);
-  if(nextScope!==scope){scope=nextScope;token++;checked=0;lastWanted=null;state={items:[],busy:false,error:false,message:'',cursor:null,more:false}}
+  if(nextScope!==scope){timelineFilter='all';timelineSelected='';clips=[];clipsScope='';scope=nextScope;token++;checked=0;lastWanted=null;state={items:[],busy:false,error:false,message:'',cursor:null,more:false}}
   const wanted=route();
   if(state.busy||!earlier&&!force&&Date.now()-checked<60000&&wanted===lastWanted)return;
   const request=++token;state.busy=true;state.error=false;state.message='';if(!state.items.length)paint();
@@ -47,12 +50,16 @@ export function mountMatchupHighlights(root,{getModel,getGame,getPlayers=()=>({}
  };
  const click=event=>{
   if(!getHost()?.contains(event.target))return;
+  const filter=event.target.closest('[data-timeline-filter]'),moment=event.target.closest('[data-timeline-moment]');
+  if(filter){timelineFilter=filter.dataset.timelineFilter;paint();return}
+  if(moment){timelineSelected=moment.dataset.timelineMoment;paint();animateUi(getHost()?.querySelector('[data-timeline-detail]'),[{opacity:.5,transform:'translateY(3px)'},{opacity:1,transform:'none'}],{duration:180,motion:getMotion()});return}
   const selected=event.target.closest('[data-highlight]');
   if(selected){open(selected.dataset.highlight);return}
   if(event.target.closest('[data-highlights-recap]'))open();
   else if(event.target.closest('[data-highlights-retry]'))void update({force:true});
   else if(event.target.closest('[data-highlights-more]'))void update({earlier:true});
  };
+ const toggle=event=>{if(!event.target.matches('.matchup-timeline[open]')||!current())return;const key=scope;if(clipsScope===key)return;clipsScope=key;void loadHomeHighlights().then(rows=>{if(current()&&scope===key){clips=rows;paint()}}).catch(()=>{if(scope===key)clipsScope=''})};root.addEventListener('toggle',toggle,true);
  const tab=()=>void update();root.addEventListener('click',click);root.addEventListener('dfl:clubhouse-tab',tab);
- return {update,items:()=>state.items,stop(){stopped=true;token++;recap.stop();root.removeEventListener('click',click);root.removeEventListener('dfl:clubhouse-tab',tab)}};
+ return {update,items:()=>state.items,stop(){stopped=true;token++;recap.stop();root.removeEventListener('click',click);root.removeEventListener('toggle',toggle,true);root.removeEventListener('dfl:clubhouse-tab',tab)}};
 }

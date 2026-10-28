@@ -6940,3 +6940,96 @@ body dialog.dfl-mobile-sheet{inset:var(--dialog-viewport-top,0px) 0 var(--dialog
  .replay-dock-expanded .home-reel-screen { max-height:65dvh; }
 }
 @media(min-width:601px) { .postgame-receipts>*:nth-child(odd) { margin-right:16px; } }
+
+
+/* Source: css/dfl-network.css */
+/* Event identity, using the shared Medicine Wheel defaults and native controls. */
+.dfl-network-mark { display:flex; align-items:center; gap:8px; margin:0 0 14px; color:var(--body-text); font:700 10px/1.2 var(--font-display); letter-spacing:.08em; text-transform:uppercase; }
+.dfl-network-mark>b { padding:4px 5px; border:1px solid var(--accent); color:var(--accent); font-size:11px; letter-spacing:.02em; }
+.dfl-network-mark>i { flex:1; height:1px; background:var(--line); transform-origin:left; animation:dfl-network-line 420ms cubic-bezier(.2,.75,.25,1) both; }
+.matchup-finish .dfl-network-mark { padding-top:4px; }
+.td-receipt-body>.dfl-network-mark { padding:12px 0 0; }
+.clubhouse-award>.dfl-network-mark { grid-column:1 / -1; width:100%; margin:0 0 10px; }
+.clubhouse-award .clubhouse-award-metric { font-variant-numeric:tabular-nums; animation:dfl-network-stat 280ms ease-out both; }
+.clubhouse-award { background:var(--bg); box-shadow:none; }
+.clubhouse-award>strong { font:700 20px/1.3 var(--font-display); }
+.clubhouse-award .clubhouse-award-metric { font-size:36px; letter-spacing:-.02em; }
+.clubhouse-award .clubhouse-award-metric small { font:500 12px/1.3 var(--font-display); letter-spacing:0; }
+.td-alert-receipt { border-top:3px solid var(--accent); }
+.td-receipt-summary h3 { font:700 16px/1.35 var(--font-display); }
+.td-receipt-summary .td-receipt-score b { font:800 28px/1 var(--font-display); }
+.td-receipt-summary .td-receipt-score small { font-size:11px; }
+.matchup-finish-verdict b { font-size:36px; }
+.network-empty { margin:12px 0; color:var(--body-text); font:500 13px/1.4 var(--font-display); }
+.matchup-timeline,.banter-memory { margin:12px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+#view :is(.matchup-timeline,.banter-memory)>summary { display:flex; justify-content:space-between; align-items:center; gap:12px; min-height:48px; padding:8px 0; color:var(--text); cursor:pointer; font:700 15px/1.3 var(--font-display); }
+.matchup-timeline>summary>b,.banter-memory>summary>b { color:var(--body-text); font:500 12px/1.3 var(--font-display); }
+.timeline-filters { display:flex; gap:6px; padding:4px 0 8px; }
+.timeline-filters button { min-height:44px; padding:8px 12px; border:1px solid var(--line); border-radius:7px; background:transparent; color:var(--body-text); font:600 12px/1.3 var(--font-display); }
+.timeline-filters [aria-pressed="true"] { color:var(--text); border-color:var(--accent); background:color-mix(in srgb,var(--accent) 8%,transparent); }
+.timeline-rail { display:flex; gap:8px; padding:4px 0 10px; margin:0; list-style:none; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; touch-action:pan-x pan-y pinch-zoom; }
+.timeline-rail li { flex:0 0 160px; min-width:0; scroll-snap-align:start; }
+.timeline-rail button { display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between; gap:7px; min-height:145px; width:100%; padding:12px; text-align:left; color:var(--text); background:var(--bg); border:1px solid var(--line); border-radius:10px; }
+.timeline-rail button[aria-pressed="true"] { border-color:var(--accent); box-shadow:inset 0 3px var(--accent); }
+.timeline-rail strong { font:700 14px/1.3 var(--font-display); overflow-wrap:anywhere; }
+.timeline-rail small,.timeline-rail time { color:var(--body-text); font:500 11px/1.3 var(--font-display); }
+.timeline-rail b { font:800 18px/1 var(--font-display); font-variant-numeric:tabular-nums; }
+.timeline-detail { padding:14px 0 6px; }
+.timeline-detail header { display:grid; gap:4px; }
+.timeline-detail header small,.banter-memory article>small { color:var(--muted); font:700 11px/1.3 var(--font-display); text-transform:uppercase; letter-spacing:.05em; }
+.timeline-detail header strong { font:700 17px/1.3 var(--font-display); }
+.timeline-detail p { color:var(--body-text); font-size:13px; }
+.timeline-scores { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px; }
+.timeline-scores span { display:grid; gap:5px; min-width:0; color:var(--body-text); font:600 13px/1.3 var(--font-display); }
+.timeline-scores b { color:var(--text); font:800 25px/1 var(--font-display); font-variant-numeric:tabular-nums; }
+.timeline-detail .linkbtn,.banter-memory .linkbtn { display:inline-flex; align-items:center; min-height:44px; }
+.banter-memory article { padding:14px 0; border-top:1px solid var(--line); }
+.banter-memory h4 { margin:6px 0 8px; color:var(--text); font:700 17px/1.35 var(--font-display); }
+.banter-memory p { margin:0; color:var(--body-text); font:500 13px/1.4 var(--font-display); }
+.multigame-desk { margin:0 0 18px; }
+.multigame-head { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0 12px; }
+.multigame-head small { color:var(--muted); font:700 10px/1.3 var(--font-display); letter-spacing:.08em; }
+.multigame-head h3 { margin:4px 0 0; color:var(--text); font:700 18px/1.15 var(--font-display); }
+.multigame-head details { position:relative; flex:none; }
+#view .multigame-head summary { display:flex; align-items:center; gap:6px; min-height:44px; padding:6px; color:var(--body-text); font:600 12px/1.3 var(--font-display); cursor:pointer; }
+.multigame-head details>div { position:absolute; right:0; top:100%; z-index:6; width:min(260px,calc(100vw - 48px)); max-height:330px; overflow:auto; padding:8px; border:1px solid var(--line); border-radius:10px; background:var(--bg); box-shadow:0 8px 24px color-mix(in srgb,var(--text) 14%,transparent); }
+.multigame-head label { display:flex; align-items:center; gap:8px; min-height:44px; padding:4px 8px; color:var(--text); font:600 13px/1.3 var(--font-display); }
+.multigame-head input { width:20px; height:20px; accent-color:var(--accent); }
+.multigame-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.multigame-card { min-width:0; border:1px solid var(--line); border-radius:10px; background:var(--bg); }
+.multigame-card.is-selected { border-color:var(--accent); box-shadow:inset 0 3px var(--accent); }
+.multigame-card>button { display:flex; flex-direction:column; align-items:stretch; gap:10px; width:100%; min-height:44px; height:100%; padding:10px 8px; border:0; border-radius:inherit; color:var(--text); background:transparent; text-align:left; }
+.multigame-card>button>small { min-height:28px; color:var(--body-text); font:500 11px/1.3 var(--font-display); }
+.multigame-score { display:grid; gap:6px; }
+.multigame-score>span { display:flex; justify-content:space-between; align-items:center; gap:4px; color:var(--body-text); font:700 12px/1.3 var(--font-display); }
+.multigame-score b { color:var(--text); font:800 25px/1 var(--font-display); font-variant-numeric:tabular-nums; }
+.multigame-people { min-height:70px; display:grid; gap:7px; padding-top:10px; border-top:1px solid var(--line); font:500 11px/1.35 var(--font-display); color:var(--body-text); overflow-wrap:anywhere; }
+.multigame-people .is-mine { color:var(--accent); font-weight:700; }
+.multigame-latest { min-height:45px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; color:var(--body-text); font:500 11px/1.35 var(--font-display); }
+.multigame-follow { margin-top:auto; color:var(--accent); font:700 11px/1.3 var(--font-display); }
+.trade-scout { margin:12px 0 18px; border:1px solid var(--line); border-radius:12px; }
+#view .trade-scout>summary { display:flex; align-items:center; justify-content:space-between; min-height:64px; gap:8px; padding:12px; cursor:pointer; }
+.trade-scout>summary>span { display:grid; gap:4px; }
+.trade-scout>summary small { color:var(--muted); font:700 10px/1.3 var(--font-display); letter-spacing:.06em; }
+.trade-scout>summary strong { color:var(--text); font:700 15px/1.3 var(--font-display); }
+.trade-scout>summary>b { color:var(--accent); white-space:nowrap; font:700 12px/1.3 var(--font-display); }
+.trade-scout[hidden],.trade-scout:not([open]) { display:none; }
+.trade-scout>div { padding:0 12px; }
+.scout-card { padding:14px 0; border-top:1px solid var(--line); }
+.scout-card>header { display:flex; justify-content:space-between; gap:8px; align-items:center; }
+.scout-card h3 { margin:0; color:var(--text); font:700 16px/1.3 var(--font-display); }
+.scout-card header>b { flex:none; color:var(--body-text); font:600 11px/1.3 var(--font-display); }
+.scout-package,.scout-card dl { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:14px 0 8px; }
+.scout-package small,.scout-card dt { display:block; margin-bottom:5px; color:var(--body-text); font:500 11px/1.3 var(--font-display); }
+.scout-package strong { display:block; color:var(--text); font:600 14px/1.35 var(--font-display); overflow-wrap:anywhere; }
+.scout-card dd { margin:0; color:var(--ok); font:800 24px/1 var(--font-display); }
+.scout-window { color:var(--body-text); font:500 11px/1.3 var(--font-display); }
+.scout-signals { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 0; }
+.scout-signals span { padding:4px 6px; border:1px solid var(--line); border-radius:4px; color:var(--body-text); font:600 11px/1.3 var(--font-display); }
+.scout-card .linkbtn { display:flex; align-items:center; min-height:44px; margin-top:4px; }
+#view :is(.matchup-timeline,.banter-memory,.multigame-desk,.trade-scout) :is(button,a,summary,input):focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+@keyframes dfl-network-line { from { opacity:0; transform:scaleX(0); } to { opacity:1; transform:scaleX(1); } }
+@keyframes dfl-network-stat { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+@media(max-width:360px) { .multigame-head h3 { font-size:16px; }.multigame-grid { gap:6px; }.multigame-score b { font-size:22px; } }
+@media(prefers-reduced-motion:reduce) { .dfl-network-mark>i,.clubhouse-award .clubhouse-award-metric { animation:none; } }
+html[data-ui-motion="off"] :is(.dfl-network-mark>i,.clubhouse-award .clubhouse-award-metric),[data-motion="off"] :is(.dfl-network-mark>i,.clubhouse-award .clubhouse-award-metric) { animation:none; }

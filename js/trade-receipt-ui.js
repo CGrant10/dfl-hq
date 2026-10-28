@@ -1,3 +1,4 @@
+import {networkMark} from './network-mark.js';
 import {esc} from './ui.js';
 import {tradeAlertViewModel} from './trade-alerts.js';
 import {playerIdentity} from './player-presentation.js';
@@ -27,7 +28,7 @@ export function completedTradeMarkup(alerts=[],selectedTransactionId='',{standal
   }).join('');
   return `<details class="td-alert-receipt" id="trade-${esc(alert.transactionId)}" data-receipt-tone="${esc(alert.outcome.tone)}"${selected?' data-route-focus':''}${open?' open':''}>
    <summary class="td-receipt-summary"><div class="td-receipt-heading"><small>${alert.season?`${esc(alert.season)} · `:''}${alert.week?`WEEK ${esc(alert.week)}`:'COMPLETED'}${alert.teams.length>2?` · ${alert.teams.length} TEAMS`:''}</small><h3>${alert.teams.map(t=>esc(t.teamName)).join(` <span class="td-receipt-vs" aria-label="and">${alert.teams.length>2?'+':'↔'}</span> `)}</h3><p class="td-receipt-call">${esc(call)}</p></div><span class="td-receipt-score"><b>${alert.fairness==null?'—':`${alert.fairness}%`}</b><small>${esc(alert.balanceLabel)}${caution&&alert.fairness!=null?' · est.':''}</small></span><span class="td-receipt-chevron" aria-hidden="true"></span></summary>
-   <div class="td-receipt-body"><section class="td-receipt-comparison" aria-label="Team value balance">${balanceRows}</section><div class="td-alert-packages">${packages.map(pkg=>{
+   <div class="td-receipt-body">${networkMark('Deal filed')}<section class="td-receipt-comparison" aria-label="Team value balance">${balanceRows}</section><div class="td-alert-packages">${packages.map(pkg=>{
     const sent=alert.packages.find(t=>t.rosterId===pkg.rosterId);
     return `<section data-receipt-team="${esc(pkg.rosterId)}" aria-label="${esc(pkg.teamName)} trade receipt">${teamIdentity({...pkg.team,team_name:pkg.teamName},{meta:received?'RECEIVED':'SENT',compact:true})}
      <div class="td-receipt-column-head" aria-hidden="true"><span>${received?'Players received':'Players sent'}</span><span>Value</span></div>${playerRows(pkg.players,received?'received':'sent')}
