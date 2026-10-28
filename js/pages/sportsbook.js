@@ -1,3 +1,4 @@
+import {revealSportsbookTicket} from '../sportsbook-ticket-route.js';
 import {fantasyMarketKey,fantasyOutcomeResult,withFantasyLegResult,bookLegResult,bookEntryResult,pendingBookReturn} from '../sportsbook-fantasy-results.js';
 import {mountSheetDrag,enterSheet,exitSheet} from '../sheet-drag.js';
 import { fitDialogToViewport } from '../dialog-viewport.js';
@@ -201,7 +202,7 @@ export async function render(view){
   const refreshSlip=wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
   rememberView(view,me.id);
   wireProductTabs(view,me.id);wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
-  wireMarketActivities(view);wirePageDisclosures(view);wireBookTabs(view,me.id);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me,()=>view._refreshFantasy?.({paint:false}));wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);
+  wireMarketActivities(view);wirePageDisclosures(view);wireBookTabs(view,me.id);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me,()=>view._refreshFantasy?.({paint:false}));wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);revealSportsbookTicket(view);
   if(canBook)wireCommissioner(view);
   const noticeSettlements=createSettlementTracker(bets,globalThis.localStorage,me.id),recentSettled=new Set();
   wallet ||= {balance:0};
@@ -648,8 +649,9 @@ function ticketsMarkup(bets,marketMap,outcomeMap,recent=new Set(),order=[]){
   const visible=bets.filter(b=>b.status==='open'||recent.has(String(b.id)));
   const rank=new Map(order.map((id,index)=>[id,index]));
   visible.sort((a,b)=>(rank.get(String(a.id))??-1)-(rank.get(String(b.id))??-1));
+  const requestedTicket=new URLSearchParams(globalThis.location?.hash?.split('?')[1]||'').get('ticket');
   const older=bets.filter(b=>b.status!=='open'&&!recent.has(String(b.id)));
-  return `<section class="block">${ticketBoardHead(bets)}<div data-live-tickets>${visible.map(b=>ticketCard(b,marketMap,outcomeMap)).join('')}</div>${disclosure('sportsbook-settled','Settled tickets','',older.slice(0,12).map(b=>ticketCard(b,marketMap,outcomeMap)).join('')||'<p class="muted">No settled tickets yet.</p>')}${!bets.length?'<p class="sb-empty">No tickets yet. Choose a line to start an entry.</p>':''}</section>`;
+  return `<section class="block">${ticketBoardHead(bets)}<div data-live-tickets>${visible.map(b=>ticketCard(b,marketMap,outcomeMap)).join('')}</div>${disclosure('sportsbook-settled','Settled tickets','',older.filter((b,i)=>i<12||String(b.id)===requestedTicket).map(b=>ticketCard(b,marketMap,outcomeMap)).join('')||'<p class="muted">No settled tickets yet.</p>')}${!bets.length?'<p class="sb-empty">No tickets yet. Choose a line to start an entry.</p>':''}</section>`;
 }
 function ledgerMarkup(rows){
   return rows.length?rows.map(r=>`<div id="sb-ledger-${esc(r.id)}" class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${esc(r.note||r.kind)}</strong><br><span class="muted tiny">${esc(fmtTime(r.created_at))}</span></span><strong>${r.amount>0?'+':''}${num(r.amount)} SIN</strong></div>`).join(''):'<span class="muted">No SIN has moved yet.</span>';
