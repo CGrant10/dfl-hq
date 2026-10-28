@@ -1,9 +1,11 @@
+import {mountDisclosureMotion} from './disclosure-motion.js';
 // Finite presentation effects; never animate score geometry or delay selection.
 export function mountClubhousePolish(root,{getMotion=()=>true,active=()=>root.isConnected}={}) {
  const tabs=root.querySelector('.clubhouse-tabs'),animations=new Set();
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let stopped=false,frame=null,waiting=null,waitTimer=null,selection=null;
  const current=()=>!stopped&&root.isConnected&&active();
+ const disclosures=mountDisclosureMotion(root,{selector:'.matchup-timeline,.banter-memory,.clubhouse-position-stats,.gd-compare-bench,.clubhouse-profile-awards,.weekly-roast-receipts details',getMotion,active:current});
  const canPlay=()=>current()&&getMotion()&&!reduced.matches&&document.visibilityState==='visible';
  const visible=node=>{
   if(!node||node.closest('[hidden]')||!node.getClientRects().length)return false;
@@ -64,18 +66,12 @@ export function mountClubhousePolish(root,{getMotion=()=>true,active=()=>root.is
    waiting.observe(faceoff);waitTimer=setTimeout(stopWaiting,1100);
   }
  };
- const toggle=event=>{
-  const details=event.target;
-  if(!details.matches?.('.clubhouse-position-stats,.gd-compare-bench')||!details.open||!visible(details))return;
-  const content=details.querySelector(':scope > table,:scope > ul');
-  play(content,[{opacity:.4},{opacity:1}],{duration:180});
- };
- const motionChanged=()=>{if(!canPlay())stopTransient();syncTabs(false)};
+ const motionChanged=()=>{disclosures.motionChanged();if(!canPlay())stopTransient();syncTabs(false)};
  const onVisibility=()=>{if(document.visibilityState!=='visible')stopTransient()};
- root.addEventListener('toggle',toggle,true);reduced.addEventListener('change',motionChanged);document.addEventListener('visibilitychange',onVisibility);
+ reduced.addEventListener('change',motionChanged);document.addEventListener('visibilitychange',onVisibility);
  syncTabs(false);scheduleTabs();
  return {
   enter,stopTransient,motionChanged,
-  stop(){if(stopped)return;stopped=true;stopTransient();cancelAnimationFrame(frame);tabObserver.disconnect();resize.disconnect();root.removeEventListener('toggle',toggle,true);reduced.removeEventListener('change',motionChanged);document.removeEventListener('visibilitychange',onVisibility);indicator?.remove();if(tabs)delete tabs.dataset.clubhousePolished},
+  stop(){if(stopped)return;stopped=true;disclosures.stop();stopTransient();cancelAnimationFrame(frame);tabObserver.disconnect();resize.disconnect();reduced.removeEventListener('change',motionChanged);document.removeEventListener('visibilitychange',onVisibility);indicator?.remove();if(tabs)delete tabs.dataset.clubhousePolished},
  };
 }

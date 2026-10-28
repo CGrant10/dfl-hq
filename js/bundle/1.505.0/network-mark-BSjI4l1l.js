@@ -1,0 +1,1 @@
+import{Nr as e}from"./app-core-BDH0avVh.js";function t(t){return`<span class="dfl-network-mark"><b>DFL</b><span>${e(t)}</span><i aria-hidden="true"></i></span>`}export{t};

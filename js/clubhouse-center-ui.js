@@ -4,7 +4,7 @@ import {clubhouseGameMetrics,clubhouseLeaguePulse} from './clubhouse-center-mode
 const pts=v=>v==null?'—':Number(v).toFixed(2);
 
 export function clubhouseScoreboardHtml(model,selected) {
- return `<div class="clubhouse-scoreboard-grid" role="group" aria-label="Choose a league matchup">${model.games.map(game=>{
+ return `<div class="clubhouse-scoreboard-grid" data-no-swipe role="group" aria-label="Choose a league matchup">${model.games.map(game=>{
   const metrics=clubhouseGameMetrics(game,model.completed),on=game.id===selected;
   return `<button type="button" class="clubhouse-scoreboard-game${metrics.pressure?' is-close':''}" data-clubhouse-game="${esc(game.id)}" aria-pressed="${on}" aria-label="View ${esc(game.sides.map(t=>t.name).join(' versus '))}"><span class="clubhouse-mini-phase" data-state="${esc(metrics.phase.key)}">${esc(metrics.pressure?'Close game':metrics.phase.label)}</span>${game.sides.map(t=>`<span data-matchup-roster="${esc(t.roster)}" class="clubhouse-mini-team${metrics.lead?.side===(game.sides.indexOf(t)?'right':'left')?' is-leading':''}">${teamPortrait({team_name:t.name,identity:t.identity})}<span>${esc(t.name)}</span><b>${metrics.lead?.side===(game.sides.indexOf(t)?'right':'left')?`<span class="sr-only">${metrics.lead.label}: </span>`:''}${pts(t.score)}</b></span>`).join('')}</button>`;
  }).join('')}</div>`;

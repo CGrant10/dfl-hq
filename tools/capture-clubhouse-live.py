@@ -66,7 +66,7 @@ with sync_playwright() as p:
    page.evaluate('''async mode=>{
     (await import('/js/theme.js')).pinMode(mode);const m=await import('/js/members.js');m.selectMember(f.members[0]);
     const clips=await(await fetch('/tools/fixtures/home-highlight-clips.json')).json();f.clips=[{...clips[0],play_id:'401873011981'},clips[1],{...clips[0],id:'990001',game_id:'401900001',headline:'Jayden Daniels runs for a 30-yard touchdown',game_label:'WAS · NYG',source_url:'https://www.espn.com/video/clip/_/id/990001'}];
-    f.page=await import('/js/pages/clubhouse.js');document.getElementById('view').dataset.pulseSystem='1';document.getElementById('view').dataset.pageSystem='1';await f.page.render(document.getElementById('view'));
+    f.page=await import('/js/pages/clubhouse.js');document.getElementById('view').dataset.pulseSystem='1';document.getElementById('view').dataset.pageSystem='1';await f.page.render(document.getElementById('view'));f.stopPageSwipe=(await import('/js/ui-motion.js')).mountPageSwipeTabs(document.getElementById('view'));
    }''',mode)
    tag=f'{width}px {mode}';page.wait_for_selector('.gd-lineup-comparison',timeout=20000)
    check(tag+' one Clubhouse offers Matchups, Highlights and Leaders',page.locator('[data-clubhouse-tab]').count()==6 and page.locator('.gameday-watch').count()==0)
@@ -74,6 +74,14 @@ with sync_playwright() as p:
    check(tag+' live matchup keeps both starting lineups side by side',page.locator('[data-clubhouse-matchup="1"] [data-gameday-player]').count()>=3)
    check(tag+' hides highlight loading until its tab is opened',page.evaluate('f.clipReads===0'))
    check(tag+' NFL viewing shortcuts are obvious before the week picker',page.locator('[data-clubhouse-nfl-open]').count()==2 and page.locator('.clubhouse-nfl-shortcuts').bounding_box()['y']<page.locator('.clubhouse-context').bounding_box()['y'] and page.locator('[data-clubhouse-nfl-open]').evaluate_all('es=>es.every(e=>e.clientHeight>=44)'))
+   check(tag+' matchup chooser is a compact native horizontal rail',page.locator('.clubhouse-scoreboard-grid').evaluate('e=>getComputedStyle(e).gridAutoFlow==="column"&&getComputedStyle(e).overflowX==="auto"&&e.clientHeight<180'))
+   rail=page.locator('.clubhouse-scoreboard-grid');rail.scroll_into_view_if_needed();page.wait_for_timeout(150)
+   bounds=rail.bounding_box();first=rail.locator('button').first.bounding_box();x=min(first['x']+first['width']+5,bounds['x']+bounds['width']-8);y=first['y']+first['height']/2
+   cdp=c.new_cdp_session(page);cdp.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
+   for step in range(1,9):cdp.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x-step*13,'y':y}]});page.wait_for_timeout(18)
+   cdp.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});page.wait_for_timeout(250)
+   check(tag+' native matchup swipes do not switch Clubhouse tabs',rail.evaluate('e=>e.scrollLeft>20') and page.locator('#clubhouse-tab-matchups').get_attribute('aria-selected')=='true')
+   rail.evaluate('e=>e.scrollLeft=0');page.evaluate('scrollTo(0,0)');page.wait_for_timeout(750)
    page.screenshot(path=str(OUT/f'{width}-{mode}-clubhouse-entry.png'))
    page.locator('#clubhouse-tab-highlights').click()
    try:page.wait_for_selector('[data-home-reel-clip]',timeout=15000)
@@ -161,7 +169,7 @@ with sync_playwright() as p:
    check(tag+' rapid scope changes reject the old request',page.locator('[data-team-reel-scope="mine"]').get_attribute('aria-pressed')=='true' and 'Tyler Shough' in page.locator('.home-reel-cards').inner_text())
    page.emulate_media(reduced_motion='reduce');page.locator('#clubhouse-tab-recap').click();page.locator('#clubhouse-tab-highlights').click()
    check(tag+' reduced motion and distant tabs remain usable',page.locator('#clubhouse-tab-highlights').get_attribute('aria-selected')=='true' and page.locator('#clubhouse-panel-highlights').is_visible())
-   page.evaluate('f.failClips=false');page.locator('[data-home-reel-open]').click();page.evaluate('f.keepVideo=document.querySelector(".home-reel-player video");f.page.leave()')
+   page.evaluate('f.failClips=false');page.locator('[data-home-reel-open]').click();page.evaluate('f.keepVideo=document.querySelector(".home-reel-player video");f.stopPageSwipe();f.page.leave()')
    check(tag+' leaving Clubhouse removes the reel and stops playback',page.locator('.home-reel-player').count()==0 and page.evaluate('f.keepVideo.paused&&!f.keepVideo.hasAttribute("src")'))
    page.evaluate("async()=>{location.hash='#/clubhouse?season=2026&week=7&tab=highlights&matchup=1&moment=nfl:401873011:401873011981:1&nflGame=401873011&clip=50276663';await f.page.render(document.getElementById('view'))}")
    page.wait_for_selector('.home-reel-player[open]');check(tag+' video notification deep link opens the exact clip automatically',page.locator('[data-reel-choose][aria-pressed="true"]').get_attribute('data-reel-choose')=='50276663')
