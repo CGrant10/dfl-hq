@@ -46,6 +46,8 @@ No member profile or preference was edited.
   receipts and profiles at 320/390px. Chosen photos remain, generated mascots are
   absent and no atlas is requested. Record targets, genuine fresh crossings,
   correction/stale/covered updates and Clubhouse integration continue to pass.
+- 21 final-result checks cover clutch wins, blowouts, ties, real score digits,
+  exact existing share payloads, explicit replay, motion preferences and teardown.
 - Production remains 90 modules, three startup/four Home. The 56 shared styles
   ship in one request. No new dependency, backend endpoint or animation loop.
 - Browser checks use isolated fixtures and block database writes. Physical-phone
