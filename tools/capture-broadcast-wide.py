@@ -46,6 +46,7 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/f'wide-{mode}-{width}-{i}.png'))
     assert metrics['within'] and metrics['separated'] and metrics['artContained'] and not metrics['overflow'],(mode,width,i,metrics)
     assert metrics['headFont']>=18,(mode,width,i,'headline too small',metrics)
+    assert slide.locator('.bx-brief-art .dfl-player-portrait').evaluate_all('''nodes=>nodes.every(n=>getComputedStyle(n).borderTopWidth==='0px'&&getComputedStyle(n).backgroundImage==='none'&&[...n.querySelectorAll('img')].every(img=>getComputedStyle(img).backgroundImage==='none'))'''),(mode,width,i,'portrait inherited an unrelated plate')
     targets=stage.locator('[data-bx-step],[data-bx-pause],[data-bx-go]').evaluate_all('nodes=>nodes.every(n=>n.getBoundingClientRect().width>=43.5&&n.getBoundingClientRect().height>=43.5)')
     assert targets,(mode,width,i,'small transport target')
     assert stage.locator('[aria-current="true"]').evaluate('''n=>{const a=n.getBoundingClientRect(),r=n.parentElement.getBoundingClientRect();return a.left>=r.left-1&&a.right<=r.right+1}'''),(mode,width,i,'active segment hidden in rail')

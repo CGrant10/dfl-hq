@@ -6,6 +6,8 @@ const marks={award:'M5 4h10v5a5 5 0 0 1-10 0V4Zm0 1H2v3a4 4 0 0 0 4 4m9-7h3v3a4 
 const mark=kind=>`<svg class="bx-brief-mark" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${marks[kind]||marks.news}"/></svg>`;
 const art=src=>`<span class="bx-brief-art" aria-hidden="true"><img src="${esc(src)}" alt="" decoding="async"></span>`;
 const footer=(text,detail='')=>`<span class="bx-brief-action">${detail?`<span class="bx-brief-detail">${detail}</span>`:''}<span>${esc(text)} ${arrow}</span></span>`;
+const recordLabels={high:'Highest score',blowout:'Biggest beating',nailbiter:'Closest finish',streak:'Streak watch',heartbreak:'Heartbreak',rivalry:'Rivalry ledger',title:'Title history',volume:'League history',low:'Rough weeks'};
+export const broadcastRecordHeading=item=>recordLabels[item.storyKind]||'From the record book';
 export function renderBroadcastBrief(item){
  if(!item)return '';
  let kind='news',heading=item.headline||'',body='',media='',detail='',action=item.actionLabel||'Open story',href=item.href||'',tag=href?'a':'section';
@@ -29,6 +31,7 @@ export function renderBroadcastBrief(item){
  }else if(item.kind==='season'){
   kind='season';heading=item.headline||'Seasons';media=`<strong class="bx-brief-number">${esc(item.figure)}</strong>`;body=`<p>${esc(item.subtitle)}</p>`;action='League archive';
  }else if(item.figure!=null){
+  if(item.kind==='record')heading=broadcastRecordHeading(item);
   kind='metric';media=`<div class="bx-brief-value" style="--bx-digits:${String(item.figure).length}"><strong>${esc(typeof item.figure==='number'&&!Number.isInteger(item.figure)?item.figure.toFixed(2):item.figure)}</strong>${item.figureLabel?`<small>${esc(item.figureLabel)}</small>`:''}</div>`;body=item.subtitle?`<p>${esc(short(item.subtitle))}</p>`:'';
  }else if(item.generator==='nextMove'&&item.scoutPlayer){
   kind='scout';media=`<span class="bx-brief-art">${playerPortrait(item.scoutPlayer)}</span>`;heading=item.scoutPlayer.name;body=`<p>${esc(short(item.subtitle||item.headline))}</p>`;action='Open Auto Scout';
@@ -38,5 +41,6 @@ export function renderBroadcastBrief(item){
  }
  const phase=(kind==='result'||item.treatment==='event')&&['live','upcoming','final'].includes(item.temporal)&&!new RegExp(item.temporal,'i').test(item.kicker||'')?item.temporal:'';
  const title=`<h2 class="bx-head">${esc(heading)}</h2>`,content=body?`<div class="bx-brief-body">${body}</div>`:'';
- return `<${tag} class="bx-slide bx-brief bx-brief-${kind}${kind==='award'&&item.variant==='chip'?' bx-brief-chip':''}${media?' bx-brief-with-art':''}"${href?` href="${esc(href)}"`:''}${kind==='trade'?` aria-label="${esc(heading+'. '+item.tradeStory.packages.map(p=>p.teamName+' sends '+(p.players||[]).map(player=>player.name).join(', ')).join('. '))}"`:''}><span class="bx-kicker">${mark(kind)}${esc(item.kicker)}${phase?` <span class="bx-brief-phase">· ${esc(phase)}</span>`:''}</span>${kind==='result'?content+title:title+content}${media}${kind==='injury'?`<button type="button" class="bx-brief-action" data-open-injury-report>${esc(action)} ${arrow}</button>`:href?footer(action,detail):''}</${tag}>`;
+ const category=item.kicker||{injury:'Player availability',season:'DFL archive',news:'League wire',metric:'By the numbers',scout:'Auto Scout',rivalry:'The ledger',trade:'Trade receipt',award:item.variant==='chip'?'Chip Eater':'League champion',result:'Around the league'}[kind];
+ return `<${tag} class="bx-slide bx-brief bx-brief-${kind}${kind==='award'&&item.variant==='chip'?' bx-brief-chip':''}${kind==='award'&&heading.length>38?' bx-brief-award-long':''}${media?' bx-brief-with-art':''}"${href?` href="${esc(href)}"`:''}${kind==='trade'?` aria-label="${esc(heading+'. '+item.tradeStory.packages.map(p=>p.teamName+' sends '+(p.players||[]).map(player=>player.name).join(', ')).join('. '))}"`:''}><span class="bx-kicker">${mark(kind)}${esc(category)}${phase?` <span class="bx-brief-phase">· ${esc(phase)}</span>`:''}</span>${kind==='result'?content+title:title+content}${media}${kind==='injury'?`<button type="button" class="bx-brief-action" data-open-injury-report>${esc(action)} ${arrow}</button>`:href?footer(action,detail):''}</${tag}>`;
 }

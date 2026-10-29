@@ -1,0 +1,254 @@
+[
+  {
+    "check": "light/320 scores retain exact values and the known leader",
+    "pass": true
+  },
+  {
+    "check": "light/320 full names, framed photos and score columns fit",
+    "pass": true
+  },
+  {
+    "check": "light/320 readable text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/320 compact scoreboard leaves room for the page",
+    "pass": true
+  },
+  {
+    "check": "light/320 a score correction can change the highlighted side",
+    "pass": true
+  },
+  {
+    "check": "light/320 a real zero tie highlights neither side",
+    "pass": true
+  },
+  {
+    "check": "light/320 an unknown total never becomes a lead or a zero",
+    "pass": true
+  },
+  {
+    "check": "light/320 forecasts remain labeled and visually neutral",
+    "pass": true
+  },
+  {
+    "check": "light/320 long current names wrap fully instead of truncating",
+    "pass": true
+  },
+  {
+    "check": "light/320 enlarged text stays within the fixed scoreboard",
+    "pass": true
+  },
+  {
+    "check": "light/320 tapping returns to the original matchup",
+    "pass": true
+  },
+  {
+    "check": "light/390 scores retain exact values and the known leader",
+    "pass": true
+  },
+  {
+    "check": "light/390 full names, framed photos and score columns fit",
+    "pass": true
+  },
+  {
+    "check": "light/390 readable text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/390 theme changes keep labels and their surface readable together []",
+    "pass": true
+  },
+  {
+    "check": "light/390 compact scoreboard leaves room for the page",
+    "pass": true
+  },
+  {
+    "check": "light/390 a score correction can change the highlighted side",
+    "pass": true
+  },
+  {
+    "check": "light/390 a real zero tie highlights neither side",
+    "pass": true
+  },
+  {
+    "check": "light/390 an unknown total never becomes a lead or a zero",
+    "pass": true
+  },
+  {
+    "check": "light/390 forecasts remain labeled and visually neutral",
+    "pass": true
+  },
+  {
+    "check": "light/390 long current names wrap fully instead of truncating",
+    "pass": true
+  },
+  {
+    "check": "light/390 tapping returns to the original matchup",
+    "pass": true
+  },
+  {
+    "check": "light/768 scores retain exact values and the known leader",
+    "pass": true
+  },
+  {
+    "check": "light/768 full names, framed photos and score columns fit",
+    "pass": true
+  },
+  {
+    "check": "light/768 readable text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/768 a score correction can change the highlighted side",
+    "pass": true
+  },
+  {
+    "check": "light/768 a real zero tie highlights neither side",
+    "pass": true
+  },
+  {
+    "check": "light/768 an unknown total never becomes a lead or a zero",
+    "pass": true
+  },
+  {
+    "check": "light/768 forecasts remain labeled and visually neutral",
+    "pass": true
+  },
+  {
+    "check": "light/768 long current names wrap fully instead of truncating",
+    "pass": true
+  },
+  {
+    "check": "light/768 tapping returns to the original matchup",
+    "pass": true
+  },
+  {
+    "check": "dark/320 scores retain exact values and the known leader",
+    "pass": true
+  },
+  {
+    "check": "dark/320 full names, framed photos and score columns fit",
+    "pass": true
+  },
+  {
+    "check": "dark/320 readable text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/320 compact scoreboard leaves room for the page",
+    "pass": true
+  },
+  {
+    "check": "dark/320 a score correction can change the highlighted side",
+    "pass": true
+  },
+  {
+    "check": "dark/320 a real zero tie highlights neither side",
+    "pass": true
+  },
+  {
+    "check": "dark/320 an unknown total never becomes a lead or a zero",
+    "pass": true
+  },
+  {
+    "check": "dark/320 forecasts remain labeled and visually neutral",
+    "pass": true
+  },
+  {
+    "check": "dark/320 long current names wrap fully instead of truncating",
+    "pass": true
+  },
+  {
+    "check": "dark/320 enlarged text stays within the fixed scoreboard",
+    "pass": true
+  },
+  {
+    "check": "dark/320 tapping returns to the original matchup",
+    "pass": true
+  },
+  {
+    "check": "dark/390 scores retain exact values and the known leader",
+    "pass": true
+  },
+  {
+    "check": "dark/390 full names, framed photos and score columns fit",
+    "pass": true
+  },
+  {
+    "check": "dark/390 readable text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/390 theme changes keep labels and their surface readable together []",
+    "pass": true
+  },
+  {
+    "check": "dark/390 compact scoreboard leaves room for the page",
+    "pass": true
+  },
+  {
+    "check": "dark/390 a score correction can change the highlighted side",
+    "pass": true
+  },
+  {
+    "check": "dark/390 a real zero tie highlights neither side",
+    "pass": true
+  },
+  {
+    "check": "dark/390 an unknown total never becomes a lead or a zero",
+    "pass": true
+  },
+  {
+    "check": "dark/390 forecasts remain labeled and visually neutral",
+    "pass": true
+  },
+  {
+    "check": "dark/390 long current names wrap fully instead of truncating",
+    "pass": true
+  },
+  {
+    "check": "dark/390 tapping returns to the original matchup",
+    "pass": true
+  },
+  {
+    "check": "dark/768 scores retain exact values and the known leader",
+    "pass": true
+  },
+  {
+    "check": "dark/768 full names, framed photos and score columns fit",
+    "pass": true
+  },
+  {
+    "check": "dark/768 readable text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/768 a score correction can change the highlighted side",
+    "pass": true
+  },
+  {
+    "check": "dark/768 a real zero tie highlights neither side",
+    "pass": true
+  },
+  {
+    "check": "dark/768 an unknown total never becomes a lead or a zero",
+    "pass": true
+  },
+  {
+    "check": "dark/768 forecasts remain labeled and visually neutral",
+    "pass": true
+  },
+  {
+    "check": "dark/768 long current names wrap fully instead of truncating",
+    "pass": true
+  },
+  {
+    "check": "dark/768 tapping returns to the original matchup",
+    "pass": true
+  },
+  {
+    "check": "No browser errors or production writes",
+    "pass": true
+  }
+]

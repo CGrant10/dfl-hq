@@ -1,5 +1,5 @@
 import {broadcastEditionKey} from './broadcast-edition.js';
-import {renderBroadcastBrief} from './broadcast-brief.js';
+import {renderBroadcastBrief,broadcastRecordHeading} from './broadcast-brief.js';
 /* =====================================================================
    broadcast-stage.js - the big screen
    ---------------------------------------------------------------------
@@ -397,9 +397,8 @@ function renderStoryItem(item, { editorial = false } = {}) {
     </a>`;
   }
   if (editorial && ['fact', 'record'].includes(item.kind) && ['stat', 'announcement'].includes(item.treatment)) {
-    const labels = { high: 'Highest score', blowout: 'Biggest beating', nailbiter: 'Closest finish', streak: 'Streak watch', heartbreak: 'Heartbreak', rivalry: 'Rivalry ledger', title: 'Title history', volume: 'League history', low: 'Rough weeks' };
     const rivalry = item.storyKind === 'rivalry';
-    const headline = labels[item.storyKind] || 'From the record book';
+    const headline = broadcastRecordHeading(item);
     const value = item.figure == null ? '' : Number.isFinite(Number(item.figure)) ? Number(item.figure).toFixed(Number.isInteger(Number(item.figure)) ? 0 : 2) : String(item.figure);
     return `<a class="bx-slide bx-archive-story${rivalry ? ' bx-rivalry-story' : ''} is-${esc(item.treatment)}" href="${esc(item.href || '#/history')}">
       <div class="bx-story-copy"><span class="bx-kicker">${esc(item.kicker)}</span>
@@ -676,7 +675,7 @@ export function startStage(root, deck, { refresh } = {}) {
     if(wide){
       // Enlarged type reflows into more rows; reserve the same room for every
       // story so long award names never clip or move the surrounding Home.
-      const scale=Math.max(1,parseFloat(getComputedStyle(document.documentElement).fontSize)/16),height=Math.ceil(Math.max(items.length>1?248:208,Math.min(340,root.clientWidth/1.65+(items.length>1?52:8)))*scale+64*(scale-1));
+      const scale=Math.max(1,parseFloat(getComputedStyle(document.documentElement).fontSize)/16),height=Math.ceil(Math.max(items.length>1?232:200,Math.min(300,root.clientWidth/1.9+(items.length>1?44:8)))*scale+64*(scale-1));
       root.toggleAttribute('data-bx-large-text',scale>1.05);
       if(root.style.height!==`${height}px`)root.style.height=`${height}px`;
       const dot=root.querySelector('[aria-current="true"]'),dots=dot?.parentElement;

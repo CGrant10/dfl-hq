@@ -24,7 +24,7 @@ export function homeScoreFrame(g,t,top,span){
 // scroll frames never measure the page or create/remove a copy at the endpoints.
 export function mountHomeScoreCollapse(root){
  const dock=document.createElement('button');dock.type='button';dock.className='home-score-dock';dock.hidden=true;dock.inert=true;
- dock.innerHTML='<span class="home-score-caption"><span data-dock-caption></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 12 5-5 5 5"/></svg></span><span class="home-score-pair"><span><i data-dock-mark></i><strong data-dock-name></strong><b data-dock-score></b></span><small aria-hidden="true">vs</small><span><i data-dock-mark></i><strong data-dock-name></strong><b data-dock-score></b></span></span>';
+ dock.innerHTML='<span class="home-score-pair"><span><i data-dock-mark></i><strong data-dock-name></strong><b data-dock-score></b></span><small class="home-score-caption"><span data-dock-caption></span></small><span><i data-dock-mark></i><strong data-dock-name></strong><b data-dock-score></b></span></span>';
  const layer=document.createElement('span');layer.className='home-score-flight';layer.setAttribute('aria-hidden','true');root.append(dock,layer);
  const reduced=matchMedia('(prefers-reduced-motion: reduce)'),marks=[...dock.querySelectorAll('[data-dock-mark]')],scores=[...dock.querySelectorAll('[data-dock-score]')],names=[...dock.querySelectorAll('[data-dock-name]')];
  let stopped=false,frame=0,dirty=true,source=null,parts=[],flights=[],geometry=[],effects=[],native=false,layout=null,viewportWidth=innerWidth;
