@@ -28,9 +28,20 @@ with sync_playwright() as p:
     page.evaluate("window.reviewStage.suspend('power-review',true)")
     page.evaluate("()=>{window.powerMotionStarts=0;const original=Element.prototype.animate;Element.prototype.animate=function(...args){if(this.closest('.power-edition'))window.powerMotionStarts++;return original.apply(this,args)}}")
     page.evaluate("async()=>{const {buildPowerBoards}=await import('./js/league-power-model.js');const {currentAnalyzerRoster}=await import('./js/analyzer-league-context.js');const {powerRankingsMarkup,mountPowerRankings}=await import('./js/league-power-ui.js');window.powerReviewMount=()=>{window.reviewPowerStop?.();const root=document.querySelector('[data-home-rankings-slot]');root.innerHTML=powerRankingsMarkup(window.reviewPowerRankings);window.reviewPowerStop=mountPowerRankings(root,window.reviewPowerRankings)};const teams=Array.from({length:12},(_,i)=>({id:String(i+1),roster_id:i+1,team_name:i===8?'The Bastards of the Very Long Championship Team Name':i===0?'<script>Team One</script>':'DFL Team '+(i+1),powerForecast:{complete:true,points:120+i}}));teams.forEach((t,i)=>{const owner='review-owner-'+i,custom=i===8||i===11?'https://sleepercdn.com/uploads/broken-team.jpg':i%2?'https://sleepercdn.com/uploads/team-'+i+'.jpg':null;Object.assign(t,currentAnalyzerRoster({...t,sleeper_user_id:owner},i===11?{profile_image:'https://sleepercdn.com/uploads/dfl-profile.jpg'}:null,[{user_id:owner,metadata:{team_name:t.team_name,avatar:custom},avatar:i===10?null:i===11?'broken-owner':'owner-avatar-'+i}]))});const matchups=Array.from({length:4},(_,w)=>Array.from({length:6},(_,i)=>({season:2026,week:w+1,roster1:i+1,roster2:i+7,score1:80+i*8+(w===3?i*12:0),score2:100+i*4-(w===3?i*8:0)}))).flat();window.reviewPowerRankings={focus:{id:'9'},allTeams:teams,powerRankings:buildPowerBoards({teams,matchups,currentWeek:5,season:2026})};powerReviewMount()}")
+    page.evaluate("document.addEventListener('click',e=>{(window.powerClicks||=[]).push({target:e.target.outerHTML.slice(0,200),inert:!!e.target.closest('[inert]')})},true)")
+    def open_report(programmatic=False):
+        row=page.locator('.power-edition .is-me')
+        expand=row.locator('[data-power-expand]')
+        if expand.get_attribute('aria-expanded')!='true':expand.evaluate('e=>e.click()')
+        action=row.locator('[data-power-team]')
+        if programmatic:action.evaluate('e=>e.click()')
+        else:action.click()
+        if not page.locator('dialog.power-detail').count():
+            page.screenshot(path=str(out/'power-report-failure.png'))
+            raise AssertionError({'errors':errors,'clicks':page.evaluate('window.powerClicks.slice(-5)'), 'state':row.evaluate('e=>({class:e.className,preview:e.querySelector("[data-power-preview]").outerHTML.slice(0,250)})')})
     card=page.locator('.power-edition')
     card.scroll_into_view_if_needed();page.wait_for_timeout(800)
-    assert page.locator('.power-edition>ol>li:visible [data-power-team]').count()==4
+    assert page.locator('.power-edition>ol>li:visible .power-team-link').count()==4
     assert page.locator('.power-edition .is-me').is_visible()
     assert page.locator('.power-edition script').count()==0
     page.wait_for_function("()=>document.querySelector('[data-power-id=\"9\"] img')?.currentSrc.endsWith('/owner-avatar-8')&&document.querySelector('[data-power-id=\"9\"] .has-photo')")
@@ -39,18 +50,43 @@ with sync_playwright() as p:
     assert page.locator('[data-power-id="11"] .dfl-team-mark i').inner_text()=='DT'
     assert page.locator('[data-power-id="6"] img').get_attribute('src').endswith('/team-5.jpg')
     results.append({'photos':'current team, owner, DFL profile, initials; broken URLs fall through without loops'})
+    # The new snapshot is an intrinsic, reversible disclosure with one open row.
+    for theme in ['light','dark']:
+        page.evaluate('(theme)=>window.reviewSetTheme(theme)',theme)
+        for width in [320,390]:
+            page.set_viewport_size({'width':width,'height':900})
+            mine=card.locator('.is-me');expand=mine.locator('[data-power-expand]');panel=mine.locator('[data-power-preview]')
+            mine.scroll_into_view_if_needed();folded=mine.bounding_box()['height']
+            expand.evaluate('e=>e.click()');page.wait_for_timeout(85);mid=mine.bounding_box()['height'];page.wait_for_timeout(230);full=mine.bounding_box()['height']
+            assert folded+2<mid<full-2,(theme,width,folded,mid,full)
+            assert expand.get_attribute('aria-expanded')=='true' and not panel.evaluate('e=>e.inert')
+            assert panel.locator('.power-preview-form [role=listitem]').count()==3
+            assert not page.evaluate('window.reviewTextContrast(document.querySelector(".is-me")).failures'),(theme,width,'snapshot contrast')
+            card.screenshot(path=str(out/f'power-snapshot-{theme}-{width}.png'))
+            panel.locator('[data-power-team]').focus();expand.evaluate('e=>e.click()')
+            assert panel.evaluate('e=>e.inert') and expand.evaluate('e=>e===document.activeElement')
+            page.wait_for_timeout(85);reversal=mine.evaluate('e=>{const before=e.getBoundingClientRect().height;e.querySelector("[data-power-expand]").click();return {before,after:e.getBoundingClientRect().height}}')
+            assert abs(reversal['before']-reversal['after'])<2,(theme,width,'snapshot reversal jumped',reversal)
+            page.wait_for_timeout(300);assert abs(mine.bounding_box()['height']-full)<2
+            other=card.locator('[data-power-expand]').first;other.evaluate('e=>e.click()')
+            assert panel.evaluate('e=>e.inert') and card.locator('.is-snapshot-open').count()==1
+            other.evaluate('e=>e.click()');page.wait_for_timeout(300)
+            assert abs(mine.bounding_box()['height']-folded)<2
+            assert mine.locator('.power-team-link').get_attribute('href')=='#/clubhouse?tab=matchups&roster=9'
+            results.append({'theme':theme,'width':width,'snapshot':'finite expansion; continuous reversal; one open row; immediate inert/focus; full report; correct Clubhouse roster','contrast':True})
     for theme in ['light','dark']:
         page.evaluate('(theme)=>window.reviewSetTheme(theme)',theme)
         for width in [320,390,768]:
             page.set_viewport_size({'width':width,'height':900})
             card.evaluate("e=>window.scrollTo({top:scrollY+e.getBoundingClientRect().top-240,behavior:'instant'})");page.wait_for_timeout(120)
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(theme,width)
-            rects=card.locator('button:visible').evaluate_all('(nodes)=>nodes.map(e=>({w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height,overflow:e.scrollWidth>e.clientWidth+1}))')
+            rects=card.locator('button:visible,a:visible').evaluate_all('(nodes)=>nodes.map(e=>({w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height,overflow:e.scrollWidth>e.clientWidth+1}))')
             assert all(r['w']>=44 and r['h']>=44 and not r['overflow'] for r in rects),(theme,width,rects)
             card.screenshot(path=str(out/f'power-{theme}-{width}.png'))
-            page.locator('.power-edition .is-me [data-power-team]').click()
+            open_report()
             dialog=page.locator('dialog.power-detail')
-            assert dialog.is_visible()
+            dialog.wait_for(state='visible')
+            assert dialog.is_visible(),(theme,width,errors,page.locator('.is-me [data-power-expand]').get_attribute('aria-expanded'),page.locator('dialog.power-detail').count())
             page.wait_for_function("()=>document.querySelector('.power-detail-face img')?.complete&&document.querySelector('.power-detail-face.has-photo')")
             assert 'The Bastards of the Very Long Championship Team Name' in dialog.text_content(), dialog.text_content()
             assert dialog.evaluate('e=>e.scrollWidth<=e.clientWidth'),(theme,width)
@@ -60,13 +96,14 @@ with sync_playwright() as p:
             dialog.screenshot(path=str(out/f'power-detail-{theme}-{width}.png'))
             page.keyboard.press('Escape');dialog.wait_for(state='detached')
             assert page.evaluate('document.activeElement.closest(".is-me")!==null')
+            page.locator('.power-edition .is-me [data-power-expand]').evaluate('e=>e.click()');page.wait_for_timeout(280)
             results.append({'theme':theme,'width':width,'rows':4,'detail':'focus, Escape, full name, no overflow','targets':len(rects)})
     # The actual team mark connects both ways, including an interrupted opening.
     page.set_viewport_size({'width':390,'height':844})
     for theme in ['light','dark']:
         page.evaluate('(theme)=>window.reviewSetTheme(theme)',theme)
         card.evaluate("e=>window.scrollTo({top:scrollY+e.getBoundingClientRect().top-180,behavior:'instant'})");page.wait_for_timeout(150)
-        page.locator('.power-edition .is-me [data-power-team]').evaluate('e=>e.click()')
+        open_report(True)
         origin=page.wait_for_function("""()=>{const e=document.querySelector('.dfl-connected-artwork'),a=e?.getAnimations()[0];if(!a)return false;a.pause();a.currentTime=140;return e.getBoundingClientRect().toJSON()}""").json_value()
         assert page.locator('.dfl-connected-artwork img').evaluate('e=>e.complete&&e.naturalWidth>0')
         page.screenshot(path=str(out/f'power-connected-{theme}.png'))
@@ -76,7 +113,7 @@ with sync_playwright() as p:
         page.wait_for_function('!document.querySelector(".power-detail,.dfl-connected-artwork")')
         assert page.locator('.power-edition .is-me .dfl-team-mark').evaluate("e=>e.style.visibility!=='hidden'")
         results.append({'theme':theme,'teamMotion':'loaded photo; continuous reversal; synchronized quiet close; no hidden source'})
-    page.locator('.power-edition .is-me [data-power-team]').evaluate('e=>e.click()')
+    open_report(True)
     page.wait_for_selector('.dfl-connected-artwork')
     page.evaluate('window.reviewPowerStop()')
     assert page.locator('.power-detail,.dfl-connected-artwork').count()==0
@@ -85,23 +122,23 @@ with sync_playwright() as p:
     # Exercise the actual CSS tracks, not just the final class/row count.
     page.set_viewport_size({'width':390,'height':900})
     card.scroll_into_view_if_needed()
-    folded=card.locator('ol').evaluate('e=>e.getBoundingClientRect().height')
+    folded=card.locator(':scope>ol').evaluate('e=>e.getBoundingClientRect().height')
     page.locator('[data-home-rank-toggle]').evaluate('e=>e.click()')
     page.wait_for_timeout(90)
-    opening=card.locator('ol').evaluate('e=>e.getBoundingClientRect().height')
+    opening=card.locator(':scope>ol').evaluate('e=>e.getBoundingClientRect().height')
     page.wait_for_timeout(350)
-    full=card.locator('ol').evaluate('e=>e.getBoundingClientRect().height')
+    full=card.locator(':scope>ol').evaluate('e=>e.getBoundingClientRect().height')
     assert folded+5<opening<full-5,(folded,opening,full)
     page.locator('[data-home-rank-toggle]').evaluate('e=>e.click()')
     page.wait_for_timeout(90)
-    closing=card.locator('ol').evaluate('e=>e.getBoundingClientRect().height')
+    closing=card.locator(':scope>ol').evaluate('e=>e.getBoundingClientRect().height')
     assert folded+5<closing<full-5,(folded,closing,full)
     assert card.locator('.is-rank-collapsed:not([inert])').count()==0
     # Reverse during collapse: it must continue from the visible height.
-    reversal=card.evaluate('e=>{const list=e.querySelector("ol"),before=list.getBoundingClientRect().height;e.querySelector("[data-home-rank-toggle]").click();return {before,after:list.getBoundingClientRect().height}}')
+    reversal=card.evaluate('e=>{const list=e.querySelector(":scope>ol"),before=list.getBoundingClientRect().height;e.querySelector("[data-home-rank-toggle]").click();return {before,after:list.getBoundingClientRect().height}}')
     assert abs(reversal['before']-reversal['after'])<2,reversal
     page.wait_for_timeout(380)
-    assert abs(card.locator('ol').evaluate('e=>e.getBoundingClientRect().height')-full)<2
+    assert abs(card.locator(':scope>ol').evaluate('e=>e.getBoundingClientRect().height')-full)<2
     # Resize and change week mid-transition; no stale callback can undo it.
     page.locator('[data-home-rank-toggle]').evaluate('e=>e.click()')
     page.wait_for_timeout(50)
@@ -109,12 +146,12 @@ with sync_playwright() as p:
     page.locator('[data-power-week="-1"]').evaluate('e=>e.click()')
     page.wait_for_timeout(380)
     assert page.locator('[data-home-rank-toggle]').get_attribute('aria-expanded')=='false'
-    assert card.locator('ol').evaluate('e=>!e.style.height')
+    assert card.locator(':scope>ol').evaluate('e=>!e.style.height')
     assert card.locator('.is-rank-collapsed').evaluate_all('(rows)=>rows.every(r=>r.inert&&r.getBoundingClientRect().height<1)')
     page.locator('[data-power-week="1"]').click()
     results.append({'expansion':'intermediate heights in both directions, continuous reversal, resize and week switch','heights':[folded,opening,full,closing]})
     # The ranking details use the existing mobile sheet gesture.
-    page.locator('.power-edition .is-me [data-power-team]').click()
+    open_report()
     dialog=page.locator('dialog.power-detail')
     page.wait_for_timeout(260)
     box=dialog.locator('header').bounding_box();x=box['x']+20;y=box['y']+16
@@ -129,13 +166,13 @@ with sync_playwright() as p:
     results.append({'detailSheet':'touch dismissal, removed dialog and focus restored'})
     page.locator('[data-home-rank-toggle]').click()
     page.wait_for_timeout(380)
-    assert page.locator('.power-edition>ol>li:visible [data-power-team]').count()==12
+    assert page.locator('.power-edition>ol>li:visible .power-team-link').count()==12
     assert page.locator('[data-home-rank-toggle]').get_attribute('aria-expanded')=='true'
     page.locator('[data-power-week="-1"]').click()
-    assert page.locator('.power-edition>ol>li:visible [data-power-team]').count()==12
+    assert page.locator('.power-edition>ol>li:visible .power-team-link').count()==12
     assert page.locator('[data-home-rank-toggle]').get_attribute('aria-expanded')=='true'
     page.locator('[data-power-week="1"]').click()
-    assert page.locator('.power-edition>ol>li:visible [data-power-team]').count()==12
+    assert page.locator('.power-edition>ol>li:visible .power-team-link').count()==12
     page.locator('[data-home-rank-toggle]').click()
     for _ in range(4):page.locator('[data-power-week="-1"]').click()
     assert page.locator('.power-week-nav strong').inner_text()=='Roster model'
@@ -144,10 +181,21 @@ with sync_playwright() as p:
     assert page.locator('.power-week-nav strong').inner_text()=='Week 4'
     assert page.locator('[data-power-week="1"]').is_disabled()
     page.set_viewport_size({'width':320,'height':900})
+    for theme in ['light','dark']:
+        page.evaluate('(theme)=>window.reviewSetTheme(theme)',theme)
+        page.evaluate("document.documentElement.style.fontSize='32px';powerReviewMount()")
+        mine=card.locator('.is-me');mine.scroll_into_view_if_needed();mine.locator('[data-power-expand]').click();page.wait_for_timeout(300)
+        assert card.evaluate('e=>e.scrollWidth<=e.clientWidth')
+        assert mine.locator('.power-team-copy>strong').evaluate('e=>e.scrollWidth<=e.clientWidth')
+        assert mine.locator('.power-expand').evaluate('e=>e.scrollWidth<=e.clientWidth')
+        assert mine.locator('[data-power-preview]').evaluate('e=>e.scrollWidth<=e.clientWidth')
+        card.screenshot(path=str(out/f'power-large-text-{theme}-320.png'))
+        page.evaluate("document.documentElement.style.fontSize='';powerReviewMount()")
+        results.append({'theme':theme,'systemText':'200% at 320px; full team names, rating and snapshot reflow'})
     # Simulate text enlargement without reducing target sizes or hiding columns.
     page.add_style_tag(content='.power-edition strong,.power-edition small,.power-edition em,.power-edition b,.power-edition .power-rank-move{font-size:200%!important}')
     assert page.evaluate('document.querySelector(".power-edition").scrollWidth<=document.querySelector(".power-edition").clientWidth')
-    page.locator('.power-edition .is-me [data-power-team]').click()
+    open_report()
     page.evaluate('window.reviewPowerStop()')
     assert page.locator('dialog.power-detail').count()==0
     for reduced,preference in [('reduce','on'),('no-preference','off')]:
@@ -171,7 +219,7 @@ with sync_playwright() as p:
     results.append({'expanded':12,'weekNavigation':'both boundaries','textEnlargement':'200% at 320px','cleanup':'dialog removed','reveal':'once per edition'})
     page.evaluate("()=>{const b=reviewPowerRankings.powerRankings.boards.at(-1);b.published=true;b.publishedAt='2026-10-20T17:00:00Z';powerReviewMount()}")
     assert page.locator('.power-edition-state').inner_text().lower()=='published'
-    page.locator('.power-edition .is-me [data-power-team]').click()
+    open_report()
     assert 'Published lineup' in page.locator('dialog.power-detail').text_content()
     page.keyboard.press('Escape')
     page.evaluate("()=>{reviewPowerRankings.powerRankings.boards.at(-1).reconstructed=true;powerReviewMount()}")
