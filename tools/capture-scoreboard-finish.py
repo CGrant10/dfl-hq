@@ -29,7 +29,10 @@ with sync_playwright() as p:
    page.evaluate('''()=>{reviewStage.suspend('scoreboard-finish',true);window.values=[...document.querySelectorAll('.gameday-matchup .home-projected-total,.gameday-matchup .gd-thermal-value')];values.forEach((n,i)=>n.textContent=i?'94.10':'100.25');const source=document.querySelector('.gameday-matchup');source.classList.remove('is-projected');document.querySelector('.home-game-phase').textContent='Final';source.querySelectorAll('.gameday-faceoff-mark').forEach(n=>{n.innerHTML='<img src="tools/fixtures/player-portrait.png" alt="">';n.classList.add('has-photo')})}''');settle(page);dock=page.locator('.home-score-dock');tag=f'{mode}/{width}'
    check(tag+' scores retain exact values and the known leader',dock.locator('[data-dock-score]').all_text_contents()==['100.25','94.10'] and dock.get_attribute('data-leader')=='left' and dock.locator('[data-dock-score]').evaluate_all('ns=>getComputedStyle(ns[0]).color!==getComputedStyle(ns[1]).color'))
    check(tag+' full names, framed photos and score columns fit',dock.evaluate('''e=>{const names=[...e.querySelectorAll('[data-dock-name]')],scores=[...e.querySelectorAll('[data-dock-score]')].map(n=>n.getBoundingClientRect());return names.every(n=>n.scrollWidth<=n.clientWidth+1&&n.scrollHeight<=n.clientHeight+1)&&Math.abs(scores[0].top-scores[1].top)<1&&e.getBoundingClientRect().left>=0&&e.getBoundingClientRect().right<=innerWidth+1}'''))
-   check(tag+' readable text contrast',page.evaluate('''async()=>!(await import('/tools/home-review-contrast.js')).reviewTextContrast(document.querySelector('.home-score-dock')).failures.length'''))
+   contrast=page.evaluate('''async()=> (await import('/tools/home-review-contrast.js')).reviewTextContrast(document.querySelector('.home-score-dock'))''')
+   if contrast['failures']:
+    (OUT/f'{mode}-{width}-contrast-failure.json').write_text(json.dumps(contrast,indent=2));dock.screenshot(path=str(OUT/f'{mode}-{width}-contrast-failure.png'))
+   check(tag+' readable text contrast '+json.dumps(contrast['failures']),not contrast['failures'])
    if width<700:
     check(tag+' compact scoreboard leaves room for the page',dock.evaluate('(e,max)=>e.offsetHeight>=44&&e.offsetHeight<=max',72 if width==320 else 64))
    dock.screenshot(path=str(OUT/f'{mode}-{width}-dock.png'))
