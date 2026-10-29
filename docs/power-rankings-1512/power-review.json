@@ -1,0 +1,134 @@
+[
+  {
+    "photos": "current team, owner, DFL profile, initials; broken URLs fall through without loops"
+  },
+  {
+    "theme": "light",
+    "width": 320,
+    "snapshot": "finite expansion; continuous reversal; one open row; immediate inert/focus; full report; correct Clubhouse roster",
+    "contrast": true
+  },
+  {
+    "theme": "light",
+    "width": 390,
+    "snapshot": "finite expansion; continuous reversal; one open row; immediate inert/focus; full report; correct Clubhouse roster",
+    "contrast": true
+  },
+  {
+    "theme": "dark",
+    "width": 320,
+    "snapshot": "finite expansion; continuous reversal; one open row; immediate inert/focus; full report; correct Clubhouse roster",
+    "contrast": true
+  },
+  {
+    "theme": "dark",
+    "width": 390,
+    "snapshot": "finite expansion; continuous reversal; one open row; immediate inert/focus; full report; correct Clubhouse roster",
+    "contrast": true
+  },
+  {
+    "theme": "light",
+    "width": 320,
+    "rows": 4,
+    "detail": "focus, Escape, full name, no overflow",
+    "targets": 11
+  },
+  {
+    "theme": "light",
+    "width": 390,
+    "rows": 4,
+    "detail": "focus, Escape, full name, no overflow",
+    "targets": 11
+  },
+  {
+    "theme": "light",
+    "width": 768,
+    "rows": 4,
+    "detail": "focus, Escape, full name, no overflow",
+    "targets": 11
+  },
+  {
+    "theme": "dark",
+    "width": 320,
+    "rows": 4,
+    "detail": "focus, Escape, full name, no overflow",
+    "targets": 11
+  },
+  {
+    "theme": "dark",
+    "width": 390,
+    "rows": 4,
+    "detail": "focus, Escape, full name, no overflow",
+    "targets": 11
+  },
+  {
+    "theme": "dark",
+    "width": 768,
+    "rows": 4,
+    "detail": "focus, Escape, full name, no overflow",
+    "targets": 11
+  },
+  {
+    "theme": "light",
+    "teamMotion": "loaded photo; continuous reversal; synchronized quiet close; no hidden source"
+  },
+  {
+    "theme": "dark",
+    "teamMotion": "loaded photo; continuous reversal; synchronized quiet close; no hidden source"
+  },
+  {
+    "teamMotionCleanup": "page teardown cancels in-flight copy and removes modal"
+  },
+  {
+    "expansion": "intermediate heights in both directions, continuous reversal, resize and week switch",
+    "heights": [
+      309.09375,
+      727.203125,
+      829.59375,
+      411.34375
+    ]
+  },
+  {
+    "detailSheet": "touch dismissal, removed dialog and focus restored"
+  },
+  {
+    "theme": "light",
+    "systemText": "200% at 320px; full team names, rating and snapshot reflow"
+  },
+  {
+    "theme": "dark",
+    "systemText": "200% at 320px; full team names, rating and snapshot reflow"
+  },
+  {
+    "reduced": "reduce",
+    "motion": "on",
+    "animations": 0
+  },
+  {
+    "reduced": "no-preference",
+    "motion": "off",
+    "animations": 0
+  },
+  {
+    "expanded": 12,
+    "weekNavigation": "both boundaries",
+    "textEnlargement": "200% at 320px",
+    "cleanup": "dialog removed",
+    "reveal": "once per edition"
+  },
+  {
+    "sources": [
+      "Preview",
+      "Published",
+      "Rebuilt",
+      "Roster model"
+    ]
+  },
+  {
+    "failedLastImage": "initials visible; no stale has-photo state"
+  },
+  {
+    "browserErrors": [],
+    "expandedWeekNavigation": "preserved"
+  }
+]

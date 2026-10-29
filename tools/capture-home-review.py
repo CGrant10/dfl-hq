@@ -164,7 +164,7 @@ def check_score_consistency(page):
             assert all(abs(r['right']-r['phaseRight'])<1 and r['font']==r['trackerFont']=='18px' and r['color']==r['trackerColor'] for r in rows), rows
             results.append({'mode':mode,'width':width,'rows':rows})
     board = page.locator('.home-rankings-card > ol > li')
-    assert board.first.locator('strong').text_content().strip() == 'Grant'
+    assert board.first.locator('.power-team-copy>strong').text_content().strip() == 'Grant'
     assert board.first.locator('[data-power-record]').text_content().strip() == '3-1', board.first.inner_html()
     assert board.nth(1).locator('[data-power-record]').text_content().strip() == '4-0', board.nth(1).inner_html()
     page.set_viewport_size({'width': 1280, 'height': 1200})
@@ -642,7 +642,7 @@ def check_watch_score_strip(page):
     """Real Watch controller, with isolated reads and labeled sample teams."""
     source=(ROOT/'js/game-day-watch.js').read_text().split('export function mountGameDayWatch')[1]
     page.evaluate("""async source=>{
-      const helpers=Object.assign({},...await Promise.all(['ui','sleeper-links','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-moment-effects','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','player-week-details','clubhouse-matchup-model','watch-score-collapse','moment-recap','record-chases','record-chases-model','team-art','live-football','matchup-finish','matchup-finish-model','game-day-matchup-share','matchup-story','matchup-highlights','live-football'].map(name=>import(`./js/${name}.js`))));
+      const helpers=Object.assign({},...await Promise.all(['ui','sleeper-links','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-moment-effects','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','player-week-details','clubhouse-matchup-model','watch-score-collapse','moment-recap','record-chases','record-chases-model','live-football','matchup-finish','matchup-finish-model','game-day-matchup-share','matchup-story','matchup-highlights','live-football'].map(name=>import(`./js/${name}.js`))));
       const mountDetails=helpers.mountPlayerWeekDetails;helpers.mountPlayerWeekDetails=(root,options)=>mountDetails(root,{...options,load:async()=>[]});
       const {buildGameDay}=await import('./js/game-day-model.js');window.watchShareCount=0;window.watchHoldMoments=false;helpers.shareMatchupReceipt=()=>{window.watchShareCount++};
       const members=[1,2,3,4].map(id=>({id,sleeper_user_id:`strip-${id}`,team_name:id===1?'The Very Long Championship Bayou Bombers':id===2?'Klutch Sports Group':`Demo Team ${id}`}));

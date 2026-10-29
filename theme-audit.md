@@ -1438,3 +1438,17 @@ injury status remain semantic. No theme entries or retired crest colors were
 added. `pnpm themes`, `pnpm check` and the final type/name/build checks pass.
 Fixtures block external writes. Physical phone frame timing and screen readers
 remain unverified. Evidence: [broadcast-presentation-1511.md](docs/broadcast-presentation-1511.md).
+
+# 1.512.0 — Power Rankings and mascot removal
+
+Reviewed ranking rows, inline snapshots and reports in Light/Dark at 320/390/768px,
+including full names, 200% root text, photos/fallbacks, correct roster links,
+keyboard focus, disclosure reversals and motion preferences. Text contrast and
+44px controls pass. Matchup introductions, final receipts and profiles retain
+chosen photos and legible names after generated team mascots are removed. New
+surfaces, labels, disclosure controls and the member-row wash use shared theme
+tokens. Movement/status inks and member identity accents remain meaningful.
+No theme entries or retired crest colors were added. `pnpm themes`, `pnpm check`
+and final type/name/build checks pass. Fixtures block external writes. Physical
+phone frame timing and screen readers remain unverified. Evidence:
+[power-rankings-1512.md](docs/power-rankings-1512.md).
