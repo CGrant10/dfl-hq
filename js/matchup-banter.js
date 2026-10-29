@@ -74,3 +74,23 @@ export function matchupBanter(model, history = []) {
       ...chirp, text: `${chirp.receipt} ${chirp.roast}` };
   }).sort((a, b) => Number(b.isMine) - Number(a.isMine));
 }
+
+// A selected recorded moment earns a short line. No projected result, play
+// fantasy points or manager quote is inferred from the event.
+export function momentChirp(entry,game,{season,week}={}){
+ const moment=entry?.moment||entry;if(!moment||!game?.sides?.length)return null;
+ const seed=seedFor(`${season}:${week}:${game.id}:${moment.eventKey||moment.key}:${moment.kind}`);
+ const player=moment.player?.name,team=moment.team?.team_name;
+ if(moment.kind==='lead'){
+  const sides=moment.recap?.sides;
+  if(sides?.length!==2||!sides.every(s=>typeof s.points==='number'&&Number.isFinite(s.points)))return null;
+  const leader=sides.find(s=>s.leading),other=sides.find(s=>s!==leader);
+  if(!leader||!other||leader.points<=other.points)return null;
+  return pick([`${leader.team_name} has the lead. Save the fucking victory speech.`,`${other.team_name}, the lead just left without you.`,`${leader.team_name} moves in front. The group chat just got louder.`,`${other.team_name}, refresh all you want. That's still the score.`,`${leader.team_name}, keep that same energy when the lead changes.`,`${other.team_name}, time to stop typing and start praying.`],seed);
+ }
+ if(moment.kind==='touchdown'&&moment.recap?.play?.kind==='touchdown'&&player)return pick([`${player} found the end zone. Somebody's Sunday just got a lot fucking better.`,`${player} scored. Take that shit straight to the group chat.`,`${player} brought the touchdown. You can handle the shit talk.`,`${player} just gave ${team||'the lineup'} something to yell about.`],seed);
+ if(moment.kind==='big-play'&&moment.recap?.play?.kind==='big-play'&&player)return pick([`${player} just made somebody put their beer down.`,`${player} hit a big one. Now keep the fucking drive alive.`,`${player} brought a play worth interrupting the group chat for.`],seed);
+ if(moment.kind==='big'&&typeof moment.recap?.points==='number'&&moment.recap.points>=20&&player)return pick([`${player} is carrying the lineup and the fucking conversation.`,`${player} brought the points. Let the rest of the roster explain itself.`,`${player} showed up. Some of these other fuckers should take notes.`],seed);
+ if(moment.kind==='surge'&&typeof moment.recap?.delta==='number'&&moment.recap.delta>=6&&player)return pick([`${player} moved the scoreboard. Now the other side can sweat.`,`${player} just made refreshing the app worth a damn.`,`${player} put points on the board. The excuses can wait.`],seed);
+ return null;
+}

@@ -133,6 +133,9 @@ on:
       - 'tools/capture-first-launch.py'
       - 'supabase/migrations/*player_directory*'
       - 'supabase/tests/player_directory.sql'
+      - 'js/matchup-view-context*'
+      - 'js/trade-routing-board*'
+      - 'tools/capture-connected-polish.py'
       - 'js/matchup-momentum*'
       - 'css/matchup-momentum.css'
       - 'tools/capture-matchup-momentum.py'
@@ -381,7 +384,9 @@ jobs:
       - name: Check replay minimizing, return and media continuity
         env:
           DFL_CONNECTED_REVIEW_DIR: ${{ github.workspace }}/home-review-output/connected
-        run: python tools/capture-connected-viewing.py
+        run: |
+          node tools/render-trade-review.mjs
+          python tools/capture-connected-viewing.py
       - name: Check live NFL play refresh and recovery
         env:
           DFL_NFL_REFRESH_REVIEW_DIR: ${{ github.workspace }}/home-review-output/nfl-refresh
@@ -475,3 +480,25 @@ jobs:
           psql -h localhost -U postgres -d dfl_highlight_test -v ON_ERROR_STOP=1 -f supabase/tests/home_highlights.sql
           psql -h localhost -U postgres -c 'create database dfl_player_cache_test'
           psql -h localhost -U postgres -d dfl_player_cache_test -v ON_ERROR_STOP=1 -f supabase/tests/player_directory.sql
+
+  connected-polish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright
+      - name: Check inherited matchup scores, touch trade routing and Home priorities
+        env:
+          DFL_CONNECTED_POLISH_DIR: connected-polish-output
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          python tools/capture-connected-polish.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: connected-polish-review
+          path: connected-polish-output/
+          retention-days: 7

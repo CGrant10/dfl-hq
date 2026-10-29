@@ -3,8 +3,8 @@ import {homeRhythmPhase} from './home-rhythm.js';
 const now=Date.parse('2026-10-28T17:00:00Z');
 const upcoming=(date,extra={})=>({model:{season:2026,week:7,completed:true},leagueState:{season:2026,currentWeek:8},openingWeek:8,openingNfl:{payload:{events:[{date,status:{type:{state:'pre'}}}]}},...extra});
 describe('Home entry rhythm',()=>{
- it('keeps receipts first early in the next week, then prioritizes decisions within 24 hours of kickoff',()=>{
-  expect(homeRhythmPhase(upcoming('2026-10-30T00:15:00Z'),now)).toMatchObject({mode:'aftermath',key:'final',order:['recap','live','plan']});
+ it('keeps receipts first early in the next week, then prioritizes decisions within 48 hours of kickoff',()=>{
+  expect(homeRhythmPhase(upcoming('2026-10-31T00:15:00Z'),now)).toMatchObject({mode:'aftermath',key:'final',order:['recap','live','plan']});
   expect(homeRhythmPhase(upcoming('2026-10-29T00:15:00Z'),now)).toMatchObject({mode:'pregame',key:'pregame'});
  });
  it('uses actual NFL game states through breaks and settlement, with no weekday guess',()=>{

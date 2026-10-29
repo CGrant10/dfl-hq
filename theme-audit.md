@@ -1468,3 +1468,18 @@ replay checks used isolated clips. The score-capture migration and read-only
 client permissions passed isolated PostgreSQL and production verification.
 Physical phone frame timing and screen-reader announcements remain unverified.
 Evidence: [clubhouse-momentum-1513.md](docs/clubhouse-momentum-1513.md).
+
+# 1.514.0 — Connected viewing, trade destinations and quieter motion
+
+Reviewed actual fantasy context in player cards/replays, nested and detached
+viewing, three-team receiving lanes, native touch dragging, selected destinations,
+Undo/recovery, 200% text, recorded-event roasts and narrow result/metric broadcasts
+in Light/Dark at 320/390/768px. Text contrast, complete names, 44px new controls,
+keyboard focus, exact return and motion preferences pass the browser reviews.
+All new text, borders, surfaces, active lanes and controls use shared theme tokens;
+player/member identity images and meaningful score/status colors remain. Home's
+first broadcast and Wall ordering are preserved. No themes or retired crest
+accents were added. `pnpm themes`, `pnpm check` and final type/name/build checks
+pass. Real league checks are read-only; replay media and trade actions use
+isolated fixtures. Physical phone frame pacing, decoder behavior and screen-reader
+speech remain unverified. Evidence: [connected-motion-1514.md](docs/connected-motion-1514.md).

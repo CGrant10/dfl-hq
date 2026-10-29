@@ -7,7 +7,7 @@ export function homeRhythmPhase(edition={},now=Date.now()){
  const kickoffs=(edition.openingNfl?.payload?.events||[]).map(e=>Date.parse(e.date)).filter(t=>Number.isFinite(t)&&t>now);
  const next=kickoffs.length?Math.min(...kickoffs):null;
  const aftermath=phase.key==='final'||phase.key==='pregame'&&edition.model?.completed
-  &&Number(phase.week)>Number(edition.model.week)&&next!==null&&next-now>24*3600000;
+  &&Number(phase.week)>Number(edition.model.week)&&next!==null&&next-now>48*3600000;
  return {...phase,...(aftermath?{key:'final',order:['recap','live','plan']}:{}),mode:aftermath?'aftermath':phase.key==='pregame'?'pregame':'live'};
 }
 
@@ -27,6 +27,9 @@ export function mountHomeRhythm(root,{win=window,doc=document}={}){
    chosen={...phase,layoutAllowed:!engaged&&!root?.contains(doc.activeElement)};
    // A default desk stays in place if the initial data arrives after engagement.
    if(host&&chosen.layoutAllowed){
+    const personal=root.querySelector('.home-personal-desk');
+    const priorities=phase.mode==='pregame'?['decisions','matchup']:['matchup','decisions'];
+    priorities.forEach((key,index)=>{const node=personal?.querySelector('[data-home-personal-part="'+key+'"]');if(node&&personal.children[index]!==node)personal.insertBefore(node,personal.children[index]||null)});
     const order=phase.mode==='live'?['highlights','week']:['week','highlights'];
     order.forEach((key,index)=>{const node=host.querySelector('[data-home-rhythm-part="'+key+'"]');if(node&&host.children[index]!==node)host.insertBefore(node,host.children[index]||null)});
    }

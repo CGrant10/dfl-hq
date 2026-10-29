@@ -1,3 +1,4 @@
+import {mountTradeRoutingBoard} from './trade-routing-board.js';
 import {tradeEditSnapshot,restoreTradeEdit,replaceTradePlayer} from './trade-editor.js';
 import {openTradeReplacement} from './trade-player-picker.js';
 import {animateUi} from './ui-motion.js';
@@ -511,7 +512,8 @@ export function tradeDeskMarkup(team, teams, pool, state) {
       <summary><span>Build your trade</span><i aria-hidden="true"></i></summary>
       <div class="td-builder-body">
         <div class="td-party-controls">${selectors}${add}</div>
-        <div class="td-package-limit" data-td-limit><span><b data-td-total-count>${tradePlayerCount(state.sends)}</b> of ${MAX_TRADE_PLAYERS} players selected</span><small>${multi?"Set each destination.":""}</small></div>
+        <div class="td-package-limit" data-td-limit><span><b data-td-total-count>${tradePlayerCount(state.sends)}</b> of ${MAX_TRADE_PLAYERS} players selected</span></div>
+        <section class="td-routing-board" data-td-routing-board aria-label="Trade destinations" hidden></section><p class="sr-only" data-td-route-announcement role="status" aria-atomic="true"></p>
         <div class="td-board ${multi ? "is-multi" : ""}" style="--td-party-count:${parties.length}">
           ${parties.map((party, index) => sideList(party, pool, state.sends[index], String(index), multi ? `${teamName(party)} sends` : index ? "YOU GET" : "YOU SEND", state.filters?.[index] || "",parties,state.destinations,state.rosterOpen?.[index])).join("")}
         </div>
@@ -535,6 +537,12 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
   const partiesOf = () => [team, ...state.memberIds.map(id => teams.find(item => String(item.id) === String(id))).filter(Boolean)];
 
   const remember=()=>{undo=tradeEditSnapshot(partiesOf(),state)};
+  const routingBoard=mountTradeRoutingBoard(root.querySelector('[data-td-routing-board]'),{getParties:partiesOf,getState:()=>state,pool,onMove:(id,to)=>{
+    remember();const origins=connection.capture(root.querySelector(`[data-td-routing-board] [data-trade-player="${CSS.escape(id)}"]`));
+    state.destinations[id]=to;syncSelectionUi();update();connection.play(origins,root.querySelector('[data-td-routing-board]'));
+    root.querySelector('[data-td-route-announcement]').textContent=`${pool.get(id)?.name||id} to ${teamName(partiesOf().find(t=>String(t.id)===to))}`;
+  }});
+
   const syncEditBar=()=>{
     const bar=root.querySelector('[data-td-edit-bar]');if(!bar)return;
     bar.hidden=(!tradePlayerCount(state.sends)&&!undo)||!root.querySelector('.td-builder')?.open;
@@ -582,7 +590,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     if(impact&&decision)verdictHost.querySelector('.td-ticket').after(impact);
     verdictHost.querySelectorAll('details').forEach((node,i)=>{if(open.has(node.className+'|'+[...verdictHost.querySelectorAll('details')].filter(n=>n.className===node.className).indexOf(node)))node.open=true});
     verdictHost.querySelectorAll('.td-decision dd').forEach((node,i)=>{if(previous[i]&&previous[i]!==node.textContent)animateUi(node,[{opacity:.55,transform:'translateY(2px)'},{opacity:1,transform:'translateY(0)'}],{duration:180})});
-    window.scrollTo({top:y,behavior:'instant'});syncEditBar();onDeal?.(currentDeal);
+    window.scrollTo({top:y,behavior:'instant'});syncEditBar();routingBoard.update();onDeal?.(currentDeal);
   };
 
   root.addEventListener('toggle',async event=>{
@@ -701,5 +709,5 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
   syncSelectionUi();
   for(const input of root.querySelectorAll("[data-td-filter]")) input.dispatchEvent(new Event("input",{bubbles:true}));
   update();
-  return ()=>{stopped=true;stopReplacement();connection.stop()};
+  return ()=>{stopped=true;stopReplacement();connection.stop();routingBoard.stop()};
 }

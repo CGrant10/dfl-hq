@@ -2,6 +2,7 @@ import {scrollChromeBottom} from './scroll-chrome.js';
 const clamp=n=>Math.max(0,Math.min(1,n));
 const ease=p=>p*p*p*(p*(p*6-15)+10);
 export const homeScoreProgress=(top,cardTop,height)=>ease(clamp((top+104-cardTop)/Math.max(96,height-24)));
+export const homeScoreHandoff=p=>ease(clamp(p));
 const mix=(a,b,p)=>a+(b-a)*p;
 const text=node=>node?.textContent.trim()||'';
 const set=(node,value)=>{if(node.textContent!==value)node.textContent=value};
@@ -15,7 +16,7 @@ export function homeScoreFrame(g,t,top,span){
  const scale=name?1:mix(1,g.scale,p);
  const x=mix(g.from.left+g.from.width/2,g.to.left+g.to.width/2,p)-g.width*scale/2;
  const y=mix(top+104-span*t+g.from.top+g.from.height/2,g.to.top+g.to.height/2,p)-g.height*scale/2;
- const opacity=Math.min(clamp(t/.015),clamp((1-t)/.015))*(name?clamp((p-.08)/.32):1);
+ const opacity=Math.min(homeScoreHandoff(t/.07),homeScoreHandoff((1-t)/.07))*(name?clamp((p-.08)/.32):1);
  return {transform:`translate3d(${x}px,${y}px,0) scale(${scale})`,opacity};
 }
 
@@ -84,8 +85,8 @@ export function mountHomeScoreCollapse(root){
   const {divider,header}=layout;
   const times=[...new Set([0,.001,.015,...Array.from({length:63},(_,i)=>(i+1)/64),.985,.999,1])].sort((a,b)=>a-b);
   const teamFrames=times.map(t=>({offset:t,opacity:1-clamp(ease(t)*2.5)}));
-  const sourceFrames=[{offset:0,opacity:1},{offset:.015,opacity:0},{offset:1,opacity:0}];
-  const targetFrames=[{offset:0,opacity:0},{offset:.985,opacity:0},{offset:1,opacity:1}];
+  const sourceFrames=times.map(t=>({offset:t,opacity:1-homeScoreHandoff(t/.07)}));
+  const targetFrames=times.map(t=>({offset:t,opacity:1-homeScoreHandoff((1-t)/.07)}));
   if(typeof globalThis.ViewTimeline==='function'&&CSS.supports('animation-range','exit-crossing 0% exit-crossing 100%')){
    try{
     const timeline=new ViewTimeline({subject:source,axis:'block',inset:[CSS.px(top+104),CSS.px(0)]}),rangeEnd=span/box.height*100;
@@ -112,9 +113,9 @@ export function mountHomeScoreCollapse(root){
   if(native)return;
   style(dock,'opacity',String(motion()?p:t===1?1:0));
   if(!motion())return;
-  parts.forEach(part=>{write(part.team,'opacity',String(1-clamp(p*2.5)));write(part.mark,'opacity',String(1-clamp(t/.015)));write(part.score,'opacity',String(1-clamp(t/.015)))});
+  parts.forEach(part=>{write(part.team,'opacity',String(1-clamp(p*2.5)));write(part.mark,'opacity',String(1-homeScoreHandoff(t/.07)));write(part.score,'opacity',String(1-homeScoreHandoff(t/.07)))});
   for(const node of [layout.divider,layout.header])if(node)write(node,'opacity',String(1-clamp(p*2.5)));
-  [...marks,...names,...scores].forEach(node=>write(node,'opacity',String(clamp((t-.985)/.015))));
+  [...marks,...names,...scores].forEach(node=>write(node,'opacity',String(1-homeScoreHandoff((1-t)/.07))));
   flights.forEach((node,i)=>{const value=homeScoreFrame(geometry[i],t,layout.top,layout.span);style(node,'transform',value.transform);style(node,'opacity',String(value.opacity))});
  };
  const schedule=()=>{if(!stopped&&!frame)frame=requestAnimationFrame(paint)};

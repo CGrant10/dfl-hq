@@ -68,3 +68,12 @@ html[data-ui-motion="off"] #home-wrap .bx-stage[data-bx-format="wide"] .bx-brief
 #home-wrap .bx-stage[data-bx-large-text] .bx-brief>.bx-kicker .bx-brief-mark { display:inline-block; margin-right:7px; vertical-align:-2px; }
 
 #home-wrap .bx-stage[data-bx-large-text] .bx-brief-action { flex:none; min-height:calc(1.4em + 4px); }
+/* Metric categories retain their full wording inside the narrow copy column. */
+#home-wrap .bx-brief-metric>.bx-kicker{white-space:normal;overflow:visible;overflow-wrap:break-word}
+@media(max-width:360px){
+ #home-wrap .bx-brief-result .bx-brief-scores{display:flex;flex-direction:column;gap:7px;width:100%;padding:5px 0}
+ #home-wrap .bx-brief-result .bx-brief-scores>div{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px}
+ #home-wrap .bx-brief-result .bx-brief-scores>div+div{padding:0;border:0}
+ #home-wrap .bx-brief-result .bx-brief-scores strong{min-height:0;font-size:.8125rem;line-height:1.25}
+ #home-wrap .bx-brief-result .bx-brief-scores b{font-size:1.625rem}
+}

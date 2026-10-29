@@ -1,3 +1,4 @@
+import {applyViewingMatchup,setViewingMatchup} from './matchup-view-context.js';
 import {playerJourneyLinks} from './player-journey.js';
 import { esc } from './ui.js';
 import {mountWatchButton} from './player-watchlist-ui.js';
@@ -43,7 +44,7 @@ function setup() {
       const origin=stopConnection.position?.();stopEntrance({closing:true});stopConnection();
       const source = returnTarget();
       const target = source?.querySelector('.dfl-player-portrait') || source?.closest('.dfl-player')?.querySelector('.dfl-player-portrait');
-      if(dialog.dataset.playerCardStage!=='portrait'||origin)stopConnection = connectPortrait(body.querySelector('.dfl-player-portrait'), target, { motion:dialog.dataset.motion !== 'off', duration:280, hideSource:true, origin, easing:'cubic-bezier(.4,0,.2,1)' });
+      if(dialog.dataset.playerCardStage!=='portrait'||origin)stopConnection = connectPortrait(body.querySelector('.dfl-player-portrait'), target, { motion:dialog.dataset.motion !== 'off', duration:280, hideSource:true, origin, easing:'cubic-bezier(.2,.75,.25,1)' });
     }
     if(options.immediate)stopEntrance({closing:true});
     exitSheet(dialog, () => {sheetDrag.reset();dialog.close();}, { ...options, connected:!!stopConnection.position?.() });
@@ -56,7 +57,7 @@ function setup() {
     if(dialog.open)return;
     stopEntrance();stopConnection(); cancelUiExit(dialog); cancelUiMotion(dialog);
     delete dialog.dataset.playerCardStage;dialog.style.removeProperty('clip-path');dialog.style.removeProperty('opacity');
-    moreMotion?.stop();moreMotion=null;gameExplorer?.stop();gameExplorer=null;request++; activeContext = null; body.removeAttribute('aria-busy');
+    moreMotion?.stop();moreMotion=null;gameExplorer?.stop();gameExplorer=null;request++; activeContext = null;setViewingMatchup(dialog,null); body.removeAttribute('aria-busy');
     returnTarget()?.focus({ preventScroll: true });
   });
   window.addEventListener('hashchange', () => { if (dialog.open) dismiss({ immediate:true }); });
@@ -83,6 +84,7 @@ function render(model) {
 }
 export async function openPlayerCard(selection, { context = null, motion = true, source = document.activeElement } = {}) {
   setup();moreMotion?.stop();moreMotion=null; gameExplorer?.stop();gameExplorer=null; stopEntrance();stopConnection(); cancelUiExit(dialog); sheetDrag.reset(); cancelUiMotion(body);dialog.style.removeProperty('clip-path');dialog.style.removeProperty('opacity');delete dialog.dataset.playerCardStage; const token = ++request; opener = source; returnContainer = source?.closest('dialog') || source?.closest('#view'); activeContext = context;returnOfferKey=source?.closest('[data-offer-key]')?.dataset.offerKey||null;
+  applyViewingMatchup(dialog,source);
   const route=source?.closest('#view')?.dataset.route||document.querySelector('#view')?.dataset.route;
   const origin=dialog.querySelector('[data-player-card-origin]'),label={clubhouse:'Clubhouse',trade:'Trade board',home:'Home',sportsbook:'The Book',analyzer:'Team analyzer'}[route];
   origin.textContent=label||'';origin.hidden=!label;

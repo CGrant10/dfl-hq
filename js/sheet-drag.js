@@ -15,7 +15,7 @@ export function exitSheet(dialog,complete,{connected=false,...options}={}) {
   // A direct pull still follows the finger all the way beyond the viewport.
   connected=connected&&!dialog.dataset.sheetMoving;
   if(connected)dialog.dataset.sheetConnectedClose='true';else delete dialog.dataset.sheetConnectedClose;
-  const transform=connected?`translateY(${offset+8}px)`:innerWidth<=600?`translateY(${Math.max(24,edge-dialog.getBoundingClientRect().top+offset+24)}px)`:'translateY(12px)';
+  const transform=connected?`translateY(${offset}px)`:innerWidth<=600?`translateY(${Math.max(24,edge-dialog.getBoundingClientRect().top+offset+24)}px)`:'translateY(12px)';
   exitUi(dialog,complete,{...options,transform,duration:connected?280:220});
 }
 

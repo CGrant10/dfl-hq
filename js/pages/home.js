@@ -445,8 +445,8 @@ export async function render(view) {
     ${homeNewspaperMasthead({ founded: LEAGUE_FOUNDED })}
     <div class="home-frontpage">
     <div class="home-personal-desk">
-    <div data-home-gameday-slot></div>
-    <div data-home-focus-slot>${homeWeeklyFocus(null,null,{loading:true})}</div>
+    <div data-home-gameday-slot data-home-personal-part="matchup"></div>
+    <div data-home-focus-slot data-home-personal-part="decisions">${homeWeeklyFocus(null,null,{loading:true})}</div>
     </div>
     <section class="home-broadcast is-loading" data-content-state="loading" aria-busy="true" aria-label="League broadcast">
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>

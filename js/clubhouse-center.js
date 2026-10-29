@@ -1,3 +1,4 @@
+import {viewingMatchup,setViewingMatchup} from './matchup-view-context.js';
 import {banterMemoryMarkup} from './banter-memory-ui.js';
 import {leaguePanel} from './game-day-panels.js';
 import {esc} from './ui.js';
@@ -53,6 +54,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  const enter=(card,options={})=>polish.enter(card,options);
  const paintActive=(forceHighlights=false)=>{
   const game=selectedGame(),card=game&&cardOf(game.id);if(!card)return;
+  setViewingMatchup(card,viewingMatchup(model,game));
   stopScores();stopScores=()=>{};
   card.style.setProperty('--clubhouse-left',accentOf(game.sides[0].identity));card.style.setProperty('--clubhouse-right',accentOf(game.sides[1].identity));
   const {lead}=clubhouseGameMetrics(game,model.completed);
