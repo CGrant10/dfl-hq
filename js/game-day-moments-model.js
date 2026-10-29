@@ -17,7 +17,7 @@ export function savedMoments(rows,model,players={}){
   else return[];
   const meta=players[r.player_id],lineup=side.lineup.find(p=>p.id===String(r.player_id));
   const points=number(r.data?.points),delta=number(r.data?.delta);
-  const recap=r.kind==='lead'?{sides:game.sides.map(t=>({team_name:t.name,identity:t.identity,points:number(r.data.scores[t.roster]),leading:String(t.roster)===String(r.roster_id)}))}
+  const recap=r.kind==='lead'?{sides:game.sides.map(t=>({roster:String(t.roster),team_name:t.name,identity:t.identity,points:number(r.data.scores[t.roster]),leading:String(t.roster)===String(r.roster_id)}))}
    :{points,delta:r.kind==='surge'?delta:null,before:r.kind==='surge'&&points!==null&&delta!==null?Math.round((points-delta)*100)/100:null};
   return[{key:String(r.id),kind:r.kind,text,at,matchupId:String(r.matchup_id),roster:String(r.roster_id),recap,team:{team_name:side.name,identity:side.identity},player:r.kind==='lead'?null:{id:String(r.player_id),name,position:meta?.p||lineup?.position,nflTeam:meta?.t||lineup?.nflTeam}}];
  }).sort((a,b)=>b.at-a.at||Number(b.key)-Number(a.key));

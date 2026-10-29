@@ -1452,3 +1452,19 @@ No theme entries or retired crest colors were added. `pnpm themes`, `pnpm check`
 and final type/name/build checks pass. Fixtures block external writes. Physical
 phone frame timing and screen readers remain unverified. Evidence:
 [power-rankings-1512.md](docs/power-rankings-1512.md).
+
+# 1.513.0 — Clubhouse matchup momentum
+
+Reviewed recorded score traces, team identities, native scrubber, selected scores,
+lead/play filters, event rail, player/clip actions and recovery in Light/Dark at
+320/390/768px. Text contrast, 44px targets, 200% text, keyboard selection, native
+touch/vertical scrolling, focus return, update-during-drag and motion preferences
+pass. Shared theme tokens supply text, controls, traces, borders and selected
+washes; chosen member/player images retain their existing identity behavior.
+Solid/dashed traces distinguish sides without color alone. No theme entries or
+retired crest accents were added. `pnpm themes` and `pnpm check` pass, as do the
+final type/name/build checks. Real-data app reviews were read-only in both modes;
+replay checks used isolated clips. The score-capture migration and read-only
+client permissions passed isolated PostgreSQL and production verification.
+Physical phone frame timing and screen-reader announcements remain unverified.
+Evidence: [clubhouse-momentum-1513.md](docs/clubhouse-momentum-1513.md).

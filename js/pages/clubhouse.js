@@ -48,7 +48,7 @@ export async function render(view){
    <div id="clubhouse-panel-leaders" role="tabpanel" aria-labelledby="clubhouse-tab-leaders" ${initialTab==='leaders'?'':'hidden'}><section class="card clubhouse-section"><div data-clubhouse-leaders><p role="status">Loading player scores…</p></div><div data-clubhouse-nfl-scoreboard></div></section></div>
    <div id="clubhouse-panel-recap" role="tabpanel" aria-labelledby="clubhouse-tab-recap" ${initialTab==='recap'?'':'hidden'}><div data-personal-postgame hidden></div><section class="card clubhouse-section"><div class="clubhouse-heading"><div><small>WEEK ${model.week} · ${model.season}</small><h2>Week in review</h2></div><span class="clubhouse-status">${model.completed?'Final receipts':'In progress'}</span></div><div data-clubhouse-recap>${recapHtml(model)}</div></section><div data-recap-advice></div><section class="card clubhouse-section" data-recap-calls><p role="status">Loading prediction receipts…</p></section></div>
   </div>`;
-  const center=mountClubhouseCenter(view,model,{active,autoFinish:!params.has('archive')&&latest?.season===model.season&&latest?.week===model.week});
+  const center=mountClubhouseCenter(view,model,{active,autoFinish:!params.has('archive')&&latest?.season===model.season&&latest?.week===model.week,onClip:(id,source,accepts)=>teamReel.openClip(id,{source,returnToGame:true,accepts})});
   const teamReel=mountClubhouseTeamHighlights(view,{getModel:center.getModel,getGame:center.getGame,active});
   const nflCenter=mountClubhouseNfl(view,{getModel:center.getModel,active,onClip:(id,source)=>teamReel.openClip(id,{source,returnToGame:true})});
   const postgame=mountPersonalPostgame(view,{getModel:center.getModel,active});

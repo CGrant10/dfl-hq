@@ -24,7 +24,7 @@ import {accentOf} from './identity-rules.js';
 import {mountClubhousePolish} from './clubhouse-polish.js';
 
 let stopCurrent=null;
-export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,loadStats=loadWeeklyStats,loadLeague=id=>sleeper.league(id),autoFinish=true}={}) {
+export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,loadStats=loadWeeklyStats,loadLeague=id=>sleeper.league(id),autoFinish=true,onClip=null}={}) {
  stopCurrent?.();
  let stopped=false,last=null,model=null,slots=null,vfx=null,leaderVfx=null,fxCard=null,stopScores=()=>{},leaderFilter='all',includeBench=false;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)'),current=()=>!stopped&&root.isConnected&&active();
@@ -37,7 +37,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  const selectedGame=()=>model.games.find(g=>g.id===selected),cardOf=id=>root.querySelector(`[data-clubhouse-matchup="${CSS.escape(id)}"] .clubhouse-matchup-card`);
  const football=mountLiveFootball(root,{getModel:()=>model,getGameId:()=>selected,getHost:()=>cardOf(selected)?.querySelector('[data-clubhouse-lineup]'),getMotion:()=>motion,active:()=>current()&&!root.querySelector('#clubhouse-panel-matchups')?.hidden});
  const recordWatch=mountRecordChases(root,{getModel:()=>last?model:null,getGame:selectedGame,getMotion:()=>motion});
- const highlights=mountMatchupHighlights(root,{getModel:()=>last?model:null,getGame:selectedGame,getPlayers:()=>last?.players||{},getHost:()=>{const card=cardOf(selected),lineup=card?.querySelector('[data-clubhouse-lineup]');let host=card?.querySelector('[data-clubhouse-highlights]');if(!host&&lineup){host=document.createElement('div');host.dataset.clubhouseHighlights='';lineup.before(host)}return host},getMotion:()=>motion,active:()=>current()&&!root.querySelector('#clubhouse-panel-matchups')?.hidden});
+ const highlights=mountMatchupHighlights(root,{momentum:true,onClip,getModel:()=>last?model:null,getGame:selectedGame,getPlayers:()=>last?.players||{},getHost:()=>{const card=cardOf(selected),lineup=card?.querySelector('[data-clubhouse-lineup]');let host=card?.querySelector('[data-clubhouse-highlights]');if(!host&&lineup){host=document.createElement('div');host.dataset.clubhouseHighlights='';(card.querySelector('[data-clubhouse-team-stats]')||lineup).before(host)}return host},getMotion:()=>motion,active:()=>current()&&!root.querySelector('#clubhouse-panel-matchups')?.hidden});
  const finish=mountMatchupFinish(root,{getModel:()=>last?model:null,getGame:selectedGame,getSurface:()=>cardOf(selected),getMotion:()=>motion,getOwner:()=>currentMember()?.id,allowAuto:()=>autoFinish,onShare:async()=>{const target=selected,sharedModel=model;await highlights.update();if(!current()||selected!==target)return;return shareMatchupReceipt(matchupReceiptData(sharedModel,{gameId:target,moments:highlights.items()}))}});
  const polish=mountClubhousePolish(root,{getMotion:()=>motion,active:current});
  const stopAnimations=()=>{recordWatch.motionChanged();finish.cancel();stopScores();stopScores=()=>{};polish.stopTransient()};
@@ -51,7 +51,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   if(!motion||reduced.matches)stopAnimations();polish.motionChanged();finish.motionChanged();football.motionChanged();spotlight.setMotion(motion);
  };
  const enter=(card,options={})=>polish.enter(card,options);
- const paintActive=()=>{
+ const paintActive=(forceHighlights=false)=>{
   const game=selectedGame(),card=game&&cardOf(game.id);if(!card)return;
   stopScores();stopScores=()=>{};
   card.style.setProperty('--clubhouse-left',accentOf(game.sides[0].identity));card.style.setProperty('--clubhouse-right',accentOf(game.sides[1].identity));
@@ -69,7 +69,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   const teamStats=card.querySelector('[data-clubhouse-team-stats]');if(teamStats)patchGameDay(teamStats,last?clubhouseTeamStatsHtml(game,model.completed):'');
   const position=card.querySelector('[data-clubhouse-position-stats]');if(position)patchGameDay(position,last?clubhousePositionStatsHtml(game,model.completed):'');
   if(fxCard!==card){vfx?.stop();fxCard=card;vfx=mountScoreVfx(card)}
-  vfx?.refresh();setMotion();spotlight.update();finish.update();void football.update();void highlights.update();void details.update();root.dispatchEvent(new CustomEvent('dfl:clubhouse-context'));
+  vfx?.refresh();setMotion();spotlight.update();finish.update();void football.update();void highlights.update({force:forceHighlights});void details.update();root.dispatchEvent(new CustomEvent('dfl:clubhouse-context'));
  };
  const paintLeaders=()=>{
   const host=root.querySelector('[data-clubhouse-leaders]');if(!host||root.querySelector('#clubhouse-panel-leaders')?.hidden)return;
@@ -111,7 +111,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  let entered=false;
  return {
   getModel:()=>model,getGame:selectedGame,
-  update(data){if(!current())return;stopAnimations();const previous=last?model.snapshot:null;last={rows:data.rows,rosters:data.rosters||[],players:data.players,nfl:data.nfl?{teams:data.nfl,payload:data.nflPayload,fetchedAt:data.nflFetchedAt}:null,checkedAt:Date.now()};model=make(last);model.checkedAt=last.checkedAt;model.scoreStatus='ready';model.nflAvailable=!!last.nfl||week.completed;model.playersAvailable=!!last.players;model.snapshot.checkedAt=last.checkedAt;paintBoard();paintActive();paintLeaders();const card=cardOf(selected);if(!entered){entered=true;if(!model.completed)enter(card)}if(previous&&card&&!model.completed)stopScores=animateScoreChanges(card,{previous,model,motion,gameId:selected,feedback:true});void details.update({force:!!data.force})},
+  update(data){if(!current())return;stopAnimations();const previous=last?model.snapshot:null;last={rows:data.rows,rosters:data.rosters||[],players:data.players,nfl:data.nfl?{teams:data.nfl,payload:data.nflPayload,fetchedAt:data.nflFetchedAt}:null,checkedAt:Date.now()};model=make(last);model.checkedAt=last.checkedAt;model.scoreStatus='ready';model.nflAvailable=!!last.nfl||week.completed;model.playersAvailable=!!last.players;model.snapshot.checkedAt=last.checkedAt;paintBoard();paintActive(!!data.force);paintLeaders();const card=cardOf(selected);if(!entered){entered=true;if(!model.completed)enter(card)}if(previous&&card&&!model.completed)stopScores=animateScoreChanges(card,{previous,model,motion,gameId:selected,feedback:true});void details.update({force:!!data.force})},
   fail(){if(!current())return;stopAnimations();if(!last)for(const host of root.querySelectorAll('[data-clubhouse-lineup]'))host.innerHTML='<p class="clubhouse-stat-status">Lineups unavailable. Refresh scores to retry.</p>'},
   stop,
  };
