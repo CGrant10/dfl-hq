@@ -674,7 +674,9 @@ export function startStage(root, deck, { refresh } = {}) {
     if (!slide) return;
     fitHeadlines(slide);
     if(wide){
-      const scale=Math.max(1,parseFloat(getComputedStyle(document.documentElement).fontSize)/16),height=Math.ceil(Math.max(items.length>1?248:208,Math.min(340,root.clientWidth/1.65+(items.length>1?52:8)))*scale);
+      // Enlarged type reflows into more rows; reserve the same room for every
+      // story so long award names never clip or move the surrounding Home.
+      const scale=Math.max(1,parseFloat(getComputedStyle(document.documentElement).fontSize)/16),height=Math.ceil(Math.max(items.length>1?248:208,Math.min(340,root.clientWidth/1.65+(items.length>1?52:8)))*scale+64*(scale-1));
       root.toggleAttribute('data-bx-large-text',scale>1.05);
       if(root.style.height!==`${height}px`)root.style.height=`${height}px`;
       const dot=root.querySelector('[aria-current="true"]'),dots=dot?.parentElement;

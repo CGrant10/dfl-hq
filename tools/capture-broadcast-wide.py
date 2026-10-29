@@ -32,7 +32,7 @@ with sync_playwright() as p:
   window.artStage=startStage(document.querySelector('[data-bx-stage]'),artDeck);artStage.suspend('art-review',true);scrollTo(0,0);
  }''')
  for mode in ['light','dark']:
-  for width in [320,390,768]:
+  for width in ([] if os.environ.get('DFL_REVIEW_ENLARGED_ONLY') else [320,390,768]):
    page.set_viewport_size({'width':width,'height':844});page.evaluate('mode=>reviewSetTheme(mode)',mode)
    count=page.locator('[data-bx-go]').count();height=None
    for i in range(count):
@@ -55,6 +55,32 @@ with sync_playwright() as p:
     assert metrics['height']==height,'Rotation moved the page'
     contrast=page.evaluate('reviewTextContrast()');assert not contrast['failures'],(mode,width,i,contrast['failures'])
     checks.append({'mode':mode,'width':width,'index':i,**metrics});(OUT/'wide-checks.json').write_text(json.dumps(checks,indent=2))
+ # Enlarged type must reflow every composition, not just grow a short title.
+ enlarged=[]
+ for mode in ['light','dark']:
+  page.set_viewport_size({'width':320,'height':844});page.evaluate('mode=>reviewSetTheme(mode)',mode)
+  for font_size in [20,32]:
+   page.evaluate('size=>document.documentElement.style.fontSize=size+"px"',font_size)
+   enlarged_height=None
+   for i in range(1,page.locator('[data-bx-go]').count()):
+    page.locator(f'[data-bx-go="{i}"]').evaluate('e=>e.click()');page.wait_for_timeout(350)
+    result=page.locator('.bx-layer>.bx-slide:not(.bx-leaving)').evaluate('''e=>{
+     const r=e.getBoundingClientRect(),art=e.querySelector('.bx-brief-art,.bx-brief-number,.bx-brief-value')?.getBoundingClientRect();
+     const copy=[...e.querySelectorAll(':scope>.bx-kicker,:scope>.bx-head,:scope>.bx-brief-body,:scope>.bx-brief-action')];
+     const within=[...e.children].every(n=>{const b=n.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1&&b.top>=r.top-1&&b.bottom<=r.bottom+1&&n.scrollWidth<=n.clientWidth+1});
+     const separate=!art||copy.every(n=>{const b=n.getBoundingClientRect();return b.right<=art.left+1||b.left>=art.right-1||b.bottom<=art.top+1||b.top>=art.bottom-1});
+     const series=e.querySelector('.bx-brief-series')?.getBoundingClientRect(),names=[...e.querySelectorAll('.bx-brief-rivals strong')];
+     return {children:[...e.children].map(n=>({class:n.className,rect:n.getBoundingClientRect().toJSON(),scroll:[n.scrollWidth,n.scrollHeight],client:[n.clientWidth,n.clientHeight]})),bounds:r.toJSON(),within,separate,seriesSeparate:!series||names.every(n=>n.getBoundingClientRect().bottom<=series.top+1),overflow:document.documentElement.scrollWidth>innerWidth+1};
+    }''')
+    if not result['within'] or not result['separate']:page.screenshot(path=str(OUT/'enlarged-failure.png'))
+    assert result['within'] and result['separate'] and result['seriesSeparate'] and not result['overflow'],(mode,font_size,i,result)
+    if font_size==32 and i in [1,4,6,12]:page.screenshot(path=str(OUT/f'wide-{mode}-200pct-{i}.png'))
+    current_height=page.locator('[data-bx-stage]').evaluate('e=>e.clientHeight')
+    if enlarged_height is None:enlarged_height=current_height
+    assert current_height==enlarged_height,'Enlarged text rotation moved the page'
+    enlarged.append({'mode':mode,'fontSize':font_size,'index':i,**result})
+ page.evaluate("document.documentElement.style.fontSize=''")
+ (OUT/'wide-enlarged-checks.json').write_text(json.dumps(enlarged,indent=2))
  page.set_viewport_size({'width':320,'height':844});page.evaluate("document.documentElement.style.fontSize='20px'");page.locator('[data-bx-go=\"1\"]').evaluate('e=>e.click()');page.wait_for_timeout(450)
  assert page.locator('.bx-brief h2').evaluate('e=>parseFloat(getComputedStyle(e).fontSize)>=23'),'Larger text preference did not scale the headline'
  page.evaluate("document.documentElement.style.fontSize=''")
@@ -86,4 +112,4 @@ with sync_playwright() as p:
  assert page.locator('.bx-layer').evaluate('e=>e.getAnimations({subtree:true}).filter(a=>a.playState==="running").length')==0
  page.evaluate('reducedStage.stop()');assert not errors,errors
  browser.close()
-server.shutdown();print(json.dumps({'layouts':len(checks),'onePass':True,'manualReplay':True,'reducedMotion':True,'errors':errors}))
+server.shutdown();print(json.dumps({'layouts':len(checks),'enlargedLayouts':len(enlarged),'onePass':True,'manualReplay':True,'reducedMotion':True,'errors':errors}))
