@@ -24,7 +24,7 @@ export function homeScoreFrame(g,t,top,span){
 // scroll frames never measure the page or create/remove a copy at the endpoints.
 export function mountHomeScoreCollapse(root){
  const dock=document.createElement('button');dock.type='button';dock.className='home-score-dock';dock.hidden=true;dock.inert=true;
- dock.innerHTML='<span class="home-score-caption"></span><span class="home-score-pair"><span><i data-dock-mark></i><strong data-dock-name></strong><b data-dock-score></b></span><small aria-hidden="true">vs</small><span><i data-dock-mark></i><strong data-dock-name></strong><b data-dock-score></b></span></span>';
+ dock.innerHTML='<span class="home-score-caption"><span data-dock-caption></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 12 5-5 5 5"/></svg></span><span class="home-score-pair"><span><i data-dock-mark></i><strong data-dock-name></strong><b data-dock-score></b></span><small aria-hidden="true">vs</small><span><i data-dock-mark></i><strong data-dock-name></strong><b data-dock-score></b></span></span>';
  const layer=document.createElement('span');layer.className='home-score-flight';layer.setAttribute('aria-hidden','true');root.append(dock,layer);
  const reduced=matchMedia('(prefers-reduced-motion: reduce)'),marks=[...dock.querySelectorAll('[data-dock-mark]')],scores=[...dock.querySelectorAll('[data-dock-score]')],names=[...dock.querySelectorAll('[data-dock-name]')];
  let stopped=false,frame=0,dirty=true,source=null,parts=[],flights=[],geometry=[],effects=[],native=false,layout=null,viewportWidth=innerWidth;
@@ -52,16 +52,19 @@ export function mountHomeScoreCollapse(root){
   // with scroll-frame writes. Live scores, photos and fonts refresh this cache.
   const box=source.getBoundingClientRect(),bounds=root.getBoundingClientRect(),top=scrollChromeBottom();
   const span=Math.max(96,box.height-24),sourceStyles=parts.map(part=>getComputedStyle(part.score));
+  dock.dataset.scoreLayout=bounds.width<18*parseFloat(getComputedStyle(document.documentElement).fontSize)?'rows':'columns';
   dock.hidden=false;style(dock,'left',`${bounds.left}px`);style(dock,'width',`${bounds.width}px`);style(dock,'top',`${top}px`);style(dock,'opacity','0');
   const scoreType=text(source.querySelector('.home-team-total > small')),week=text(root.querySelector('[data-gameday-week]'));
   const phase=source.classList.contains('is-projected')?'Projected':text(source.closest('.gameday-card')?.querySelector('.home-game-phase'))||(scoreType==='Actual'?'':scoreType);
-  set(dock.querySelector('.home-score-caption'),[week,phase].filter(Boolean).join(' · '));
+  set(dock.querySelector('[data-dock-caption]'),[week,phase].filter(Boolean).join(' · '));
   parts.forEach((part,i)=>{
    set(scores[i],text(part.score));set(names[i],text(part.name));
    // Preserve the actual score face at both ends of the flight.
    style(scores[i],'fontFamily',sourceStyles[i].fontFamily);style(scores[i],'fontWeight',sourceStyles[i].fontWeight);style(scores[i],'letterSpacing',sourceStyles[i].letterSpacing);
    const clone=part.mark.cloneNode(true);clone.removeAttribute('id');clone.setAttribute('aria-hidden','true');marks[i].replaceChildren(clone);
   });
+  const values=parts.map(part=>{const value=text(part.score);return /^-?\d+(?:\.\d+)?$/.test(value)?Number(value):null});
+  dock.dataset.leader=source.classList.contains('is-projected')?'projected':values.every(value=>value!==null)?values[0]===values[1]?'tie':values[0]>values[1]?'left':'right':'unknown';
   attr(dock,'aria-label',`Back to your matchup. ${phase?`${phase} scores`:'Scores'}. ${parts.map((part,i)=>`${text(part.name)}: ${scores[i].textContent}`).join('. ')}`);
   const height=dock.offsetHeight;
   if(root.style.getPropertyValue('--dfl-scroll-top')!==`${top}px`)root.style.setProperty('--dfl-scroll-top',`${top}px`);
@@ -144,7 +147,7 @@ export function mountHomeScoreCollapse(root){
   let changed=false;
   for(const entry of entries){const {width,height}=entry.contentRect,next=entry.target===root?`${width}`:`${width}:${height}`;if(sizes.get(entry.target)!==next){sizes.set(entry.target,next);changed=true}}
   if(changed)invalidate();
- });resize.observe(root);const header=document.querySelector('.topbar');if(header)resize.observe(header);
+ });resize.observe(root);resize.observe(dock);const header=document.querySelector('.topbar');if(header)resize.observe(header);
  const viewport=()=>{if(innerWidth!==viewportWidth)invalidate()};
  const entrance=event=>{if(event.target===root||event.target===source)invalidate()};
  const visibility=()=>{if(document.hidden)suppress();else invalidate()};
