@@ -92,7 +92,7 @@ with sync_playwright() as p:
         page.evaluate("scrollTo({top:0,behavior:'instant'})")
         page.screenshot(path=str(output/f'trade-{width}-workbench.png'))
         # Price, actual roster fit and data risk remain separate on each offer.
-        assert 'Price balance' in page.locator('.tb-offer .tb-offer-summary').first.inner_text()
+        assert 'Value balance' in page.locator('.tb-offer .tb-offer-summary').first.inner_text()
         assert page.locator('.tb-offer .tb-offer-horizon').first.is_visible()
         # Upcoming schedules fail honestly and retry without silently keeping
         # a Next 4 weeks label on rest-of-season numbers.
@@ -207,9 +207,9 @@ with sync_playwright() as p:
         pick(1,'2-9');select('[data-td-destination="2-9"]','1');click('[data-td-save-proposal]')
         assert page.locator('.td-proposal-grid article').count()==3
         click('[data-td-remove-pick="1"][data-player-id="2-9"]')
-        impact=page.locator('.td-ticket [data-td-lineup-impact]')
+        impact=page.locator('[data-td-verdict] > [data-td-lineup-impact]')
         assert impact.count()==1
-        assert impact.evaluate('e=>e.previousElementSibling.classList.contains("td-decision")')
+        assert impact.evaluate('e=>e.previousElementSibling.classList.contains("td-ticket")')
         visible=impact.locator('.td-starter-changes').first.locator('.td-starter-change').evaluate_all('es=>es.map(e=>[...e.querySelectorAll("strong")].map(n=>n.textContent))')
         full=page.locator('.td-lineup-teams > section').first.locator('.td-lineup-slot.is-changed').evaluate_all('es=>es.slice(0,3).map(e=>[...e.querySelectorAll("strong")].map(n=>n.textContent))')
         assert visible==full,(visible,full)
@@ -242,7 +242,7 @@ with sync_playwright() as p:
         click('[data-td-use-counter]');assert page.locator('[data-td-remove-pick="1"]').count()>=1
         page.locator('[data-td-verdict]').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")
         assert page.locator('.td-total b').evaluate_all('es=>es.every(e=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects().length===1})'),f'{width}: bilateral value wrapped'
-        assert page.locator('.td-cols').evaluate("e=>{const totals=[...e.querySelectorAll('.td-total b')].map(n=>n.getBoundingClientRect());return totals.length===2&&Math.abs(totals[0].bottom-totals[1].bottom)<1}"),f'{width}: unequal package totals do not align'
+        assert page.locator('.td-cols').evaluate("e=>{const cols=[...e.children],totals=cols.map(n=>n.querySelector('.td-total b').getBoundingClientRect());return totals.length===2&&(innerWidth>600?Math.abs(totals[0].bottom-totals[1].bottom)<1:Math.abs(totals[0].right-totals[1].right)<1&&totals[1].top>totals[0].bottom&&cols.every(n=>n.querySelector('.td-total').getBoundingClientRect().top>=[...n.querySelectorAll('.td-item')].at(-1).getBoundingClientRect().bottom))}"),f'{width}: package totals do not follow their readable rows'
         page.screenshot(path=str(output/f'trade-{width}-verdict.png'))
         label=page.locator('.td-balance-label').bounding_box();ticket=page.locator('.td-ticket').bounding_box()
         assert label['x']>=ticket['x'] and label['x']+label['width']<=ticket['x']+ticket['width']

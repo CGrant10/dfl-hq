@@ -25,7 +25,7 @@ function setup() {
   dialog.setAttribute('aria-labelledby', 'trade-picker-title');
   dialog.innerHTML = '<header><div><small data-picker-context></small><h2 id="trade-picker-title" tabindex="-1" autofocus>Add a player</h2></div><button type="button" class="linkbtn" data-picker-close>Close</button></header><div class="trade-picker-search"><label class="sr-only" for="trade-picker-search">Search players or teams</label><input id="trade-picker-search" type="search" placeholder="Search players or teams…" autocomplete="off"><div class="trade-picker-positions" aria-label="Filter by position"></div><p role="status" data-picker-count></p></div><div class="trade-picker-list" data-picker-list data-sheet-body></div>';
   document.body.append(dialog);
-  sheet=mountMobileSheet(dialog,{restoreFocus:()=>{if(active)focusTradePicker(active.select.isConnected?active.select:active.root.querySelector(active.selector))}});
+  sheet=mountMobileSheet(dialog,{restoreFocus:()=>{if(active?.replacement)active.source?.focus({preventScroll:true});else if(active)focusTradePicker(active.select.isConnected?active.select:active.root.querySelector(active.selector))}});
   const dismiss = (options = {}) => {connection.cancel();sheet.close(options)};
   dialog.querySelector('[data-picker-close]').onclick = () => dismiss();
 
@@ -40,6 +40,11 @@ function setup() {
     if (!choice || !active) return;
     const { select, root, selector } = active;
     const id = choice.dataset.pickerPlayer;
+    if(active.replacement){
+      if(!active.source.isConnected||!root.isConnected||!active.rows.some(row=>String(row.player.id)===id)){dismiss({immediate:true});return;}
+      const context=active,origins=connection.capture(choice);active=null;cancelUiExit(dialog);cancelUiMotion(dialog);dialog.close();
+      const target=context.onSelect(id);connection.play(origins,target?.closest('.td-selected')||target?.closest('.td-item'));target?.focus({preventScroll:true});return;
+    }
     // Only offer the current select's available options. A redraw invalidates
     // an open sheet instead of applying a choice to a different roster.
     if (!select.isConnected || ![...select.options].some(option => option.value === id && !option.disabled)) { dismiss({ immediate:true }); return; }
@@ -70,7 +75,7 @@ function draw() {
     const hasProjection = p.expectedPerGame != null && Number.isFinite(projection);
     const value = Number(p.tradeValue);
     const tradeValue = p.tradeValue != null && Number.isFinite(value) ? Math.round(value) : '—';
-    const label = ['Add '+p.name, p.position, p.nflTeam || p.team, owner, p.injuryStatus, hasProjection ? `Projected ${projection.toFixed(1)} points per game` : 'Projection unavailable', 'Trade value '+tradeValue].filter(Boolean).join(', ');
+    const label = [(active.replacement?'Replace with ':'Add ')+p.name, p.position, p.nflTeam || p.team, owner, p.injuryStatus, hasProjection ? `Projected ${projection.toFixed(1)} points per game` : 'Projection unavailable', 'Trade value '+tradeValue].filter(Boolean).join(', ');
     return `<button type="button" class="trade-picker-player" data-trade-player="${esc(p.id)}" data-picker-player="${esc(p.id)}" aria-label="${esc(label)}"><span class="trade-picker-identity">${playerIdentity({ ...p, injuryStatus:'' })}${p.injuryStatus ? `<small class="trade-picker-injury">${esc(p.injuryStatus)}</small>` : ''}${owner ? `<small class="trade-picker-owner">${esc(owner)}</small>` : ''}</span><span class="trade-picker-stat"><b>${hasProjection ? projection.toFixed(1) : '—'}</b><small>Proj / game</small><span>Value ${tradeValue}</span></span></button>`;
   }).join('') : '<p class="trade-picker-empty">No matching players. Try another name or position.</p>';
   dialog.querySelector('[data-picker-list]').scrollTop = 0;
@@ -109,4 +114,18 @@ export function mountTradePlayerPickers(root, pool, teams) {
     connection.cancel();
     if(active?.root===root){active=null;cancelUiExit(dialog);cancelUiMotion(dialog);if(dialog.open)dialog.close();}
   };
+}
+
+// Share the existing searchable sheet and its gestures; replacements never
+// remove the original player until a valid choice is committed.
+export function openTradeReplacement(source,{root,pool,team,selected,onSelect}){
+ setup();connection.cancel();cancelUiExit(dialog);cancelUiMotion(dialog);
+ const excluded=new Set(selected.map(String));
+ const rows=team.playerIds.map(id=>pool.get(String(id))).filter(p=>p&&!excluded.has(String(p.id))).sort((a,b)=>(Number(b.tradeValue)||0)-(Number(a.tradeValue)||0)).map(player=>({player,owner:team.team_name||team.ownerName||''}));
+ active={replacement:true,source,root,rows,onSelect};position='all';dialog.querySelector('input').value='';
+ dialog.querySelector('h2').textContent='Replace player';dialog.querySelector('[data-picker-context]').textContent=team.team_name||team.ownerName||'Trade package';
+ const positions=[...new Set(rows.map(row=>row.player.position).filter(Boolean))];
+ dialog.querySelector('.trade-picker-positions').innerHTML=['all',...positions].map(pos=>`<button type="button" data-picker-position="${esc(pos)}" aria-pressed="${pos==='all'}">${pos==='all'?'All':esc(pos)}</button>`).join('');
+ draw();sheet.open({source});
+ const context=active;return ()=>{if(active!==context)return;active=null;connection.cancel();cancelUiExit(dialog);cancelUiMotion(dialog);if(dialog.open)dialog.close();};
 }

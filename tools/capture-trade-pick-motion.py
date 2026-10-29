@@ -32,7 +32,7 @@ with sync_playwright() as p:
    assert selected.bounding_box()['height']<=48
    page.screenshot(path=str(OUT/f'pick-{width}-{theme}.png'));page.wait_for_timeout(360)
    assert page.locator('.dfl-connected-portrait').count()==0
-   selected.locator('button').click();page.wait_for_function('!!document.querySelector(".dfl-connected-portrait")')
+   selected.locator('[data-td-remove-pick]').click();page.wait_for_function('!!document.querySelector(".dfl-connected-portrait")')
    assert not box.is_checked() and box.evaluate('e=>e===document.activeElement')
    # Repeated selection cancels the preceding flight and keeps the committed state.
    box.evaluate('e=>{e.click();e.click();e.click()}');page.wait_for_timeout(50)

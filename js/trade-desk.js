@@ -1,3 +1,6 @@
+import {tradeEditSnapshot,restoreTradeEdit,replaceTradePlayer} from './trade-editor.js';
+import {openTradeReplacement} from './trade-player-picker.js';
+import {animateUi} from './ui-motion.js';
 import {tradeDecisionMarkup} from './trade-decision-ui.js';
 import {loadTradeWeekSchedules,tradeWeeklyOutlook} from './trade-weekly-outlook.js';
 import {analyzerPlayerSignal} from "./analyzer-player-form.js";
@@ -116,17 +119,17 @@ function playerRow(player, side, checked) {
     ${playerPortrait(player)}
     <span class="td-player-copy">
       <b>${esc(player.name)}</b>
-      <small>${esc([player.position, player.nflTeam, signal, `${Math.round(num(player.expectedPoints))} projected`].filter(Boolean).join(" · "))}</small>
+      <small>${esc([player.position, player.nflTeam, signal, `${Math.round(num(player.expectedPoints))} season pts`].filter(Boolean).join(" · "))}</small>
     </span>
     <span class="td-value">${Math.round(num(player.tradeValue))}</span>
   </label>`;
 }
 
 function selectedPlayersMarkup(picked, pool, side,parties=[],destinations={}) {
-  if (!picked.size) return `<span class="td-selected-empty">No players added yet.</span>`;
+  if (!picked.size) return `<span class="td-selected-empty">No players selected.</span>`;
   return [...picked].map(id => {
     const player = pool.get(String(id));
-    return `<div class="td-selected-player" data-trade-player="${esc(id)}"><button type="button" data-td-remove-pick="${esc(side)}" data-player-id="${esc(id)}" aria-label="Remove ${esc(player?.name || id)}">${player?playerPortrait(player):''}<span class="td-selected-name">${esc(player?.name || id)}</span><i aria-hidden="true">×</i></button>${parties.length>2||!destinations[id]?`<label class="td-recipient"><span>Send to</span><select data-td-destination="${esc(id)}" aria-label="Who receives ${esc(player?.name||id)}" aria-invalid="${!destinations[id]}"><option value="" ${!destinations[id]?'selected':''}>Choose recipient</option>${parties.filter((_,index)=>index!==Number(side)).map(t=>`<option value="${esc(t.id)}" ${String(t.id)===String(destinations[id])?'selected':''}>${esc(teamName(t))}</option>`).join('')}</select></label>`:''}</div>`;
+    return `<div class="td-selected-player" data-trade-player="${esc(id)}"><div class="td-selected-identity"><button type="button" data-td-replace-pick="${esc(side)}" data-player-id="${esc(id)}" aria-label="Replace ${esc(player?.name||id)}" aria-haspopup="dialog">${player?playerPortrait(player):''}<span class="td-selected-name">${esc(player?.name||id)}</span><small>Swap</small></button><button type="button" data-td-remove-pick="${esc(side)}" data-player-id="${esc(id)}" aria-label="Remove ${esc(player?.name||id)}"><i aria-hidden="true">×</i></button></div>${parties.length>2||!destinations[id]?`<label class="td-recipient"><span>To</span><select data-td-destination="${esc(id)}" aria-label="Who receives ${esc(player?.name||id)}" aria-invalid="${!destinations[id]}"><option value="" ${!destinations[id]?'selected':''}>Choose team</option>${parties.filter((_,index)=>index!==Number(side)).map(t=>`<option value="${esc(t.id)}" ${String(t.id)===String(destinations[id])?'selected':''}>${esc(teamName(t))}</option>`).join('')}</select></label>`:''}</div>`;
   }).join("");
 }
 
@@ -140,7 +143,7 @@ function sideList(team, pool, picked, side, label, filter = '',parties=[],destin
       <span class="td-picked-count" data-td-count="${side}">${picked.size} picked</span>
     </div>
     <div class="td-selected" data-td-selected="${side}">${selectedPlayersMarkup(picked, pool, side,parties,destinations)}</div>
-    <details class="td-roster" data-td-roster="${side}"${rosterOpen?' open':''}><summary>Choose players <small>${players.length} on roster</small></summary>
+    <details class="td-roster" data-td-roster="${side}"${rosterOpen?' open':''}><summary>Add players <small>${players.length} on roster</small></summary>
     <label class="td-search"><span class="sr-only">Search ${esc(teamName(team))}</span><input type="search" data-td-filter="${side}" value="${esc(filter)}" placeholder="Search players" autocomplete="off"></label>
     <div class="td-list">${players.map(p => playerRow(p, side, picked.has(String(p.id)))).join("")
       || `<p class="td-empty">No rated players on this roster.</p>`}</div></details>
@@ -333,12 +336,12 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
   rosters. That is what makes it shareable, and a trade argument happens in the
   group chat, not on this page.
 */
-function packageRows(ids, pool) {
+function packageRows(ids, pool, side) {
   const players = ids.map(id => pool.get(String(id))).filter(Boolean)
     .sort((a, b) => num(b.tradeValue) - num(a.tradeValue));
   if (!players.length) return `<div class="td-item is-empty"><span><b>Nobody yet</b></span></div>`;
   return players.map(player => `<div class="td-item" data-trade-player="${esc(player.id)}">
-    ${playerPortrait(player)}<span class="td-item-copy"><b>${esc(player.name)}</b><small>${esc(player.position)} &middot; ${esc(player.nflTeam)}</small></span>
+    ${playerPortrait(player)}<span class="td-item-copy"><button type="button" data-td-replace-pick="${side}" data-player-id="${esc(player.id)}" aria-label="Replace ${esc(player.name)}" aria-haspopup="dialog">${esc(player.name)}</button><small>${esc(player.position)} &middot; ${esc(player.nflTeam)}</small></span>
     <span class="td-item-value">${Math.round(num(player.tradeValue))}</span>
   </div>`).join("");
 }
@@ -386,7 +389,7 @@ function evidenceMarkup(result) {
 function idleTicket() {
   return `<div class="td-ticket is-idle">
     <div class="td-ticket-head">
-      <small>DFL Trade Analyzer</small>
+      <small>Trade overview</small>
       <h2>No deal yet</h2>
       <span>Pick players from each team.</span>
     </div>
@@ -407,27 +410,27 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
      blending the two into one score would hide exactly that. */
   return `<div class="td-ticket is-${v.tone}">
     <div class="td-ticket-head">
-      <small>DFL Trade Analyzer</small>
+      <small>Trade overview</small>
       <h2>${esc(teamName(teamA))} <i aria-hidden="true">&rlarr;</i> ${esc(teamName(teamB))}</h2>
 
     </div>
 
     ${tradeDecisionMarkup(result,pool)}
     <div class="td-stamp is-compact is-${recommendation.tone}">
-      <strong>${recommendation.action}</strong>
+      <strong>${recommendation.action==='REVIEW'?'Check data':recommendation.action}</strong>
       <span>${esc(recommendationCaption(result, teamA, recommendation))}</span>
     </div>
 
     <div class="td-cols">
       <div class="td-col">
         <small>You send</small>
-        ${packageRows(sendA, pool)}
-        <div class="td-total"><small>Value sent</small><b>${Math.round(num(result.valueToB))}</b></div>
+        ${packageRows(sendA, pool, 0)}
+        <div class="td-total"><small>Value out</small><b>${Math.round(num(result.valueToB))}</b></div>
       </div>
       <div class="td-col">
-        <small>You get</small>
-        ${packageRows(sendB, pool)}
-        <div class="td-total"><small>Value received</small><b class="td-in">${Math.round(num(result.valueToA))}</b></div>
+        <small>You receive</small>
+        ${packageRows(sendB, pool, 1)}
+        <div class="td-total"><small>Value in</small><b class="td-in">${Math.round(num(result.valueToA))}</b></div>
       </div>
     </div>
     <details class="td-data-context td-impact-details"><summary>Depth &amp; roster fit</summary>
@@ -439,7 +442,7 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
       ${need ? `<div class="td-line"><span>Fills your ${esc(need)} need</span><b class="${fills.length ? "is-up" : "is-down"}">${fills.length ? `${esc(fills.map(p => p.name).join(", "))} &check;` : "No"}</b></div>` : ""}
     </div></details>
 
-    <details class="td-data-context td-impact-details"><summary>Roster detail</summary>${balanceMeter(result.fairness)}</details>
+    <details class="td-data-context td-impact-details"><summary>Value balance</summary>${balanceMeter(result.fairness)}</details>
     ${confidenceMarkup(result,esc,true)}${evidenceMarkup(result)}
     ${reasonList(reasons)}
   </div>`;
@@ -460,19 +463,19 @@ function multiTicketMarkup(result, parties, pool, sends) {
   const reasons=tradeReasons(perspective,parties[0],others,pool,sends[0],incoming);
   return `<div class="td-ticket is-${v.tone}">
     <div class="td-ticket-head">
-      <small>DFL Trade Analyzer</small>
+      <small>Trade overview</small>
       <h2>${parties.length}-team deal</h2>
 
     </div>
 
     ${tradeDecisionMarkup(result,pool)}
     <div class="td-stamp is-compact is-${recommendation.tone}">
-      <strong>${recommendation.action}</strong>
+      <strong>${recommendation.action==='REVIEW'?'Check data':recommendation.action}</strong>
       <span>${esc(recommendationCaption(perspective, parties[0], recommendation))}</span>
     </div>
 
     <div class="td-legs">
-      ${parties.map((from,index)=>`<div class="td-leg"><small>${esc(teamName(from))} SENDS</small>${sends[index].map(id=>`<div class="td-routed-player">${packageRows([id],pool)}<small>→ ${esc(teamName(parties.find(t=>String(t.id)===String(result.destinations?.[id]||parties[(index+1)%parties.length].id))))}</small></div>`).join('')}<div class="td-total"><small>Value sent</small><b>${num(result.outgoingValues?.[index]??result.values[(index+1)%parties.length])}</b></div><div class="td-total"><small>Value received</small><b>${num(result.values[index])}</b></div></div>`).join('')}
+      ${parties.map((from,index)=>`<div class="td-leg"><small>${esc(teamName(from))} SENDS</small>${sends[index].map(id=>`<div class="td-routed-player">${packageRows([id],pool,index)}<small>→ ${esc(teamName(parties.find(t=>String(t.id)===String(result.destinations?.[id]||parties[(index+1)%parties.length].id))))}</small></div>`).join('')}<div class="td-total"><small>Value out</small><b>${num(result.outgoingValues?.[index]??result.values[(index+1)%parties.length])}</b></div><div class="td-total"><small>Value in</small><b>${num(result.values[index])}</b></div></div>`).join('')}
     </div>
 
     <details class="td-data-context td-impact-details"><summary>Depth &amp; roster fit</summary>
@@ -480,7 +483,7 @@ function multiTicketMarkup(result, parties, pool, sends) {
       ${parties.map((party, index) => `<div class="td-line"><span>${esc(teamName(party))} lineup</span><b class="${result.weeklyDeltas[index] >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltas[index])} avg/wk</b></div><div class="td-line"><span>${esc(teamName(party))} depth</span><b class="${num(result.depthDeltas?.[index]) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltas?.[index])} avg/wk</b></div>`).join("")}
     </div></details>
 
-    <details class="td-data-context td-impact-details"><summary>Roster detail</summary>${balanceMeter(result.fairness)}</details>
+    <details class="td-data-context td-impact-details"><summary>Value balance</summary>${balanceMeter(result.fairness)}</details>
     ${confidenceMarkup(result,esc,true)}${evidenceMarkup(result)}
     ${reasonList(reasons)}
   </div>`;
@@ -504,15 +507,15 @@ export function tradeDeskMarkup(team, teams, pool, state) {
   }).join("");
   const add = parties.length < Math.min(8,teams.length) ? `<button type="button" class="btn ghost small td-add-member" data-td-add-member>+ Add member</button>` : "";
   const multi = parties.length > 2;
-  return `<details class="td-builder"${state.editing ? " open" : ""}>
+  return `<div class="td-edit-bar" data-td-edit-bar hidden><button type="button" class="td-edit-package" data-td-review aria-label="Review full trade"><span data-td-edit-send></span><span data-td-edit-receive></span></button><button type="button" class="linkbtn" data-td-undo hidden>Undo</button><p data-td-edit-status role="status"></p></div><details class="td-builder"${state.editing ? " open" : ""}>
       <summary><span>Build your trade</span><i aria-hidden="true"></i></summary>
       <div class="td-builder-body">
         <div class="td-party-controls">${selectors}${add}</div>
-        <div class="td-package-limit" data-td-limit><span><b data-td-total-count>${tradePlayerCount(state.sends)}</b> of ${MAX_TRADE_PLAYERS} players selected</span><small>${multi?"Choose each player’s recipient.":""}</small></div>
+        <div class="td-package-limit" data-td-limit><span><b data-td-total-count>${tradePlayerCount(state.sends)}</b> of ${MAX_TRADE_PLAYERS} players selected</span><small>${multi?"Set each destination.":""}</small></div>
         <div class="td-board ${multi ? "is-multi" : ""}" style="--td-party-count:${parties.length}">
           ${parties.map((party, index) => sideList(party, pool, state.sends[index], String(index), multi ? `${teamName(party)} sends` : index ? "YOU GET" : "YOU SEND", state.filters?.[index] || "",parties,state.destinations,state.rosterOpen?.[index])).join("")}
         </div>
-        <div class="td-actions"><button type="button" class="btn ghost small" data-td-clear>Clear the board</button></div>
+        <div class="td-actions"><button type="button" class="btn ghost small" data-td-clear>Clear trade</button></div>
       </div>
     </details>
     <div data-td-verdict>${multi ? multiTicketMarkup(null) : ticketMarkup(null)}</div>`;
@@ -525,12 +528,24 @@ export function tradeDeskMarkup(team, teams, pool, state) {
 export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange, onDeal,lockedIds=[] }) {
   if (!root) return;
   const verdictHost = root.querySelector("[data-td-verdict]"),connection=createTradeConnection();
-  let currentDeal=null,counters=[],revision=0;
+  let currentDeal=null,counters=[],revision=0,undo=null,stopped=false,stopReplacement=()=>{};
   root.querySelector(".td-builder")?.addEventListener("toggle", event => {
-    state.editing = event.currentTarget.open;
+    state.editing = event.currentTarget.open;syncEditBar();
   });
   const partiesOf = () => [team, ...state.memberIds.map(id => teams.find(item => String(item.id) === String(id))).filter(Boolean)];
 
+  const remember=()=>{undo=tradeEditSnapshot(partiesOf(),state)};
+  const syncEditBar=()=>{
+    const bar=root.querySelector('[data-td-edit-bar]');if(!bar)return;
+    bar.hidden=(!tradePlayerCount(state.sends)&&!undo)||!root.querySelector('.td-builder')?.open;
+    const nameList=ids=>{const names=[...ids].map(id=>pool.get(String(id))?.name||id);return names.length?`${names[0]}${names.length>1?' +'+(names.length-1):''}`:'Choose players'};
+    const received=currentDeal?.receives?.[0]||state.sends.slice(1).flatMap(ids=>[...ids].filter(id=>String(state.destinations?.[id])===String(team.id)));
+    root.querySelector('[data-td-edit-send]').innerHTML=`<small>You send</small><b>${esc(nameList(state.sends[0]))}</b>`;
+    root.querySelector('[data-td-edit-receive]').innerHTML=`<small>You receive</small><b>${esc(nameList(received))}</b>`;
+    const p=tradePerspective(currentDeal?.result);
+    root.querySelector('[data-td-edit-status]').textContent=p?`${Math.round(p.fairness)}% balance · Your lineup ${signed(p.weeklyDeltaA)} / wk`:`${tradePlayerCount(state.sends)} players · Finish the package`;
+    root.querySelectorAll('[data-td-undo]').forEach(button=>button.hidden=!undo);
+  };
   const syncSelectionUi = () => {
     const total = tradePlayerCount(state.sends), full = total >= MAX_TRADE_PLAYERS;
     const totalNode = root.querySelector("[data-td-total-count]");
@@ -543,7 +558,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
       const tray = root.querySelector(`[data-td-selected="${index}"]`);
       if (tray) tray.innerHTML = selectedPlayersMarkup(set, pool, String(index),parties,state.destinations);
     });
-    root.querySelectorAll("[data-td-pick]").forEach(box => { box.disabled = full && !box.checked; });
+    root.querySelectorAll("[data-td-pick]").forEach(box => {box.checked=!!state.sends[Number(box.dataset.tdPick)]?.has(box.value);box.closest(".td-player")?.classList.toggle("is-picked",box.checked);box.disabled = full && !box.checked; });
   };
 
   /*
@@ -553,6 +568,8 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     with the ticket above it would be worse than no image.
   */
   const update=()=>{
+    const y=scrollY,open=new Set([...verdictHost.querySelectorAll('details[open]')].map(node=>node.className+'|'+[...verdictHost.querySelectorAll('details')].filter(n=>n.className===node.className).indexOf(node)));
+    const previous=[...verdictHost.querySelectorAll('.td-decision dd')].map(n=>n.textContent);
     const parties=partiesOf(),sends=state.sends.map(set=>[...set]);revision++;counters=[];
     currentDeal=evaluateTradeDeal(parties,sends,pool,state.destinations);
     const result=currentDeal?.result,issue=tradeRoutingIssue(parties,sends,state.destinations);
@@ -560,10 +577,12 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     const routingMessage=issue?.kind==='senders'?`Select players from ${missingNames}.`:issue?.kind==='recipients'?`Choose a recipient for ${issue.playerIds.length} player${issue.playerIds.length===1?'':'s'}.`:issue?.kind==='receivers'?`${missingNames} ${issue.teamIds.length===1?'needs':'need'} a player coming back.`:'Review the selected players and recipients.';
     verdictHost.innerHTML=(parties.length>2?multiTicketMarkup(result,parties,pool,sends):ticketMarkup(result,team,parties[1],pool,...sends))
       +(currentDeal?lineupComparisonMarkup(currentDeal,pool)+`<details class="td-data-context" data-td-weekly><summary>Next four weeks</summary><div data-td-weekly-body></div></details>`:sends.some(ids=>ids.length)?`<p class="td-projection-note" role="status" data-td-routing-status>${esc(routingMessage)}</p>`:'')
-      +`<div class="td-deal-tools"><button type="button" class="btn ghost small" data-td-find-counter ${currentDeal?'':'disabled'}>Find a counteroffer</button><button type="button" class="btn ghost small" data-td-save-proposal ${currentDeal?'':'disabled'}>Save for comparison</button></div><div data-td-counter-results role="region" aria-label="Counteroffer suggestions"></div>`;
+      +`<div class="td-deal-tools"><button type="button" class="btn ghost small" data-td-undo hidden>Undo last change</button><button type="button" class="btn ghost small" data-td-find-counter ${currentDeal?'':'disabled'}>Find a counteroffer</button><button type="button" class="btn ghost small" data-td-save-proposal ${currentDeal?'':'disabled'}>Save for comparison</button></div><div data-td-counter-results role="region" aria-label="Counteroffer suggestions"></div>`;
     const impact=verdictHost.querySelector("[data-td-lineup-impact]"),decision=verdictHost.querySelector(".td-decision");
-    if(impact&&decision)decision.after(impact);
-    onDeal?.(currentDeal);
+    if(impact&&decision)verdictHost.querySelector('.td-ticket').after(impact);
+    verdictHost.querySelectorAll('details').forEach((node,i)=>{if(open.has(node.className+'|'+[...verdictHost.querySelectorAll('details')].filter(n=>n.className===node.className).indexOf(node)))node.open=true});
+    verdictHost.querySelectorAll('.td-decision dd').forEach((node,i)=>{if(previous[i]&&previous[i]!==node.textContent)animateUi(node,[{opacity:.55,transform:'translateY(2px)'},{opacity:1,transform:'translateY(0)'}],{duration:180})});
+    window.scrollTo({top:y,behavior:'instant'});syncEditBar();onDeal?.(currentDeal);
   };
 
   root.addEventListener('toggle',async event=>{
@@ -581,7 +600,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
 
   root.addEventListener("change", event => {
     const destination=event.target.closest('[data-td-destination]');
-    if(destination){const origins=connection.capture(destination.closest('.td-selected-player'));state.destinations[destination.dataset.tdDestination]=destination.value;destination.setAttribute('aria-invalid',String(!destination.value));update();connection.play(origins,verdictHost);return;}
+    if(destination){remember();const origins=connection.capture(destination.closest('.td-selected-player'));state.destinations[destination.dataset.tdDestination]=destination.value;destination.setAttribute('aria-invalid',String(!destination.value));update();connection.play(origins,verdictHost);return;}
     const box = event.target.closest("[data-td-pick]");
     if (box) {
       const set = state.sends[Number(box.dataset.tdPick)];
@@ -591,10 +610,12 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
         return;
       }
       const origins=connection.capture(box.checked?box.closest('.td-player'):root.querySelector(`[data-td-selected="${box.dataset.tdPick}"] [data-trade-player="${CSS.escape(box.value)}"]`));
+      remember();const top=box.getBoundingClientRect().top;
       if (box.checked) set.add(box.value); else set.delete(box.value);
       box.closest(".td-player")?.classList.toggle("is-picked", box.checked);
       syncSelectionUi();
       update();
+      window.scrollBy({top:box.getBoundingClientRect().top-top,behavior:'instant'});
       connection.play(origins,box.checked?root.querySelector(`[data-td-selected="${box.dataset.tdPick}"]`):box.closest('.td-player'));
       return;
     }
@@ -620,6 +641,17 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
   for(const section of root.querySelectorAll('[data-td-roster]')) section.addEventListener('toggle',event=>{state.rosterOpen||={};state.rosterOpen[event.currentTarget.dataset.tdRoster]=event.currentTarget.open;});
 
   root.addEventListener("click", async event => {
+    if(event.target.closest('[data-td-review]')){const heading=verdictHost.querySelector('h2');verdictHost.scrollIntoView({block:'start',behavior:'instant'});if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}return;}
+    if(event.target.closest('[data-td-undo]')){connection.cancel();if(restoreTradeEdit(partiesOf(),state,undo)){undo=null;syncSelectionUi();update();root.querySelector('.td-builder>summary')?.focus({preventScroll:true})}return;}
+    const replace=event.target.closest('[data-td-replace-pick]');
+    if(replace){const side=Number(replace.dataset.tdReplacePick),id=replace.dataset.playerId,fromTicket=verdictHost.contains(replace);
+      stopReplacement=openTradeReplacement(replace,{root,pool,team:partiesOf()[side],selected:state.sends.flatMap(ids=>[...ids]),onSelect:next=>{
+        if(stopped||!root.isConnected)return null;
+        const before=tradeEditSnapshot(partiesOf(),state),y=scrollY;
+        if(!replaceTradePlayer(partiesOf(),state,side,id,next))return null;undo=before;syncSelectionUi();update();window.scrollTo({top:y,behavior:'instant'});
+        return (fromTicket?verdictHost:root.querySelector(`[data-td-selected="${side}"]`)).querySelector(`[data-td-replace-pick="${side}"][data-player-id="${CSS.escape(next)}"]`);
+      }});return;
+    }
     const counterButton=event.target.closest('[data-td-find-counter]');
     if(counterButton&&currentDeal){const at=revision,deal=currentDeal;counterButton.disabled=true;counterButton.setAttribute('aria-busy','true');counterButton.textContent='Checking small changes…';await new Promise(resolve=>setTimeout(resolve,0));if(!root.isConnected||at!==revision)return;
       try{counters=findTradeCounteroffers(deal,pool,{lockedIds});root.querySelector('[data-td-counter-results]').innerHTML=counterofferMarkup(counters,pool,deal.parties);}
@@ -631,7 +663,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     if (removePick) {
       const side = Number(removePick.dataset.tdRemovePick), id = String(removePick.dataset.playerId);
       const origins=connection.capture(removePick.closest('.td-selected-player'));
-      state.sends[side]?.delete(id);
+      remember();state.sends[side]?.delete(id);
       root.querySelectorAll(`[data-td-pick="${side}"]`).forEach(box => {
         if (String(box.value) !== id) return;
         box.checked = false;
@@ -657,7 +689,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     }
     if (!event.target.closest("[data-td-clear]")) return;
     connection.cancel();
-    state.sends.forEach(set => set.clear());
+    remember();state.sends.forEach(set => set.clear());
     root.querySelectorAll("[data-td-pick]").forEach(box => {
       box.checked = false;
       box.closest(".td-player")?.classList.remove("is-picked");
@@ -669,5 +701,5 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
   syncSelectionUi();
   for(const input of root.querySelectorAll("[data-td-filter]")) input.dispatchEvent(new Event("input",{bubbles:true}));
   update();
-  return ()=>connection.stop();
+  return ()=>{stopped=true;stopReplacement();connection.stop()};
 }
