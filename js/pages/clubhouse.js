@@ -50,7 +50,7 @@ export async function render(view){
   </div>`;
   const center=mountClubhouseCenter(view,model,{active,autoFinish:!params.has('archive')&&latest?.season===model.season&&latest?.week===model.week});
   const teamReel=mountClubhouseTeamHighlights(view,{getModel:center.getModel,getGame:center.getGame,active});
-  const nflCenter=mountClubhouseNfl(view,{getModel:center.getModel,active,onClip:async id=>{view.querySelector('#clubhouse-tab-highlights').click();return teamReel.openClip(id)}});
+  const nflCenter=mountClubhouseNfl(view,{getModel:center.getModel,active,onClip:(id,source)=>teamReel.openClip(id,{source,returnToGame:true})});
   const postgame=mountPersonalPostgame(view,{getModel:center.getModel,active});
   stopLive=mountMatchupLive(view,model,threadIds,active,{onUpdate:center.update,onError:center.fail,onStop:()=>{postgame.stop();nflCenter.stop();teamReel.stop();center.stop()}});
   wirePageDisclosures(view);

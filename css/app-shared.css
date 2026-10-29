@@ -7466,3 +7466,53 @@ html[data-ui-motion=off] .pc-compare-log>summary i { transition:none; }
  #view[data-route="trade"] .td-starter-change .dfl-player-copy strong { white-space:normal; word-break:normal; overflow-wrap:break-word; }
 }
 @media(max-height:600px){#view[data-route="trade"] .td-edit-bar { position:static; }#view[data-route="trade"]:has([data-td-edit-bar]:not([hidden])) .dfl-scroll-context{visibility:visible;pointer-events:auto}}
+
+
+/* Source: css/clubhouse-viewing.css */
+/* The game stays put while the viewer moves between its plays and players. */
+.nfl-center-tools { position:sticky; top:0; z-index:4; padding-top:4px; background:var(--bg); border-bottom:1px solid var(--line); }
+#view[data-route="clubhouse"] .nfl-center-tools { top:calc(var(--dfl-scroll-top,var(--topbar-h,44px)) + var(--dfl-scroll-height,0px)); }
+.nfl-center-tools .nfl-center-picker { position:static; margin:0; padding:6px 0 8px; }
+.nfl-center-picker label { font:500 .6875rem/1.4 var(--font-body); }
+.nfl-center-picker select { font:500 1rem/1.4 var(--font-body); border-radius:8px; }
+.nfl-center-picker button { min-width:52px; font:600 .75rem/1.4 var(--font-body); }
+.nfl-center-picker button[aria-busy="true"] { opacity:.65; }
+.nfl-center-modes { position:relative; gap:0; margin:0; padding:0; border:0; border-radius:0; background:transparent; }
+.nfl-center-modes>i { position:absolute; left:0; bottom:0; width:50%; height:2px; background:var(--accent); transform:translateX(calc(var(--nfl-mode,0)*100%)); transition:transform 240ms cubic-bezier(.22,.75,.25,1); pointer-events:none; }
+.nfl-center-modes button,.nfl-center-modes button[aria-pressed="true"] { min-height:46px; padding:8px 6px; border:0; border-radius:0; background:transparent; font:600 .8125rem/1.4 var(--font-body); }
+.nfl-center-score { border-top:0; padding:12px 0; }
+.nfl-center-status { min-height:1rem; margin:6px 0 10px; font:500 .6875rem/1.4 var(--font-body); }
+.nfl-center-status:empty { display:none; }
+.nfl-center-empty { margin:0; padding:20px 4px; font:500 .8125rem/1.5 var(--font-body); color:var(--body-text); }
+.nfl-center-body[aria-busy="true"] { min-height:180px; }
+.nfl-center-fantasy { gap:12px; }
+.nfl-center-fantasy .nfl-fantasy-team { padding:8px 6px; background:var(--bg-2); }
+.nfl-center-fantasy .nfl-fantasy-team h3 { font:700 1rem/1.3 var(--font-display); }
+.nfl-center-fantasy .nfl-fantasy-player-head :is(strong,button) { min-height:44px; font:600 .875rem/1.4 var(--font-body); word-break:normal; overflow-wrap:break-word; }
+.nfl-center-fantasy .nfl-fantasy-player p { font:500 .75rem/1.5 var(--font-body); }
+.nfl-center-fantasy .nfl-fantasy-owner { font:500 .6875rem/1.4 var(--font-body); }
+.nfl-center-fantasy .nfl-fantasy-value b { font:700 1.375rem/1.3 var(--font-display); }
+.nfl-center-plays .nfl-play-actions>button { font:600 .8125rem/1.4 var(--font-body); }
+.nfl-center-plays .nfl-play-details>summary { font:500 .75rem/1.4 var(--font-body); }
+#view[data-route="clubhouse"] .multigame-desk { margin-bottom:12px; }
+#view[data-route="clubhouse"] .multigame-head { padding:0 0 8px; }
+#view[data-route="clubhouse"] .multigame-head h3 { margin:0; font:600 1rem/1.4 var(--font-body); }
+#view[data-route="clubhouse"] .multigame-grid { grid-template-columns:none; grid-auto-flow:column; grid-auto-columns:calc((100% - 8px)/2); align-items:stretch; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; scrollbar-width:thin; }
+#view[data-route="clubhouse"] .multigame-card { scroll-snap-align:start; background:var(--bg-2); }
+#view[data-route="clubhouse"] .multigame-card>button { gap:6px; padding:10px; }
+#view[data-route="clubhouse"] .multigame-card>button>small { min-height:0; font:500 .6875rem/1.4 var(--font-body); }
+#view[data-route="clubhouse"] .multigame-score { gap:4px; }
+#view[data-route="clubhouse"] .multigame-score b { font:700 1.25rem/1.2 var(--font-display); }
+#view[data-route="clubhouse"] .multigame-people { min-height:0; gap:2px; padding-top:6px; font:500 .6875rem/1.4 var(--font-body); }
+#view[data-route="clubhouse"] .multigame-latest { min-height:0; -webkit-line-clamp:2; font:500 .6875rem/1.4 var(--font-body); }
+#view[data-route="clubhouse"] .multigame-follow { font:600 .6875rem/1.4 var(--font-body); }
+.reel-browser-modes button { font:600 .8125rem/1.4 var(--font-body); }
+.home-reel-player>header h2 { font:700 .875rem/1.3 var(--font-display); }
+.home-reel-player-copy h3 { font:600 .9375rem/1.4 var(--font-body); }
+.home-reel-player [data-reel-close] { flex:none; min-width:44px; min-height:44px; font:600 .8125rem/1.4 var(--font-body); }
+.reel-game-browser .nfl-center-tools { top:0; background:var(--bg); }
+.nfl-center-tools :is(button,select):focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+@media(min-width:700px){#view[data-route="clubhouse"] .multigame-grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-flow:row}}
+@media(max-height:500px){#view[data-route="clubhouse"] .nfl-center-tools{position:static}}
+html[data-ui-motion="off"] .nfl-center-modes>i { transition:none; }
+@media(prefers-reduced-motion:reduce){.nfl-center-modes>i{transition:none}}

@@ -84,6 +84,7 @@ on:
       - 'css/home-highlight-reel.css'
       - 'tools/capture-home-highlights.py'
       - 'tools/capture-nfl-live-refresh.py'
+      - 'tools/capture-connected-viewing.py'
       - 'tools/fixtures/home-highlight-clips.json'
       - 'tools/fixtures/nfl-game-center-summary.json'
       - 'tools/fixtures/nfl-highlight-play.json'
@@ -181,6 +182,7 @@ on:
       - 'js/disclosure-motion.js'
       - 'tools/capture-disclosure-motion.py'
       - 'css/clubhouse-reading.css'
+      - 'css/clubhouse-viewing.css'
       - 'css/clubhouse-polish.css'
       - 'js/game-day-lineup-comparison*'
       - 'css/game-day-watch.css'
@@ -367,6 +369,10 @@ jobs:
         env:
           DFL_HOME_HIGHLIGHTS_REVIEW_DIR: ${{ github.workspace }}/home-review-output/highlights
         run: python tools/capture-home-highlights.py
+      - name: Check replay minimizing, return and media continuity
+        env:
+          DFL_CONNECTED_REVIEW_DIR: ${{ github.workspace }}/home-review-output/connected
+        run: python tools/capture-connected-viewing.py
       - name: Check live NFL play refresh and recovery
         env:
           DFL_NFL_REFRESH_REVIEW_DIR: ${{ github.workspace }}/home-review-output/nfl-refresh

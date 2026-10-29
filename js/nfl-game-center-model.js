@@ -18,6 +18,15 @@ export function nflCenterGames(payload,season,week){
  });
 }
 export function nflSummaryMatches(summary,game,season){return !!game&&String(summary?.header?.id)===game.id&&Number(summary?.header?.season?.year)===Number(season)&&Number(summary?.header?.season?.type)===2;}
+// A confirmed game summary can advance a lagging board; an earlier phase
+// cannot turn a final game back into a live one or replace its final score.
+export function nflObservedGame(game,summary,season){
+ if(!nflSummaryMatches(summary,game,season))return game;
+ const observed=summary.header.competitions?.[0],phase={pre:0,in:1,post:2};
+ if(!observed||!(phase[observed.status?.type?.state]>=phase[game.state]))return game;
+ const sides=game.sides.map(side=>{const score=observed.competitors?.find(c=>footballTeam(c.team?.abbreviation)===side.code)?.score;return {...side,score:/^\d+$/.test(String(score))?Number(score):side.score}});
+ return {...game,sides,status:observed.status.type.shortDetail||game.status,state:observed.status.type.state};
+}
 export function nflCenterPlays(summary){
  const all=[...footballPlays(summary),...(summary?.scoringPlays||[])],unique=new Map();
  for(const play of all){

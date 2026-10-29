@@ -25,6 +25,11 @@ describe('shared player-card entry points', () => {
     expect(openPlayerCard).toHaveBeenCalledWith({ id:'7564', name:'Ja’Marr Chase', team:'CIN' }, { source:button });
     expect(preventDefault).toHaveBeenCalledOnce();
   });
+  it('passes the viewed NFL week without substituting its PPR score for league points',async()=>{
+    const scoped={dataset:{playerCard:'7564',playerSeason:'2025',playerWeek:'8',playerState:'final',playerPoints:'40'}};
+    await activate(selector=>selector==='[data-player-card]'?scoped:null);
+    expect(openPlayerCard).toHaveBeenCalledWith({id:'7564',name:undefined,team:undefined},{source:scoped,context:{id:'7564',season:2025,week:8,state:'final'}});
+  });
   it('leaves artwork without a player control alone', async () => {
     const preventDefault = await activate(selector => selector === '.dfl-player-portrait' ? {} : null);
     expect(openPlayerCard).not.toHaveBeenCalled();
