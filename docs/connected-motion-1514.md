@@ -75,7 +75,8 @@ transitions use quieter handoffs and respond to interrupted movement.
   routing, keyboard/tap routes, cancelled gestures, Undo, incomplete deals,
   200% text, contrast and phase-based Home priorities.
 - Existing regression checks pass: 141 momentum, 248 Clubhouse, 116 connected
-  viewing/trade actions, 84 trade editing, 43 player-card finish and 72 shared
+  viewing/trade actions, 84 trade editing, 43 player-card finish, 21 final-result and 63 record/identity
+  checks, plus 72 shared
   scroll checks. The scoreboard's native/fallback review covers 18 cases; Home
   entry covers 18 cases plus three late-data guards. Eight broadcast contrast,
   transport and enlarged-text cases pass after the narrow-layout corrections.
@@ -85,7 +86,8 @@ transitions use quieter handoffs and respond to interrupted movement.
   exact selected momentum entry. Historical clips retain existing Thursday
   expiry; media checks use isolated local video, not expired league footage.
 - The previously failing connected-viewing CI fixture now renders the trade
-  harness explicitly. Its output path resolves relative to the checkout on both
+  harness explicitly. Final-result and record fixtures import the score-context
+  helper when evaluating the extracted controller. Its output path resolves relative to the checkout on both
   local and hosted runners. The Clubhouse native-swipe fixture crosses the snap
   card's midpoint rather than depending on momentum from a short gesture.
 - Production remains 90 modules, three startup/four Home, and 57 shared styles in
