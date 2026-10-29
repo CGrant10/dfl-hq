@@ -1386,3 +1386,16 @@ No theme-picker options or retired crest colors were added. `pnpm themes` and
 `pnpm check` pass. No production member, trade, wager or push was created.
 Physical device frame pacing and screen readers remain unverified. Evidence:
 [player-card-polish-1507.md](docs/player-card-polish-1507.md).
+
+# 1.508.0 — Compare Players
+
+Reviewed weekly and trade comparisons in Light/Dark at 320/390px, including full
+names, aligned numeric columns, meaningful value gaps, selected tabs, native week
+selection, replacement/Cancel and the expanding recent game log. Text contrast,
+200% root text, keyboard focus, refresh/retry, delayed data, portrait sequencing,
+sheet drags, Motion off and reduced motion pass the browser review. Current injury
+tags use semantic warning/danger ink; all new surfaces, borders, highlights and
+controls use shared theme tokens. No new themes or retired crest colors were
+added. `pnpm themes` and `pnpm check` pass. No production writes were made.
+Physical phone frame pacing and screen readers remain unverified. Evidence:
+[player-comparison-polish-1508.md](docs/player-comparison-polish-1508.md).

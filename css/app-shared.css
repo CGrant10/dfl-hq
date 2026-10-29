@@ -7377,3 +7377,45 @@ body .dfl-player-card .player-card-tools>.linkbtn { min-width:0; min-height:44px
 body .dfl-player-card :is(button,a,summary):focus-visible { outline-offset:-2px; }
 html[data-ui-motion=off] .player-card-more>summary i { transition:none; }
 @media(prefers-reduced-motion:reduce){.player-card-more>summary i{transition:none}}
+
+
+/* Source: css/player-compare-reading.css */
+/* Values use the same two columns as the player identities. */
+body .dfl-player-compare { background:var(--bg-2); border:1px solid var(--line); }
+body .dfl-player-compare .pc-compare-body { flex:1 1 auto; padding-top:12px; }
+body .dfl-player-compare>header h2 { font-size:1rem; }
+.pc-compare-heads { gap:4px 12px; }
+.pc-compare-heads strong { font-size:1rem; line-height:1.25; }
+.pc-compare-heads :is(small,span:not(.dfl-player-portrait)) { font-size:.6875rem; line-height:1.4; }
+.pc-compare-heads .linkbtn { width:100%; border-bottom:1px solid var(--line); border-radius:0; font:600 .75rem/1.3 var(--font-body); text-decoration:none; }
+.pc-compare-heads .dfl-player-portrait { background:var(--bg-2); }
+.pc-compare-availability { display:inline-block; margin-left:4px; color:var(--warn-ink); font:600 .625rem/1.3 var(--font-body); font-style:normal; }
+.pc-compare-availability[data-out=true] { color:var(--danger-ink); }
+body .dfl-player-compare .pc-compare-tabs { margin-top:8px; }
+body .dfl-player-compare .pc-compare-tabs button { font-size:.8125rem; }
+.pc-compare-scope { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 0 0; }
+.pc-compare-scope>span { font:500 .75rem/1.4 var(--font-body); color:var(--body-text); }
+.pc-compare-scope select { min-width:0; max-width:70%; min-height:44px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:var(--bg-2); color:var(--text); font:500 1rem/1.3 var(--font-body); }
+body .dfl-player-compare .pc-compare-body h3 { margin:12px 0 0; font:600 .6875rem/1.4 var(--font-body); letter-spacing:.03em; }
+body .dfl-player-compare .pc-compare-row { grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 12px; padding:8px 0; min-height:48px; }
+.pc-compare-row>span { grid-column:1/-1; text-align:center; font-size:.6875rem; }
+body .dfl-player-compare .pc-compare-row>b { display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; padding:3px 6px; font:600 1rem/1.35 var(--font-body); }
+.pc-compare-row>b small { display:block; margin-top:3px; font:500 .625rem/1.4 var(--font-body); color:var(--body-text); }
+body .dfl-player-compare .pc-compare-row.is-featured>b { font-size:1.5rem; font-weight:700; }
+.pc-compare-row.is-featured>b.is-edge { border-radius:8px; background:color-mix(in srgb,var(--accent) 7%,transparent); }
+.pc-compare-gap { display:inline-block; margin-top:2px; font:600 .625rem/1.3 var(--font-body); font-style:normal; font-variant-numeric:tabular-nums; }
+.pc-compare-log { margin:8px 0 0; border:0; border-bottom:1px solid var(--line); }
+.pc-compare-log>summary { display:flex; align-items:center; justify-content:space-between; min-height:48px; padding:8px 0; list-style:none; cursor:pointer; color:var(--text); font:600 .8125rem/1.4 var(--font-body); }
+.pc-compare-log>summary::-webkit-details-marker { display:none; }
+.pc-compare-log>summary i { width:7px; height:7px; margin-right:4px; border:solid var(--body-text); border-width:0 1.5px 1.5px 0; transform:rotate(45deg); transition:transform 200ms ease; }
+.pc-compare-log[open]>summary i { transform:rotate(225deg); }
+body .dfl-player-compare .pc-compare-history { display:block; margin:0; }
+body .dfl-player-compare .pc-compare-history>.pc-compare-row { display:grid; }
+.pc-compare-source,.pc-compare-status { font-size:.6875rem; line-height:1.45; }
+.pc-compare-picker-head { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:44px; padding-top:12px; }
+.pc-compare-picker-head>strong { font:600 .875rem/1.4 var(--font-body); }
+.pc-compare-picker-head>.linkbtn { min-height:44px; min-width:44px; font:600 .8125rem/1.3 var(--font-body); color:var(--text); }
+.pc-compare-search { margin-top:4px; }
+body .dfl-player-compare :is(button,input,select,summary):focus-visible { outline-offset:-2px; }
+html[data-ui-motion=off] .pc-compare-log>summary i { transition:none; }
+@media(prefers-reduced-motion:reduce){.pc-compare-log>summary i{transition:none}}
