@@ -10,6 +10,8 @@ on:
       - 'tools/capture-trade-motion.py'
       - 'tools/capture-trade-offer-reading.py'
       - 'css/trade-book-reading.css'
+      - 'css/trade-editing.css'
+      - 'tools/capture-trade-editing-review.py'
       - 'tools/capture-trade-pick-motion.py'
       - 'tools/capture-trade-receipt-motion.py'
       - 'js/trade-receipt-motion.js'
@@ -75,6 +77,8 @@ jobs:
       - name: Check receive-position controls and mobile themes
         run: python tools/capture-trade-receive-controls.py
       - run: python tools/capture-trade-review.py
+      - name: Check compact editing, replacement, Undo and readable trade names
+        run: python tools/capture-trade-editing-review.py
       - name: Check lazy lineup previews, reading position and motion
         run: python tools/capture-trade-offer-reading.py
       - name: Check connected offer transitions

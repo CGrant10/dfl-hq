@@ -1399,3 +1399,16 @@ controls use shared theme tokens. No new themes or retired crest colors were
 added. `pnpm themes` and `pnpm check` pass. No production writes were made.
 Physical phone frame pacing and screen readers remain unverified. Evidence:
 [player-comparison-polish-1508.md](docs/player-comparison-polish-1508.md).
+
+# 1.509.0 — Trade editing and analysis names
+
+Reviewed actual Analyze Trade, selected-player Swap/remove controls, replacement
+sheet, sticky package reference, Undo and three-team routes in Light/Dark at
+320/390px. Full names and 200% root text fit; new action targets are at least 44px.
+Text contrast and current value/selected/focus states pass the browser checks.
+The analysis uses the shared quiet surface rather than a tinted gradient. New
+surfaces, borders, text, controls and focus colors use theme tokens; player/NFL
+identity colors remain explicit. No theme entries or retired crest accents were
+added. `pnpm themes` and `pnpm check` pass. Browser fixtures block production
+writes. Physical device frame pacing and screen readers remain unverified.
+Evidence: [trade-editing-polish-1509.md](docs/trade-editing-polish-1509.md).
