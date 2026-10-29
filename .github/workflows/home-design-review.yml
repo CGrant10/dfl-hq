@@ -122,6 +122,7 @@ on:
       - 'css/player-card-reading.css'
       - 'js/player-card-summary.js'
       - 'tools/capture-score-scroll-review.py'
+      - 'css/player-compare-reading.css'
       - 'js/player-compare*'
       - 'js/moment-recap*'
       - 'js/football-moment*'

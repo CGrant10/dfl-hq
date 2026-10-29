@@ -66,6 +66,7 @@ function wireGameExplorer(model){
   gameExplorer=mountPlayerGameExplorer(body,model,{initialWeek,getMotion:()=>dialog.dataset.motion!=='off',onShare:async spec=>{try{const {openSharePreview}=await import('./share-editorial.js');if(dialog.open&&!dialog.dataset.uiClosing&&request===generation)openSharePreview(spec,{filename:`dfl-${model.player.id}-week-${spec.context.split(' ').at(-1)}.png`,title:`${model.player.name} · Player performance`,text:`${model.player.name} · ${spec.context} · ${spec.results[0].value} points · ${spec.status}`})}catch{body.querySelector('[data-player-game-announcement]')?.replaceChildren(document.createTextNode('Could not open the share preview. Try again.'))}}});
 }
 function render(model) {
+  dialog.dataset.playerSeason=String(model.season);
   const p = model.player, me = currentMember(), journey=playerJourneyLinks(model);
   const props = ['QB', 'RB', 'WR', 'TE'].includes(p.position);
   const trade = model.owner && model.myRosterId != null && String(model.owner.id) !== String(model.myRosterId) && me?.sleeper_user_id;
