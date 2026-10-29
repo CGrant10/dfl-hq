@@ -133,6 +133,11 @@ on:
       - 'tools/capture-first-launch.py'
       - 'supabase/migrations/*player_directory*'
       - 'supabase/tests/player_directory.sql'
+      - 'js/matchup-momentum*'
+      - 'css/matchup-momentum.css'
+      - 'tools/capture-matchup-momentum.py'
+      - 'supabase/migrations/*gameday_score_history*'
+      - 'supabase/tests/gameday_score_history.sql'
       - 'js/matchup-highlights*'
       - 'js/matchup-story*'
       - 'css/matchup-highlights.css'
@@ -312,6 +317,10 @@ jobs:
         env:
           DFL_HIGHLIGHTS_REVIEW_DIR: ${{ github.workspace }}/home-review-output/highlights
         run: python tools/capture-matchup-highlights.py
+      - name: Check recorded matchup momentum, touch scrubbing and exact replay return
+        env:
+          DFL_MOMENTUM_REVIEW_DIR: ${{ github.workspace }}/home-review-output/momentum
+        run: python tools/capture-matchup-momentum.py
       - name: Check real first launch, compact player loading and fallback
         env:
           DFL_STARTUP_REVIEW_DIR: ${{ github.workspace }}/home-review-output/startup
@@ -460,6 +469,8 @@ jobs:
         run: |
           psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/tests/live_football.sql
           psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/tests/matchup_highlights.sql
+          psql -h localhost -U postgres -c 'create database dfl_momentum_test'
+          psql -h localhost -U postgres -d dfl_momentum_test -v ON_ERROR_STOP=1 -f supabase/tests/gameday_score_history.sql
           psql -h localhost -U postgres -c 'create database dfl_highlight_test'
           psql -h localhost -U postgres -d dfl_highlight_test -v ON_ERROR_STOP=1 -f supabase/tests/home_highlights.sql
           psql -h localhost -U postgres -c 'create database dfl_player_cache_test'

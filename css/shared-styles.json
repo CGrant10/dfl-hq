@@ -54,5 +54,6 @@
   "css/player-compare-reading.css",
   "css/trade-editing.css",
   "css/clubhouse-viewing.css",
-  "css/broadcast-compositions.css"
+  "css/broadcast-compositions.css",
+  "css/matchup-momentum.css"
 ]
