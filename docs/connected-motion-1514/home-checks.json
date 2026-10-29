@@ -1,0 +1,243 @@
+{
+  "cases": [
+    {
+      "theme": "light",
+      "width": 320,
+      "phase": "pregame",
+      "order": [
+        "week",
+        "highlights"
+      ],
+      "scrollStable": true,
+      "height": 206,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "light",
+      "width": 320,
+      "phase": "live",
+      "order": [
+        "highlights",
+        "week"
+      ],
+      "scrollStable": true,
+      "height": 246,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "light",
+      "width": 320,
+      "phase": "aftermath",
+      "order": [
+        "week",
+        "highlights"
+      ],
+      "scrollStable": true,
+      "height": 246,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "phase": "pregame",
+      "order": [
+        "week",
+        "highlights"
+      ],
+      "scrollStable": true,
+      "height": 222,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "phase": "live",
+      "order": [
+        "highlights",
+        "week"
+      ],
+      "scrollStable": true,
+      "height": 266,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "phase": "aftermath",
+      "order": [
+        "week",
+        "highlights"
+      ],
+      "scrollStable": true,
+      "height": 266,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "light",
+      "width": 768,
+      "phase": "pregame",
+      "order": [
+        "week",
+        "highlights"
+      ],
+      "scrollStable": true,
+      "height": 338,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "light",
+      "width": 768,
+      "phase": "live",
+      "order": [
+        "highlights",
+        "week"
+      ],
+      "scrollStable": true,
+      "height": 338,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "light",
+      "width": 768,
+      "phase": "aftermath",
+      "order": [
+        "week",
+        "highlights"
+      ],
+      "scrollStable": true,
+      "height": 338,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "dark",
+      "width": 320,
+      "phase": "pregame",
+      "order": [
+        "week",
+        "highlights"
+      ],
+      "scrollStable": true,
+      "height": 206,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "dark",
+      "width": 320,
+      "phase": "live",
+      "order": [
+        "highlights",
+        "week"
+      ],
+      "scrollStable": true,
+      "height": 246,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "dark",
+      "width": 320,
+      "phase": "aftermath",
+      "order": [
+        "week",
+        "highlights"
+      ],
+      "scrollStable": true,
+      "height": 246,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "phase": "pregame",
+      "order": [
+        "week",
+        "highlights"
+      ],
+      "scrollStable": true,
+      "height": 222,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "phase": "live",
+      "order": [
+        "highlights",
+        "week"
+      ],
+      "scrollStable": true,
+      "height": 266,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "phase": "aftermath",
+      "order": [
+        "week",
+        "highlights"
+      ],
+      "scrollStable": true,
+      "height": 266,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "dark",
+      "width": 768,
+      "phase": "pregame",
+      "order": [
+        "week",
+        "highlights"
+      ],
+      "scrollStable": true,
+      "height": 338,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "dark",
+      "width": 768,
+      "phase": "live",
+      "order": [
+        "highlights",
+        "week"
+      ],
+      "scrollStable": true,
+      "height": 338,
+      "overflow": false,
+      "contentFits": true
+    },
+    {
+      "theme": "dark",
+      "width": 768,
+      "phase": "aftermath",
+      "order": [
+        "week",
+        "highlights"
+      ],
+      "scrollStable": true,
+      "height": 338,
+      "overflow": false,
+      "contentFits": true
+    }
+  ],
+  "lateDataGuards": [
+    "pointer",
+    "scroll",
+    "focus"
+  ]
+}

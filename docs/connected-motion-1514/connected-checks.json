@@ -1,0 +1,614 @@
+[
+  {
+    "check": "light/320 player card keeps both exact fantasy scores and full team names",
+    "pass": true
+  },
+  {
+    "check": "light/320 score context text has readable theme contrast",
+    "pass": true
+  },
+  {
+    "check": "light/320 viewing score strip fits without hiding player stats",
+    "pass": true
+  },
+  {
+    "check": "light/320 enlarged player context stays inside the sheet",
+    "pass": true
+  },
+  {
+    "check": "light/320 closing returns focus and removes every moving portrait",
+    "pass": true
+  },
+  {
+    "check": "light/320 clip keeps the fantasy matchup separate from NFL video scores",
+    "pass": true
+  },
+  {
+    "check": "light/320 another clip keeps fantasy context and releases the previous media source",
+    "pass": true
+  },
+  {
+    "check": "light/320 nested player inherits the replay matchup",
+    "pass": true
+  },
+  {
+    "check": "light/320 replay returns to the exact source",
+    "pass": true
+  },
+  {
+    "check": "light/320 unrelated openings clear the prior matchup",
+    "pass": true
+  },
+  {
+    "check": "light/320 detached replay retains the original fantasy matchup",
+    "pass": true
+  },
+  {
+    "check": "light/320 expanding after leaving keeps the same native video",
+    "pass": true
+  },
+  {
+    "check": "light/320 compact receiving board shows all three packages",
+    "pass": true
+  },
+  {
+    "check": "light/320 choosing a chip focuses a legal keyboard destination",
+    "pass": true
+  },
+  {
+    "check": "light/320 tap routing changes only the receiver and recomputes the deal",
+    "pass": true
+  },
+  {
+    "check": "light/320 a missing receiving side produces no invented valid verdict",
+    "pass": true
+  },
+  {
+    "check": "light/320 Undo restores the exact routed deal",
+    "pass": true
+  },
+  {
+    "check": "light/320 dragging uses one pointer-transparent preview",
+    "pass": true
+  },
+  {
+    "check": "light/320 dropping routes the player and cleans the preview",
+    "pass": true
+  },
+  {
+    "check": "light/320 board fits the phone and leaves its normal chips vertically scrollable",
+    "pass": true
+  },
+  {
+    "check": "light/320 Escape cancels an armed move without changing terms",
+    "pass": true
+  },
+  {
+    "check": "light/320 native touch drag uses the same validated destination",
+    "pass": true
+  },
+  {
+    "check": "light/320 cancelled touch removes its preview without changing the trade",
+    "pass": true
+  },
+  {
+    "check": "light/320 large text reflows the full team/player names",
+    "pass": true
+  },
+  {
+    "check": "light/320 pregame puts decisions before the matchup without duplicating either",
+    "pass": true
+  },
+  {
+    "check": "light/320 new data cannot reshuffle a chosen visit",
+    "pass": true
+  },
+  {
+    "check": "light/320 live leads with the matchup or final result",
+    "pass": true
+  },
+  {
+    "check": "light/320 aftermath leads with the matchup or final result",
+    "pass": true
+  },
+  {
+    "check": "light/390 player card keeps both exact fantasy scores and full team names",
+    "pass": true
+  },
+  {
+    "check": "light/390 score context text has readable theme contrast",
+    "pass": true
+  },
+  {
+    "check": "light/390 viewing score strip fits without hiding player stats",
+    "pass": true
+  },
+  {
+    "check": "light/390 closing returns focus and removes every moving portrait",
+    "pass": true
+  },
+  {
+    "check": "light/390 clip keeps the fantasy matchup separate from NFL video scores",
+    "pass": true
+  },
+  {
+    "check": "light/390 another clip keeps fantasy context and releases the previous media source",
+    "pass": true
+  },
+  {
+    "check": "light/390 nested player inherits the replay matchup",
+    "pass": true
+  },
+  {
+    "check": "light/390 replay returns to the exact source",
+    "pass": true
+  },
+  {
+    "check": "light/390 unrelated openings clear the prior matchup",
+    "pass": true
+  },
+  {
+    "check": "light/390 detached replay retains the original fantasy matchup",
+    "pass": true
+  },
+  {
+    "check": "light/390 expanding after leaving keeps the same native video",
+    "pass": true
+  },
+  {
+    "check": "light/390 compact receiving board shows all three packages",
+    "pass": true
+  },
+  {
+    "check": "light/390 choosing a chip focuses a legal keyboard destination",
+    "pass": true
+  },
+  {
+    "check": "light/390 tap routing changes only the receiver and recomputes the deal",
+    "pass": true
+  },
+  {
+    "check": "light/390 a missing receiving side produces no invented valid verdict",
+    "pass": true
+  },
+  {
+    "check": "light/390 Undo restores the exact routed deal",
+    "pass": true
+  },
+  {
+    "check": "light/390 dragging uses one pointer-transparent preview",
+    "pass": true
+  },
+  {
+    "check": "light/390 dropping routes the player and cleans the preview",
+    "pass": true
+  },
+  {
+    "check": "light/390 board fits the phone and leaves its normal chips vertically scrollable",
+    "pass": true
+  },
+  {
+    "check": "light/390 Escape cancels an armed move without changing terms",
+    "pass": true
+  },
+  {
+    "check": "light/390 pregame puts decisions before the matchup without duplicating either",
+    "pass": true
+  },
+  {
+    "check": "light/390 new data cannot reshuffle a chosen visit",
+    "pass": true
+  },
+  {
+    "check": "light/390 live leads with the matchup or final result",
+    "pass": true
+  },
+  {
+    "check": "light/390 aftermath leads with the matchup or final result",
+    "pass": true
+  },
+  {
+    "check": "light/768 player card keeps both exact fantasy scores and full team names",
+    "pass": true
+  },
+  {
+    "check": "light/768 score context text has readable theme contrast",
+    "pass": true
+  },
+  {
+    "check": "light/768 viewing score strip fits without hiding player stats",
+    "pass": true
+  },
+  {
+    "check": "light/768 closing returns focus and removes every moving portrait",
+    "pass": true
+  },
+  {
+    "check": "light/768 clip keeps the fantasy matchup separate from NFL video scores",
+    "pass": true
+  },
+  {
+    "check": "light/768 another clip keeps fantasy context and releases the previous media source",
+    "pass": true
+  },
+  {
+    "check": "light/768 nested player inherits the replay matchup",
+    "pass": true
+  },
+  {
+    "check": "light/768 replay returns to the exact source",
+    "pass": true
+  },
+  {
+    "check": "light/768 unrelated openings clear the prior matchup",
+    "pass": true
+  },
+  {
+    "check": "light/768 detached replay retains the original fantasy matchup",
+    "pass": true
+  },
+  {
+    "check": "light/768 expanding after leaving keeps the same native video",
+    "pass": true
+  },
+  {
+    "check": "light/768 compact receiving board shows all three packages",
+    "pass": true
+  },
+  {
+    "check": "light/768 choosing a chip focuses a legal keyboard destination",
+    "pass": true
+  },
+  {
+    "check": "light/768 tap routing changes only the receiver and recomputes the deal",
+    "pass": true
+  },
+  {
+    "check": "light/768 a missing receiving side produces no invented valid verdict",
+    "pass": true
+  },
+  {
+    "check": "light/768 Undo restores the exact routed deal",
+    "pass": true
+  },
+  {
+    "check": "light/768 dragging uses one pointer-transparent preview",
+    "pass": true
+  },
+  {
+    "check": "light/768 dropping routes the player and cleans the preview",
+    "pass": true
+  },
+  {
+    "check": "light/768 board fits the phone and leaves its normal chips vertically scrollable",
+    "pass": true
+  },
+  {
+    "check": "light/768 Escape cancels an armed move without changing terms",
+    "pass": true
+  },
+  {
+    "check": "light/768 pregame puts decisions before the matchup without duplicating either",
+    "pass": true
+  },
+  {
+    "check": "light/768 new data cannot reshuffle a chosen visit",
+    "pass": true
+  },
+  {
+    "check": "light/768 live leads with the matchup or final result",
+    "pass": true
+  },
+  {
+    "check": "light/768 aftermath leads with the matchup or final result",
+    "pass": true
+  },
+  {
+    "check": "dark/320 player card keeps both exact fantasy scores and full team names",
+    "pass": true
+  },
+  {
+    "check": "dark/320 score context text has readable theme contrast",
+    "pass": true
+  },
+  {
+    "check": "dark/320 viewing score strip fits without hiding player stats",
+    "pass": true
+  },
+  {
+    "check": "dark/320 enlarged player context stays inside the sheet",
+    "pass": true
+  },
+  {
+    "check": "dark/320 closing returns focus and removes every moving portrait",
+    "pass": true
+  },
+  {
+    "check": "dark/320 clip keeps the fantasy matchup separate from NFL video scores",
+    "pass": true
+  },
+  {
+    "check": "dark/320 another clip keeps fantasy context and releases the previous media source",
+    "pass": true
+  },
+  {
+    "check": "dark/320 nested player inherits the replay matchup",
+    "pass": true
+  },
+  {
+    "check": "dark/320 replay returns to the exact source",
+    "pass": true
+  },
+  {
+    "check": "dark/320 unrelated openings clear the prior matchup",
+    "pass": true
+  },
+  {
+    "check": "dark/320 detached replay retains the original fantasy matchup",
+    "pass": true
+  },
+  {
+    "check": "dark/320 expanding after leaving keeps the same native video",
+    "pass": true
+  },
+  {
+    "check": "dark/320 compact receiving board shows all three packages",
+    "pass": true
+  },
+  {
+    "check": "dark/320 choosing a chip focuses a legal keyboard destination",
+    "pass": true
+  },
+  {
+    "check": "dark/320 tap routing changes only the receiver and recomputes the deal",
+    "pass": true
+  },
+  {
+    "check": "dark/320 a missing receiving side produces no invented valid verdict",
+    "pass": true
+  },
+  {
+    "check": "dark/320 Undo restores the exact routed deal",
+    "pass": true
+  },
+  {
+    "check": "dark/320 dragging uses one pointer-transparent preview",
+    "pass": true
+  },
+  {
+    "check": "dark/320 dropping routes the player and cleans the preview",
+    "pass": true
+  },
+  {
+    "check": "dark/320 board fits the phone and leaves its normal chips vertically scrollable",
+    "pass": true
+  },
+  {
+    "check": "dark/320 Escape cancels an armed move without changing terms",
+    "pass": true
+  },
+  {
+    "check": "dark/320 native touch drag uses the same validated destination",
+    "pass": true
+  },
+  {
+    "check": "dark/320 cancelled touch removes its preview without changing the trade",
+    "pass": true
+  },
+  {
+    "check": "dark/320 large text reflows the full team/player names",
+    "pass": true
+  },
+  {
+    "check": "dark/320 pregame puts decisions before the matchup without duplicating either",
+    "pass": true
+  },
+  {
+    "check": "dark/320 new data cannot reshuffle a chosen visit",
+    "pass": true
+  },
+  {
+    "check": "dark/320 live leads with the matchup or final result",
+    "pass": true
+  },
+  {
+    "check": "dark/320 aftermath leads with the matchup or final result",
+    "pass": true
+  },
+  {
+    "check": "dark/390 player card keeps both exact fantasy scores and full team names",
+    "pass": true
+  },
+  {
+    "check": "dark/390 score context text has readable theme contrast",
+    "pass": true
+  },
+  {
+    "check": "dark/390 viewing score strip fits without hiding player stats",
+    "pass": true
+  },
+  {
+    "check": "dark/390 closing returns focus and removes every moving portrait",
+    "pass": true
+  },
+  {
+    "check": "dark/390 clip keeps the fantasy matchup separate from NFL video scores",
+    "pass": true
+  },
+  {
+    "check": "dark/390 another clip keeps fantasy context and releases the previous media source",
+    "pass": true
+  },
+  {
+    "check": "dark/390 nested player inherits the replay matchup",
+    "pass": true
+  },
+  {
+    "check": "dark/390 replay returns to the exact source",
+    "pass": true
+  },
+  {
+    "check": "dark/390 unrelated openings clear the prior matchup",
+    "pass": true
+  },
+  {
+    "check": "dark/390 detached replay retains the original fantasy matchup",
+    "pass": true
+  },
+  {
+    "check": "dark/390 expanding after leaving keeps the same native video",
+    "pass": true
+  },
+  {
+    "check": "dark/390 compact receiving board shows all three packages",
+    "pass": true
+  },
+  {
+    "check": "dark/390 choosing a chip focuses a legal keyboard destination",
+    "pass": true
+  },
+  {
+    "check": "dark/390 tap routing changes only the receiver and recomputes the deal",
+    "pass": true
+  },
+  {
+    "check": "dark/390 a missing receiving side produces no invented valid verdict",
+    "pass": true
+  },
+  {
+    "check": "dark/390 Undo restores the exact routed deal",
+    "pass": true
+  },
+  {
+    "check": "dark/390 dragging uses one pointer-transparent preview",
+    "pass": true
+  },
+  {
+    "check": "dark/390 dropping routes the player and cleans the preview",
+    "pass": true
+  },
+  {
+    "check": "dark/390 board fits the phone and leaves its normal chips vertically scrollable",
+    "pass": true
+  },
+  {
+    "check": "dark/390 Escape cancels an armed move without changing terms",
+    "pass": true
+  },
+  {
+    "check": "dark/390 pregame puts decisions before the matchup without duplicating either",
+    "pass": true
+  },
+  {
+    "check": "dark/390 new data cannot reshuffle a chosen visit",
+    "pass": true
+  },
+  {
+    "check": "dark/390 live leads with the matchup or final result",
+    "pass": true
+  },
+  {
+    "check": "dark/390 aftermath leads with the matchup or final result",
+    "pass": true
+  },
+  {
+    "check": "dark/768 player card keeps both exact fantasy scores and full team names",
+    "pass": true
+  },
+  {
+    "check": "dark/768 score context text has readable theme contrast",
+    "pass": true
+  },
+  {
+    "check": "dark/768 viewing score strip fits without hiding player stats",
+    "pass": true
+  },
+  {
+    "check": "dark/768 closing returns focus and removes every moving portrait",
+    "pass": true
+  },
+  {
+    "check": "dark/768 clip keeps the fantasy matchup separate from NFL video scores",
+    "pass": true
+  },
+  {
+    "check": "dark/768 another clip keeps fantasy context and releases the previous media source",
+    "pass": true
+  },
+  {
+    "check": "dark/768 nested player inherits the replay matchup",
+    "pass": true
+  },
+  {
+    "check": "dark/768 replay returns to the exact source",
+    "pass": true
+  },
+  {
+    "check": "dark/768 unrelated openings clear the prior matchup",
+    "pass": true
+  },
+  {
+    "check": "dark/768 detached replay retains the original fantasy matchup",
+    "pass": true
+  },
+  {
+    "check": "dark/768 expanding after leaving keeps the same native video",
+    "pass": true
+  },
+  {
+    "check": "dark/768 compact receiving board shows all three packages",
+    "pass": true
+  },
+  {
+    "check": "dark/768 choosing a chip focuses a legal keyboard destination",
+    "pass": true
+  },
+  {
+    "check": "dark/768 tap routing changes only the receiver and recomputes the deal",
+    "pass": true
+  },
+  {
+    "check": "dark/768 a missing receiving side produces no invented valid verdict",
+    "pass": true
+  },
+  {
+    "check": "dark/768 Undo restores the exact routed deal",
+    "pass": true
+  },
+  {
+    "check": "dark/768 dragging uses one pointer-transparent preview",
+    "pass": true
+  },
+  {
+    "check": "dark/768 dropping routes the player and cleans the preview",
+    "pass": true
+  },
+  {
+    "check": "dark/768 board fits the phone and leaves its normal chips vertically scrollable",
+    "pass": true
+  },
+  {
+    "check": "dark/768 Escape cancels an armed move without changing terms",
+    "pass": true
+  },
+  {
+    "check": "dark/768 pregame puts decisions before the matchup without duplicating either",
+    "pass": true
+  },
+  {
+    "check": "dark/768 new data cannot reshuffle a chosen visit",
+    "pass": true
+  },
+  {
+    "check": "dark/768 live leads with the matchup or final result",
+    "pass": true
+  },
+  {
+    "check": "dark/768 aftermath leads with the matchup or final result",
+    "pass": true
+  },
+  {
+    "check": "No browser errors or database mutations",
+    "pass": true
+  }
+]

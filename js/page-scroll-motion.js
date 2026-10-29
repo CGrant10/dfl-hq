@@ -55,7 +55,7 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
   const copy=dock.querySelector('.dfl-scroll-copy'),title=copy.querySelector('strong'),section=copy.querySelector('small');
   const value=dock.querySelector('.dfl-scroll-value'),scores=dock.querySelector('.dfl-scroll-scores'),progress=dock.querySelector('.dfl-scroll-read');
   const originalTop=root.style.getPropertyValue('--dfl-scroll-top'),originalHeight=root.style.getPropertyValue('--dfl-scroll-height');
-  let stopped=false,frame=0,dirty=true,hero=null,heading=null,headings=[],sectionPositions=[],activeSection=null,compact=false,shown=false,lastScroll=window.scrollY,paintedScroll=window.scrollY,scrolledAt=-Infinity,scoreAnchor=null,scoreKey='';
+  let stopped=false,frame=0,dirty=true,hero=null,heading=null,headings=[],sectionPositions=[],activeSection=null,compact=false,shown=false,lastScroll=window.scrollY,paintedScroll=window.scrollY,scrolledAt=-Infinity,scoreAnchor=null,scoreKey='',scrollDirection=0,scrollSpeed=0;let scrollAt=performance.now();
   const seen=new WeakSet(),observed=new Set(),layoutNodes=new Set(),labels=new WeakMap(),rising=new Set(),focusRestores=new Map();
   const current=()=>!stopped&&root.isConnected;
   const markVisible=nodes=>nodes.forEach(node=>{seen.add(node);intersection?.unobserve(node);observed.delete(node)});
@@ -65,8 +65,8 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
       if(!entry.isIntersecting||!displayed(entry.target))continue;
       markVisible([entry.target]);
       // An async score/data render is not a scroll entrance.
-      if(allowed()&&performance.now()-scrolledAt<900){
-        const animation=animate?.(entry.target,[{opacity:.7,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:420,easing:'cubic-bezier(.16,1,.3,1)'});
+      if(allowed()&&scrollSpeed<1.4&&performance.now()-scrolledAt<600){
+        const animation=animate?.(entry.target,[{opacity:.7,transform:'translateY(4px)'},{opacity:1,transform:'translateY(0)'}],{duration:260,easing:'cubic-bezier(.16,1,.3,1)'});
         if(animation){rising.add(entry.target);const finish=()=>rising.delete(entry.target);animation.finished.then(finish,finish);}
       }
     }
@@ -103,13 +103,13 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
     if(on===shown)return false;
     // Reverse an interrupted entrance/exit from its current frame, rather
     // than flashing back to fully visible or restarting at zero opacity.
-    const from=dock.hidden?{opacity:0,transform:'translateY(-8px)'}
+    const from=dock.hidden?{opacity:0,transform:'translateY(-4px)'}
       :{opacity:getComputedStyle(dock).opacity,transform:getComputedStyle(dock).transform};
     shown=on;dock.hidden=false;dock.inert=!on;dock.setAttribute('aria-hidden',String(!on));
     if(!allowed())cancel?.(dock);
     const animation=allowed()?animate?.(dock,[from,on
       ?{opacity:1,transform:'translateY(0)'}
-      :{opacity:0,transform:'translateY(-6px)'}],{duration:on?240:150,fill:'forwards'}):null;
+      :{opacity:0,transform:'translateY(-4px)'}],{duration:on?220:160,fill:'forwards'}):null;
     if(!on){const finish=()=>{if(!shown&&current())dock.hidden=true};if(animation)animation.finished.then(finish,finish);else finish();}
     return true;
   }
@@ -128,8 +128,8 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
   function glide(node,direction){
     if(!allowed())return;
     const interrupted=node.getAnimations().length>0,style=interrupted?getComputedStyle(node):null;
-    animate?.(node,[{opacity:style?.opacity||.5,transform:style?.transform||`translateY(${direction*4}px)`},
-      {opacity:1,transform:'translateY(0)'}],{duration:180});
+    animate?.(node,[{opacity:style?.opacity||.5,transform:style?.transform||`translateY(${direction*3}px)`},
+      {opacity:1,transform:'translateY(0)'}],{duration:160});
   }
   function paint(){
     frame=0;if(!current()||document.hidden)return;
@@ -197,7 +197,7 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
     }
   }
   function schedule(){if(current()&&!frame)frame=requestAnimationFrame(paint);}
-  const scroll=()=>{if(window.scrollY!==lastScroll){lastScroll=window.scrollY;scrolledAt=performance.now();}schedule();};
+  const scroll=()=>{const at=performance.now(),delta=window.scrollY-lastScroll;if(delta){const direction=Math.sign(delta);scrollSpeed=Math.abs(delta)/Math.max(8,at-scrollAt);if(scrollDirection&&direction!==scrollDirection){for(const node of rising)cancel?.(node);rising.clear()}scrollDirection=direction;lastScroll=window.scrollY;scrolledAt=at;scrollAt=at;}schedule();};
   const observer=new MutationObserver(records=>{
     if(records.some(record=>!dock.contains(record.target)&&!(record.type==='childList'&&[...record.addedNodes,...record.removedNodes].every(node=>node===dock||node.nodeType===1&&node.matches('.dfl-selection-rail,.dfl-scroll-cue')))
       &&(record.attributeName!=='class'||record.target.matches('button,[data-clubhouse-matchup],.clubhouse-matchup-card')))){

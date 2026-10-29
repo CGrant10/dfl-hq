@@ -61,8 +61,12 @@ with sync_playwright() as p:
  # Home's compact scoreboard must not bypass the section entrance observer.
  page.evaluate('fixture("home")');page.wait_for_timeout(150)
  intro=page.evaluate("()=>{const h=document.querySelectorAll('.story h2')[1];return {y:h.getBoundingClientRect().top+scrollY-400,height:document.documentElement.scrollHeight}}")
- page.evaluate('y=>scrollTo(0,y)',intro['y'])
- page.wait_for_function("document.querySelectorAll('.story h2')[1].getAnimations().length>0")
+ page.evaluate('y=>scrollTo(0,y)',intro['y']-600)
+ revealed=False
+ for delta in range(0,601,24):
+  page.evaluate('y=>scrollTo(0,y)',intro['y']-600+delta);page.wait_for_timeout(30)
+  revealed |= page.evaluate("document.querySelectorAll('.story h2')[1].getAnimations().length>0")
+ check('Gentle scrolling reveals a major heading once',revealed)
  check('Home reveals section headings while keeping the compact scoreboard',page.evaluate("document.querySelector('#view').classList.contains('has-home-score-dock')&&document.querySelector('.dfl-scroll-context').hidden"))
  page.wait_for_timeout(500)
  check('Section reveal settles without shifting the document',page.evaluate('height=>document.documentElement.scrollHeight===height&&getComputedStyle(document.querySelectorAll(".story h2")[1]).opacity==="1"',intro['height']))

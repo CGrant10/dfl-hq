@@ -79,7 +79,7 @@ with sync_playwright() as p:
    rail=page.locator('.clubhouse-scoreboard-grid');rail.scroll_into_view_if_needed();page.wait_for_timeout(150)
    bounds=rail.bounding_box();first=rail.locator('button').first.bounding_box();x=min(first['x']+first['width']+5,bounds['x']+bounds['width']-8);y=first['y']+first['height']/2
    cdp=c.new_cdp_session(page);cdp.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
-   for step in range(1,9):cdp.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x-step*13,'y':y}]});page.wait_for_timeout(18)
+   for step in range(1,9):cdp.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x-step*max(13,first['width']*.75/8),'y':y}]});page.wait_for_timeout(18)
    cdp.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});page.wait_for_timeout(250)
    check(tag+' native matchup swipes do not switch Clubhouse tabs',rail.evaluate('e=>e.scrollLeft>20') and page.locator('#clubhouse-tab-matchups').get_attribute('aria-selected')=='true')
    rail.evaluate('e=>e.scrollLeft=0');page.evaluate('scrollTo(0,0)');page.wait_for_timeout(750)

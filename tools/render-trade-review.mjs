@@ -1,8 +1,9 @@
 // Exercise the production page and event handlers with isolated roster data.
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+import {fileURLToPath} from 'node:url';
 import {tradeReviewFixture as receiptFixture} from './trade-review-fixture.mjs';
 import {buildTradeAlertSnapshot} from '../js/trade-receipt-model.js';
-const output=process.env.DFL_TRADE_REVIEW_DIR||'/workspace/dfl-trade-review';mkdirSync(output,{recursive:true});
+const output=process.env.DFL_TRADE_REVIEW_DIR||fileURLToPath(new URL('../../dfl-trade-review/',import.meta.url));mkdirSync(output,{recursive:true});
 const receiptData=receiptFixture(),receiptTeams=receiptData.teams.slice(0,3),receiptState=new Map(receiptTeams.map(t=>[String(t.id),new Set(t.playerIds)]));
 const receiptTx={transaction_id:'1416251900797464576',type:'trade',status:'complete',roster_ids:[1,2,3],drops:{'1-4':1,'1-3':1,'2-6':2,'3-3':3},adds:{'1-4':3,'1-3':2,'2-6':1,'3-3':1},draft_picks:[],waiver_budget:[],created:Date.now(),leg:6};
 const makeReceipt=transaction=>buildTradeAlertSnapshot({transaction,season:2026,week:6,teams:receiptTeams,rosterState:receiptState,pool:receiptData.pool});

@@ -1,3 +1,4 @@
+import {applyViewingMatchup} from './matchup-view-context.js';
 import {dockReplay,isReplayDocked,restoreReplayDock,detachReplayDock,closeReplayDock} from './replay-dock.js';
 import {readJourneyChoice,writeJourneyChoice} from './journey-memory.js';
 import {esc} from './ui.js';
@@ -143,7 +144,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
  };
  const open=(id,source,{returnToGame=false}={})=>{
   clips=visibleClips();search='';const rows=browseRows();if(!rows.length){paint();return}
-  opener=source;returnPoint=returnToGame&&source?.isConnected?{top:source.getBoundingClientRect().top}:null;setup();
+  opener=source;returnPoint=returnToGame&&source?.isConnected?{top:source.getBoundingClientRect().top}:null;setup();applyViewingMatchup(dialog,returnToGame?source:null);
   const closeButton=dialog.querySelector('[data-reel-close]');closeButton.textContent=returnToGame?'Back':'×';closeButton.setAttribute('aria-label',returnToGame?'Back to game':'Close highlights');if(isReplayDocked(media))restoreReplayDock(media);else closeReplayDock();browseScroll=0;dialog.querySelector('h2').textContent=returnToGame?'NFL replay':typeof title==='function'?title():title;cancelUiExit(dialog);selected=id||rows[0].id;dialog.querySelector('[data-reel-search]').value='';
   dialog.showModal();stopViewport();stopViewport=fitDialogToViewport(dialog)||(()=>{});layout.reset();drawPlayer(true);scrollQueue(true);const people=dialog.querySelector('[data-reel-players]'),person=people.querySelector('[aria-pressed="true"]');people.scrollLeft=player&&person?Math.max(0,person.offsetLeft-people.offsetLeft-people.clientWidth/2+person.clientWidth/2):0;dialog.querySelector('h2').focus({preventScroll:true});
   setBrowserMode('clips');

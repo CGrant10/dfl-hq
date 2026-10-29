@@ -63,7 +63,7 @@ describe('sheet exit geometry',()=>{
     const dialog={dataset:{},isConnected:true,closest:()=>null,getBoundingClientRect:()=>({top:200})};
     dialog.animate=vi.fn(()=>({finished:Promise.resolve(),cancel:vi.fn(),effect:{target:dialog}}));
     const done=vi.fn();exitSheet(dialog,done,{connected:true});
-    expect(dialog.animate.mock.calls[0][0][1].transform).toBe('translateY(8px)');
+    expect(dialog.animate.mock.calls[0][0][1].transform).toBe('translateY(0px)');
     expect(dialog.animate.mock.calls[0][1].duration).toBe(280);
     await Promise.resolve();expect(done).toHaveBeenCalledOnce();
   });
