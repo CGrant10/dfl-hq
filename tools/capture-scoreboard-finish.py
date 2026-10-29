@@ -33,6 +33,10 @@ with sync_playwright() as p:
    if contrast['failures']:
     (OUT/f'{mode}-{width}-contrast-failure.json').write_text(json.dumps(contrast,indent=2));dock.screenshot(path=str(OUT/f'{mode}-{width}-contrast-failure.png'))
    check(tag+' readable text contrast '+json.dumps(contrast['failures']),not contrast['failures'])
+   if width==390:
+    transient=page.evaluate('''async mode=>{reviewSetTheme(mode);await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);return reviewTextContrast(document.querySelector('.home-score-dock'))}''','dark' if mode=='light' else 'light')
+    check(tag+' theme changes keep labels and their surface readable together '+json.dumps(transient['failures']),not transient['failures'])
+    page.evaluate('''async mode=>{reviewSetTheme(mode);await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame)}''',mode)
    if width<700:
     check(tag+' compact scoreboard leaves room for the page',dock.evaluate('(e,max)=>e.offsetHeight>=44&&e.offsetHeight<=max',72 if width==320 else 64))
    dock.screenshot(path=str(OUT/f'{mode}-{width}-dock.png'))

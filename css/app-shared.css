@@ -4562,6 +4562,9 @@ html[data-ui-motion="off"] #more * { transition:none!important; }
 .dfl-scroll-up { grid-row:1; grid-column:-2; width:20px; height:20px; fill:none; stroke:var(--body-text); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
 .dfl-scroll-read { position:absolute; bottom:0; left:0; width:100%; height:2px; border-radius:2px; background:var(--accent); transform-origin:left; pointer-events:none; }
 #view > .dfl-scroll-context:focus-visible { outline:2px solid var(--accent); outline-offset:-3px; }
+/* Label ink resolves immediately on a theme change. Keep its fixed surface in
+   the same palette frame instead of inheriting a generic button color fade. */
+#view.view[data-route] > :is(.home-score-dock,.dfl-scroll-context) { transition:scale 150ms ease; }
 #view > .dfl-scroll-context.is-matchup { grid-template-columns:minmax(0,1fr) 20px; }
 .dfl-scroll-scores { grid-column:1 / -1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; border-top:1px solid var(--line-soft); padding-top:7px; }
 .dfl-scroll-scores > span { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:6px; min-width:0; }

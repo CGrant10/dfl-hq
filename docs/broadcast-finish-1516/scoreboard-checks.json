@@ -8,7 +8,7 @@
     "pass": true
   },
   {
-    "check": "light/320 readable text contrast",
+    "check": "light/320 readable text contrast []",
     "pass": true
   },
   {
@@ -52,7 +52,11 @@
     "pass": true
   },
   {
-    "check": "light/390 readable text contrast",
+    "check": "light/390 readable text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/390 theme changes keep labels and their surface readable together []",
     "pass": true
   },
   {
@@ -92,7 +96,7 @@
     "pass": true
   },
   {
-    "check": "light/768 readable text contrast",
+    "check": "light/768 readable text contrast []",
     "pass": true
   },
   {
@@ -128,7 +132,7 @@
     "pass": true
   },
   {
-    "check": "dark/320 readable text contrast",
+    "check": "dark/320 readable text contrast []",
     "pass": true
   },
   {
@@ -172,7 +176,11 @@
     "pass": true
   },
   {
-    "check": "dark/390 readable text contrast",
+    "check": "dark/390 readable text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/390 theme changes keep labels and their surface readable together []",
     "pass": true
   },
   {
@@ -212,7 +220,7 @@
     "pass": true
   },
   {
-    "check": "dark/768 readable text contrast",
+    "check": "dark/768 readable text contrast []",
     "pass": true
   },
   {

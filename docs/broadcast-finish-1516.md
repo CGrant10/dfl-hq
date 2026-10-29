@@ -26,7 +26,10 @@ layouts. The pinned scoreboard also frees more space for the page.
   74px. Full names, chosen photos, score precision, neutral forecasts and tap to
   the original matchup remain. Long names/enlarged text can grow naturally.
   Other contextual scroll bars lose 4px of vertical padding; 44px minimum touch
-  targets and dismiss controls remain.
+  targets and dismiss controls remain. Fixed bars switch text/surface colors
+  together: a generic button background fade previously passed through a
+  low-contrast midpoint when changing Light to Dark. CI caught this; the
+  correction preserves scale feedback and the compositor scroll effects.
 - The independent daily opener, limited current edition, archive rotation,
   stale-news cutoff, one-pass playback and Wall-last order remain. No new feed,
   poll, dependency, image asset, font request, scroll-frame read or idle loop.
@@ -41,7 +44,7 @@ layouts. The pinned scoreboard also frees more space for the page.
   artwork, no overflow, stable height, text contrast and 44px transport targets.
   Native forward/reverse swipes, one-pass playback, manual replay, edition refresh
   and Reduced Motion pass. Added a check against inherited portrait plates.
-- 61 compact scoreboard checks cover full/aligned names and totals, contrast,
+- 63 compact scoreboard checks cover full/aligned names and totals, contrast,
   changed leaders, unknown versus real zero, neutral labeled forecasts, 200%
   text, exact return and mobile height budgets. Existing native/fallback review
   passes 18 cases, shared scrolling 72 checks, sticky alerts 13, and broadcast

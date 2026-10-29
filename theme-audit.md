@@ -1507,7 +1507,10 @@ full names, separate copy/art, stable rotation height, text contrast and 44px
 controls pass. The real-data mobile scoreboard is 56px with exact Projected
 labeling and original totals; score/name updates and native/fallback handoffs
 pass. New panel, label, border and score styling uses shared theme tokens.
-Scout art clears inherited NFL-colored image plates. No palette entries or
+Scout art clears inherited NFL-colored image plates. Fixed bars also clear
+inherited button color fading so labels and surfaces change palettes together;
+the CI-discovered low-contrast midpoint is covered by the contrast checks.
+No palette entries or
 retired crest accents were added. `pnpm themes`, `pnpm check` and final build
 pass. Screenshots were inspected; data checks block production mutations.
 Physical phone frame pacing and screen-reader speech remain unverified.
