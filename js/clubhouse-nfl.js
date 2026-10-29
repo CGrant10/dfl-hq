@@ -2,7 +2,7 @@ import {mountMultigame} from './multigame.js';
 import {mountNflGameCenter} from './nfl-game-center.js';
 import {loadHomeHighlights} from './home-highlight-data.js';
 import {currentMember} from './members.js';
-export function mountClubhouseNfl(root,{getModel,active=()=>root.isConnected,onClip=(_id)=>{}}={}){
+export function mountClubhouseNfl(root,{getModel,active=()=>root.isConnected,onClip=(_id,_source=null)=>{}}={}){
  const slot=root.querySelector('[data-clubhouse-nfl-center]'),params=new URLSearchParams(location.hash.split('?')[1]||'');
  let stopped=false,desk=null,center=null,clips=[],key='',preferred=params.get('nflView')==='fantasy'?'fantasy':'plays';
  const visible=()=>!stopped&&active()&&!root.querySelector('#clubhouse-panel-nfl')?.hidden;

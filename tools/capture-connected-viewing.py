@@ -1,11 +1,12 @@
 """Actual replay and trade controllers, isolated data and local video only."""
 import json,os,threading
+from datetime import datetime,timezone
 from pathlib import Path
 from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
 from playwright.sync_api import sync_playwright
 ROOT=Path(__file__).resolve().parents[1]
 OUT=Path(os.environ.get('DFL_CONNECTED_REVIEW_DIR','/tmp/dfl-connected-1502'));OUT.mkdir(parents=True,exist_ok=True)
-TRADE=Path('/workspace/dfl-trade-review')
+TRADE=Path(os.environ.get('DFL_TRADE_REVIEW_DIR',ROOT.parent/'dfl-trade-review'))
 head=(ROOT/'index.html').read_text().split('<head>')[1].split('</head>')[0]
 html='<!doctype html><html lang="en"><head>'+head+'</head><body><main id="view" class="view" data-route="home"><h1>DFL Daily</h1><div id="reel" data-home-highlights-slot></div></main><nav class="bottomnav" style="height:54px">DFL HQ</nav></body></html>'
 class Handler(SimpleHTTPRequestHandler):
@@ -34,7 +35,7 @@ with sync_playwright() as p:
     if r.request.url.endswith('.mp4'):return r.fulfill(content_type='video/mp4',body=(ROOT/'tools/fixtures/highlight-playback.mp4').read_bytes(),headers={'Access-Control-Allow-Origin':'*'})
     if r.request.resource_type=='image':return r.fulfill(content_type='image/png',body=(ROOT/'tools/fixtures/player-portrait.png').read_bytes())
     return r.abort()
-   c.route('**/*',route);pg=c.new_page();errors=[];pg.on('pageerror',lambda e:errors.append(str(e)));pg.goto(base+'/connected-review.html#/home',wait_until='domcontentloaded')
+   c.route('**/*',route);pg=c.new_page();errors=[];pg.on('pageerror',lambda e:errors.append(str(e)));pg.clock.install(time=datetime(2026,10,28,15,tzinfo=timezone.utc));pg.goto(base+'/connected-review.html#/home',wait_until='domcontentloaded')
    pg.evaluate('''async theme=>{
     (await import('/js/theme.js')).pinMode(theme);
     const rows=await(await fetch('/tools/fixtures/home-highlight-clips.json')).json();

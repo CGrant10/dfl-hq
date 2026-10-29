@@ -28,7 +28,11 @@ with sync_playwright() as p:
    const f=window.f={reads:0,boardReads:0,forces:[],summary,state:'in',active:true,fail:false,hold:false,hidden:false,online:true,extra:[]};
    Object.defineProperty(document,'hidden',{configurable:true,get:()=>f.hidden});Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>f.online});
    f.add=()=>f.extra.push({id:String(999999900000+f.extra.length),sequenceNumber:String(999999900000+f.extra.length),text:'A.Rodgers pass deep left to D.Metcalf for 29 yards.',type:{id:'24',text:'Pass Reception'},statYardage:29,period:{number:4},clock:{displayValue:'2:00'}});
-   f.center=mountNflGameCenter(document.getElementById('feed'),{watchOthers:()=>f.pendingOthers===true,liveOthers:()=>f.liveOthers===true,getContext:()=>({season:2026,week:7,players:[]}),active:()=>f.active,loadStats:async()=>({data:[]}),loadBoard:async()=>{f.boardReads++;return {payload:{season:{year:2026,type:2},week:{number:7},events:[{id:'401873011',date:'2026-10-25T17:00:00Z',status:{type:{state:f.state,shortDetail:f.state==='post'?'Final':'Q4 2:00'}},competitions:[{competitors:[{team:{abbreviation:'NO'},homeAway:'home',score:'10'},{team:{abbreviation:'PIT'},homeAway:'away',score:'16'}]}]}]}}},loadSummary:async(_game,_season,options)=>{f.reads++;f.forces.push(options.force);if(f.hold)await new Promise(r=>f.release=r);if(f.fail)throw Error('Provider offline');const data=structuredClone(summary);data.header.competitions[0].status.type.state=f.state;data.drives.current={plays:[...f.extra]};return {summary:data,fetchedAt:Date.now()}}});
+   f.center=mountNflGameCenter(document.getElementById('feed'),{
+    watchOthers:()=>f.pendingOthers===true,liveOthers:()=>f.liveOthers===true,getContext:()=>({season:2026,week:7,players:[]}),active:()=>f.active,loadStats:async()=>({data:[]}),
+    loadBoard:async()=>{f.boardReads++;const event=(id,codes)=>({id,date:'2026-10-25T17:00:00Z',status:{type:{state:f.state,shortDetail:f.state==='post'?'Final':'Q4 2:00'}},competitions:[{competitors:codes.map((abbreviation,i)=>({team:{abbreviation},homeAway:i?'away':'home',score:i?'16':'10'}))}]});return {payload:{season:{year:2026,type:2},week:{number:7},events:[event('401873011',['NO','PIT']),...(f.second?[event('401900001',['NYG','WAS'])]:[])]}}},
+    loadSummary:async(game,_season,options)=>{f.reads++;f.forces.push(options.force);if(f.hold)await new Promise(r=>f.release=r);if(f.holdGame===game.id)await new Promise(r=>(f.releases||={})[game.id]=r);if(f.fail)throw Error('Provider offline');const data=game.id==='401873011'?structuredClone(summary):JSON.parse(JSON.stringify(summary).replaceAll('401873011','401900001').replaceAll('"PIT"','"WAS"').replaceAll('"NO"','"NYG"'));data.header.competitions[0].status.type.state=f.state;data.drives.current={plays:[...f.extra]};return {summary:data,fetchedAt:Date.now()}}
+   });
    f.video=document.querySelector('video');await f.video.play();
   }''',theme)
   pg.wait_for_selector('.nfl-center-plays h4');count=pg.locator('.nfl-center-plays li').count();tag=theme+' live feed'
@@ -73,6 +77,27 @@ with sync_playwright() as p:
   check(tag+' stops the shared desk once every pinned game is finished',pg.evaluate('f.reads')==before)
 
   pg.locator('[data-nfl-center-mode="plays"]').click();pg.screenshot(path=str(OUT/(theme+'-updated-feed.png')))
+  pg.evaluate('f.state="in";f.second=true;f.center.refresh()');pg.clock.run_for(20)
+  pg.locator('[data-nfl-center-filter]').select_option('all');row=pg.locator('.nfl-center-plays li[id]').nth(12);row.scroll_into_view_if_needed();row.locator('summary').click();rid=row.get_attribute('id');y=row.bounding_box()['y']
+  pg.locator('[data-nfl-center-mode="fantasy"]').click();person=pg.locator('.nfl-fantasy-player').nth(3);person.scroll_into_view_if_needed();pid=person.get_attribute('id');py=person.bounding_box()['y'];pg.locator('[data-nfl-center-mode="plays"]').click()
+  check(tag+' switching views restores the expanded play and its reading position',abs(pg.locator('#'+rid).bounding_box()['y']-y)<2 and pg.locator('#'+rid+' details').evaluate('e=>e.open'))
+  pg.locator('[data-nfl-center-mode="fantasy"]').click()
+  check(tag+' returning to fantasy restores its own stat row',abs(pg.locator('#'+pid).bounding_box()['y']-py)<2)
+  pg.locator('[data-nfl-center-game]').select_option('401900001');pg.clock.run_for(20)
+  check(tag+' a different game shows only its own teams',pg.locator('.nfl-fantasy-team h3').all_inner_texts()==['WAS','NYG'])
+  pg.evaluate('f.holdGame="401873011";f.center.selectGame("401873011")');pg.clock.run_for(20)
+  check(tag+' a visited game stays readable while its fresh request is pending',pg.locator('.nfl-fantasy-team h3').all_inner_texts()==['PIT','NO'] and pg.locator('.nfl-fantasy-player').count()>0 and 'Loading game details' not in pg.locator('.nfl-center-status').inner_text())
+  check(tag+' switching games restores the exact saved fantasy row',abs(pg.locator('#'+pid).bounding_box()['y']-py)<2)
+  pg.evaluate('f.holdGame="";f.releases["401873011"]()');pg.clock.run_for(20)
+  pg.evaluate('f.holdGame="401900001";f.center.selectGame("401900001")');pg.clock.run_for(20);pg.evaluate('f.center.selectGame("401873011")');pg.clock.run_for(20);pg.evaluate('f.holdGame="";f.releases["401900001"]()');pg.clock.run_for(20)
+  check(tag+' a late game response cannot overwrite the current selection',pg.locator('[data-nfl-center-game]').input_value()=='401873011' and pg.locator('.nfl-fantasy-team h3').all_inner_texts()==['PIT','NO'])
+  pg.evaluate('f.modal=document.createElement("dialog");f.modal.innerHTML="<button>Player detail</button>";document.body.append(f.modal);f.modal.showModal()');before=pg.evaluate('f.reads');pg.clock.run_for(40000)
+  check(tag+' a player or replay modal pauses background NFL reads',pg.evaluate('f.reads')==before)
+  pg.evaluate('f.modal.close();f.modal.remove()');pg.clock.run_for(20)
+  check(tag+' closing the modal resumes the same game immediately',pg.evaluate('f.reads')==before+1 and pg.locator('[data-nfl-center-game]').input_value()=='401873011')
+  pg.evaluate('localStorage.setItem("dfl.details.v1.guest.gameday-motion","off");document.documentElement.dataset.uiMotion="off"');pg.locator('[data-nfl-center-mode="plays"]').click()
+  check(tag+' Motion off switches views without moving layers',pg.locator('#feed').evaluate('e=>e.getAnimations({subtree:true}).length===0') and pg.locator('.nfl-center-modes>i').evaluate('e=>getComputedStyle(e).transitionDuration==="0s"'))
+  before=pg.evaluate('f.reads')
   pg.evaluate('f.center.stop();dispatchEvent(new Event("online"));dispatchEvent(new Event("focus"))');pg.clock.run_for(30000)
   check(tag+' teardown removes timers and reconnect listeners',pg.evaluate('f.reads')==before and not errors)
   c.close()

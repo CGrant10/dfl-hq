@@ -32,5 +32,5 @@ export function mountClubhouseTeamHighlights(root,{getModel,getGame,active=()=>r
  const tab=event=>{if(event.detail?.tab!=='highlights')reel.close();else{sync();void reel.refresh()}};
  root.addEventListener('click',click);root.addEventListener('dfl:clubhouse-context',sync);root.addEventListener('dfl:clubhouse-tab',tab);sync();
  if(route.has('player')&&!returning){writeJourneyChoice('reel-scope',{scope});void reel.refresh().then(()=>{if(!stopped&&scope==='league')reel.filterPlayer(route.get('player'),route.get('query')||'')});}
- return {async openClip(id){scope='league';sync();await reel.refresh();if(stopped||!active())return false;return reel.openClip(id)},stop(){stopped=true;reel.stop();root.removeEventListener('click',click);root.removeEventListener('dfl:clubhouse-context',sync);root.removeEventListener('dfl:clubhouse-tab',tab)}};
+ return {async openClip(id,options={}){scope='league';sync();await reel.refresh();if(stopped||!active())return false;return reel.openClip(id,options)},stop(){stopped=true;reel.stop();root.removeEventListener('click',click);root.removeEventListener('dfl:clubhouse-context',sync);root.removeEventListener('dfl:clubhouse-tab',tab)}};
 }

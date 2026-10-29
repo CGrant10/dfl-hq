@@ -1412,3 +1412,17 @@ identity colors remain explicit. No theme entries or retired crest accents were
 added. `pnpm themes` and `pnpm check` pass. Browser fixtures block production
 writes. Physical device frame pacing and screen readers remain unverified.
 Evidence: [trade-editing-polish-1509.md](docs/trade-editing-polish-1509.md).
+
+# 1.510.0 — Clubhouse game and replay viewing
+
+Reviewed pinned NFL cards, unified sticky game/view controls, full play headlines,
+side-by-side fantasy stats, scoped player cards and the replay Back flow in both
+Light/Dark at 320/390px. Text contrast, 44px controls, 200% root text, focused
+returns, native gestures, live updates, failures, cached/pending views and motion
+preferences pass the browser reviews. All new text, surfaces, borders and the
+sliding indicator use shared theme tokens. Existing NFL/team identities and
+semantic score/status colors remain meaningful. No new theme entries or retired
+crest accents were added. `pnpm themes` and `pnpm check` pass. Real-data reviews
+were read-only; video checks used isolated clips. Physical device frame timing
+and screen-reader announcements remain unverified. Evidence:
+[clubhouse-viewing-1510.md](docs/clubhouse-viewing-1510.md).
