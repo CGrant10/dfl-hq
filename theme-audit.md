@@ -1483,3 +1483,17 @@ accents were added. `pnpm themes`, `pnpm check` and final type/name/build checks
 pass. Real league checks are read-only; replay media and trade actions use
 isolated fixtures. Physical phone frame pacing, decoder behavior and screen-reader
 speech remain unverified. Evidence: [connected-motion-1514.md](docs/connected-motion-1514.md).
+
+# 1.515.0 — Home compact scoreboard finish
+
+Reviewed the flush compact score surface, matching expanded total type, framed
+chosen photos/initials, full names, actual-leader accent and neutral forecast/tie/
+unknown states in Light/Dark at 320/390/768px. Text contrast, 200% root text with
+two team rows, native/fallback handoffs, live updates, click/focus return and
+motion preferences pass the browser checks. New surfaces, edge, shadow, icon,
+text and leading-score ink use shared theme tokens; member-photo identity stays
+unchanged. No theme entries or retired crest colors were added. `pnpm themes`,
+`pnpm check` and final type/name/build checks pass. Real-data reviews are read-only;
+visual state checks use isolated fixtures. Physical phone frame pacing and
+screen-reader speech remain unverified. Evidence:
+[scoreboard-finish-1515.md](docs/scoreboard-finish-1515.md).

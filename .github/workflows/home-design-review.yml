@@ -139,6 +139,7 @@ on:
       - 'js/matchup-momentum*'
       - 'css/matchup-momentum.css'
       - 'tools/capture-matchup-momentum.py'
+      - 'tools/capture-scoreboard-finish.py'
       - 'supabase/migrations/*gameday_score_history*'
       - 'supabase/tests/gameday_score_history.sql'
       - 'js/matchup-highlights*'
@@ -496,6 +497,17 @@ jobs:
         run: |
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           python tools/capture-connected-polish.py
+      - name: Render the isolated scoreboard fixture
+        env:
+          DFL_REVIEW_DIR: ${{ github.workspace }}/scoreboard-fixture
+        run: node tools/render-home-review.mjs
+      - name: Check compact scoreboard finish and score states
+        env:
+          DFL_REVIEW_DIR: ${{ github.workspace }}/scoreboard-fixture
+          DFL_DOCK_REVIEW_DIR: connected-polish-output/scoreboard
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          python tools/capture-scoreboard-finish.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
