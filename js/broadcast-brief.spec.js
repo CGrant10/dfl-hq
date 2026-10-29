@@ -17,6 +17,10 @@ describe('wide broadcast previews',()=>{
   const html=renderBroadcastBrief({kind:'league-story',headline:'Keep the receipt.',figure:'131.22',sides:[{name:'North',score:'131.22'},{name:'South',score:'0.00'}]});
   expect(html.match(/131\.22/g)).toHaveLength(1);expect(html).toContain('<b>0.00</b>');expect(html).toContain('North');expect(html).toContain('South');
  });
+ it('gives an archive metric a distinct heading rather than repeating its figure',()=>{
+  const html=renderBroadcastBrief({kind:'record',storyKind:'blowout',headline:'108.38-point beating',figure:108.38,subtitle:'North 202.76 – 94.38 South',href:'#/history?season=2025'});
+  expect(html.match(/108\.38/g)).toHaveLength(1);expect(html).toContain('Biggest beating');expect(html).toContain('North 202.76 – 94.38 South');expect(html).toContain('href="#/history?season=2025"');
+ });
  it('labels only a known final football margin, including a real zero score',()=>{
   const item={kind:'league-story',temporal:'final',sides:[{name:'North',score:'0.26',up:true},{name:'South',score:'0.00'}],href:'#/clubhouse?week=7'};
   expect(renderBroadcastBrief(item)).toContain('<b>0.26</b> pt margin');

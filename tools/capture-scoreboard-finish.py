@@ -30,6 +30,8 @@ with sync_playwright() as p:
    check(tag+' scores retain exact values and the known leader',dock.locator('[data-dock-score]').all_text_contents()==['100.25','94.10'] and dock.get_attribute('data-leader')=='left' and dock.locator('[data-dock-score]').evaluate_all('ns=>getComputedStyle(ns[0]).color!==getComputedStyle(ns[1]).color'))
    check(tag+' full names, framed photos and score columns fit',dock.evaluate('''e=>{const names=[...e.querySelectorAll('[data-dock-name]')],scores=[...e.querySelectorAll('[data-dock-score]')].map(n=>n.getBoundingClientRect());return names.every(n=>n.scrollWidth<=n.clientWidth+1&&n.scrollHeight<=n.clientHeight+1)&&Math.abs(scores[0].top-scores[1].top)<1&&e.getBoundingClientRect().left>=0&&e.getBoundingClientRect().right<=innerWidth+1}'''))
    check(tag+' readable text contrast',page.evaluate('''async()=>!(await import('/tools/home-review-contrast.js')).reviewTextContrast(document.querySelector('.home-score-dock')).failures.length'''))
+   if width<700:
+    check(tag+' compact scoreboard leaves room for the page',dock.evaluate('(e,max)=>e.offsetHeight>=44&&e.offsetHeight<=max',72 if width==320 else 64))
    dock.screenshot(path=str(OUT/f'{mode}-{width}-dock.png'))
    if width==390:page.screenshot(path=str(OUT/f'{mode}-390-context.png'))
    page.evaluate("values[1].textContent='110.05'");page.wait_for_function('document.querySelector(".home-score-dock").dataset.leader==="right"');check(tag+' a score correction can change the highlighted side',dock.locator('[data-dock-score]').nth(1).inner_text()=='110.05')

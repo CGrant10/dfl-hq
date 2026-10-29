@@ -68,8 +68,8 @@ html[data-ui-motion="off"] #more * { transition:none!important; }
 /* A header folds into a small reference without changing document height. */
 #view > .dfl-scroll-context {
   position:fixed; z-index:18; display:grid; grid-template-columns:minmax(0,1fr) auto 20px;
-  align-items:center; gap:6px 10px; box-sizing:border-box; min-height:48px; margin:0;
-  padding:8px 12px; border:1px solid var(--line); border-radius:0 0 8px 8px;
+  align-items:center; gap:4px 10px; box-sizing:border-box; min-height:44px; margin:0;
+  padding:6px 12px; border:1px solid var(--line); border-radius:0 0 8px 8px;
   color:var(--text); background:var(--bg); text-align:left; text-transform:none;
   letter-spacing:0; box-shadow:0 5px 12px rgb(0 0 0 / .08); cursor:pointer; overflow:hidden;
 }

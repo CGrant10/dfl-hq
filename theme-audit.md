@@ -1497,3 +1497,18 @@ unchanged. No theme entries or retired crest colors were added. `pnpm themes`,
 visual state checks use isolated fixtures. Physical phone frame pacing and
 screen-reader speech remain unverified. Evidence:
 [scoreboard-finish-1515.md](docs/scoreboard-finish-1515.md).
+
+# 1.516.0 — Broadcast finish and smaller scroll surfaces
+
+Reviewed shorter broadcast frames, champion/Chip Eater illustrations, three-way
+trade previews, confirmed results, numeric/rivalry/news/injury/scout layouts and
+compact scroll context in Light/Dark at 320/390/768px. 125%/200% text reflows;
+full names, separate copy/art, stable rotation height, text contrast and 44px
+controls pass. The real-data mobile scoreboard is 56px with exact Projected
+labeling and original totals; score/name updates and native/fallback handoffs
+pass. New panel, label, border and score styling uses shared theme tokens.
+Scout art clears inherited NFL-colored image plates. No palette entries or
+retired crest accents were added. `pnpm themes`, `pnpm check` and final build
+pass. Screenshots were inspected; data checks block production mutations.
+Physical phone frame pacing and screen-reader speech remain unverified.
+Evidence: [broadcast-finish-1516.md](docs/broadcast-finish-1516.md).
