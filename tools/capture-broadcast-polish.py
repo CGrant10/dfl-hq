@@ -61,7 +61,7 @@ with sync_playwright() as p:
   stage=page.locator('[data-bx-stage]');stage.scroll_into_view_if_needed();page.wait_for_timeout(450)
   # The outgoing award can remain for the 600ms transition backstop.
   # Measure the active slide, just as the wide gallery does.
-  assert stage.locator('.bx-brief-award:not(.bx-leaving)').evaluate('''e=>{const a=e.querySelector('h2').getBoundingClientRect(),b=e.querySelector('.bx-brief-art').getBoundingClientRect(),f=e.querySelector('.bx-brief-action').getBoundingClientRect(),r=e.getBoundingClientRect();return a.right<=b.left+1&&f.bottom<=r.bottom+1&&e.querySelector('h2').scrollWidth<=e.querySelector('h2').clientWidth+1}''')
+  assert stage.locator('.bx-brief-award:not(.bx-leaving)').evaluate('''e=>{const a=e.querySelector('h2').getBoundingClientRect(),b=e.querySelector('.bx-brief-art').getBoundingClientRect(),f=e.querySelector('.bx-brief-action').getBoundingClientRect(),r=e.getBoundingClientRect();return (a.right<=b.left+1||a.bottom<=b.top+1)&&b.bottom<=r.bottom+1&&f.bottom<=r.bottom+1&&e.querySelector('h2').scrollWidth<=e.querySelector('h2').clientWidth+1}''')
   stage.screenshot(path=str(OUT/f'large-text-award-{mode}.png'))
   page.evaluate("document.documentElement.style.fontSize=''")
   # Motion off also disables the new reveal and progress; keyboard still works.

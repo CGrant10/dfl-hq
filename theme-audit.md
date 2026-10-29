@@ -1426,3 +1426,15 @@ crest accents were added. `pnpm themes` and `pnpm check` pass. Real-data reviews
 were read-only; video checks used isolated clips. Physical device frame timing
 and screen-reader announcements remain unverified. Evidence:
 [clubhouse-viewing-1510.md](docs/clubhouse-viewing-1510.md).
+
+# 1.511.0 — Home broadcast compositions
+
+Reviewed wide awards, three-team trades, matchup results, rivalries, news, scout,
+archive and numeric stories in Light/Dark at 320/390/768px. Contrast, 44px
+transport controls, artwork separation, long names, keyboard focus, 125%/200%
+text, Motion off and reduced motion pass. New surfaces, borders, category marks,
+copy and award washes use shared theme tokens; meaningful player identities and
+injury status remain semantic. No theme entries or retired crest colors were
+added. `pnpm themes`, `pnpm check` and the final type/name/build checks pass.
+Fixtures block external writes. Physical phone frame timing and screen readers
+remain unverified. Evidence: [broadcast-presentation-1511.md](docs/broadcast-presentation-1511.md).

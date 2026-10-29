@@ -30,4 +30,14 @@ describe('wide broadcast previews',()=>{
   expect(html).toContain('<b>78%</b> group balance');expect(html).toContain('href="#/trade?tx=exact"');
   expect(renderBroadcastBrief({...item,figure:null})).not.toContain('group balance');
  });
+ it('uses the actual rivalry headline and accessible series rather than a generic heading',()=>{
+  const html=renderBroadcastBrief({storyKind:'rivalry',headline:'The rematch',storyNames:['North','South'],storySeries:'7–5',href:'#/history'});
+  expect(html).toContain('The rematch');expect(html).not.toContain('The rivalry');expect(html).toContain('aria-label="Series 7–5"');
+ });
+ it('makes a larger trade explicit and preserves every route in its accessible summary',()=>{
+  const packages=['North','South','East','West'].map(teamName=>({teamName,players:[{name:teamName+' player'}]}));
+  const html=renderBroadcastBrief({kind:'trade',tradeStory:{packages},href:'#/trade?tx=four'});
+  expect(html).toContain('4-team trade');expect(html).toContain('West sends West player');expect(html.match(/class="bx-brief-package"/g)).toHaveLength(3);
+ });
+
 });
