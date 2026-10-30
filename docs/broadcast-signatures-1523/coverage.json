@@ -1,0 +1,46 @@
+{
+  "normalLayouts": 90,
+  "enlargedLayouts": 56,
+  "allWithin": true,
+  "allArtSeparate": true,
+  "widths": [
+    320,
+    390,
+    768
+  ],
+  "themes": [
+    "dark",
+    "light"
+  ],
+  "onePass": true,
+  "manualReplay": true,
+  "reducedMotion": true,
+  "motionOff": true,
+  "offscreenPause": true,
+  "noEntranceReplayOnReturn": true,
+  "visibleBeforeAutoplayGate": true,
+  "directSwipeDoesNotReplayChildEntrance": true,
+  "errors": [],
+  "firstRead": [
+    {
+      "mode": "dark",
+      "belowFold": true,
+      "fullDwell": true,
+      "resume": true,
+      "manualChoiceKept": true,
+      "shortViewport": true,
+      "reducedMotion": true,
+      "cleanup": true
+    },
+    {
+      "mode": "light",
+      "belowFold": true,
+      "fullDwell": true,
+      "resume": true,
+      "manualChoiceKept": true,
+      "shortViewport": true,
+      "reducedMotion": true,
+      "cleanup": true
+    }
+  ]
+}

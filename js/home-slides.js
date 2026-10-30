@@ -80,7 +80,7 @@ export function tradeAlertSlide(alert) {
     figure: alert.fairness == null ? null : `${alert.fairness}%`,
     headline: call,
     occurredAt: alert.occurredAt,
-    tradeStory: { packages: alert.packages || [], outcome: alert.outcome || null,balanceLabel:alert.balanceLabel },
+    tradeStory: { packages: alert.packages || [], receivedPackages:alert.receivedPackages||null, outcome: alert.outcome || null,balanceLabel:alert.balanceLabel },
     subtitle: delta ? `${reason} ${delta.teamName} ${signed(delta.weekly)}/wk.` : reason,
     href: alert.href || "#/trade",
   };

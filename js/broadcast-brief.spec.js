@@ -31,7 +31,7 @@ describe('wide broadcast previews',()=>{
  it('keeps the sourced transaction balance and label beside the exact receipt action',()=>{
   const item={kind:'trade',figure:'78%',href:'#/trade?tx=exact',tradeStory:{balanceLabel:'group balance',packages:[{teamName:'North',players:[]},{teamName:'South',players:[]},{teamName:'West',players:[]}]}};
   const html=renderBroadcastBrief(item);
-  expect(html).toContain('<b>78%</b> group balance');expect(html).toContain('href="#/trade?tx=exact"');
+  expect(html).toContain('<b>78%</b><small>group balance</small>');expect(html).toContain('--bx-balance:78%');expect(html).toContain('href="#/trade?tx=exact"');
   expect(renderBroadcastBrief({...item,figure:null})).not.toContain('group balance');
  });
  it('uses the actual rivalry headline and accessible series rather than a generic heading',()=>{
@@ -42,6 +42,31 @@ describe('wide broadcast previews',()=>{
   const packages=['North','South','East','West'].map(teamName=>({teamName,players:[{name:teamName+' player'}]}));
   const html=renderBroadcastBrief({kind:'trade',tradeStory:{packages},href:'#/trade?tx=four'});
   expect(html).toContain('4-team trade');expect(html).toContain('West sends West player');expect(html.match(/class="bx-brief-package"/g)).toHaveLength(3);
+ });
+
+ it('matches routed incoming players to their actual roster in a reordered three-team receipt',()=>{
+  const packages=[{rosterId:'1',teamName:'North',players:[{name:'A'}]},{rosterId:'2',teamName:'South',players:[{name:'B'}]},{rosterId:'3',teamName:'West',players:[{name:'C'}]}];
+  const receivedPackages=[{rosterId:3,players:[{name:'A'}]},{rosterId:1,players:[{name:'B'},{name:'C'}]},{rosterId:2,players:[]}];
+  const html=renderBroadcastBrief({kind:'trade',tradeStory:{packages,receivedPackages}});
+  expect(html).toMatch(/North<\/span> <em>gets<\/em><\/small>.*?<strong>B <span>\+1<\/span>/);
+  expect(html).toMatch(/South<\/span> <em>gets<\/em><\/small>.*?<strong>Trade package/);
+  expect(html).toMatch(/West<\/span> <em>gets<\/em><\/small>.*?<strong>A/);
+  expect(html).toContain('North sends A. South sends B. West sends C');
+  expect(html).toContain('North gets B, C. South gets no players. West gets A');
+ });
+
+ it('keeps a sending preview when incoming routes are partial or ambiguous',()=>{
+  const packages=[{rosterId:'1',teamName:'North',players:[{name:'A'}]},{rosterId:'2',teamName:'South',players:[{name:'B'}]}];
+  for(const receivedPackages of [null,[],[{rosterId:'1',players:[]}],[{rosterId:'1',players:[]},{rosterId:'1',players:[]}]]){
+   const html=renderBroadcastBrief({kind:'trade',tradeStory:{packages,receivedPackages}});
+   expect(html).toContain('North</span> <em>sends</em>');expect(html).toContain('<strong>A</strong>');expect(html).not.toContain('<em>gets</em>');
+  }
+ });
+
+ it('does not fabricate a balance meter when the receipt has no usable percentage',()=>{
+  const tradeStory={packages:[{teamName:'North',players:[]},{teamName:'South',players:[]}]};
+  for(const figure of [null,undefined,'',NaN,'Not rated',120,-1])expect(renderBroadcastBrief({kind:'trade',tradeStory,figure})).not.toContain('class="bx-brief-balance-track"');
+  expect(renderBroadcastBrief({kind:'trade',tradeStory,figure:0})).toContain('--bx-balance:0%');
  });
 
 });
