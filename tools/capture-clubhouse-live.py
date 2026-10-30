@@ -122,8 +122,8 @@ with sync_playwright() as p:
    page.locator('[data-home-reel-game]').select_option('');page.locator('[data-home-reel-search]').fill('Metcalf');check(tag+' grid search finds the requested player',page.locator('[data-home-reel-clip]').count()==1);page.locator('[data-home-reel-search]').fill('')
    page.locator('[data-clubhouse-nfl-open="plays"]').click();page.wait_for_selector('[data-nfl-center-game] option[value="401873011"]',state='attached');page.wait_for_selector('.nfl-center-plays li',timeout=15000)
    check(tag+' NFL game center shows the full play-by-play',page.locator('.nfl-center-plays li').count()>100)
-   page.locator('[data-nfl-center-filter]').select_option('big');check(tag+' big plays show full names and a clear larger result',page.locator('.nfl-center-plays [data-play-kind="big-play"]').count()>0 and page.locator('.nfl-center-plays [data-play-kind="big-play"] h4').evaluate_all('es=>es.every(e=>parseFloat(getComputedStyle(e).fontSize)>=17)'))
-   play=page.locator('.nfl-center-plays [data-play-kind="big-play"]').first;check(tag+' full play descriptions stay collapsed until tapped',not play.locator('details').evaluate('e=>e.open'));play.locator('summary').click();check(tag+' full NFL description remains available',play.locator('details p').is_visible());play.locator('summary').click()
+   page.locator('[data-nfl-center-filter]').select_option('big');check(tag+' big plays show full names and a compact emphasized result',page.locator('.nfl-center-plays [data-play-kind="big-play"]').count()>0 and page.locator('.nfl-center-plays [data-play-kind="big-play"] .nfl-play-result').evaluate_all('es=>es.every(e=>parseFloat(getComputedStyle(e).fontSize)===16)'))
+   play=page.locator('.nfl-center-plays [data-play-kind="big-play"]').first;check(tag+' full NFL descriptions are always visible',play.locator('.nfl-play-details>p').is_visible() and page.locator('.nfl-center-plays details,.nfl-center-plays summary').count()==0)
    page.screenshot(path=str(OUT/f'{width}-{mode}-nfl-big-plays.png'))
    page.locator('[data-nfl-center-filter]').select_option('scoring');check(tag+' NFL scoring filter is precise',page.locator('.nfl-center-plays li').count()>2 and page.locator('.nfl-center-plays li').count()<20)
    page.locator('[data-clubhouse-nfl-open="fantasy"]').click();check(tag+' fantasy overview identifies your players and league scoring',page.locator('[data-nfl-your-player]').count()>0 and 'League' in page.locator('.nfl-center-fantasy').inner_text())
@@ -154,9 +154,9 @@ with sync_playwright() as p:
    page.locator('[data-nfl-center-game]').select_option('401873011');page.locator('[data-nfl-center-mode="plays"]').click();page.wait_for_selector('.nfl-center-plays li[id]')
    check(tag+' returning to an NFL game restores its chosen filter',page.locator('[data-nfl-center-filter]').input_value()=='scoring')
    page.locator('[data-nfl-center-filter]').select_option('all')
-   reading=page.locator('.nfl-center-plays li[id]').nth(12);reading.evaluate('e=>e.scrollIntoView({block:"center"})');reading.locator('summary').click();reading_id=reading.get_attribute('id');reading_top=reading.bounding_box()['y']
+   reading=page.locator('.nfl-center-plays li[id]').nth(12);reading.evaluate('e=>e.scrollIntoView({block:"center"})');reading_id=reading.get_attribute('id');reading_top=reading.bounding_box()['y']
    page.locator('[data-nfl-center-mode="fantasy"]').click();page.wait_for_selector('.nfl-fantasy-player');page.locator('[data-nfl-center-mode="plays"]').click()
-   check(tag+' play and fantasy switching restores the exact reading row',abs(page.locator('#'+reading_id).bounding_box()['y']-reading_top)<3 and page.locator('#'+reading_id+' details').evaluate('e=>e.open'))
+   check(tag+' play and fantasy switching restores the exact reading row',abs(page.locator('#'+reading_id).bounding_box()['y']-reading_top)<3 and page.locator('#'+reading_id+' .nfl-play-details>p').is_visible())
    page.locator('[data-nfl-center-clip]').first.evaluate('e=>e.scrollIntoView({block:"center"})');page.wait_for_timeout(60)
    source=page.locator('[data-nfl-center-clip]').first;source.evaluate('e=>e.addEventListener("click",()=>f.clipSourceTop=e.getBoundingClientRect().top,{once:true,capture:true})');source.click();page.wait_for_function('document.querySelector(".home-reel-player")?.open')
    check(tag+' watching a play keeps the NFL game selected underneath',page.locator('#clubhouse-tab-nfl').get_attribute('aria-selected')=='true' and page.locator('[data-reel-close]').get_attribute('aria-label')=='Back to game')

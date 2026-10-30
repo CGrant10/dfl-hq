@@ -11,13 +11,12 @@ import {animateUi} from './ui-motion.js';
 import {loadWeeklyStats} from './sleeper.js';
 import {teamLogoUrl} from './nfl-teams.js';
 let serial=0;
-const chevron='<svg class="nfl-play-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 8 4 4 4-4"/></svg>';
 function scoreMarkup(observed,hidden){
  return `<header class="nfl-center-score"${hidden?' hidden':''}>${(observed.sides||[]).map((side,index)=>`${index===1?`<small>${esc(observed.status)}</small>`:''}<span><img src="${esc(teamLogoUrl(side.code))}" alt="" width="28" height="28" decoding="async" onerror="this.hidden=true"><strong>${esc(side.code)}</strong><b>${esc(side.score??'—')}</b></span>`).join('')}</header>`;
 }
 function playMarkup(p,{uid,teams,clip,view,focused}){
  const score=!p.voided&&p.score&&p.away!=null&&p.home!=null?`<small class="nfl-play-score">${esc(teams[0]?.code)} ${p.away} – ${p.home} ${esc(teams[1]?.code)}</small>`:'';
- return `<li id="${uid}-play-${p.id}" data-play-kind="${view.kind}"${p.voided?' data-play-voided':''}${focused?' data-nfl-focused-play':''}><div class="nfl-play-meta"><small><span>${p.period?`${p.period>4?'OT':'Q'+p.period}`:''}</span><b>${esc(p.clock)}</b></small></div><div class="nfl-play-content">${(view.kind!=='play'||p.voided)&&view.headline!==view.label?`<b class="nfl-play-tag">${esc(view.label)}</b>`:''}<details class="nfl-play-details"><summary><h4><span class="nfl-play-headline">${esc(view.headline)}</span>${view.result&&!p.voided?`<span class="nfl-play-result">${esc(view.result)}</span>`:''}${score}${chevron}</h4></summary><p>${esc(p.text)}</p></details>${clip?`<div class="nfl-play-actions"><button type="button" class="linkbtn" data-nfl-center-clip="${clip.id}"><span aria-hidden="true">▶</span> Watch clip</button></div>`:''}</div></li>`;
+ return `<li id="${uid}-play-${p.id}" data-play-kind="${view.kind}"${p.voided?' data-play-voided':''}${focused?' data-nfl-focused-play':''}><div class="nfl-play-meta"><small><span>${p.period?`${p.period>4?'OT':'Q'+p.period}`:''}</span><b>${esc(p.clock)}</b></small></div><div class="nfl-play-content">${(view.kind!=='play'||p.voided)&&view.headline!==view.label?`<b class="nfl-play-tag">${esc(view.label)}</b>`:''}<div class="nfl-play-details"><h4><span class="nfl-play-headline">${esc(view.headline)}</span>${view.result&&!p.voided&&['touchdown','big-play'].includes(view.kind)?`<span class="nfl-play-result">${esc(view.result)}</span>`:''}${score}</h4><p>${esc(p.text)}</p></div>${clip?`<div class="nfl-play-actions"><button type="button" class="linkbtn" data-nfl-center-clip="${clip.id}"><span aria-hidden="true">▶</span> Watch clip</button></div>`:''}</div></li>`;
 }
 export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,getClips=()=>[],onClip=(_id,_source=null)=>{},loadBoard=loadNflGameDay,loadSummary=loadNflGameSummary,loadStats=loadWeeklyStats,initialGame='',initialPlay='',embedded=false,initialMode='plays',onGameChange=(_id)=>{},onBoard=(_payload,_selected)=>{},watchOthers=()=>false,liveOthers=()=>false}={}){
  const memoryKey=embedded?'nfl-replay':'nfl-center',saved=readJourneyChoice(root,memoryKey);
@@ -39,12 +38,11 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
  const saveReading=()=>{
   if(!summary||!root.getClientRects().length)return;
   const boundary=edge(),row=[...root.querySelectorAll(rowSelector())].find(n=>n.getBoundingClientRect().bottom>boundary);
-  readings.set(viewKey(),{id:row?.id,offset:row?row.getBoundingClientRect().top-boundary:0,scroll:scroller.scrollTop,open:[...root.querySelectorAll('.nfl-center-plays li[id]:has(details[open])')].map(n=>n.id)});
+  readings.set(viewKey(),{id:row?.id,offset:row?row.getBoundingClientRect().top-boundary:0,scroll:scroller.scrollTop});
  };
  const restoreReading=()=>{
   if(!pendingReading||!summary)return false;
   const saved=readings.get(viewKey()),row=saved?.id?root.querySelector('#'+CSS.escape(saved.id)):null;
-  for(const id of saved?.open||[]){const details=root.querySelector('#'+CSS.escape(id)+' details');if(details)details.open=true;}
   if(row)scroller.scrollTop+=row.getBoundingClientRect().top-edge()-saved.offset;
   else if(saved)scroller.scrollTop=saved.scroll;
   else {const body=root.querySelector('[data-nfl-center-body]');if(body)scroller.scrollTop+=body.getBoundingClientRect().top-edge();}
