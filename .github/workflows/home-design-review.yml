@@ -639,6 +639,13 @@ jobs:
         run: |
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           python tools/capture-clubhouse-live.py
+      - name: Check all Clubhouse tabs and content at phone widths and larger text
+        env:
+          DFL_CLUBHOUSE_LAYOUT_ONLY: '1'
+          DFL_CLUBHOUSE_LIVE_REVIEW_DIR: interface-review-output/clubhouse-layout
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          python tools/capture-clubhouse-live.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

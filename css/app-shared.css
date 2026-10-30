@@ -8129,3 +8129,72 @@ html[data-readability="comfortable"] #view.view[data-route="clubhouse"] .clubhou
 }
 @media(max-width:360px) { #view.view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid article { grid-template-columns:minmax(0,1fr); } }
 @media(min-width:700px) { #view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player .dfl-player-copy :is(strong,.player-card-trigger) { font-size:var(--ui-row); } }
+
+/* Clubhouse has six real destinations. Reflow their navigation instead of
+   clipping the final labels inside a horizontal tab rail. The containment
+   belongs to this shell only, leaving sticky scores and media unaffected. */
+#view.view[data-route="clubhouse"] .clubhouse-command-center,
+#view.view[data-route="clubhouse"] .clubhouse-command-center [role="tabpanel"] { min-width:0; max-width:100%; }
+.clubhouse-tab-shell { min-width:0; width:100%; container:clubhouse-tabs / inline-size; }
+#view.view[data-route="clubhouse"] .clubhouse-context { container:clubhouse-pickers / inline-size; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-toolbar { container:clubhouse-tools / inline-size; flex-wrap:wrap; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-tabs {
+ display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:0;
+ width:100%; min-width:0; overflow:visible;
+}
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-tabs>button {
+ min-width:0; min-height:44px; padding:10px 2px; white-space:normal;
+ letter-spacing:-.01em; overflow-wrap:normal;
+}
+@container clubhouse-tabs (max-width:21rem) {
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-tabs { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@container clubhouse-tabs (max-width:12rem) {
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-tabs { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@container clubhouse-pickers (max-width:17.5rem) {
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-week-picker { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-archive-action { grid-column:1/-1; justify-self:start; }
+}
+@container clubhouse-pickers (max-width:12rem) {
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-week-picker { grid-template-columns:minmax(0,1fr); }
+}
+@container clubhouse-tools (max-width:17.5rem) {
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-toolbar [data-matchup-freshness] { flex-basis:100%; }
+}
+@media(max-width:600px) {
+ html[data-readability="comfortable"] #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-tabs { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+
+/* Shared matchup reference: quiet state, team mark/name, exact tabular score.
+   Home's scroll-flight geometry stays owned by its existing controller. */
+#view [data-ui-score-strip] { --score-mark:22px; --score-number:1.375rem; background:var(--bg); color:var(--text); }
+#view [data-ui-score-strip] :is([data-dock-name],.clubhouse-strip-team>strong) { color:var(--text); font:600 var(--ui-meta,.6875rem)/1.3 var(--font-ui); overflow-wrap:break-word; }
+#view [data-ui-score-strip] :is([data-dock-score],.clubhouse-strip-team>b) { font-family:var(--font-sport); font-variant-numeric:tabular-nums; letter-spacing:-.015em; }
+#view.view[data-route="clubhouse"] .clubhouse-score-strip { container:clubhouse-score / inline-size; padding:8px 0; border-color:var(--line-soft); }
+#view.view[data-route="clubhouse"] .clubhouse-strip-phase { margin-bottom:6px; font:500 var(--ui-label)/1.4 var(--font-ui); }
+#view.view[data-route="clubhouse"] .clubhouse-strip-teams { gap:12px; }
+#view.view[data-route="clubhouse"] .clubhouse-strip-team { grid-template-columns:var(--score-mark) minmax(0,1fr) auto; gap:6px; align-items:center; }
+#view.view[data-route="clubhouse"] .clubhouse-strip-team>.dfl-team-mark { grid-column:1; grid-row:1; width:var(--score-mark); height:var(--score-mark); border-radius:5px; }
+#view.view[data-route="clubhouse"] .clubhouse-strip-team>strong { grid-column:2; grid-row:1; }
+#view.view[data-route="clubhouse"] .clubhouse-strip-team>b { grid-column:3; grid-row:1; font-size:var(--score-number); line-height:1.1; }
+@container clubhouse-score (max-width:17.5rem) {
+ #view.view[data-route="clubhouse"] .clubhouse-strip-teams { grid-template-columns:minmax(0,1fr); gap:8px; }
+}
+
+/* One player identity rhythm in Home leaders, league leaders and lineups.
+   The score remains separate from the name and the entire identity is tappable. */
+#view [data-ui-player-row] { min-width:0; }
+#view [data-ui-player-row] .dfl-player-copy { min-width:0; }
+#view [data-ui-player-row] .dfl-player-copy :is(strong,.player-card-trigger) { font:600 var(--ui-row,.8125rem)/1.35 var(--font-ui); letter-spacing:-.01em; white-space:normal; overflow-wrap:break-word; }
+#view [data-ui-player-row] .dfl-player-copy>small { color:var(--body-text); font:400 var(--ui-meta,.6875rem)/1.4 var(--font-ui); }
+#view [data-ui-player-score] { min-width:0; font-variant-numeric:tabular-nums; }
+#view [data-ui-player-score] :is(b,strong) { font-family:var(--font-sport); font-variant-numeric:tabular-nums; }
+#view.view[data-route="home"] #home-wrap .home-weekly-digest [data-ui-player-row] .dfl-player-portrait,
+#view.view[data-route="clubhouse"] [data-clubhouse-leaders] [data-ui-player-row] .dfl-player-portrait {
+ width:32px; height:36px; min-width:32px; flex-basis:32px; border-radius:6px;
+}
+#view.view[data-route="home"] #home-wrap .home-weekly-digest [data-ui-player-row] .home-outlook-player-main>em strong,
+#view.view[data-route="clubhouse"] [data-clubhouse-leaders] [data-ui-player-score] b { font-size:1.375rem; line-height:1.15; }
+#view.view[data-route="clubhouse"] .gd-compare-player[data-ui-player-row] .dfl-player-copy :is(strong,.player-card-trigger) { font-size:var(--ui-row); }
+#view.view[data-route="clubhouse"] .gd-compare-head strong { font:600 var(--ui-meta)/1.4 var(--font-ui); }

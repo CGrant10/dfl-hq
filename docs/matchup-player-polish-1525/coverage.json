@@ -1,0 +1,34 @@
+{
+  "layoutChecks": 290,
+  "widths": [
+    320,
+    375,
+    390,
+    430,
+    768
+  ],
+  "themes": [
+    "light",
+    "dark"
+  ],
+  "textSizes": [
+    16,
+    20,
+    32
+  ],
+  "readerModes": [
+    "compact",
+    "comfortable"
+  ],
+  "allTabsVisible": true,
+  "markerTracksBothAxes": true,
+  "pickerValuesFit": true,
+  "playerNamesAndScoresSeparate": true,
+  "clubhouseChecks": 252,
+  "weeklyChecks": 347,
+  "dockChecks": 63,
+  "homeLayouts": 24,
+  "homeEnlargedCaptures": 6,
+  "unitTests": 2419,
+  "unitFiles": 293
+}

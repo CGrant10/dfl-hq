@@ -143,7 +143,7 @@ function outlookPlayerRow(player, index) {
     : player.opponent ? ` · vs ${player.opponent}` : "";
   const state = playerLiveState(player);
   const source = player.scoreSource === "actual" ? "Actual pts" : "Projected pts";
-  return `<li${index===0?' class="home-week-featured-player"':''}><b>${index + 1}</b><div class="home-outlook-player-main">${playerIdentity(player, { interactive: true, detail: `${player.nflTeam || "FA"} · ${player.ownerName}${matchup}` })}<em class="is-${player.scoreSource} is-${state.key}"><strong data-live-key="player:${esc(player.id)}" data-live-score="${Number(player.points).toFixed(1)}" data-live-state="${state.key}">${Number(player.points).toFixed(1)}</strong><small><span>${source}</span><span>${state.label}</span></small></em></div></li>`;
+  return `<li data-ui-player-row${index===0?' class="home-week-featured-player"':''}><b>${index + 1}</b><div class="home-outlook-player-main">${playerIdentity(player, { interactive: true, detail: `${player.nflTeam || "FA"} · ${player.ownerName}${matchup}` })}<em data-ui-player-score class="is-${player.scoreSource} is-${state.key}"><strong data-live-key="player:${esc(player.id)}" data-live-score="${Number(player.points).toFixed(1)}" data-live-state="${state.key}">${Number(player.points).toFixed(1)}</strong><small><span>${source}</span><span>${state.label}</span></small></em></div></li>`;
 }
 
 function playerScoreLine(player) {

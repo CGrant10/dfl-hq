@@ -1,0 +1,447 @@
+{
+  "release": "1.525.0",
+  "public": false,
+  "checks": [
+    {
+      "mode": "light",
+      "slide": 0,
+      "type": "bx-slide bx-home-feature is-announcement bx-in",
+      "height": 232,
+      "separate": true,
+      "within": true
+    },
+    {
+      "mode": "light",
+      "slide": 1,
+      "type": "bx-slide bx-brief bx-brief-metric bx-brief-with-art bx-in",
+      "height": 232,
+      "separate": true,
+      "within": true
+    },
+    {
+      "mode": "light",
+      "slide": 2,
+      "type": "bx-slide bx-brief bx-brief-scout bx-brief-with-art bx-in",
+      "height": 232,
+      "separate": true,
+      "within": true
+    },
+    {
+      "mode": "light",
+      "slide": 3,
+      "type": "bx-slide bx-brief bx-brief-award bx-brief-with-art bx-in",
+      "height": 232,
+      "separate": true,
+      "within": true
+    },
+    {
+      "mode": "light",
+      "member": 1,
+      "scores": [
+        "0.00",
+        "18.30"
+      ],
+      "caption": "Week 8 \u00b7 In progress",
+      "leader": "right",
+      "namesMatchSource": true,
+      "exactReturn": true,
+      "dockHeight": 56
+    },
+    {
+      "mode": "dark",
+      "slide": 0,
+      "type": "bx-slide bx-home-feature is-announcement bx-in",
+      "height": 232,
+      "separate": true,
+      "within": true
+    },
+    {
+      "mode": "dark",
+      "slide": 1,
+      "type": "bx-slide bx-brief bx-brief-metric bx-brief-with-art bx-in",
+      "height": 232,
+      "separate": true,
+      "within": true
+    },
+    {
+      "mode": "dark",
+      "slide": 2,
+      "type": "bx-slide bx-brief bx-brief-scout bx-brief-with-art bx-in",
+      "height": 232,
+      "separate": true,
+      "within": true
+    },
+    {
+      "mode": "dark",
+      "slide": 3,
+      "type": "bx-slide bx-brief bx-brief-award bx-brief-with-art bx-in",
+      "height": 232,
+      "separate": true,
+      "within": true
+    },
+    {
+      "mode": "dark",
+      "member": 1,
+      "scores": [
+        "0.00",
+        "18.30"
+      ],
+      "caption": "Week 8 \u00b7 In progress",
+      "leader": "right",
+      "namesMatchSource": true,
+      "exactReturn": true,
+      "dockHeight": 56
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "title": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "tab": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "overflow": false
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 320,
+      "tab": "matchups",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 320,
+      "tab": "highlights",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 320,
+      "tab": "nfl",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 320,
+      "tab": "leaders",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 320,
+      "tab": "overview",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 320,
+      "tab": "recap",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 375,
+      "tab": "matchups",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 375,
+      "tab": "highlights",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 375,
+      "tab": "nfl",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 375,
+      "tab": "leaders",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 375,
+      "tab": "overview",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 375,
+      "tab": "recap",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 390,
+      "tab": "matchups",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 390,
+      "tab": "highlights",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 390,
+      "tab": "nfl",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 390,
+      "tab": "leaders",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 390,
+      "tab": "overview",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 390,
+      "tab": "recap",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 430,
+      "tab": "matchups",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 430,
+      "tab": "highlights",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 430,
+      "tab": "nfl",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 430,
+      "tab": "leaders",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 430,
+      "tab": "overview",
+      "tabsFit": true
+    },
+    {
+      "mode": "light",
+      "screen": "clubhouse",
+      "width": 430,
+      "tab": "recap",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "title": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "tab": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "overflow": false
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 320,
+      "tab": "matchups",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 320,
+      "tab": "highlights",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 320,
+      "tab": "nfl",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 320,
+      "tab": "leaders",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 320,
+      "tab": "overview",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 320,
+      "tab": "recap",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 375,
+      "tab": "matchups",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 375,
+      "tab": "highlights",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 375,
+      "tab": "nfl",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 375,
+      "tab": "leaders",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 375,
+      "tab": "overview",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 375,
+      "tab": "recap",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 390,
+      "tab": "matchups",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 390,
+      "tab": "highlights",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 390,
+      "tab": "nfl",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 390,
+      "tab": "leaders",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 390,
+      "tab": "overview",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 390,
+      "tab": "recap",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 430,
+      "tab": "matchups",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 430,
+      "tab": "highlights",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 430,
+      "tab": "nfl",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 430,
+      "tab": "leaders",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 430,
+      "tab": "overview",
+      "tabsFit": true
+    },
+    {
+      "mode": "dark",
+      "screen": "clubhouse",
+      "width": 430,
+      "tab": "recap",
+      "tabsFit": true
+    }
+  ],
+  "errors": []
+}

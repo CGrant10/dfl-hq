@@ -32,9 +32,11 @@ export function mountClubhousePolish(root,{getMotion=()=>true,active=()=>root.is
   const previous=selection;selection=button.dataset.clubhouseTab;
   // FLIP only the decorative marker. Native tab focus and panels change immediately.
   for(const animation of animations)if(animation.effect?.target===indicator){animation.onfinish=null;animation.cancel();animations.delete(animation)}
+  const top=after.bottom-bar.top+tabs.scrollTop-2;
   indicator.hidden=false;indicator.style.width=`${after.width}px`;indicator.style.left=`${after.left-bar.left+tabs.scrollLeft}px`;
+  indicator.style.bottom='auto';indicator.style.top=`${top}px`;
   if(animate&&previous&&previous!==selection){
-   play(indicator,[{transform:`translateX(${before.left-after.left}px) scaleX(${before.width/after.width})`},{transform:'translateX(0) scaleX(1)'}],{duration:280});
+   play(indicator,[{transform:`translate(${before.left-after.left}px,${before.top-(after.bottom-2)}px) scaleX(${before.width/after.width})`},{transform:'translate(0,0) scaleX(1)'}],{duration:280});
    const panel=root.querySelector('#'+button.getAttribute('aria-controls'));
    const heading=panel?.querySelector('.clubhouse-pulse-heading,.clubhouse-heading');
    if(visible(heading))play(heading,[{opacity:.45},{opacity:1}],{duration:220});

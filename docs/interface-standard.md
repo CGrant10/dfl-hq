@@ -52,6 +52,18 @@ and Anton remain in their sports/illustration roles. No remote font service.
 - Identity rows share the same UI font/weights and quiet metadata; score columns
   keep tabular sports numerals. Home leader/ranking rows and Clubhouse
   matchup/leader/stat rows establish the examples.
+- `data-ui-score-strip`: Home's returning matchup dock and Clubhouse's pinned
+  lineup score reference share team-mark, name and tabular-score roles. The
+  owning scroll controller still manages Home's flight and return behavior.
+- `data-ui-player-row` / `data-ui-player-score`: submitted player rows and Home
+  leaders keep the identity separate from its score. Home/league portraits use
+  a compact 32×36px frame. Full names wrap; score/status keys keep their meaning.
+
+Clubhouse navigation reflows all six destinations inside its own container.
+Normal wider phones use one row; narrower/large-text layouts use two or three
+rows. The existing underline follows both horizontal and vertical selection.
+Pickers and utility controls also reflow at larger text sizes. Avoid concealing
+navigation labels with an overflow clip as a substitute for layout.
 
 Keep the route adapters in `interface-system.css` while migrating old selectors;
 new component declarations should use the shared roles instead of choosing a new

@@ -1,0 +1,1162 @@
+[
+  {
+    "check": "320px light/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/16px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "320px light/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/16px/comfortable keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "320px light/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/20px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "320px light/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px light/32px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "320px light no layout browser errors or writes",
+    "pass": true
+  },
+  {
+    "check": "320px dark/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/16px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "320px dark/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/16px/comfortable keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "320px dark/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/20px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "320px dark/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "320px dark/32px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "320px dark no layout browser errors or writes",
+    "pass": true
+  },
+  {
+    "check": "375px light/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/16px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "375px light/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/16px/comfortable keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "375px light/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/20px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "375px light/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px light/32px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "375px light no layout browser errors or writes",
+    "pass": true
+  },
+  {
+    "check": "375px dark/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/16px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "375px dark/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/16px/comfortable keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "375px dark/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/20px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "375px dark/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "375px dark/32px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "375px dark no layout browser errors or writes",
+    "pass": true
+  },
+  {
+    "check": "390px light/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/16px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "390px light/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/16px/comfortable keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "390px light/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/20px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "390px light/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px light/32px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "390px light no layout browser errors or writes",
+    "pass": true
+  },
+  {
+    "check": "390px dark/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/16px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "390px dark/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/16px/comfortable keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "390px dark/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/20px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "390px dark/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "390px dark/32px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "390px dark no layout browser errors or writes",
+    "pass": true
+  },
+  {
+    "check": "430px light/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/16px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "430px light/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/16px/comfortable keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "430px light/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/20px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "430px light/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px light/32px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "430px light no layout browser errors or writes",
+    "pass": true
+  },
+  {
+    "check": "430px dark/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/16px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "430px dark/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/16px/comfortable keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "430px dark/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/20px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "430px dark/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "430px dark/32px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "430px dark no layout browser errors or writes",
+    "pass": true
+  },
+  {
+    "check": "768px light/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/16px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "768px light/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/16px/comfortable keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "768px light/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/20px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "768px light/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 52, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 52, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 52, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 52, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 52, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 52, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px light/32px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "768px light no layout browser errors or writes",
+    "pass": true
+  },
+  {
+    "check": "768px dark/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/16px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "768px dark/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/16px/comfortable keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "768px dark/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/20px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "768px dark/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 52, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 52, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 52, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 52, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 52, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 736, \"scroll\": 736, \"height\": 52, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "pass": true
+  },
+  {
+    "check": "768px dark/32px/compact keyboard wraps to Matchups",
+    "pass": true
+  },
+  {
+    "check": "768px dark no layout browser errors or writes",
+    "pass": true
+  }
+]
