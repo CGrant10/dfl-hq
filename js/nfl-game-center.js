@@ -100,7 +100,7 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
  const click=event=>{
   const fieldButton=event.target.closest('[data-nfl-field-play]');if(fieldButton){fieldPlay=fieldButton.dataset.nflFieldPlay;fieldKey='';paint();scrollField(root.querySelector('[data-nfl-field]'));return;}
   if(event.target.closest('[data-nfl-field-latest]')){fieldPlay='';paint();scrollField(root.querySelector('[data-nfl-field]'));return;}
-  const fieldReturn=event.target.closest('[data-nfl-field-return]');if(fieldReturn){scrollField(root.querySelector(`[data-nfl-field-play="${CSS.escape(fieldReturn.dataset.nflFieldReturn)}"]`));return;}
+  const fieldReturn=event.target.closest('[data-nfl-field-return]');if(fieldReturn){const selector=`[data-nfl-field-play="${CSS.escape(fieldReturn.dataset.nflFieldReturn)}"]`;if(!root.querySelector(selector)){filter='all';remember();paint();}scrollField(root.querySelector(selector));return;}
 
   if(event.target.closest('[data-nfl-latest]')){pendingPlays.clear();const first=root.querySelector('.nfl-center-plays li[id]');if(first)scroller.scrollTop=Math.max(0,scroller.scrollTop+first.getBoundingClientRect().top-edge()-4);latestNotice();return;}
   const modeButton=event.target.closest('[data-nfl-center-mode]');if(modeButton)changeMode(modeButton.dataset.nflCenterMode);

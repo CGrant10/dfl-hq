@@ -14,7 +14,7 @@ rail and marker, alongside an explicit team code. Text retains shared theme
 colors. Neutral rows are kept when the feed does not identify a team. Full play
 descriptions and the compact type/spacing from 1.519 stay visible. A play with
 verified geometry has a 44px headline button to replay it on the field; Latest
-and Back to play controls preserve access to the live field and source row.
+and Back to play controls preserve access to the live field and source row, restoring All plays if a filter hides it.
 Historical field selection survives updates. Missing locations are not plotted.
 
 The active live refresh cadence is five seconds after each completed cycle. The
@@ -35,11 +35,11 @@ visibility, offline, modal, final-game, non-overlap and teardown protections.
 
 ## Validation
 
-- `pnpm check`: 2,414 tests / 293 files, release/themes/types/names and build.
+- `pnpm check`: 2,415 tests / 293 files, release/themes/types/names and build.
   Final focused tests: 45 / seven files, plus themes/types/names/build. Build
   remains 90 application modules, three startup/four Home and 57 shared CSS
   sheets in one request.
-- 74 field browser checks in Light/Dark at 320/390/768px: field orientation and
+- 75 field browser checks in Light/Dark at 320/390/768px: field orientation and
   numbering, current down/possession, team rails, controls, contrast, 200% text,
   historical return, early/confirmed plays, no duplicate animation, TD/turnover/
   nullified/missing data and motion preferences. CI includes this review.

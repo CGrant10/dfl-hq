@@ -220,6 +220,10 @@
     "pass": true
   },
   {
+    "check": "Back to a filtered-out play restores All plays",
+    "pass": true
+  },
+  {
     "check": "Latest returns to the latest recorded field play",
     "pass": true
   },
