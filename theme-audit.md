@@ -1,3 +1,16 @@
+# Clubhouse matchup fit and Leaders effects — 1.526.0
+
+Reviewed the populated Bayou Bombers / Bastards matchup and Leaders in Light and
+Dark on the compiled app. Every real matchup fits at 320/375/390/430px; the
+previous automatic grid track reproduced the clipped right edge. The zero-minimum
+track contains the matchup while retaining native history scrolling. Leaders
+keeps its existing fire/ice canvas through filters, bench changes, score refreshes
+and tab returns; actual WebGL fire was visually confirmed. Existing theme tokens,
+scoring thresholds and motion preferences remain in use. `pnpm themes` and
+`pnpm check` pass. Layout checks cover Compact/Comfortable and 100/125/200% text.
+Physical iPhone Safari remains unmeasured. Evidence:
+[clubhouse-fit-effects-1526.md](docs/clubhouse-fit-effects-1526.md).
+
 # DFL HQ theme audit — 1.422.0
 
 Reviewed 2026-10-15 using Chromium on the compiled app, with the existing member

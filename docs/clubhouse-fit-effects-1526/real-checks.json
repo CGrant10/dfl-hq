@@ -1,0 +1,349 @@
+{
+  "checks": [
+    {
+      "mode": "light",
+      "viewport": 320,
+      "game": "1",
+      "fit": true,
+      "cardWidth": 288
+    },
+    {
+      "mode": "light",
+      "viewport": 320,
+      "game": "2",
+      "fit": true,
+      "cardWidth": 288
+    },
+    {
+      "mode": "light",
+      "viewport": 320,
+      "game": "3",
+      "fit": true,
+      "cardWidth": 288
+    },
+    {
+      "mode": "light",
+      "viewport": 320,
+      "game": "4",
+      "fit": true,
+      "cardWidth": 288
+    },
+    {
+      "mode": "light",
+      "viewport": 320,
+      "game": "5",
+      "fit": true,
+      "cardWidth": 288
+    },
+    {
+      "mode": "light",
+      "viewport": 320,
+      "game": "6",
+      "fit": true,
+      "cardWidth": 288
+    },
+    {
+      "mode": "light",
+      "viewport": 375,
+      "game": "1",
+      "fit": true,
+      "cardWidth": 343
+    },
+    {
+      "mode": "light",
+      "viewport": 375,
+      "game": "2",
+      "fit": true,
+      "cardWidth": 343
+    },
+    {
+      "mode": "light",
+      "viewport": 375,
+      "game": "3",
+      "fit": true,
+      "cardWidth": 343
+    },
+    {
+      "mode": "light",
+      "viewport": 375,
+      "game": "4",
+      "fit": true,
+      "cardWidth": 343
+    },
+    {
+      "mode": "light",
+      "viewport": 375,
+      "game": "5",
+      "fit": true,
+      "cardWidth": 343
+    },
+    {
+      "mode": "light",
+      "viewport": 375,
+      "game": "6",
+      "fit": true,
+      "cardWidth": 343
+    },
+    {
+      "mode": "light",
+      "viewport": 390,
+      "game": "1",
+      "fit": true,
+      "cardWidth": 358
+    },
+    {
+      "mode": "light",
+      "viewport": 390,
+      "game": "2",
+      "fit": true,
+      "cardWidth": 358
+    },
+    {
+      "mode": "light",
+      "viewport": 390,
+      "game": "3",
+      "fit": true,
+      "cardWidth": 358
+    },
+    {
+      "mode": "light",
+      "viewport": 390,
+      "game": "4",
+      "fit": true,
+      "cardWidth": 358
+    },
+    {
+      "mode": "light",
+      "viewport": 390,
+      "game": "5",
+      "fit": true,
+      "cardWidth": 358
+    },
+    {
+      "mode": "light",
+      "viewport": 390,
+      "game": "6",
+      "fit": true,
+      "cardWidth": 358
+    },
+    {
+      "mode": "light",
+      "viewport": 430,
+      "game": "1",
+      "fit": true,
+      "cardWidth": 398
+    },
+    {
+      "mode": "light",
+      "viewport": 430,
+      "game": "2",
+      "fit": true,
+      "cardWidth": 398
+    },
+    {
+      "mode": "light",
+      "viewport": 430,
+      "game": "3",
+      "fit": true,
+      "cardWidth": 398
+    },
+    {
+      "mode": "light",
+      "viewport": 430,
+      "game": "4",
+      "fit": true,
+      "cardWidth": 398
+    },
+    {
+      "mode": "light",
+      "viewport": 430,
+      "game": "5",
+      "fit": true,
+      "cardWidth": 398
+    },
+    {
+      "mode": "light",
+      "viewport": 430,
+      "game": "6",
+      "fit": true,
+      "cardWidth": 398
+    },
+    {
+      "mode": "light",
+      "leadersSurfacePreserved": true
+    },
+    {
+      "mode": "dark",
+      "viewport": 320,
+      "game": "1",
+      "fit": true,
+      "cardWidth": 288
+    },
+    {
+      "mode": "dark",
+      "viewport": 320,
+      "game": "2",
+      "fit": true,
+      "cardWidth": 288
+    },
+    {
+      "mode": "dark",
+      "viewport": 320,
+      "game": "3",
+      "fit": true,
+      "cardWidth": 288
+    },
+    {
+      "mode": "dark",
+      "viewport": 320,
+      "game": "4",
+      "fit": true,
+      "cardWidth": 288
+    },
+    {
+      "mode": "dark",
+      "viewport": 320,
+      "game": "5",
+      "fit": true,
+      "cardWidth": 288
+    },
+    {
+      "mode": "dark",
+      "viewport": 320,
+      "game": "6",
+      "fit": true,
+      "cardWidth": 288
+    },
+    {
+      "mode": "dark",
+      "viewport": 375,
+      "game": "1",
+      "fit": true,
+      "cardWidth": 343
+    },
+    {
+      "mode": "dark",
+      "viewport": 375,
+      "game": "2",
+      "fit": true,
+      "cardWidth": 343
+    },
+    {
+      "mode": "dark",
+      "viewport": 375,
+      "game": "3",
+      "fit": true,
+      "cardWidth": 343
+    },
+    {
+      "mode": "dark",
+      "viewport": 375,
+      "game": "4",
+      "fit": true,
+      "cardWidth": 343
+    },
+    {
+      "mode": "dark",
+      "viewport": 375,
+      "game": "5",
+      "fit": true,
+      "cardWidth": 343
+    },
+    {
+      "mode": "dark",
+      "viewport": 375,
+      "game": "6",
+      "fit": true,
+      "cardWidth": 343
+    },
+    {
+      "mode": "dark",
+      "viewport": 390,
+      "game": "1",
+      "fit": true,
+      "cardWidth": 358
+    },
+    {
+      "mode": "dark",
+      "viewport": 390,
+      "game": "2",
+      "fit": true,
+      "cardWidth": 358
+    },
+    {
+      "mode": "dark",
+      "viewport": 390,
+      "game": "3",
+      "fit": true,
+      "cardWidth": 358
+    },
+    {
+      "mode": "dark",
+      "viewport": 390,
+      "game": "4",
+      "fit": true,
+      "cardWidth": 358
+    },
+    {
+      "mode": "dark",
+      "viewport": 390,
+      "game": "5",
+      "fit": true,
+      "cardWidth": 358
+    },
+    {
+      "mode": "dark",
+      "viewport": 390,
+      "game": "6",
+      "fit": true,
+      "cardWidth": 358
+    },
+    {
+      "mode": "dark",
+      "viewport": 430,
+      "game": "1",
+      "fit": true,
+      "cardWidth": 398
+    },
+    {
+      "mode": "dark",
+      "viewport": 430,
+      "game": "2",
+      "fit": true,
+      "cardWidth": 398
+    },
+    {
+      "mode": "dark",
+      "viewport": 430,
+      "game": "3",
+      "fit": true,
+      "cardWidth": 398
+    },
+    {
+      "mode": "dark",
+      "viewport": 430,
+      "game": "4",
+      "fit": true,
+      "cardWidth": 398
+    },
+    {
+      "mode": "dark",
+      "viewport": 430,
+      "game": "5",
+      "fit": true,
+      "cardWidth": 398
+    },
+    {
+      "mode": "dark",
+      "viewport": 430,
+      "game": "6",
+      "fit": true,
+      "cardWidth": 398
+    },
+    {
+      "mode": "dark",
+      "leadersSurfacePreserved": true
+    }
+  ],
+  "errors": []
+}

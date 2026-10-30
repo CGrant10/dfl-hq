@@ -75,7 +75,9 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  };
  const paintLeaders=()=>{
   const host=root.querySelector('[data-clubhouse-leaders]');if(!host||root.querySelector('#clubhouse-panel-leaders')?.hidden)return;
-  host.dataset.motion=motion?'on':'off';patchGameDay(host,leaguePanel(model,{filter:leaderFilter,includeBench}));
+  // Reconcile the rows without removing the sibling GPU effects surface.
+  // Filters, score refreshes and returning to this tab all repaint the board.
+  host.dataset.motion=motion?'on':'off';patchGameDay(host.querySelector('[data-clubhouse-leader-board]'),leaguePanel(model,{filter:leaderFilter,includeBench}));
   if(!leaderVfx)leaderVfx=mountScoreVfx(host);else leaderVfx.refresh();
   const nfl=root.querySelector('[data-clubhouse-nfl-scoreboard]');if(nfl)patchGameDay(nfl,model.events.length?`<details class="clubhouse-nfl-scoreboard"><summary>NFL scoreboard · ${model.events.length} games</summary><ul>${model.events.map(event=>`<li><strong>${event.teams.map(team=>esc(team.name)+(team.score==null?'':` ${Number(team.score)}`)).join(' · ')}</strong><span>${esc(event.label||event.state)}</span></li>`).join('')}</ul></details>`:'');
   void details.update();

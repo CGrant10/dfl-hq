@@ -70,6 +70,20 @@ with sync_playwright() as p:
     f.page=await import('/js/pages/clubhouse.js');document.getElementById('view').dataset.pulseSystem='1';document.getElementById('view').dataset.pageSystem='1';await f.page.render(document.getElementById('view'));f.stopPageSwipe=(await import('/js/ui-motion.js')).mountPageSwipeTabs(document.getElementById('view'));(await import('/js/player-card-actions.js')).mountPlayerCards();
    }''',mode)
    tag=f'{width}px {mode}';page.wait_for_selector('.gd-lineup-comparison',timeout=20000)
+   # Recorded histories vary by matchup. Exercise a populated momentum chart
+   # inside the real outer grid, rather than checking the empty fixture alone.
+   page.evaluate('''async()=>{
+    const {momentumMarkup}=await import('/js/matchup-momentum-ui.js'),at=Date.now();
+    const game={id:'layout-stress',sides:[{name:'The Very Long Bayou Bombers',starters:[]},{name:'Bastards of the Realm',starters:[]}]};
+    const choice={key:'score',kind:'score',at,scores:[112.34,138.54]};
+    const view={choice,index:0,start:at-3600000,end:at,points:[choice],paths:[],x:()=>240,y:()=>70,entries:[choice,...['Green Bay Packers','Tucker Kraft','Matthew Golden','Rhamondre Stevenson'].map((name,i)=>({key:'play-'+i,kind:'touchdown',moment:{},player:{name}}))]};
+    const probe=document.createElement('div');probe.className='clubhouse-matchup-list';probe.dataset.layoutProbe='';
+    probe.innerHTML='<section data-clubhouse-matchup="layout-stress"><article class="clubhouse-game clubhouse-matchup-card">'+momentumMarkup(view,game,{season:2026,week:7})+'</article></section>';
+    document.querySelector('.clubhouse-command-center').append(probe);
+   }''')
+   check(tag+' populated matchup history cannot widen its outer grid',page.locator('[data-layout-probe]').evaluate('''e=>[e,...e.querySelectorAll('[data-clubhouse-matchup],.clubhouse-matchup-card,.matchup-momentum,.momentum-plot,.momentum-events')].every(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth})'''))
+   page.locator('[data-layout-probe]').screenshot(path=str(OUT/f'{width}-{mode}-populated-history.png'))
+   page.locator('[data-layout-probe]').evaluate('e=>e.remove()')
    if os.environ.get('DFL_CLUBHOUSE_LAYOUT_ONLY'):
     page.locator('#view').evaluate("e=>e.style.paddingInline='16px'")
     for size,reader in [(16,'compact'),(16,'comfortable'),(20,'compact'),(32,'compact')]:
@@ -80,7 +94,7 @@ with sync_playwright() as p:
        const r=e.getBoundingClientRect(),buttons=[...e.querySelectorAll('button')],selected=e.querySelector('[aria-selected="true"]'),b=selected.getBoundingClientRect(),marker=e.querySelector('.clubhouse-tab-indicator');
        return {width:e.clientWidth,scroll:e.scrollWidth,height:e.clientHeight,allFit:buttons.every(n=>{const a=n.getBoundingClientRect();return a.left>=r.left-1&&a.right<=r.right+1&&a.top>=r.top-1&&a.bottom<=r.bottom+1&&n.scrollWidth<=n.clientWidth+1}),targets:buttons.every(n=>n.getBoundingClientRect().height>=43.5&&n.getBoundingClientRect().width>=43.5),marker:Math.abs(parseFloat(marker.style.top)-(b.bottom-r.top-2))<1&&Math.abs(parseFloat(marker.style.left)-(b.left-r.left))<1};
       }''')
-      bounds=page.locator('.clubhouse-command-center').evaluate('''e=>{const nodes=[e,...e.querySelectorAll('[role="tabpanel"],.clubhouse-section,.gd-compare-head,.gd-compare-row,.clubhouse-score-strip,.nfl-center-fantasy')].filter(n=>n.getClientRects().length);return nodes.every(n=>{const r=n.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1&&n.clientWidth<=innerWidth})}''')
+      bounds=page.locator('.clubhouse-command-center').evaluate('''e=>{const nodes=[e,...e.querySelectorAll('[role="tabpanel"],.clubhouse-section,.clubhouse-matchup-list,[data-clubhouse-matchup],.clubhouse-matchup-card,.gd-compare-head,.gd-compare-row,.clubhouse-score-strip,.nfl-center-fantasy')].filter(n=>n.getClientRects().length);return nodes.every(n=>{const r=n.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1&&n.clientWidth<=innerWidth})}''')
       rows=page.locator('.clubhouse-command-center').evaluate('''e=>{
        const separate=(a,b)=>a.right<=b.left+1||a.left>=b.right-1||a.bottom<=b.top+1||a.top>=b.bottom-1;
        const strips=[...e.querySelectorAll('.clubhouse-strip-team')].filter(n=>n.getClientRects().length);
@@ -217,9 +231,18 @@ with sync_playwright() as p:
    page.screenshot(path=str(OUT/f'{width}-{mode}-replay-large-text.png'));page.evaluate("document.documentElement.style.fontSize=''");page.locator('[data-reel-mode="plays"]').click();page.wait_for_selector('.reel-game-browser [data-nfl-center-clip]')
    page.screenshot(path=str(OUT/f'{width}-{mode}-replay-game-center.png'));page.locator('.reel-game-browser [data-nfl-center-clip]').first.click();check(tag+' watching a play clears the old clip search visibly and starts the exact video',page.locator('[data-reel-search]').input_value()=='' and page.locator('[data-reel-choose][aria-pressed="true"]').get_attribute('data-reel-choose')=='50276663');page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open')
    page.locator('#clubhouse-tab-leaders').click();page.wait_for_selector('.gd-league-board .gameday-player')
+   page.evaluate('f.leaderCanvas=document.querySelector("[data-clubhouse-leaders] .gd-vfx-canvas")')
+   check(tag+' Leaders has its connected fire and ice surface',page.evaluate('!!f.leaderCanvas?.isConnected'))
    check(tag+' Leaders moved into Clubhouse with hot and cold filters',page.locator('[data-league-filter]').count()==3 and page.locator('[data-league-bench]').count()==1)
    page.locator('[data-league-filter="hot"]').click();check(tag+' hot filter returns only hot players',page.locator('.gd-league-board .gameday-player').count()>=1 and page.locator('.gd-league-board [data-score-temperature="cold"]').count()==0)
    page.locator('[data-league-filter="all"]').click();count=page.locator('.gd-league-board .gameday-player').count();page.locator('[data-league-bench]').check();check(tag+' bench checkbox adds bench players',page.locator('.gd-league-board .gameday-player').count()>count)
+   check(tag+' filter and bench changes preserve the same effects surface',page.evaluate('f.leaderCanvas?.isConnected&&f.leaderCanvas===document.querySelector("[data-clubhouse-leaders] .gd-vfx-canvas")&&document.querySelectorAll("[data-clubhouse-leaders] .gd-vfx-canvas").length===1'))
+   f_rows[0]['players_points']['1']=23.5
+   page.locator('[data-matchup-refresh]').evaluate('e=>e.click()')
+   page.wait_for_function('document.querySelector("[data-clubhouse-leaders] [data-gameday-score-key=\\"1:1\\"] .gd-thermal-value")?.textContent==="23.50"')
+   check(tag+' a live score refresh keeps the effects surface connected',page.evaluate('f.leaderCanvas?.isConnected&&f.leaderCanvas===document.querySelector("[data-clubhouse-leaders] .gd-vfx-canvas")'))
+   page.locator('#clubhouse-tab-matchups').click();page.locator('#clubhouse-tab-leaders').click()
+   check(tag+' returning to Leaders preserves fire and ice',page.evaluate('f.leaderCanvas?.isConnected&&f.leaderCanvas===document.querySelector("[data-clubhouse-leaders] .gd-vfx-canvas")'))
    check(tag+' NFL scoreboard is available in Clubhouse',page.locator('.clubhouse-nfl-scoreboard').count()==1)
    page.screenshot(path=str(OUT/f'{width}-{mode}-leaders.png'))
    check(tag+' leader portraits and rows stay compact',page.locator('.gd-league-board .dfl-player-portrait').evaluate_all('es=>es.every(e=>e.getBoundingClientRect().width<=40&&e.getBoundingClientRect().height<=44)') and page.locator('.gd-league-board .gameday-player').evaluate_all('es=>es.every(e=>e.getBoundingClientRect().height<150)'))
@@ -262,7 +285,7 @@ with sync_playwright() as p:
     page.evaluate('f.page.leave()')
     page.evaluate("async()=>{f.week.completed=true;(await import('/js/weekly-clubhouse-data.js')).clearClubhouseBriefCache();location.hash='#/clubhouse?season=2026&week=7&tab=recap';await f.page.render(document.getElementById('view'))}")
     page.wait_for_selector('.personal-postgame .postgame-player-open')
-    check('the actual completed Clubhouse page renders your scored lineup recap', 'Tyler Shough' in page.locator('.personal-postgame').inner_text() and '22.00' in page.locator('.personal-postgame').inner_text())
+    check('the actual completed Clubhouse page renders your updated scored lineup recap', 'Tyler Shough' in page.locator('.personal-postgame').inner_text() and '23.50' in page.locator('.personal-postgame').inner_text())
     page.screenshot(path=str(OUT/'390-dark-personal-final.png'))
     page.evaluate("async()=>{f.page.leave();f.week.completed=false;(await import('/js/weekly-clubhouse-data.js')).clearClubhouseBriefCache()}")
    page.evaluate('''async()=>{location.hash='#/home';const view=document.getElementById('view');view.dataset.route='home';view.innerHTML='<div id="home-wrap"><div class="home-personal-desk"><div data-home-gameday-slot></div><a data-home-primary href="#/analyzer"><span>Review lineup</span></a></div></div>';f.stopPreview=(await import('/js/home-matchup-preview.js')).mountHomeMatchupPreview(view.querySelector('[data-home-gameday-slot]'),{members:f.members,member:f.members[0],active:()=>true})}''')

@@ -8135,6 +8135,10 @@ html[data-readability="comfortable"] #view.view[data-route="clubhouse"] .clubhou
    belongs to this shell only, leaving sticky scores and media unaffected. */
 #view.view[data-route="clubhouse"] .clubhouse-command-center,
 #view.view[data-route="clubhouse"] .clubhouse-command-center [role="tabpanel"] { min-width:0; max-width:100%; }
+/* A matchup's momentum/history content must not set the outer grid's minimum
+   width. Other matchups can fit while one recorded matchup widens this track. */
+#view.view[data-route="clubhouse"] .clubhouse-matchup-list { min-width:0; grid-template-columns:minmax(0,1fr); }
+#view.view[data-route="clubhouse"] [data-clubhouse-matchup] { min-width:0; }
 .clubhouse-tab-shell { min-width:0; width:100%; container:clubhouse-tabs / inline-size; }
 #view.view[data-route="clubhouse"] .clubhouse-context { container:clubhouse-pickers / inline-size; }
 #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-toolbar { container:clubhouse-tools / inline-size; flex-wrap:wrap; }

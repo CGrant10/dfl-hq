@@ -1,0 +1,1058 @@
+[
+  {
+    "check": "320px light populated matchup history cannot widen its outer grid",
+    "pass": true
+  },
+  {
+    "check": "320px light one Clubhouse offers Matchups, Highlights and Leaders",
+    "pass": true
+  },
+  {
+    "check": "320px light every Clubhouse tab is fully visible",
+    "pass": true
+  },
+  {
+    "check": "320px light live matchup keeps both starting lineups side by side",
+    "pass": true
+  },
+  {
+    "check": "320px light hides highlight loading until its tab is opened",
+    "pass": true
+  },
+  {
+    "check": "320px light NFL viewing shortcuts are obvious before the week picker",
+    "pass": true
+  },
+  {
+    "check": "320px light matchup chooser is a compact native horizontal rail",
+    "pass": true
+  },
+  {
+    "check": "320px light native matchup swipes do not switch Clubhouse tabs",
+    "pass": true
+  },
+  {
+    "check": "320px light Your team matches the actual weekly roster",
+    "pass": true
+  },
+  {
+    "check": "320px light personal player chips only offer roster-matched players",
+    "pass": true
+  },
+  {
+    "check": "320px light personal reel plays inside Clubhouse from clip one",
+    "pass": true
+  },
+  {
+    "check": "320px light personal search stays restricted to your team",
+    "pass": true
+  },
+  {
+    "check": "320px light This matchup includes both rosters without other teams",
+    "pass": true
+  },
+  {
+    "check": "320px light League clips stay inside the selected NFL week",
+    "pass": true
+  },
+  {
+    "check": "320px light scope switches reuse the same fresh clip metadata",
+    "pass": true
+  },
+  {
+    "check": "320px light highlights use compact two-column game groups",
+    "pass": true
+  },
+  {
+    "check": "320px light native player browsing swipes forward without changing Clubhouse tabs",
+    "pass": true
+  },
+  {
+    "check": "320px light native player browsing swipes back",
+    "pass": true
+  },
+  {
+    "check": "320px light choosing an NFL game narrows the grid",
+    "pass": true
+  },
+  {
+    "check": "320px light grid search finds the requested player",
+    "pass": true
+  },
+  {
+    "check": "320px light NFL game center shows the full play-by-play",
+    "pass": true
+  },
+  {
+    "check": "320px light big plays show full names and a compact emphasized result",
+    "pass": true
+  },
+  {
+    "check": "320px light full NFL descriptions are always visible",
+    "pass": true
+  },
+  {
+    "check": "320px light NFL scoring filter is precise",
+    "pass": true
+  },
+  {
+    "check": "320px light fantasy overview identifies your players and league scoring",
+    "pass": true
+  },
+  {
+    "check": "320px light stats shortcut brings the loaded heading into view",
+    "pass": true
+  },
+  {
+    "check": "320px light stats shortcut selects the NFL tab and fantasy view",
+    "pass": true
+  },
+  {
+    "check": "320px light NFL teams and player stats sit side by side",
+    "pass": true
+  },
+  {
+    "check": "320px light each stat column contains only its NFL team",
+    "pass": true
+  },
+  {
+    "check": "320px light player names and scores fit their columns",
+    "pass": true
+  },
+  {
+    "check": "320px light NFL controls and side-by-side stats fit at 200% text",
+    "pass": true
+  },
+  {
+    "check": "320px light NFL player cards open the week being viewed",
+    "pass": true
+  },
+  {
+    "check": "320px light player-card close returns to the same NFL stat row",
+    "pass": true
+  },
+  {
+    "check": "320px light NFL controls keep 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "320px light NFL stats, scoring and game controls meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "320px light switching NFL games never leaks the previous game\u2019s stats",
+    "pass": true
+  },
+  {
+    "check": "320px light returning to an NFL game restores its chosen filter",
+    "pass": true
+  },
+  {
+    "check": "320px light play and fantasy switching restores the exact reading row",
+    "pass": true
+  },
+  {
+    "check": "320px light watching a play keeps the NFL game selected underneath",
+    "pass": true
+  },
+  {
+    "check": "320px light Back from a clip restores that exact play and focus",
+    "pass": true
+  },
+  {
+    "check": "320px light a play opens its exact video in the replay studio",
+    "pass": true
+  },
+  {
+    "check": "320px light the video viewer includes the same NFL game center",
+    "pass": true
+  },
+  {
+    "check": "320px light replay uses the same two-column stats without replacing video",
+    "pass": true
+  },
+  {
+    "check": "320px light replay remains usable at 200% text",
+    "pass": true
+  },
+  {
+    "check": "320px light watching a play clears the old clip search visibly and starts the exact video",
+    "pass": true
+  },
+  {
+    "check": "320px light Leaders has its connected fire and ice surface",
+    "pass": true
+  },
+  {
+    "check": "320px light Leaders moved into Clubhouse with hot and cold filters",
+    "pass": true
+  },
+  {
+    "check": "320px light hot filter returns only hot players",
+    "pass": true
+  },
+  {
+    "check": "320px light bench checkbox adds bench players",
+    "pass": true
+  },
+  {
+    "check": "320px light filter and bench changes preserve the same effects surface",
+    "pass": true
+  },
+  {
+    "check": "320px light a live score refresh keeps the effects surface connected",
+    "pass": true
+  },
+  {
+    "check": "320px light returning to Leaders preserves fire and ice",
+    "pass": true
+  },
+  {
+    "check": "320px light NFL scoreboard is available in Clubhouse",
+    "pass": true
+  },
+  {
+    "check": "320px light leader portraits and rows stay compact",
+    "pass": true
+  },
+  {
+    "check": "320px light phone edges remain clear",
+    "pass": true
+  },
+  {
+    "check": "320px light live controls retain 44px targets",
+    "pass": true
+  },
+  {
+    "check": "320px light names, metadata and filters meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "320px light failed refresh retains the correct personal clips",
+    "pass": true
+  },
+  {
+    "check": "320px light rapid scope changes reject the old request",
+    "pass": true
+  },
+  {
+    "check": "320px light reduced motion and distant tabs remain usable",
+    "pass": true
+  },
+  {
+    "check": "320px light leaving Clubhouse removes the reel and stops playback",
+    "pass": true
+  },
+  {
+    "check": "320px light video notification deep link opens the exact clip automatically",
+    "pass": true
+  },
+  {
+    "check": "320px light missing video deep link falls back to the game\u2019s play-by-play",
+    "pass": true
+  },
+  {
+    "check": "320px light Home is a compact Clubhouse shortcut with no separate GameDay room",
+    "pass": true
+  },
+  {
+    "check": "320px light no browser errors or league writes",
+    "pass": true
+  },
+  {
+    "check": "320px dark populated matchup history cannot widen its outer grid",
+    "pass": true
+  },
+  {
+    "check": "320px dark one Clubhouse offers Matchups, Highlights and Leaders",
+    "pass": true
+  },
+  {
+    "check": "320px dark every Clubhouse tab is fully visible",
+    "pass": true
+  },
+  {
+    "check": "320px dark live matchup keeps both starting lineups side by side",
+    "pass": true
+  },
+  {
+    "check": "320px dark hides highlight loading until its tab is opened",
+    "pass": true
+  },
+  {
+    "check": "320px dark NFL viewing shortcuts are obvious before the week picker",
+    "pass": true
+  },
+  {
+    "check": "320px dark matchup chooser is a compact native horizontal rail",
+    "pass": true
+  },
+  {
+    "check": "320px dark native matchup swipes do not switch Clubhouse tabs",
+    "pass": true
+  },
+  {
+    "check": "320px dark Your team matches the actual weekly roster",
+    "pass": true
+  },
+  {
+    "check": "320px dark personal player chips only offer roster-matched players",
+    "pass": true
+  },
+  {
+    "check": "320px dark personal reel plays inside Clubhouse from clip one",
+    "pass": true
+  },
+  {
+    "check": "320px dark personal search stays restricted to your team",
+    "pass": true
+  },
+  {
+    "check": "320px dark This matchup includes both rosters without other teams",
+    "pass": true
+  },
+  {
+    "check": "320px dark League clips stay inside the selected NFL week",
+    "pass": true
+  },
+  {
+    "check": "320px dark scope switches reuse the same fresh clip metadata",
+    "pass": true
+  },
+  {
+    "check": "320px dark highlights use compact two-column game groups",
+    "pass": true
+  },
+  {
+    "check": "320px dark native player browsing swipes forward without changing Clubhouse tabs",
+    "pass": true
+  },
+  {
+    "check": "320px dark native player browsing swipes back",
+    "pass": true
+  },
+  {
+    "check": "320px dark choosing an NFL game narrows the grid",
+    "pass": true
+  },
+  {
+    "check": "320px dark grid search finds the requested player",
+    "pass": true
+  },
+  {
+    "check": "320px dark NFL game center shows the full play-by-play",
+    "pass": true
+  },
+  {
+    "check": "320px dark big plays show full names and a compact emphasized result",
+    "pass": true
+  },
+  {
+    "check": "320px dark full NFL descriptions are always visible",
+    "pass": true
+  },
+  {
+    "check": "320px dark NFL scoring filter is precise",
+    "pass": true
+  },
+  {
+    "check": "320px dark fantasy overview identifies your players and league scoring",
+    "pass": true
+  },
+  {
+    "check": "320px dark stats shortcut brings the loaded heading into view",
+    "pass": true
+  },
+  {
+    "check": "320px dark stats shortcut selects the NFL tab and fantasy view",
+    "pass": true
+  },
+  {
+    "check": "320px dark NFL teams and player stats sit side by side",
+    "pass": true
+  },
+  {
+    "check": "320px dark each stat column contains only its NFL team",
+    "pass": true
+  },
+  {
+    "check": "320px dark player names and scores fit their columns",
+    "pass": true
+  },
+  {
+    "check": "320px dark NFL controls and side-by-side stats fit at 200% text",
+    "pass": true
+  },
+  {
+    "check": "320px dark NFL player cards open the week being viewed",
+    "pass": true
+  },
+  {
+    "check": "320px dark player-card close returns to the same NFL stat row",
+    "pass": true
+  },
+  {
+    "check": "320px dark NFL controls keep 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "320px dark NFL stats, scoring and game controls meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "320px dark switching NFL games never leaks the previous game\u2019s stats",
+    "pass": true
+  },
+  {
+    "check": "320px dark returning to an NFL game restores its chosen filter",
+    "pass": true
+  },
+  {
+    "check": "320px dark play and fantasy switching restores the exact reading row",
+    "pass": true
+  },
+  {
+    "check": "320px dark watching a play keeps the NFL game selected underneath",
+    "pass": true
+  },
+  {
+    "check": "320px dark Back from a clip restores that exact play and focus",
+    "pass": true
+  },
+  {
+    "check": "320px dark a play opens its exact video in the replay studio",
+    "pass": true
+  },
+  {
+    "check": "320px dark the video viewer includes the same NFL game center",
+    "pass": true
+  },
+  {
+    "check": "320px dark replay uses the same two-column stats without replacing video",
+    "pass": true
+  },
+  {
+    "check": "320px dark replay remains usable at 200% text",
+    "pass": true
+  },
+  {
+    "check": "320px dark watching a play clears the old clip search visibly and starts the exact video",
+    "pass": true
+  },
+  {
+    "check": "320px dark Leaders has its connected fire and ice surface",
+    "pass": true
+  },
+  {
+    "check": "320px dark Leaders moved into Clubhouse with hot and cold filters",
+    "pass": true
+  },
+  {
+    "check": "320px dark hot filter returns only hot players",
+    "pass": true
+  },
+  {
+    "check": "320px dark bench checkbox adds bench players",
+    "pass": true
+  },
+  {
+    "check": "320px dark filter and bench changes preserve the same effects surface",
+    "pass": true
+  },
+  {
+    "check": "320px dark a live score refresh keeps the effects surface connected",
+    "pass": true
+  },
+  {
+    "check": "320px dark returning to Leaders preserves fire and ice",
+    "pass": true
+  },
+  {
+    "check": "320px dark NFL scoreboard is available in Clubhouse",
+    "pass": true
+  },
+  {
+    "check": "320px dark leader portraits and rows stay compact",
+    "pass": true
+  },
+  {
+    "check": "320px dark phone edges remain clear",
+    "pass": true
+  },
+  {
+    "check": "320px dark live controls retain 44px targets",
+    "pass": true
+  },
+  {
+    "check": "320px dark names, metadata and filters meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "320px dark failed refresh retains the correct personal clips",
+    "pass": true
+  },
+  {
+    "check": "320px dark rapid scope changes reject the old request",
+    "pass": true
+  },
+  {
+    "check": "320px dark reduced motion and distant tabs remain usable",
+    "pass": true
+  },
+  {
+    "check": "320px dark leaving Clubhouse removes the reel and stops playback",
+    "pass": true
+  },
+  {
+    "check": "320px dark video notification deep link opens the exact clip automatically",
+    "pass": true
+  },
+  {
+    "check": "320px dark missing video deep link falls back to the game\u2019s play-by-play",
+    "pass": true
+  },
+  {
+    "check": "320px dark Home is a compact Clubhouse shortcut with no separate GameDay room",
+    "pass": true
+  },
+  {
+    "check": "320px dark no browser errors or league writes",
+    "pass": true
+  },
+  {
+    "check": "390px light populated matchup history cannot widen its outer grid",
+    "pass": true
+  },
+  {
+    "check": "390px light one Clubhouse offers Matchups, Highlights and Leaders",
+    "pass": true
+  },
+  {
+    "check": "390px light every Clubhouse tab is fully visible",
+    "pass": true
+  },
+  {
+    "check": "390px light live matchup keeps both starting lineups side by side",
+    "pass": true
+  },
+  {
+    "check": "390px light hides highlight loading until its tab is opened",
+    "pass": true
+  },
+  {
+    "check": "390px light NFL viewing shortcuts are obvious before the week picker",
+    "pass": true
+  },
+  {
+    "check": "390px light matchup chooser is a compact native horizontal rail",
+    "pass": true
+  },
+  {
+    "check": "390px light native matchup swipes do not switch Clubhouse tabs",
+    "pass": true
+  },
+  {
+    "check": "390px light Your team matches the actual weekly roster",
+    "pass": true
+  },
+  {
+    "check": "390px light personal player chips only offer roster-matched players",
+    "pass": true
+  },
+  {
+    "check": "390px light personal reel plays inside Clubhouse from clip one",
+    "pass": true
+  },
+  {
+    "check": "390px light personal search stays restricted to your team",
+    "pass": true
+  },
+  {
+    "check": "390px light This matchup includes both rosters without other teams",
+    "pass": true
+  },
+  {
+    "check": "390px light League clips stay inside the selected NFL week",
+    "pass": true
+  },
+  {
+    "check": "390px light scope switches reuse the same fresh clip metadata",
+    "pass": true
+  },
+  {
+    "check": "390px light highlights use compact two-column game groups",
+    "pass": true
+  },
+  {
+    "check": "390px light native player browsing swipes forward without changing Clubhouse tabs",
+    "pass": true
+  },
+  {
+    "check": "390px light native player browsing swipes back",
+    "pass": true
+  },
+  {
+    "check": "390px light choosing an NFL game narrows the grid",
+    "pass": true
+  },
+  {
+    "check": "390px light grid search finds the requested player",
+    "pass": true
+  },
+  {
+    "check": "390px light NFL game center shows the full play-by-play",
+    "pass": true
+  },
+  {
+    "check": "390px light big plays show full names and a compact emphasized result",
+    "pass": true
+  },
+  {
+    "check": "390px light full NFL descriptions are always visible",
+    "pass": true
+  },
+  {
+    "check": "390px light NFL scoring filter is precise",
+    "pass": true
+  },
+  {
+    "check": "390px light fantasy overview identifies your players and league scoring",
+    "pass": true
+  },
+  {
+    "check": "390px light stats shortcut brings the loaded heading into view",
+    "pass": true
+  },
+  {
+    "check": "390px light stats shortcut selects the NFL tab and fantasy view",
+    "pass": true
+  },
+  {
+    "check": "390px light NFL teams and player stats sit side by side",
+    "pass": true
+  },
+  {
+    "check": "390px light each stat column contains only its NFL team",
+    "pass": true
+  },
+  {
+    "check": "390px light player names and scores fit their columns",
+    "pass": true
+  },
+  {
+    "check": "390px light NFL controls and side-by-side stats fit at 200% text",
+    "pass": true
+  },
+  {
+    "check": "390px light NFL player cards open the week being viewed",
+    "pass": true
+  },
+  {
+    "check": "390px light player-card close returns to the same NFL stat row",
+    "pass": true
+  },
+  {
+    "check": "390px light NFL controls keep 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "390px light NFL stats, scoring and game controls meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "390px light switching NFL games never leaks the previous game\u2019s stats",
+    "pass": true
+  },
+  {
+    "check": "390px light returning to an NFL game restores its chosen filter",
+    "pass": true
+  },
+  {
+    "check": "390px light play and fantasy switching restores the exact reading row",
+    "pass": true
+  },
+  {
+    "check": "390px light watching a play keeps the NFL game selected underneath",
+    "pass": true
+  },
+  {
+    "check": "390px light Back from a clip restores that exact play and focus",
+    "pass": true
+  },
+  {
+    "check": "390px light a play opens its exact video in the replay studio",
+    "pass": true
+  },
+  {
+    "check": "390px light the video viewer includes the same NFL game center",
+    "pass": true
+  },
+  {
+    "check": "390px light replay uses the same two-column stats without replacing video",
+    "pass": true
+  },
+  {
+    "check": "390px light replay remains usable at 200% text",
+    "pass": true
+  },
+  {
+    "check": "390px light watching a play clears the old clip search visibly and starts the exact video",
+    "pass": true
+  },
+  {
+    "check": "390px light Leaders has its connected fire and ice surface",
+    "pass": true
+  },
+  {
+    "check": "390px light Leaders moved into Clubhouse with hot and cold filters",
+    "pass": true
+  },
+  {
+    "check": "390px light hot filter returns only hot players",
+    "pass": true
+  },
+  {
+    "check": "390px light bench checkbox adds bench players",
+    "pass": true
+  },
+  {
+    "check": "390px light filter and bench changes preserve the same effects surface",
+    "pass": true
+  },
+  {
+    "check": "390px light a live score refresh keeps the effects surface connected",
+    "pass": true
+  },
+  {
+    "check": "390px light returning to Leaders preserves fire and ice",
+    "pass": true
+  },
+  {
+    "check": "390px light NFL scoreboard is available in Clubhouse",
+    "pass": true
+  },
+  {
+    "check": "390px light leader portraits and rows stay compact",
+    "pass": true
+  },
+  {
+    "check": "390px light phone edges remain clear",
+    "pass": true
+  },
+  {
+    "check": "390px light live controls retain 44px targets",
+    "pass": true
+  },
+  {
+    "check": "390px light names, metadata and filters meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "390px light failed refresh retains the correct personal clips",
+    "pass": true
+  },
+  {
+    "check": "390px light rapid scope changes reject the old request",
+    "pass": true
+  },
+  {
+    "check": "390px light reduced motion and distant tabs remain usable",
+    "pass": true
+  },
+  {
+    "check": "390px light leaving Clubhouse removes the reel and stops playback",
+    "pass": true
+  },
+  {
+    "check": "390px light video notification deep link opens the exact clip automatically",
+    "pass": true
+  },
+  {
+    "check": "390px light missing video deep link falls back to the game\u2019s play-by-play",
+    "pass": true
+  },
+  {
+    "check": "390px light Home is a compact Clubhouse shortcut with no separate GameDay room",
+    "pass": true
+  },
+  {
+    "check": "390px light no browser errors or league writes",
+    "pass": true
+  },
+  {
+    "check": "390px dark populated matchup history cannot widen its outer grid",
+    "pass": true
+  },
+  {
+    "check": "390px dark one Clubhouse offers Matchups, Highlights and Leaders",
+    "pass": true
+  },
+  {
+    "check": "390px dark every Clubhouse tab is fully visible",
+    "pass": true
+  },
+  {
+    "check": "390px dark live matchup keeps both starting lineups side by side",
+    "pass": true
+  },
+  {
+    "check": "390px dark hides highlight loading until its tab is opened",
+    "pass": true
+  },
+  {
+    "check": "390px dark NFL viewing shortcuts are obvious before the week picker",
+    "pass": true
+  },
+  {
+    "check": "390px dark matchup chooser is a compact native horizontal rail",
+    "pass": true
+  },
+  {
+    "check": "390px dark native matchup swipes do not switch Clubhouse tabs",
+    "pass": true
+  },
+  {
+    "check": "390px dark Your team matches the actual weekly roster",
+    "pass": true
+  },
+  {
+    "check": "390px dark personal player chips only offer roster-matched players",
+    "pass": true
+  },
+  {
+    "check": "390px dark personal reel plays inside Clubhouse from clip one",
+    "pass": true
+  },
+  {
+    "check": "390px dark personal search stays restricted to your team",
+    "pass": true
+  },
+  {
+    "check": "390px dark This matchup includes both rosters without other teams",
+    "pass": true
+  },
+  {
+    "check": "390px dark League clips stay inside the selected NFL week",
+    "pass": true
+  },
+  {
+    "check": "390px dark scope switches reuse the same fresh clip metadata",
+    "pass": true
+  },
+  {
+    "check": "390px dark highlights use compact two-column game groups",
+    "pass": true
+  },
+  {
+    "check": "390px dark native player browsing swipes forward without changing Clubhouse tabs",
+    "pass": true
+  },
+  {
+    "check": "390px dark native player browsing swipes back",
+    "pass": true
+  },
+  {
+    "check": "390px dark choosing an NFL game narrows the grid",
+    "pass": true
+  },
+  {
+    "check": "390px dark grid search finds the requested player",
+    "pass": true
+  },
+  {
+    "check": "390px dark NFL game center shows the full play-by-play",
+    "pass": true
+  },
+  {
+    "check": "390px dark big plays show full names and a compact emphasized result",
+    "pass": true
+  },
+  {
+    "check": "390px dark full NFL descriptions are always visible",
+    "pass": true
+  },
+  {
+    "check": "390px dark NFL scoring filter is precise",
+    "pass": true
+  },
+  {
+    "check": "390px dark fantasy overview identifies your players and league scoring",
+    "pass": true
+  },
+  {
+    "check": "390px dark stats shortcut brings the loaded heading into view",
+    "pass": true
+  },
+  {
+    "check": "390px dark stats shortcut selects the NFL tab and fantasy view",
+    "pass": true
+  },
+  {
+    "check": "390px dark NFL teams and player stats sit side by side",
+    "pass": true
+  },
+  {
+    "check": "390px dark each stat column contains only its NFL team",
+    "pass": true
+  },
+  {
+    "check": "390px dark player names and scores fit their columns",
+    "pass": true
+  },
+  {
+    "check": "390px dark NFL controls and side-by-side stats fit at 200% text",
+    "pass": true
+  },
+  {
+    "check": "390px dark NFL player cards open the week being viewed",
+    "pass": true
+  },
+  {
+    "check": "390px dark player-card close returns to the same NFL stat row",
+    "pass": true
+  },
+  {
+    "check": "390px dark NFL controls keep 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "390px dark NFL stats, scoring and game controls meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "390px dark switching NFL games never leaks the previous game\u2019s stats",
+    "pass": true
+  },
+  {
+    "check": "390px dark returning to an NFL game restores its chosen filter",
+    "pass": true
+  },
+  {
+    "check": "390px dark play and fantasy switching restores the exact reading row",
+    "pass": true
+  },
+  {
+    "check": "390px dark watching a play keeps the NFL game selected underneath",
+    "pass": true
+  },
+  {
+    "check": "390px dark Back from a clip restores that exact play and focus",
+    "pass": true
+  },
+  {
+    "check": "390px dark a play opens its exact video in the replay studio",
+    "pass": true
+  },
+  {
+    "check": "390px dark the video viewer includes the same NFL game center",
+    "pass": true
+  },
+  {
+    "check": "390px dark replay uses the same two-column stats without replacing video",
+    "pass": true
+  },
+  {
+    "check": "390px dark replay remains usable at 200% text",
+    "pass": true
+  },
+  {
+    "check": "390px dark watching a play clears the old clip search visibly and starts the exact video",
+    "pass": true
+  },
+  {
+    "check": "390px dark Leaders has its connected fire and ice surface",
+    "pass": true
+  },
+  {
+    "check": "390px dark Leaders moved into Clubhouse with hot and cold filters",
+    "pass": true
+  },
+  {
+    "check": "390px dark hot filter returns only hot players",
+    "pass": true
+  },
+  {
+    "check": "390px dark bench checkbox adds bench players",
+    "pass": true
+  },
+  {
+    "check": "390px dark filter and bench changes preserve the same effects surface",
+    "pass": true
+  },
+  {
+    "check": "390px dark a live score refresh keeps the effects surface connected",
+    "pass": true
+  },
+  {
+    "check": "390px dark returning to Leaders preserves fire and ice",
+    "pass": true
+  },
+  {
+    "check": "390px dark NFL scoreboard is available in Clubhouse",
+    "pass": true
+  },
+  {
+    "check": "390px dark leader portraits and rows stay compact",
+    "pass": true
+  },
+  {
+    "check": "390px dark phone edges remain clear",
+    "pass": true
+  },
+  {
+    "check": "390px dark live controls retain 44px targets",
+    "pass": true
+  },
+  {
+    "check": "390px dark names, metadata and filters meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "390px dark failed refresh retains the correct personal clips",
+    "pass": true
+  },
+  {
+    "check": "390px dark rapid scope changes reject the old request",
+    "pass": true
+  },
+  {
+    "check": "390px dark reduced motion and distant tabs remain usable",
+    "pass": true
+  },
+  {
+    "check": "390px dark leaving Clubhouse removes the reel and stops playback",
+    "pass": true
+  },
+  {
+    "check": "390px dark video notification deep link opens the exact clip automatically",
+    "pass": true
+  },
+  {
+    "check": "390px dark missing video deep link falls back to the game\u2019s play-by-play",
+    "pass": true
+  },
+  {
+    "check": "player-card highlight route shows that player across the league",
+    "pass": true
+  },
+  {
+    "check": "Back preserves changed clip filters over the original player link",
+    "pass": true
+  },
+  {
+    "check": "player-card matchup route selects the actual owning roster",
+    "pass": true
+  },
+  {
+    "check": "the actual completed Clubhouse page renders your updated scored lineup recap",
+    "pass": true
+  },
+  {
+    "check": "390px dark Home is a compact Clubhouse shortcut with no separate GameDay room",
+    "pass": true
+  },
+  {
+    "check": "390px dark no browser errors or league writes",
+    "pass": true
+  }
+]
