@@ -31,8 +31,10 @@ export function renderBroadcastBrief(item){
  }else if(item.kind==='season'){
   kind='season';heading=item.headline||'Seasons';media=`<strong class="bx-brief-number">${esc(item.figure)}</strong>`;body=`<p>${esc(item.subtitle)}</p>`;action='League archive';
  }else if(item.figure!=null){
-  if(item.kind==='record')heading=broadcastRecordHeading(item);
-  kind='metric';media=`<div class="bx-brief-value" style="--bx-digits:${String(item.figure).length}"><strong>${esc(typeof item.figure==='number'&&!Number.isInteger(item.figure)?item.figure.toFixed(2):item.figure)}</strong>${item.figureLabel?`<small>${esc(item.figureLabel)}</small>`:''}</div>`;body=item.subtitle?`<p>${esc(short(item.subtitle))}</p>`:'';
+  if(item.kind==='record'){heading=broadcastRecordHeading(item);if(!item.actionLabel)action='View record';}
+  else if(item.generator==='playoffPicture'&&!item.actionLabel)action='Playoff picture';
+  const displayFigure=typeof item.figure==='number'&&!Number.isInteger(item.figure)?item.figure.toFixed(2):String(item.figure);
+  kind='metric';media=`<div class="bx-brief-value" style="--bx-digits:${displayFigure.length}"><strong>${esc(displayFigure)}</strong>${item.figureLabel?`<small>${esc(item.figureLabel)}</small>`:''}</div>`;body=item.subtitle?`<p>${esc(short(item.subtitle))}</p>`:'';
  }else if(item.generator==='nextMove'&&item.scoutPlayer){
   kind='scout';media=`<span class="bx-brief-art">${playerPortrait(item.scoutPlayer)}</span>`;heading=item.scoutPlayer.name;body=`<p>${esc(short(item.subtitle||item.headline))}</p>`;action='Open Auto Scout';
  }else{
@@ -41,6 +43,6 @@ export function renderBroadcastBrief(item){
  }
  const phase=(kind==='result'||item.treatment==='event')&&['live','upcoming','final'].includes(item.temporal)&&!new RegExp(item.temporal,'i').test(item.kicker||'')?item.temporal:'';
  const title=`<h2 class="bx-head">${esc(heading)}</h2>`,content=body?`<div class="bx-brief-body">${body}</div>`:'';
- const category=item.kicker||{injury:'Player availability',season:'DFL archive',news:'League wire',metric:'By the numbers',scout:'Auto Scout',rivalry:'The ledger',trade:'Trade receipt',award:item.variant==='chip'?'Chip Eater':'League champion',result:'Around the league'}[kind];
+ const category=item.kicker||{injury:'Player availability',season:'DFL archive',news:'League wire',metric:item.kind==='record'?'Record book':'By the numbers',scout:'Auto Scout',rivalry:'The ledger',trade:'Trade receipt',award:item.variant==='chip'?'Chip Eater':'League champion',result:'Around the league'}[kind];
  return `<${tag} class="bx-slide bx-brief bx-brief-${kind}${kind==='award'&&item.variant==='chip'?' bx-brief-chip':''}${kind==='award'&&heading.length>38?' bx-brief-award-long':''}${media?' bx-brief-with-art':''}"${href?` href="${esc(href)}"`:''}${kind==='trade'?` aria-label="${esc(heading+'. '+item.tradeStory.packages.map(p=>p.teamName+' sends '+(p.players||[]).map(player=>player.name).join(', ')).join('. '))}"`:''}><span class="bx-kicker">${mark(kind)}${esc(category)}${phase?` <span class="bx-brief-phase">· ${esc(phase)}</span>`:''}</span>${kind==='result'?content+title:title+content}${media}${kind==='injury'?`<button type="button" class="bx-brief-action" data-open-injury-report>${esc(action)} ${arrow}</button>`:href?footer(action,detail):''}</${tag}>`;
 }

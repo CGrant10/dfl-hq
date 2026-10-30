@@ -167,6 +167,7 @@ on:
       - 'tools/capture-recap-review.py'
       - 'js/daily-broadcast*'
       - 'css/broadcast-premium.css'
+      - 'css/broadcast-compositions.css'
       - 'css/player-compare.css'
       - 'tools/*comparison-review*'
       - 'js/connected-portrait*'
@@ -575,4 +576,36 @@ jobs:
         with:
           name: nfl-center-review
           path: nfl-center-output/
+          retention-days: 7
+
+  broadcast-finish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright
+      - name: Render production broadcast review
+        env:
+          DFL_REVIEW_DIR: broadcast-finish-output
+        run: node tools/render-home-review.mjs
+      - name: Check compositions, soft glow pixels and touch controls
+        env:
+          DFL_REVIEW_DIR: broadcast-finish-output
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          python tools/capture-broadcast-wide.py
+      - name: Check first-read visibility and motion preferences
+        env:
+          DFL_REVIEW_DIR: broadcast-finish-output
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          python tools/capture-broadcast-review.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: broadcast-finish-review
+          path: broadcast-finish-output/
           retention-days: 7
