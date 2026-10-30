@@ -1,0 +1,12 @@
+{
+  "before390": {
+    "headerToTabs": 136.296875,
+    "headerToLead": 226.140625,
+    "summaryHeight": 60
+  },
+  "after390": {
+    "headerToTabs": 48,
+    "headerToLead": 107,
+    "summaryHeight": 48
+  }
+}

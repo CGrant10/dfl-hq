@@ -1,0 +1,31 @@
+PASS Home tracks finger 1:1
+PASS adjacent preview sits at shared edge
+PASS preview is inert without duplicate IDs or action hooks
+PASS release continues from visible neighbor
+PASS panel height transitions with glide
+PASS no horizontal overflow
+PASS Home selects destination
+PASS reversal starts on the visible outgoing side
+PASS unfinished arrival keeps finger position
+PASS unfinished arrival keeps visible height
+PASS no horizontal overflow
+PASS reversing an unfinished arrival returns to preceding section
+PASS no horizontal overflow
+PASS short pull returns without selecting another tab
+PASS no horizontal overflow
+PASS Home reverse selects destination
+PASS no horizontal overflow
+PASS Clubhouse selects destination
+PASS no horizontal overflow
+PASS Book view selects destination
+PASS no horizontal overflow
+PASS Book product selects destination
+PASS no horizontal overflow
+PASS resize cancels held gesture without changing selection
+PASS no horizontal overflow
+PASS reduced motion clears held preview
+PASS drafts retain original nodes and values
+PASS no horizontal overflow
+PASS reduced motion keeps native tab navigation
+PASS teardown removes previews and flags
+PASS no browser errors

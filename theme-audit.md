@@ -1515,3 +1515,18 @@ retired crest accents were added. `pnpm themes`, `pnpm check` and final build
 pass. Screenshots were inspected; data checks block production mutations.
 Physical phone frame pacing and screen-reader speech remain unverified.
 Evidence: [broadcast-finish-1516.md](docs/broadcast-finish-1516.md).
+
+# 1.517.0 — Home weekly hierarchy
+
+Reviewed the single Week ahead heading/content-week label, compact Briefing,
+paired forecasts, position leaders, Start/Sit warnings and moves, empty/loading
+states and selected tab rails in Light/Dark at 320/390/768px. 200% root text and
+Comfortable reading reflow without clipping or name/score overlap. Text contrast,
+keyboard navigation, native swipes, 44px tabs and existing phase preferences pass.
+Surfaces, text, labels, separators and selected states use shared Medicine Wheel
+tokens; actual/projected labels and player identities retain their meanings.
+No palettes or retired crest accents were added. `pnpm themes`, `pnpm check`,
+focused Home tests and production build pass. Screenshots were inspected;
+real-data checks block production mutations. Physical phone frame pacing and
+screen-reader speech remain unverified. Evidence:
+[week-ahead-finish-1517.md](docs/week-ahead-finish-1517.md).

@@ -1,0 +1,1390 @@
+[
+  {
+    "check": "light/320/brief only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "light/320/brief no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/320/brief text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/320/brief one compact section header",
+    "pass": true
+  },
+  {
+    "check": "light/320/brief week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "light/320/brief useful content follows the header without a second title",
+    "pass": true
+  },
+  {
+    "check": "light/320/brief main brief has a clear type hierarchy",
+    "pass": true
+  },
+  {
+    "check": "light/320/picks only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "light/320/picks no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/320/picks text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/320/picks one compact section header",
+    "pass": true
+  },
+  {
+    "check": "light/320/picks week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "light/320/players only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "light/320/players no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/320/players text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/320/players one compact section header",
+    "pass": true
+  },
+  {
+    "check": "light/320/players week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "light/320/startsit only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "light/320/startsit no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/320/startsit text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/320/startsit one compact section header",
+    "pass": true
+  },
+  {
+    "check": "light/320/startsit week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "light/320 keyboard wraps to Briefing",
+    "pass": true
+  },
+  {
+    "check": "light/320 End selects Start / Sit",
+    "pass": true
+  },
+  {
+    "check": "light/390/brief only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "light/390/brief no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/390/brief text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/390/brief one compact section header",
+    "pass": true
+  },
+  {
+    "check": "light/390/brief week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "light/390/brief useful content follows the header without a second title",
+    "pass": true
+  },
+  {
+    "check": "light/390/brief main brief has a clear type hierarchy",
+    "pass": true
+  },
+  {
+    "check": "light/390/picks only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "light/390/picks no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/390/picks text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/390/picks one compact section header",
+    "pass": true
+  },
+  {
+    "check": "light/390/picks week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "light/390/players only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "light/390/players no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/390/players text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/390/players one compact section header",
+    "pass": true
+  },
+  {
+    "check": "light/390/players week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "light/390/startsit only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "light/390/startsit no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/390/startsit text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/390/startsit one compact section header",
+    "pass": true
+  },
+  {
+    "check": "light/390/startsit week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "light/390 keyboard wraps to Briefing",
+    "pass": true
+  },
+  {
+    "check": "light/390 End selects Start / Sit",
+    "pass": true
+  },
+  {
+    "check": "light/768/brief only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "light/768/brief no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/768/brief text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/768/brief one compact section header",
+    "pass": true
+  },
+  {
+    "check": "light/768/brief week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "light/768/brief useful content follows the header without a second title",
+    "pass": true
+  },
+  {
+    "check": "light/768/brief main brief has a clear type hierarchy",
+    "pass": true
+  },
+  {
+    "check": "light/768/picks only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "light/768/picks no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/768/picks text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/768/picks one compact section header",
+    "pass": true
+  },
+  {
+    "check": "light/768/picks week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "light/768/players only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "light/768/players no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/768/players text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/768/players one compact section header",
+    "pass": true
+  },
+  {
+    "check": "light/768/players week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "light/768/startsit only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "light/768/startsit no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/768/startsit text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/768/startsit one compact section header",
+    "pass": true
+  },
+  {
+    "check": "light/768/startsit week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "light/768 keyboard wraps to Briefing",
+    "pass": true
+  },
+  {
+    "check": "light/768 End selects Start / Sit",
+    "pass": true
+  },
+  {
+    "check": "dark/320/brief only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "dark/320/brief no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/320/brief text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/320/brief one compact section header",
+    "pass": true
+  },
+  {
+    "check": "dark/320/brief week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "dark/320/brief useful content follows the header without a second title",
+    "pass": true
+  },
+  {
+    "check": "dark/320/brief main brief has a clear type hierarchy",
+    "pass": true
+  },
+  {
+    "check": "dark/320/picks only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "dark/320/picks no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/320/picks text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/320/picks one compact section header",
+    "pass": true
+  },
+  {
+    "check": "dark/320/picks week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "dark/320/players only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "dark/320/players no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/320/players text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/320/players one compact section header",
+    "pass": true
+  },
+  {
+    "check": "dark/320/players week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "dark/320/startsit only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "dark/320/startsit no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/320/startsit text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/320/startsit one compact section header",
+    "pass": true
+  },
+  {
+    "check": "dark/320/startsit week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "dark/320 keyboard wraps to Briefing",
+    "pass": true
+  },
+  {
+    "check": "dark/320 End selects Start / Sit",
+    "pass": true
+  },
+  {
+    "check": "dark/390/brief only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "dark/390/brief no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/390/brief text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/390/brief one compact section header",
+    "pass": true
+  },
+  {
+    "check": "dark/390/brief week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "dark/390/brief useful content follows the header without a second title",
+    "pass": true
+  },
+  {
+    "check": "dark/390/brief main brief has a clear type hierarchy",
+    "pass": true
+  },
+  {
+    "check": "dark/390/picks only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "dark/390/picks no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/390/picks text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/390/picks one compact section header",
+    "pass": true
+  },
+  {
+    "check": "dark/390/picks week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "dark/390/players only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "dark/390/players no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/390/players text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/390/players one compact section header",
+    "pass": true
+  },
+  {
+    "check": "dark/390/players week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "dark/390/startsit only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "dark/390/startsit no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/390/startsit text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/390/startsit one compact section header",
+    "pass": true
+  },
+  {
+    "check": "dark/390/startsit week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "dark/390 keyboard wraps to Briefing",
+    "pass": true
+  },
+  {
+    "check": "dark/390 End selects Start / Sit",
+    "pass": true
+  },
+  {
+    "check": "dark/768/brief only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "dark/768/brief no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/768/brief text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/768/brief one compact section header",
+    "pass": true
+  },
+  {
+    "check": "dark/768/brief week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "dark/768/brief useful content follows the header without a second title",
+    "pass": true
+  },
+  {
+    "check": "dark/768/brief main brief has a clear type hierarchy",
+    "pass": true
+  },
+  {
+    "check": "dark/768/picks only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "dark/768/picks no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/768/picks text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/768/picks one compact section header",
+    "pass": true
+  },
+  {
+    "check": "dark/768/picks week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "dark/768/players only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "dark/768/players no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/768/players text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/768/players one compact section header",
+    "pass": true
+  },
+  {
+    "check": "dark/768/players week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "dark/768/startsit only the selected panel is exposed",
+    "pass": true
+  },
+  {
+    "check": "dark/768/startsit no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/768/startsit text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/768/startsit one compact section header",
+    "pass": true
+  },
+  {
+    "check": "dark/768/startsit week remains visible beside its accessible heading",
+    "pass": true
+  },
+  {
+    "check": "dark/768 keyboard wraps to Briefing",
+    "pass": true
+  },
+  {
+    "check": "dark/768 End selects Start / Sit",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/brief long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/brief selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/picks long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/picks selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/picks names stay paired with their exact forecasts",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/picks forecast rows have no filled box",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/picks all six predictions remain available",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/players long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/players selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/players/QB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/players/QB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/players/RB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/players/RB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/players/WR keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/players/WR names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/players/TE keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/players/TE names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/players/K keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/players/K names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/players/DEF keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/players/DEF names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/startsit long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/320/16px/startsit selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/brief long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/brief selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/picks long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/picks selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/picks names stay paired with their exact forecasts",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/picks forecast rows have no filled box",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/picks all six predictions remain available",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/players long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/players selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/players/QB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/players/QB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/players/RB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/players/RB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/players/WR keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/players/WR names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/players/TE keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/players/TE names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/players/K keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/players/K names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/players/DEF keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/players/DEF names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/startsit long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/320/32px/startsit selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/brief long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/brief selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/picks long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/picks selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/picks names stay paired with their exact forecasts",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/picks forecast rows have no filled box",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/picks all six predictions remain available",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/players long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/players selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/players/QB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/players/QB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/players/RB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/players/RB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/players/WR keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/players/WR names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/players/TE keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/players/TE names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/players/K keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/players/K names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/players/DEF keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/players/DEF names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/startsit long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/390/16px/startsit selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/brief long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/brief selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/picks long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/picks selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/picks names stay paired with their exact forecasts",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/picks forecast rows have no filled box",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/picks all six predictions remain available",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/players long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/players selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/players/QB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/players/QB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/players/RB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/players/RB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/players/WR keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/players/WR names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/players/TE keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/players/TE names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/players/K keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/players/K names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/players/DEF keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/players/DEF names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/startsit long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "light/390/32px/startsit selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/brief long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/brief selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/picks long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/picks selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/picks names stay paired with their exact forecasts",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/picks forecast rows have no filled box",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/picks all six predictions remain available",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/players long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/players selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/players/QB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/players/QB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/players/RB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/players/RB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/players/WR keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/players/WR names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/players/TE keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/players/TE names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/players/K keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/players/K names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/players/DEF keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/players/DEF names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/startsit long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/320/16px/startsit selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/brief long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/brief selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/picks long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/picks selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/picks names stay paired with their exact forecasts",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/picks forecast rows have no filled box",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/picks all six predictions remain available",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/players long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/players selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/players/QB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/players/QB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/players/RB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/players/RB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/players/WR keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/players/WR names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/players/TE keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/players/TE names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/players/K keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/players/K names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/players/DEF keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/players/DEF names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/startsit long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/320/32px/startsit selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/brief long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/brief selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/picks long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/picks selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/picks names stay paired with their exact forecasts",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/picks forecast rows have no filled box",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/picks all six predictions remain available",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/players long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/players selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/players/QB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/players/QB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/players/RB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/players/RB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/players/WR keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/players/WR names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/players/TE keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/players/TE names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/players/K keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/players/K names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/players/DEF keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/players/DEF names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/startsit long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/390/16px/startsit selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/brief long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/brief selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/picks long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/picks selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/picks names stay paired with their exact forecasts",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/picks forecast rows have no filled box",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/picks all six predictions remain available",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/players long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/players selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/players/QB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/players/QB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/players/RB keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/players/RB names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/players/WR keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/players/WR names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/players/TE keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/players/TE names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/players/K keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/players/K names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/players/DEF keeps all three ranks and actual/projected labels",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/players/DEF names and scores never overlap",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/startsit long names and enlarged text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/390/32px/startsit selected tab clears the rail edge cues",
+    "pass": true
+  },
+  {
+    "check": "light/brief Comfortable text fits",
+    "pass": true
+  },
+  {
+    "check": "light/brief Comfortable contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/players Comfortable text fits",
+    "pass": true
+  },
+  {
+    "check": "light/players Comfortable contrast []",
+    "pass": true
+  },
+  {
+    "check": "light Comfortable player detail remains enlarged",
+    "pass": true
+  },
+  {
+    "check": "light/startsit Comfortable text fits",
+    "pass": true
+  },
+  {
+    "check": "light/startsit Comfortable contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/brief Comfortable text fits",
+    "pass": true
+  },
+  {
+    "check": "dark/brief Comfortable contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/players Comfortable text fits",
+    "pass": true
+  },
+  {
+    "check": "dark/players Comfortable contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark Comfortable player detail remains enlarged",
+    "pass": true
+  },
+  {
+    "check": "dark/startsit Comfortable text fits",
+    "pass": true
+  },
+  {
+    "check": "dark/startsit Comfortable contrast []",
+    "pass": true
+  },
+  {
+    "check": "Empty slate has no invented predictions",
+    "pass": true
+  },
+  {
+    "check": "A set lineup without swaps remains a hold",
+    "pass": true
+  },
+  {
+    "check": "loading has a compact honest state",
+    "pass": true
+  },
+  {
+    "check": "unavailable has a compact honest state",
+    "pass": true
+  },
+  {
+    "check": "No browser errors or production writes",
+    "pass": true
+  }
+]

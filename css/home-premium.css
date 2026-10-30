@@ -47,3 +47,88 @@ html[data-matchup-transition] .clubhouse-game-side{animation:none!important}
 /* League section jumps clear the named compact scoreboard as well as the
    header. Returning to the main matchup keeps its normal header offset. */
 #view.has-home-score-dock #home-wrap :is(.home-broadcast,.home-week-desk,.home-league-desk,[data-home-lore-slot]){scroll-margin-top:calc(var(--dfl-scroll-top,44px) + var(--dfl-scroll-height,90px) + 16px)}
+
+/* One weekly heading, then the decision. All data and detail stay in their tabs. */
+#view[data-route="home"] #home-wrap [data-home-week-part="plan"]>summary { min-height:48px; padding-block:10px; }
+#view[data-route="home"] #home-wrap [data-home-week-part="plan"]>summary>span { display:flex; align-items:baseline; gap:12px; min-width:0; flex:1; }
+#view[data-route="home"] #home-wrap [data-home-week-part="plan"]>summary strong { color:var(--text); font:700 1.25rem/1.2 var(--home-ui-font); letter-spacing:0; text-transform:none; }
+#view[data-route="home"] #home-wrap [data-home-week-label] { display:block; margin-left:auto; color:var(--body-text); font:500 .75rem/1.3 var(--home-ui-font); white-space:nowrap; }
+#view[data-route="home"] #home-wrap [data-home-week-label][hidden] { display:none; }
+#view[data-route="home"] #home-wrap [data-home-week-part="plan"]>.page-detail-body { padding-top:0; }
+#view[data-route="home"] #home-wrap [data-home-week-part="plan"] .home-weekly-digest { padding:0; background:transparent; }
+#view[data-route="home"] #home-wrap .home-weekly-digest :is(.home-week-tabs,.home-position-tabs) { display:flex; gap:8px; min-height:44px; padding:0; margin:0; border:0; border-bottom:1px solid var(--line-soft); background:transparent; overflow-x:auto; scrollbar-width:none; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-week-tabs button { display:inline-flex; flex:1 0 auto; align-items:center; justify-content:center; gap:4px; min-height:44px; padding:8px 4px; font:600 .8125rem/1.35 var(--home-ui-font); letter-spacing:0; white-space:nowrap; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-week-tabs button b { display:inline-grid; place-items:center; flex:none; min-width:16px; height:16px; margin:0; padding-inline:2px; font:700 .6875rem/1 var(--home-ui-font); }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-position-tabs { gap:4px; margin-bottom:8px; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-position-tabs button { flex:1 0 44px; min-height:44px; padding:8px 4px; font-size:.8125rem; letter-spacing:0; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-outlook-block { padding:14px 0 8px; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-week-brief { gap:12px; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-headline { margin:0; color:var(--text); font:700 clamp(1.25rem,4.7vw,1.5rem)/1.2 var(--home-ui-font); letter-spacing:-.01em; overflow-wrap:break-word; text-wrap:pretty; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid { display:block; border:0; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid article { display:grid; grid-template-columns:88px minmax(0,1fr); gap:3px 12px; align-content:start; padding:12px 0; border:0; border-top:1px solid var(--line-soft); background:transparent; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid article>small:first-child { grid-column:1; grid-row:1/4; padding-top:2px; color:var(--body-text); font:600 .6875rem/1.35 var(--home-ui-font); letter-spacing:.035em; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid article>:not(:first-child) { grid-column:2; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid :is(strong,a) { color:var(--text); font:600 .9375rem/1.3 var(--home-ui-font); overflow-wrap:break-word; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid span { color:var(--body-text); font:500 .8125rem/1.4 var(--home-ui-font); overflow-wrap:break-word; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid a { display:flex; align-items:center; min-height:44px; color:var(--accent); }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid [data-brief-checked]:empty { display:none; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-text-action { min-height:44px; margin:0; padding-block:8px; }
+
+/* The first forecast is the lead; the rest are quiet, comparable score rows. */
+#view[data-route="home"] #home-wrap .home-outlook-games .home-week-prediction { display:block; min-width:0; margin:0; padding:12px 0; border:0; border-bottom:1px solid var(--line-soft); background:transparent; box-shadow:none; }
+#view[data-route="home"] #home-wrap .home-week-prediction>header { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:8px; }
+#view[data-route="home"] #home-wrap .home-week-prediction>header small { color:var(--body-text); font:600 .6875rem/1.35 var(--home-ui-font); letter-spacing:.035em; overflow-wrap:break-word; }
+#view[data-route="home"] #home-wrap .home-week-prediction>header>span { flex:none; color:var(--accent); font:600 .6875rem/1.35 var(--home-ui-font); }
+#view[data-route="home"] #home-wrap .home-week-prediction .home-prediction-teams { display:grid; grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr); grid-template-rows:auto auto; gap:4px 8px; align-items:center; }
+#view[data-route="home"] #home-wrap .home-prediction-teams>div { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:subgrid; grid-row:1/3; gap:4px; align-items:start; min-width:0; }
+#view[data-route="home"] #home-wrap .home-prediction-teams>div:last-child { grid-column:3; text-align:right; }
+#view[data-route="home"] #home-wrap .home-week-prediction .home-prediction-teams strong { display:block; min-width:0; color:var(--text); font:600 .9375rem/1.25 var(--home-ui-font); white-space:normal; overflow:visible; overflow-wrap:break-word; }
+#view[data-route="home"] #home-wrap .home-prediction-teams>span { grid-column:2; grid-row:1/3; align-self:center; color:var(--body-text); font:500 .625rem/1 var(--home-ui-font); text-align:center; }
+#view[data-route="home"] #home-wrap .home-prediction-teams b { color:var(--text); font:700 1.375rem/1.1 var(--home-ui-font); letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+#view[data-route="home"] #home-wrap .home-week-prediction.is-lead .home-prediction-teams b { font-size:1.75rem; }
+#view[data-route="home"] #home-wrap .home-week-prediction>footer { display:flex; justify-content:space-between; gap:12px; padding-top:8px; color:var(--body-text); font:500 .6875rem/1.35 var(--home-ui-font); }
+#view[data-route="home"] #home-wrap .home-week-prediction>footer b { color:var(--body-text); font:600 .75rem/1.35 var(--home-ui-font); }
+#view[data-route="home"] #home-wrap .home-outlook-more { margin:0; border-top:0; }
+#view[data-route="home"] #home-wrap .home-outlook-more>summary { min-height:44px; padding-block:12px; color:var(--accent); font:600 .8125rem/1.35 var(--home-ui-font); }
+
+/* Position leaders and lineup calls keep complete names and smaller detail. */
+#view[data-route="home"] #home-wrap .home-outlook-players [data-position-panel] { background:transparent; border:0; }
+#view[data-route="home"] #home-wrap .home-outlook-players li { grid-template-columns:16px minmax(0,1fr); padding:8px 0; min-height:56px; background:transparent; border-color:var(--line-soft); }
+#view[data-route="home"] #home-wrap .home-outlook-player-main { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; min-width:0; }
+#view[data-route="home"] #home-wrap .home-outlook-player-main>em { display:flex; align-items:center; gap:8px; flex:0 1 auto; margin-left:auto; min-width:0; max-width:100%; color:var(--text); font-style:normal; }
+#view[data-route="home"] #home-wrap .home-outlook-player-main>em>small { display:grid; gap:0; text-align:left; }
+#view[data-route="home"] #home-wrap .home-outlook-player-main .dfl-player-copy { min-width:0; }
+#view[data-route="home"] #home-wrap .home-outlook-players li .dfl-player { display:flex; flex:1 1 12rem; gap:8px; min-width:0; max-width:100%; }
+#view[data-route="home"] #home-wrap .home-outlook-players li .dfl-player-portrait { flex:0 0 32px; width:32px; height:36px; }
+#view[data-route="home"] #home-wrap .home-outlook-players li .player-card-trigger { min-height:44px; padding-block:4px; color:var(--text); font:600 .9375rem/1.25 var(--home-ui-font); white-space:normal; overflow:visible; overflow-wrap:break-word; }
+#view[data-route="home"] #home-wrap .home-outlook-players li .dfl-player-copy>small { color:var(--body-text); font:500 .75rem/1.35 var(--home-ui-font); white-space:normal; overflow:visible; overflow-wrap:break-word; }
+#view[data-route="home"] #home-wrap .home-outlook-players .home-outlook-player-main>em>strong { font:700 1.375rem/1.1 var(--home-ui-font); letter-spacing:-.02em; }
+#view[data-route="home"] #home-wrap .home-outlook-players .home-outlook-player-main>em>small { color:var(--body-text); font:500 .6875rem/1.35 var(--home-ui-font); letter-spacing:0; }
+#view[data-route="home"] #home-wrap .home-outlook-players .home-week-featured-player { padding-block:4px 12px; }
+#view[data-route="home"] #home-wrap .home-outlook-players li .dfl-player-portrait { align-self:flex-start; }
+#view[data-route="home"] #home-wrap .home-outlook-players li.home-week-featured-player .dfl-player-portrait { flex-basis:44px; width:44px; height:48px; }
+#view[data-route="home"] #home-wrap .home-outlook-players .home-week-featured-player .player-card-trigger { font-size:1.125rem; }
+#view[data-route="home"] #home-wrap .home-outlook-players .home-week-featured-player .home-outlook-player-main>em>strong { font-size:1.75rem; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-outlook-title { margin:0 0 10px; padding:0; border:0; }
+#view[data-route="home"] #home-wrap .home-weekly-digest .home-outlook-title h3 { margin:0; color:var(--text); font:700 1.25rem/1.2 var(--home-ui-font); letter-spacing:0; text-transform:none; }
+#view[data-route="home"] #home-wrap .home-outlook-startsit .ss-advice { padding:0; }
+#view[data-route="home"] #home-wrap .home-outlook-startsit .ss-hold>strong { color:var(--text); font:700 1.25rem/1.2 var(--home-ui-font); }
+#view[data-route="home"] #home-wrap .home-outlook-startsit .ss-moves { gap:8px; }
+#view[data-route="home"] #home-wrap .home-outlook-startsit .ss-move { padding:10px 0; border-top:1px solid var(--line-soft); border-bottom:0; background:transparent; }
+#view[data-route="home"] #home-wrap .home-outlook-startsit .ss-move>header { margin-bottom:6px; }
+#view[data-route="home"] #home-wrap .home-outlook-startsit .ss-move>header strong { font-size:.875rem; }
+#view[data-route="home"] #home-wrap .home-outlook-startsit .ss-alerts p { margin:0; padding:10px 0; }
+#view[data-route="home"] #home-wrap .home-outlook-startsit footer { padding-top:4px; }
+#view[data-route="home"] #home-wrap .home-weekly-digest.is-loading { min-height:88px; padding:12px 0; }
+#view[data-route="home"] #home-wrap .home-weekly-digest.is-loading>p { margin:0; padding:0; color:var(--body-text); font:500 .875rem/1.4 var(--home-ui-font); }
+@media(max-width:360px){
+ #view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid article { grid-template-columns:minmax(0,1fr); gap:4px; padding-block:10px; }
+ #view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid article>small:first-child { grid-column:1; grid-row:auto; padding:0; }
+ #view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid article>:not(:first-child) { grid-column:1; }
+ #view[data-route="home"] #home-wrap .home-week-prediction .home-prediction-teams { grid-template-columns:minmax(0,1fr); grid-template-rows:none; gap:8px; }
+ #view[data-route="home"] #home-wrap .home-prediction-teams>div,#view[data-route="home"] #home-wrap .home-prediction-teams>div:last-child { grid-column:1; grid-row:auto; grid-template-columns:minmax(0,1fr) auto; grid-template-rows:auto; align-items:center; gap:10px; text-align:left; }
+ #view[data-route="home"] #home-wrap .home-prediction-teams>span { display:none; }
+ #view[data-route="home"] #home-wrap .home-week-prediction.is-lead .home-prediction-teams b { font-size:1.5rem; }
+}
+html[data-readability="comfortable"] #view[data-route="home"] #home-wrap .home-weekly-digest :is(.home-brief-grid span,.dfl-player-copy>small,.home-outlook-player-main>em>small,.home-week-prediction>header small,.home-week-prediction>header>span,.home-week-prediction>footer,.home-week-prediction>footer b) { font-size:.875rem; line-height:1.45; }
+html[data-readability="comfortable"] #view[data-route="home"] #home-wrap [data-home-week-label] { font-size:.875rem; }

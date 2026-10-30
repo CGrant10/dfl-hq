@@ -61,16 +61,16 @@ describe("Home redesign wiring", () => {
   it("renders the current week as matchup predictions, player forecasts and Start/Sit advice", () => {
     expect(source).toContain("export function homeWeeklyDigest");
     expect(source).toContain("WEEK AHEAD");
-    expect(source).toContain("PROJECTED");
+    expect(source).toContain("Projected");
     expect(source).toContain("Actual pts");
     expect(source).toContain("playerLiveState(player)");
     expect(source).toContain("data-live-score");
-    expect(source).toContain("Top 3 by position");
+    expect(source).toContain("(outlook.leaders[position] || []).map(outlookPlayerRow)");
     expect(source).toContain("data-week-tab");
     expect(source).toContain("data-position-tab");
     expect(source).toContain("wireHomeWeekHub");
     expect(source).toContain("Start / Sit");
-    expect(source).toContain("Full Start / Sit");
+    expect(source).toContain("Review lineup in Analyzer");
     expect(source).toContain("buildHomeWeekOutlook");
     expect(source).toContain("data-home-report-slot");
   });
