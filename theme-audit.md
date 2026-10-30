@@ -1573,3 +1573,13 @@ unknown locations and neutral nullified plays pass. `pnpm themes`, `pnpm check`,
 final focused tests/type/name checks and build pass. Screenshots and read-only
 real data inspected. Physical phone pacing and screen-reader speech remain
 unmeasured. Evidence: [nfl-live-field-1520.md](docs/nfl-live-field-1520.md).
+
+# 1.521.0 — Live NFL runtime efficiency
+
+No visual palette or typography changes. Reviewed the existing field, team rails,
+full play descriptions, controls, fantasy columns and player routes in Light/Dark
+on mobile. The unchanged-DOM path retains focus, reading position, motion settings
+and existing theme styles. Compact UI, 200% text and contrast checks pass. Real
+final-game views inspected read-only in both themes. `pnpm check`, final type/name
+checks and build pass. Phone battery savings/frame pacing remain unmeasured.
+Evidence: [nfl-live-efficiency-1521.md](docs/nfl-live-efficiency-1521.md).

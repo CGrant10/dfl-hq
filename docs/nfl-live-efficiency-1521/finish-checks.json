@@ -1,0 +1,498 @@
+[
+  {
+    "check": "light/320/plays no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/320/plays text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/320/plays comfortable control targets",
+    "pass": true
+  },
+  {
+    "check": "light/320/plays picker uses the observed game state",
+    "pass": true
+  },
+  {
+    "check": "light/320/plays selected NFL scores stay separate from fantasy points",
+    "pass": true
+  },
+  {
+    "check": "light/320/plays complete source descriptions are always visible",
+    "pass": true
+  },
+  {
+    "check": "light/320/plays feed has no collapsed descriptions or extra tap controls",
+    "pass": true
+  },
+  {
+    "check": "light/320/plays compact play text keeps its hierarchy",
+    "pass": true
+  },
+  {
+    "check": "light/320/plays touchdown and big-play types remain distinct",
+    "pass": true
+  },
+  {
+    "check": "light/320/fantasy no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/320/fantasy text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/320/fantasy comfortable control targets",
+    "pass": true
+  },
+  {
+    "check": "light/320/fantasy picker uses the observed game state",
+    "pass": true
+  },
+  {
+    "check": "light/320/fantasy away and home stay side by side",
+    "pass": true
+  },
+  {
+    "check": "light/320/fantasy NFL score labels and actual league totals are explicit",
+    "pass": true
+  },
+  {
+    "check": "light/320/fantasy unknown player points are not made up",
+    "pass": true
+  },
+  {
+    "check": "light/320/fantasy each team keeps full player names and stat lines",
+    "pass": true
+  },
+  {
+    "check": "light/320/fantasy both teams align player names, points, owners and stat lines",
+    "pass": true
+  },
+  {
+    "check": "light/320/fantasy smaller player names and points",
+    "pass": true
+  },
+  {
+    "check": "light/320/fantasy 200% text retains both columns without clipping",
+    "pass": true
+  },
+  {
+    "check": "light/390/plays no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/390/plays text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/390/plays comfortable control targets",
+    "pass": true
+  },
+  {
+    "check": "light/390/plays picker uses the observed game state",
+    "pass": true
+  },
+  {
+    "check": "light/390/plays selected NFL scores stay separate from fantasy points",
+    "pass": true
+  },
+  {
+    "check": "light/390/plays complete source descriptions are always visible",
+    "pass": true
+  },
+  {
+    "check": "light/390/plays feed has no collapsed descriptions or extra tap controls",
+    "pass": true
+  },
+  {
+    "check": "light/390/plays compact play text keeps its hierarchy",
+    "pass": true
+  },
+  {
+    "check": "light/390/plays touchdown and big-play types remain distinct",
+    "pass": true
+  },
+  {
+    "check": "light/390/fantasy no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/390/fantasy text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/390/fantasy comfortable control targets",
+    "pass": true
+  },
+  {
+    "check": "light/390/fantasy picker uses the observed game state",
+    "pass": true
+  },
+  {
+    "check": "light/390/fantasy away and home stay side by side",
+    "pass": true
+  },
+  {
+    "check": "light/390/fantasy NFL score labels and actual league totals are explicit",
+    "pass": true
+  },
+  {
+    "check": "light/390/fantasy unknown player points are not made up",
+    "pass": true
+  },
+  {
+    "check": "light/390/fantasy each team keeps full player names and stat lines",
+    "pass": true
+  },
+  {
+    "check": "light/390/fantasy both teams align player names, points, owners and stat lines",
+    "pass": true
+  },
+  {
+    "check": "light/390/fantasy smaller player names and points",
+    "pass": true
+  },
+  {
+    "check": "light/768/plays no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/768/plays text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/768/plays comfortable control targets",
+    "pass": true
+  },
+  {
+    "check": "light/768/plays picker uses the observed game state",
+    "pass": true
+  },
+  {
+    "check": "light/768/plays selected NFL scores stay separate from fantasy points",
+    "pass": true
+  },
+  {
+    "check": "light/768/plays complete source descriptions are always visible",
+    "pass": true
+  },
+  {
+    "check": "light/768/plays feed has no collapsed descriptions or extra tap controls",
+    "pass": true
+  },
+  {
+    "check": "light/768/plays compact play text keeps its hierarchy",
+    "pass": true
+  },
+  {
+    "check": "light/768/plays touchdown and big-play types remain distinct",
+    "pass": true
+  },
+  {
+    "check": "light/768/fantasy no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "light/768/fantasy text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/768/fantasy comfortable control targets",
+    "pass": true
+  },
+  {
+    "check": "light/768/fantasy picker uses the observed game state",
+    "pass": true
+  },
+  {
+    "check": "light/768/fantasy away and home stay side by side",
+    "pass": true
+  },
+  {
+    "check": "light/768/fantasy NFL score labels and actual league totals are explicit",
+    "pass": true
+  },
+  {
+    "check": "light/768/fantasy unknown player points are not made up",
+    "pass": true
+  },
+  {
+    "check": "light/768/fantasy each team keeps full player names and stat lines",
+    "pass": true
+  },
+  {
+    "check": "light/768/fantasy both teams align player names, points, owners and stat lines",
+    "pass": true
+  },
+  {
+    "check": "light/768/fantasy smaller player names and points",
+    "pass": true
+  },
+  {
+    "check": "dark/320/plays no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/320/plays text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/320/plays comfortable control targets",
+    "pass": true
+  },
+  {
+    "check": "dark/320/plays picker uses the observed game state",
+    "pass": true
+  },
+  {
+    "check": "dark/320/plays selected NFL scores stay separate from fantasy points",
+    "pass": true
+  },
+  {
+    "check": "dark/320/plays complete source descriptions are always visible",
+    "pass": true
+  },
+  {
+    "check": "dark/320/plays feed has no collapsed descriptions or extra tap controls",
+    "pass": true
+  },
+  {
+    "check": "dark/320/plays compact play text keeps its hierarchy",
+    "pass": true
+  },
+  {
+    "check": "dark/320/plays touchdown and big-play types remain distinct",
+    "pass": true
+  },
+  {
+    "check": "dark/320/fantasy no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/320/fantasy text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/320/fantasy comfortable control targets",
+    "pass": true
+  },
+  {
+    "check": "dark/320/fantasy picker uses the observed game state",
+    "pass": true
+  },
+  {
+    "check": "dark/320/fantasy away and home stay side by side",
+    "pass": true
+  },
+  {
+    "check": "dark/320/fantasy NFL score labels and actual league totals are explicit",
+    "pass": true
+  },
+  {
+    "check": "dark/320/fantasy unknown player points are not made up",
+    "pass": true
+  },
+  {
+    "check": "dark/320/fantasy each team keeps full player names and stat lines",
+    "pass": true
+  },
+  {
+    "check": "dark/320/fantasy both teams align player names, points, owners and stat lines",
+    "pass": true
+  },
+  {
+    "check": "dark/320/fantasy smaller player names and points",
+    "pass": true
+  },
+  {
+    "check": "dark/320/fantasy 200% text retains both columns without clipping",
+    "pass": true
+  },
+  {
+    "check": "dark/390/plays no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/390/plays text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/390/plays comfortable control targets",
+    "pass": true
+  },
+  {
+    "check": "dark/390/plays picker uses the observed game state",
+    "pass": true
+  },
+  {
+    "check": "dark/390/plays selected NFL scores stay separate from fantasy points",
+    "pass": true
+  },
+  {
+    "check": "dark/390/plays complete source descriptions are always visible",
+    "pass": true
+  },
+  {
+    "check": "dark/390/plays feed has no collapsed descriptions or extra tap controls",
+    "pass": true
+  },
+  {
+    "check": "dark/390/plays compact play text keeps its hierarchy",
+    "pass": true
+  },
+  {
+    "check": "dark/390/plays touchdown and big-play types remain distinct",
+    "pass": true
+  },
+  {
+    "check": "dark/390/fantasy no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/390/fantasy text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/390/fantasy comfortable control targets",
+    "pass": true
+  },
+  {
+    "check": "dark/390/fantasy picker uses the observed game state",
+    "pass": true
+  },
+  {
+    "check": "dark/390/fantasy away and home stay side by side",
+    "pass": true
+  },
+  {
+    "check": "dark/390/fantasy NFL score labels and actual league totals are explicit",
+    "pass": true
+  },
+  {
+    "check": "dark/390/fantasy unknown player points are not made up",
+    "pass": true
+  },
+  {
+    "check": "dark/390/fantasy each team keeps full player names and stat lines",
+    "pass": true
+  },
+  {
+    "check": "dark/390/fantasy both teams align player names, points, owners and stat lines",
+    "pass": true
+  },
+  {
+    "check": "dark/390/fantasy smaller player names and points",
+    "pass": true
+  },
+  {
+    "check": "dark/768/plays no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/768/plays text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/768/plays comfortable control targets",
+    "pass": true
+  },
+  {
+    "check": "dark/768/plays picker uses the observed game state",
+    "pass": true
+  },
+  {
+    "check": "dark/768/plays selected NFL scores stay separate from fantasy points",
+    "pass": true
+  },
+  {
+    "check": "dark/768/plays complete source descriptions are always visible",
+    "pass": true
+  },
+  {
+    "check": "dark/768/plays feed has no collapsed descriptions or extra tap controls",
+    "pass": true
+  },
+  {
+    "check": "dark/768/plays compact play text keeps its hierarchy",
+    "pass": true
+  },
+  {
+    "check": "dark/768/plays touchdown and big-play types remain distinct",
+    "pass": true
+  },
+  {
+    "check": "dark/768/fantasy no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "dark/768/fantasy text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/768/fantasy comfortable control targets",
+    "pass": true
+  },
+  {
+    "check": "dark/768/fantasy picker uses the observed game state",
+    "pass": true
+  },
+  {
+    "check": "dark/768/fantasy away and home stay side by side",
+    "pass": true
+  },
+  {
+    "check": "dark/768/fantasy NFL score labels and actual league totals are explicit",
+    "pass": true
+  },
+  {
+    "check": "dark/768/fantasy unknown player points are not made up",
+    "pass": true
+  },
+  {
+    "check": "dark/768/fantasy each team keeps full player names and stat lines",
+    "pass": true
+  },
+  {
+    "check": "dark/768/fantasy both teams align player names, points, owners and stat lines",
+    "pass": true
+  },
+  {
+    "check": "dark/768/fantasy smaller player names and points",
+    "pass": true
+  },
+  {
+    "check": "0 exact league points survive the presentation",
+    "pass": true
+  },
+  {
+    "check": "-2.5 exact league points survive the presentation",
+    "pass": true
+  },
+  {
+    "check": "Nullified play stays neutral with its original description",
+    "pass": true
+  },
+  {
+    "check": "Nullified play has no touchdown result, score or video",
+    "pass": true
+  },
+  {
+    "check": "scoring excludes nullified scores",
+    "pass": true
+  },
+  {
+    "check": "big excludes nullified scores",
+    "pass": true
+  },
+  {
+    "check": "Reduced Motion retains visible source details",
+    "pass": true
+  },
+  {
+    "check": "No browser errors or production writes",
+    "pass": true
+  }
+]
