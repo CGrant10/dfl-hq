@@ -8152,14 +8152,14 @@ html[data-readability="comfortable"] #view.view[data-route="clubhouse"] .clubhou
 @container clubhouse-tabs (max-width:12rem) {
  #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-tabs { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
-@container clubhouse-pickers (max-width:18rem) {
+@container clubhouse-pickers (max-width:17.5rem) {
  #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-week-picker { grid-template-columns:repeat(2,minmax(0,1fr)); }
  #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-archive-action { grid-column:1/-1; justify-self:start; }
 }
 @container clubhouse-pickers (max-width:12rem) {
  #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-week-picker { grid-template-columns:minmax(0,1fr); }
 }
-@container clubhouse-tools (max-width:18rem) {
+@container clubhouse-tools (max-width:17.5rem) {
  #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-toolbar [data-matchup-freshness] { flex-basis:100%; }
 }
 @media(max-width:600px) {
@@ -8178,7 +8178,7 @@ html[data-readability="comfortable"] #view.view[data-route="clubhouse"] .clubhou
 #view.view[data-route="clubhouse"] .clubhouse-strip-team>.dfl-team-mark { grid-column:1; grid-row:1; width:var(--score-mark); height:var(--score-mark); border-radius:5px; }
 #view.view[data-route="clubhouse"] .clubhouse-strip-team>strong { grid-column:2; grid-row:1; }
 #view.view[data-route="clubhouse"] .clubhouse-strip-team>b { grid-column:3; grid-row:1; font-size:var(--score-number); line-height:1.1; }
-@container clubhouse-score (max-width:18rem) {
+@container clubhouse-score (max-width:17.5rem) {
  #view.view[data-route="clubhouse"] .clubhouse-strip-teams { grid-template-columns:minmax(0,1fr); gap:8px; }
 }
 

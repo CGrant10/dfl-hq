@@ -1,26 +1,26 @@
 [
   {
-    "check": "320px light/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -28,27 +28,27 @@
     "pass": true
   },
   {
-    "check": "320px light/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -56,27 +56,27 @@
     "pass": true
   },
   {
-    "check": "320px light/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -84,27 +84,27 @@
     "pass": true
   },
   {
-    "check": "320px light/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px light/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px light/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -116,27 +116,27 @@
     "pass": true
   },
   {
-    "check": "320px dark/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -144,27 +144,27 @@
     "pass": true
   },
   {
-    "check": "320px dark/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -172,27 +172,27 @@
     "pass": true
   },
   {
-    "check": "320px dark/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -200,27 +200,27 @@
     "pass": true
   },
   {
-    "check": "320px dark/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "320px dark/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 292, \"scroll\": 292, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "320px dark/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 288, \"scroll\": 288, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -232,27 +232,27 @@
     "pass": true
   },
   {
-    "check": "375px light/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -260,27 +260,27 @@
     "pass": true
   },
   {
-    "check": "375px light/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -288,27 +288,27 @@
     "pass": true
   },
   {
-    "check": "375px light/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -316,27 +316,27 @@
     "pass": true
   },
   {
-    "check": "375px light/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px light/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px light/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -348,27 +348,27 @@
     "pass": true
   },
   {
-    "check": "375px dark/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -376,27 +376,27 @@
     "pass": true
   },
   {
-    "check": "375px dark/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -404,27 +404,27 @@
     "pass": true
   },
   {
-    "check": "375px dark/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -432,27 +432,27 @@
     "pass": true
   },
   {
-    "check": "375px dark/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "375px dark/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 347, \"scroll\": 347, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "375px dark/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 343, \"scroll\": 343, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -464,27 +464,27 @@
     "pass": true
   },
   {
-    "check": "390px light/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -492,27 +492,27 @@
     "pass": true
   },
   {
-    "check": "390px light/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -520,27 +520,27 @@
     "pass": true
   },
   {
-    "check": "390px light/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -548,27 +548,27 @@
     "pass": true
   },
   {
-    "check": "390px light/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px light/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px light/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -580,27 +580,27 @@
     "pass": true
   },
   {
-    "check": "390px dark/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -608,27 +608,27 @@
     "pass": true
   },
   {
-    "check": "390px dark/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -636,27 +636,27 @@
     "pass": true
   },
   {
-    "check": "390px dark/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -664,27 +664,27 @@
     "pass": true
   },
   {
-    "check": "390px dark/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "390px dark/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 362, \"scroll\": 362, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "390px dark/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 358, \"scroll\": 358, \"height\": 155, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -696,27 +696,27 @@
     "pass": true
   },
   {
-    "check": "430px light/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -724,27 +724,27 @@
     "pass": true
   },
   {
-    "check": "430px light/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -752,27 +752,27 @@
     "pass": true
   },
   {
-    "check": "430px light/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -780,27 +780,27 @@
     "pass": true
   },
   {
-    "check": "430px light/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px light/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px light/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -812,27 +812,27 @@
     "pass": true
   },
   {
-    "check": "430px dark/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/16px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/16px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/16px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/16px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/16px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/16px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 44, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -840,27 +840,27 @@
     "pass": true
   },
   {
-    "check": "430px dark/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/16px/comfortable/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/16px/comfortable/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/16px/comfortable/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/16px/comfortable/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/16px/comfortable/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/16px/comfortable/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -868,27 +868,27 @@
     "pass": true
   },
   {
-    "check": "430px dark/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/20px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/20px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/20px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/20px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/20px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/20px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 88, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
@@ -896,27 +896,27 @@
     "pass": true
   },
   {
-    "check": "430px dark/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/32px/compact/matchups all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/32px/compact/highlights all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/32px/compact/nfl all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/32px/compact/leaders all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/32px/compact/overview all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {
-    "check": "430px dark/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 402, \"scroll\": 402, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
+    "check": "430px dark/32px/compact/recap all tabs, marker, picker values and rows fit {\"width\": 398, \"scroll\": 398, \"height\": 103, \"allFit\": true, \"targets\": true, \"marker\": true, \"rows\": true, \"bounds\": true}",
     "pass": true
   },
   {

@@ -71,6 +71,7 @@ with sync_playwright() as p:
    }''',mode)
    tag=f'{width}px {mode}';page.wait_for_selector('.gd-lineup-comparison',timeout=20000)
    if os.environ.get('DFL_CLUBHOUSE_LAYOUT_ONLY'):
+    page.locator('#view').evaluate("e=>e.style.paddingInline='16px'")
     for size,reader in [(16,'compact'),(16,'comfortable'),(20,'compact'),(32,'compact')]:
      page.evaluate("([size,reader])=>{document.documentElement.style.fontSize=size+'px';document.documentElement.dataset.readability=reader}",[size,reader]);page.evaluate('document.fonts.ready')
      for tab in ['matchups','highlights','nfl','leaders','overview','recap']:
