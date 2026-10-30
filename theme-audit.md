@@ -1599,3 +1599,18 @@ swipes, first-read pauses and motion preferences pass. Actual Home slides inspec
 read-only in both themes. `pnpm check` passes. Physical Safari/frame pacing and
 screen-reader speech remain unmeasured. Evidence:
 [broadcast-finish-1522.md](docs/broadcast-finish-1522.md).
+
+# 1.523.0 — Distinct broadcast awards and trade exchange
+
+Reviewed Champion, Chip Eater, two/three-team Trade and the other broadcast types
+in Light/Dark at 320/390/768px, with long names and enlarged text. The awards keep
+house artwork and soft inset glows; the champion's lower mask follows the actual
+image bounds. Chip Eater reverses the composition and lighting. Trade previews
+use verified incoming routes, stable team-direction labels, side-by-side
+two-team packages and the actual balance percentage/bar. Shared tokens supply
+all new UI text, surfaces, dividers and accents. No palette, asset or font added.
+Visible entrances, offscreen pauses, Motion off, Reduced Motion, swipes, targets,
+contrast and first-read playback are checked. Real Home checked read-only in
+both themes, including visible opacity and the existing score dock. Physical iOS
+frame pacing and screen-reader speech remain unmeasured. Evidence:
+[broadcast-signatures-1523.md](docs/broadcast-signatures-1523.md).

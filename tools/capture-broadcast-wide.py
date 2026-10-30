@@ -24,8 +24,10 @@ with sync_playwright() as p:
   const spotlight=weeklyHeadlineSlide({final:true,season:2026,week:5,games:[{winner:{uid:'a',name:'Bayou Bombers',value:131.22},loser:{uid:'b',name:'Monday Night Mayhem',value:120}}]},{season:2026,week:6});
   const original=reviewDeck,champ=original.find(s=>s.treatment==='champion'&&s.variant!=='chip'),chip=original.find(s=>s.treatment==='champion'&&s.variant==='chip'),injury=original.find(s=>s.treatment==='injuries');
   const packages=[{teamName:'The Very Long Championship Bayou Bombers',players:[{id:'7547',name:'Amon-Ra St. Brown',position:'WR',nflTeam:'DET'},{id:'1466',name:'Travis Kelce',position:'TE',nflTeam:'KC'}]},{teamName:'Klutch Sports Group',players:[{id:'3198',name:'Derrick Henry',position:'RB',nflTeam:'BAL'},{id:'8137',name:'George Pickens',position:'WR',nflTeam:'DAL'},{id:'2449',name:'Stefon Diggs',position:'WR',nflTeam:'WAS'}]},{teamName:'Monday Night Mayhem',players:[{id:'2216',name:'Mike Evans',position:'WR',nflTeam:'SF'},{id:'12527',name:'Ashton Jeanty',position:'RB',nflTeam:'LV'}]}];
-  const trade={id:'review-deal',key:'review-deal',kind:'trade',treatment:'stat',kicker:'2026 · WEEK 6',figure:78,href:'#/trade?tx=review',tradeStory:{packages,outcome:{displayGrade:'Value edge'},balanceLabel:'group balance'}};
-  window.artDeck=[{...champ,key:'champ',headline:'The Bayou Bombers',image:'https://example.invalid/member-profile.jpg'},{...chip,key:'chip',headline:'Monday Night Mayhem'},injury,trade,{...trade,key:'two-team',tradeStory:{...trade.tradeStory,packages:packages.slice(0,2)}},{key:'rivalry',kind:'fact',treatment:'announcement',storyKind:'rivalry',headline:'The rematch',kicker:'DFL RIVALRIES',figure:12,storyNames:['The Bayou Bombers','Klutch Sports Group'],storySeries:'7–5',href:'#/history'},{...spotlight,key:'spotlight'},{key:'percent',kind:'odds',treatment:'stat',kicker:'PLAYOFF PICTURE',figure:'72%',headline:'Still in the fucking fight.',subtitle:'The next matchup sets the tone.'}];
+  packages.forEach((pkg,i)=>pkg.rosterId=String(i+1));
+  const receivedPackages=packages.map((pkg,i)=>({...pkg,players:packages[(i+1)%3].players})).reverse();
+  const trade={id:'review-deal',key:'review-deal',kind:'trade',treatment:'stat',kicker:'BREAKING TRADE · WEEK 6',figure:78,href:'#/trade?tx=review',tradeStory:{packages,receivedPackages,outcome:{displayGrade:'Value edge'},balanceLabel:'group balance'}};
+  window.artDeck=[{...champ,key:'champ',headline:'The Bayou Bombers',image:'https://example.invalid/member-profile.jpg'},{...chip,key:'chip',headline:'Monday Night Mayhem'},injury,trade,{...trade,key:'two-team',tradeStory:{...trade.tradeStory,packages:packages.slice(0,2),receivedPackages:packages.slice(0,2).map((pkg,i)=>({...pkg,players:packages[1-i].players}))}},{key:'rivalry',kind:'fact',treatment:'announcement',storyKind:'rivalry',headline:'The rematch',kicker:'DFL RIVALRIES',figure:12,storyNames:['The Bayou Bombers','Klutch Sports Group'],storySeries:'7–5',href:'#/history'},{...spotlight,key:'spotlight'},{key:'percent',kind:'odds',treatment:'stat',kicker:'PLAYOFF PICTURE',figure:'72%',headline:'Still in the fucking fight.',subtitle:'The next matchup sets the tone.'}];
   artDeck.unshift(reviewDeck[0]);artDeck.push(reviewDeck.find(s=>s.id==='fixture:archive-record'),reviewDeck.find(s=>s.generator==='nextMove'),reviewDeck.find(s=>s.id==='fixture:golf'),{...champ,key:'long',headline:'The Bastards of the Very Long Championship Team Name'},{key:'news',kind:'news',treatment:'announcement',kicker:'LEAGUE NEWS',headline:'The league gets the last word.',body:'Weekly awards, matchup conversations and the stories everyone will be talking about.',href:'#/clubhouse'},{key:'season',kind:'season',figure:10,headline:'Seasons',subtitle:'2017 → 2026',href:'#/history'});
   const view=document.querySelector('#view');view.innerHTML='<div id="home-wrap"><div class="home-frontpage"><div class="home-broadcast"></div></div></div>';
   document.querySelector('.home-broadcast').innerHTML=renderStage(artDeck,{editorial:true,wide:true});
@@ -46,6 +48,16 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/f'wide-{mode}-{width}-{i}.png'))
     assert metrics['within'] and metrics['separated'] and metrics['artContained'] and not metrics['overflow'],(mode,width,i,metrics)
     assert metrics['headFont']>=18,(mode,width,i,'headline too small',metrics)
+    if i in [4,5]:
+     exchange=slide.evaluate('''e=>{
+      const inside=(a,b)=>a.left>=b.left-1&&a.right<=b.right+1&&a.top>=b.top-1&&a.bottom<=b.bottom+1;
+      const separate=(a,b)=>a.right<=b.left+1||a.left>=b.right-1||a.bottom<=b.top+1||a.top>=b.bottom-1;
+      const rows=[...e.querySelectorAll('.bx-brief-package')],balance=e.querySelector('.bx-brief-trade-balance').getBoundingClientRect();
+      return rows.every(row=>{const r=row.getBoundingClientRect(),items=[...row.children].map(n=>n.getBoundingClientRect());return items.every(b=>inside(b,r))&&items.every((b,j)=>items.slice(j+1).every(c=>separate(b,c)))})
+       &&[...e.querySelectorAll(':scope>.bx-kicker,:scope>.bx-head,:scope>.bx-brief-body,:scope>.bx-brief-action')].every(n=>separate(n.getBoundingClientRect(),balance))
+       &&rows.every(n=>n.querySelector('small em').textContent==='gets');
+     }''')
+     assert exchange,(mode,width,i,'exchange overlap or unverified routing')
     assert slide.locator('.bx-brief-art .dfl-player-portrait').evaluate_all('''nodes=>nodes.every(n=>getComputedStyle(n).borderTopWidth==='0px'&&getComputedStyle(n).backgroundImage==='none'&&[...n.querySelectorAll('img')].every(img=>getComputedStyle(img).backgroundImage==='none'))'''),(mode,width,i,'portrait inherited an unrelated plate')
     targets=stage.locator('[data-bx-step],[data-bx-pause],[data-bx-go]').evaluate_all('nodes=>nodes.every(n=>n.getBoundingClientRect().width>=43.5&&n.getBoundingClientRect().height>=43.5)')
     assert targets,(mode,width,i,'small transport target')
@@ -101,6 +113,27 @@ with sync_playwright() as p:
     enlarged.append({'mode':mode,'fontSize':font_size,'index':i,**result})
  (OUT/'finish-checks.json').write_text(json.dumps({'slides':finish,'glows':glows},indent=2))
  page.evaluate("document.documentElement.style.fontSize=''")
+ # Entrance runs once on arrival, pauses while hidden, and never competes
+ # with direct finger movement or the user's motion preference.
+ page.set_viewport_size({'width':390,'height':844})
+ page.evaluate("document.querySelector('.home-broadcast').style.marginTop='420px';scrollTo(0,0)")
+ page.wait_for_function("document.querySelector('[data-bx-stage]').hasAttribute('data-bx-visible')")
+ page.locator('[data-bx-go="1"]').evaluate('e=>e.click()');page.wait_for_timeout(90)
+ assert page.locator('.bx-slide:not(.bx-leaving)>.bx-brief-art').evaluate("e=>getComputedStyle(e).animationName==='bx-story-art'&&e.getAnimations().some(a=>a.playState==='running')"),'Award reveal missing'
+ page.evaluate("document.querySelector('.home-broadcast').style.marginTop='';document.querySelector('#view').style.minHeight='1800px';scrollTo(0,900)")
+ page.wait_for_function("!document.querySelector('[data-bx-stage]').hasAttribute('data-bx-visible')")
+ page.locator('[data-bx-go="2"]').evaluate('e=>e.click()');page.wait_for_timeout(90)
+ paused=page.locator('.bx-slide:not(.bx-leaving)>.bx-brief-art').evaluate("e=>e.getAnimations().map(a=>({state:a.playState,time:a.currentTime}))")
+ page.wait_for_timeout(120)
+ assert page.locator('.bx-slide:not(.bx-leaving)>.bx-brief-art').evaluate("(e,before)=>JSON.stringify(e.getAnimations().map(a=>({state:a.playState,time:a.currentTime})))===JSON.stringify(before)&&before.length>0&&before.every(a=>a.state==='paused')",paused),'Offscreen entrance kept running'
+ page.evaluate('scrollTo(0,0)');page.wait_for_timeout(600)
+ assert page.locator('.bx-slide:not(.bx-leaving)>.bx-brief-art').evaluate("e=>e.getAnimations().every(a=>a.playState==='finished')"),'Entrance did not finish on return'
+ page.evaluate('scrollTo(0,900)');page.wait_for_timeout(80);page.evaluate('scrollTo(0,0)');page.wait_for_timeout(80)
+ assert page.locator('.bx-slide:not(.bx-leaving)>.bx-brief-art').evaluate("e=>e.getAnimations().every(a=>a.playState==='finished')"),'Scrolling replayed a completed entrance'
+ page.evaluate("document.documentElement.dataset.uiMotion='off'")
+ page.locator('[data-bx-go="1"]').evaluate('e=>e.click()');page.wait_for_timeout(100)
+ assert page.locator('.bx-layer').evaluate("e=>e.getAnimations({subtree:true}).every(a=>a.playState!=='running')"),'Motion-off still animated'
+ page.evaluate("delete document.documentElement.dataset.uiMotion;document.querySelector('#view').style.minHeight=''")
  (OUT/'wide-enlarged-checks.json').write_text(json.dumps(enlarged,indent=2))
  page.set_viewport_size({'width':320,'height':844});page.evaluate("document.documentElement.style.fontSize='20px'");page.locator('[data-bx-go=\"1\"]').evaluate('e=>e.click()');page.wait_for_timeout(450)
  assert page.locator('.bx-brief h2').evaluate('e=>parseFloat(getComputedStyle(e).fontSize)>=23'),'Larger text preference did not scale the headline'
@@ -113,6 +146,7 @@ with sync_playwright() as p:
   for step in range(1,7):cdp.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':start+(end-start)*step/6,'y':y}]});page.wait_for_timeout(18)
   cdp.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});page.wait_for_timeout(400);index=(index+direction)%page.locator('[data-bx-go]').count()
   assert page.locator(f'[data-bx-go="{index}"]').get_attribute('aria-current')=='true','Wide swipe lost its place'
+  if index in [1,2]:assert page.locator('.bx-layer>.bx-slide:not(.bx-leaving) .bx-brief-art').evaluate('e=>e.getAnimations().length===0'),'Swipe replayed the artwork entrance'
  assert page.evaluate('location.hash')==initial_hash,'Swiping followed a story link'
  page.evaluate('''async()=>{artStage.stop();const {renderStage,startStage}=await import('./js/broadcast-stage.js');const host=document.querySelector('.home-broadcast'),deck=[{id:'one',kind:'news',headline:'First story',dwell:120},{id:'two',kind:'news',headline:'Second story',dwell:120}];host.innerHTML=renderStage(deck,{editorial:true,wide:true});window.onceStage=startStage(host.querySelector('[data-bx-stage]'),deck);scrollTo(0,0)}''')
  page.wait_for_timeout(800)

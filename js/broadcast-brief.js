@@ -8,17 +8,37 @@ const art=src=>`<span class="bx-brief-art" aria-hidden="true"><img src="${esc(sr
 const footer=(text,detail='')=>`<span class="bx-brief-action">${detail?`<span class="bx-brief-detail">${detail}</span>`:''}<span>${esc(text)} ${arrow}</span></span>`;
 const recordLabels={high:'Highest score',blowout:'Biggest beating',nailbiter:'Closest finish',streak:'Streak watch',heartbreak:'Heartbreak',rivalry:'Rivalry ledger',title:'Title history',volume:'League history',low:'Rough weeks'};
 export const broadcastRecordHeading=item=>recordLabels[item.storyKind]||'From the record book';
+// Incoming packages have already been routed by the receipt model. Match by
+// roster, never by array order: a three-way trade is not a circular swap.
+function tradePreview(story){
+ const sent=story.packages,received=story.receivedPackages;
+ const roster=p=>p.rosterId==null?'':String(p.rosterId);
+ const routed=Array.isArray(received)&&received.length===sent.length
+  &&new Set(sent.map(roster)).size===sent.length&&sent.every(p=>roster(p)
+   &&received.filter(r=>roster(r)===roster(p)&&Array.isArray(r.players)).length===1);
+ return {direction:routed?'gets':'sends',packages:routed?sent.map(p=>({...p,players:received.find(r=>roster(r)===roster(p)).players})):sent};
+}
 export function renderBroadcastBrief(item){
  if(!item)return '';
- let kind='news',heading=item.headline||'',body='',media='',detail='',action=item.actionLabel||'Open story',href=item.href||'',tag=href?'a':'section';
+ let kind='news',heading=item.headline||'',body='',media='',detail='',tradeSummary='',tradeReading='',action=item.actionLabel||'Open story',href=item.href||'',tag=href?'a':'section';
  if(item.treatment==='champion'){
   kind='award';const chip=item.variant==='chip';media=art(`assets/dfl-daily-${chip?'chip-eater':'champion'}.webp`);
-  body='';action=chip?'The wall of shame':'The title ledger';href=href||'#/history';tag='a';
+  // A long team name gets the space; short names can carry one clean punchline.
+  body=heading.length<=38?`<p class="bx-brief-award-line">${chip?'Last place. Still talking shit.':'Everybody else played for second.'}</p>`:'';
+  action=chip?'The wall of shame':'The title ledger';href=href||'#/history';tag='a';
  }else if(item.kind==='trade'&&item.tradeStory?.packages?.length){
   kind='trade';heading=item.tradeStory.outcome?.displayGrade||item.tradeStory.outcome?.grade||'Trade receipt';action='Open receipt';
-  body=`<div class="bx-brief-packages" style="--bx-parties:${Math.min(3,item.tradeStory.packages.length)}">${item.tradeStory.packages.slice(0,3).map(pkg=>`<div class="bx-brief-package"><small title="${esc(pkg.teamName)}">${esc(pkg.teamName)} sends</small>${pkg.players?.[0]?playerPortrait(pkg.players[0]):''}<strong>${esc(pkg.players?.[0]?.name||'Trade package')}${pkg.players?.length>1?` <span>+${pkg.players.length-1}</span>`:''}</strong></div>`).join('')}</div>`;
+  const preview=tradePreview(item.tradeStory),two=preview.packages.length===2;
+  if(preview.direction==='gets')tradeReading='. '+preview.packages.map(p=>p.teamName+' gets '+((p.players||[]).map(player=>player.name).join(', ')||'no players')).join('. ');
+  body=`<div class="bx-brief-packages${two?' bx-brief-exchange':''}" style="--bx-parties:${Math.min(3,preview.packages.length)}">${preview.packages.slice(0,3).map(pkg=>`<div class="bx-brief-package"><small title="${esc(pkg.teamName)}"><span>${esc(pkg.teamName)}</span> <em>${preview.direction}</em></small>${pkg.players?.[0]?playerPortrait(pkg.players[0]):'<span class="bx-brief-package-empty" aria-hidden="true">—</span>'}<strong>${esc(pkg.players?.[0]?.name||'Trade package')}${!two&&pkg.players?.length>1?` <span>+${pkg.players.length-1}</span>`:''}</strong>${two&&pkg.players?.length>1?`<span class="bx-brief-extra">${esc(pkg.players[1].name)}${pkg.players.length>2?` <b>+${pkg.players.length-2}</b>`:''}</span>`:''}</div>`).join('')}</div>`;
   if(item.tradeStory.packages.length>3)detail=`${item.tradeStory.packages.length}-team trade`;
-  if(item.figure!==null&&item.figure!==undefined&&String(item.figure).trim())detail=`<b>${esc(item.figure)}${typeof item.figure==='number'?'%':''}</b> ${esc(item.tradeStory.balanceLabel||'value balance')}${detail?' · '+detail:''}`;
+  if(item.figure!==null&&item.figure!==undefined&&String(item.figure).trim()){
+   const value=String(item.figure)+(typeof item.figure==='number'?'%':''),number=Number(value.replace(/%$/,''));
+   if(Number.isFinite(number)&&number>=0&&number<=100){
+    const meter=`<span class="bx-brief-balance-track" aria-hidden="true"><i style="--bx-balance:${number}%"></i></span>`;
+    tradeSummary=`<span class="bx-brief-trade-balance"><b>${esc(value)}</b><small>${esc(item.tradeStory.balanceLabel||'value balance')}</small>${meter}</span>`;
+   }
+  }
  }else if(item.sides?.length===2){
   kind='result';action=item.kind==='golf'?'Open golf day':'View matchup';body=`<div class="bx-brief-scores">${item.sides.map(s=>`<div${s.up?' class="is-winner"':''}><strong>${esc(s.name)}</strong><b>${esc(s.score)}</b></div>`).join('')}</div>`;
   const scores=item.sides.map(s=>s.score===null||s.score===undefined||String(s.score).trim()===''?NaN:Number(s.score));
@@ -44,5 +64,6 @@ export function renderBroadcastBrief(item){
  const phase=(kind==='result'||item.treatment==='event')&&['live','upcoming','final'].includes(item.temporal)&&!new RegExp(item.temporal,'i').test(item.kicker||'')?item.temporal:'';
  const title=`<h2 class="bx-head">${esc(heading)}</h2>`,content=body?`<div class="bx-brief-body">${body}</div>`:'';
  const category=item.kicker||{injury:'Player availability',season:'DFL archive',news:'League wire',metric:item.kind==='record'?'Record book':'By the numbers',scout:'Auto Scout',rivalry:'The ledger',trade:'Trade receipt',award:item.variant==='chip'?'Chip Eater':'League champion',result:'Around the league'}[kind];
- return `<${tag} class="bx-slide bx-brief bx-brief-${kind}${kind==='award'&&item.variant==='chip'?' bx-brief-chip':''}${kind==='award'&&heading.length>38?' bx-brief-award-long':''}${media?' bx-brief-with-art':''}"${href?` href="${esc(href)}"`:''}${kind==='trade'?` aria-label="${esc(heading+'. '+item.tradeStory.packages.map(p=>p.teamName+' sends '+(p.players||[]).map(player=>player.name).join(', ')).join('. '))}"`:''}><span class="bx-kicker">${mark(kind)}${esc(category)}${phase?` <span class="bx-brief-phase">· ${esc(phase)}</span>`:''}</span>${kind==='result'?content+title:title+content}${media}${kind==='injury'?`<button type="button" class="bx-brief-action" data-open-injury-report>${esc(action)} ${arrow}</button>`:href?footer(action,detail):''}</${tag}>`;
+ const label=kind==='trade'?heading+'. '+item.tradeStory.packages.map(p=>p.teamName+' sends '+(p.players||[]).map(player=>player.name).join(', ')).join('. ')+tradeReading+(tradeSummary?'. '+String(item.figure)+(typeof item.figure==='number'?'%':'')+' '+(item.tradeStory.balanceLabel||'value balance'):''):'';
+ return `<${tag} class="bx-slide bx-brief bx-brief-${kind}${kind==='award'&&item.variant==='chip'?' bx-brief-chip':''}${kind==='award'&&heading.length>38?' bx-brief-award-long':''}${tradeSummary?' bx-brief-rated-trade':''}${media?' bx-brief-with-art':''}"${href?` href="${esc(href)}"`:''}${label?` aria-label="${esc(label)}"`:''}><span class="bx-kicker">${mark(kind)}${esc(category)}${phase?` <span class="bx-brief-phase">· ${esc(phase)}</span>`:''}</span>${kind==='result'?content+title:title+content}${media}${tradeSummary}${kind==='injury'?`<button type="button" class="bx-brief-action" data-open-injury-report>${esc(action)} ${arrow}</button>`:href?footer(action,detail):''}</${tag}>`;
 }

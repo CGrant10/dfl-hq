@@ -50,6 +50,12 @@ describe("trade alert as a stage slide", () => {
     expect(tradeAlertSlide(alert).subtitle).toContain("+4.2/wk");
   });
 
+  it('carries verified incoming packages into the broadcast without guessing a three-way route',()=>{
+    const receivedPackages=[{rosterId:'3',players:[{name:'Player from team one'}]}];
+    expect(tradeAlertSlide({...alert,receivedPackages}).tradeStory.receivedPackages).toBe(receivedPackages);
+    expect(tradeAlertSlide(alert).tradeStory.receivedPackages).toBeNull();
+  });
+
   it("says BALANCED rather than naming a winner when the model calls it even", () => {
     expect(tradeAlertSlide({ ...alert, balanced: true }).headline).toBe("BALANCED");
   });

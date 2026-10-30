@@ -56,6 +56,7 @@
 #home-wrap .bx-stage[data-bx-format="wide"] .bx-slide.bx-enter { opacity:0; transform:translate3d(16px,0,0); transition:none; }
 #home-wrap .bx-stage[data-bx-format="wide"] .bx-slide.bx-leaving { opacity:0; transform:translate3d(-16px,0,0); }
 #home-wrap .bx-stage[data-bx-format="wide"] .bx-brief.bx-in * { animation:none; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief.bx-in>:is(.bx-head,.bx-brief-body,.bx-brief-art,.bx-brief-number,.bx-brief-value) { animation:none; }
 #home-wrap .bx-stage[data-bx-large-text] .bx-brief-with-art>:is(.bx-kicker,.bx-head,.bx-brief-body,.bx-brief-action) { width:100%; max-width:100%; }
 #home-wrap .bx-stage[data-bx-large-text] .bx-brief-with-art { background:var(--bg-2); }
 #home-wrap .bx-stage[data-bx-large-text] .bx-brief-with-art>.bx-brief-art { position:static; width:100%; height:60px; flex:none; }
@@ -101,3 +102,63 @@ html[data-ui-motion="off"] #home-wrap .bx-stage[data-bx-format="wide"] .bx-slide
 /* Blend cropped lower artwork into the surface; retain the complete upper silhouette. */
 #home-wrap .bx-brief-award:not(.bx-brief-chip) .bx-brief-art>img,
 #home-wrap .bx-brief-scout .bx-brief-art img { -webkit-mask-image:linear-gradient(to bottom,#000 82%,transparent 100%); mask-image:linear-gradient(to bottom,#000 82%,transparent 100%); }
+
+/* Award posters: one name, a short line, and a complete house illustration.
+   The reversed last-place composition gives the two awards different beats. */
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award { gap:6px; }
+#home-wrap .bx-brief-award>.bx-head { margin-top:auto; margin-bottom:0; font-size:clamp(1.5rem,7.5vw,2rem); letter-spacing:-.02em; }
+#home-wrap .bx-brief-award>.bx-brief-body { flex:none; margin-bottom:auto; font-size:.8125rem; line-height:1.3; }
+#home-wrap .bx-brief-award-long>.bx-head { margin-block:auto; font-size:clamp(1.25rem,6vw,1.75rem); }
+#home-wrap .bx-brief-award:not(.bx-brief-chip) .bx-brief-art>img { width:auto; height:auto; max-width:100%; max-height:100%; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-chip { background:radial-gradient(ellipse 28% 48% at 25% 50%,color-mix(in srgb,var(--warn-ink) 14%,transparent),transparent 82%),var(--bg-2); }
+#home-wrap .bx-brief-chip>.bx-brief-art { inset:30px auto 34px 12px; width:36%; }
+#home-wrap .bx-brief-chip>:is(.bx-head,.bx-brief-body) { width:49%; max-width:49%; margin-left:auto; }
+#home-wrap .bx-brief-chip>.bx-kicker { width:100%; max-width:100%; }
+#home-wrap .bx-brief-chip>.bx-brief-action { justify-content:flex-start; }
+#home-wrap .bx-brief-chip>.bx-brief-action>span:last-child { margin-left:0; }
+
+/* A receipt has a compact exchange, not a second set of generic story rows. */
+#home-wrap .bx-brief-trade>.bx-head { font-size:1.25rem; line-height:1.15; }
+#home-wrap .bx-brief-rated-trade>.bx-head { width:60%; max-width:60%; }
+#home-wrap .bx-brief-rated-trade>.bx-kicker { width:60%; max-width:60%; }
+#home-wrap .bx-brief-trade-balance { position:absolute; top:13px; right:16px; width:32%; display:grid; grid-template-columns:1fr auto; align-items:baseline; gap:3px 6px; text-align:right; }
+#home-wrap .bx-brief-trade-balance>b { grid-column:2; grid-row:1; color:var(--text); font:700 1.375rem/1 var(--font-body); font-variant-numeric:tabular-nums; letter-spacing:-.025em; }
+#home-wrap .bx-brief-trade-balance>small { grid-column:1; grid-row:1; color:var(--body-text); font:500 .625rem/1.1 var(--font-body); }
+#home-wrap .bx-brief-balance-track { grid-column:1/-1; display:block; height:3px; background:var(--line-soft); border-radius:0; overflow:hidden; }
+#home-wrap .bx-brief-balance-track>i { display:block; width:var(--bx-balance); height:100%; background:var(--accent); transform-origin:left; }
+#home-wrap .bx-brief-package>small { display:flex; gap:4px; }
+#home-wrap .bx-brief-package>small>span { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+#home-wrap .bx-brief-package>small em { flex:none; font-style:normal; color:var(--accent); }
+#home-wrap .bx-brief-packages.bx-brief-exchange { grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+#home-wrap .bx-brief-exchange .bx-brief-package { grid-template-columns:36px minmax(0,1fr); grid-template-rows:auto auto auto; gap:4px 7px; align-content:center; min-width:0; padding:0; border:0; }
+#home-wrap .bx-brief-exchange .bx-brief-package+ .bx-brief-package::before { content:''; position:absolute; left:-10px; top:4px; bottom:4px; width:1px; background:var(--line-soft); }
+#home-wrap .bx-brief-exchange .bx-brief-package>small { grid-column:1/-1; grid-row:1; font-size:.6875rem; }
+#home-wrap .bx-brief-exchange .bx-brief-package>.dfl-player-portrait { grid-column:1; grid-row:2; width:36px; min-width:36px; height:40px; background:none; }
+#home-wrap .bx-brief-exchange .bx-brief-package>strong { grid-column:2; grid-row:2; font-size:.875rem; line-height:1.18; }
+#home-wrap .bx-brief-extra { grid-column:1/-1; grid-row:3; display:block; min-width:0; color:var(--body-text); font:500 .6875rem/1.25 var(--font-body); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+#home-wrap .bx-brief-extra>b { color:var(--text); font-weight:600; }
+#home-wrap .bx-brief-package-empty { grid-column:1; grid-row:2; color:var(--muted); font:500 1rem/1 var(--font-body); }
+
+/* Only the incoming, visible card stages its artwork and copy. Direct finger
+   manipulation keeps everything together; no entrance fights the swipe. */
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award.bx-in>.bx-brief-art { animation:bx-story-art 360ms cubic-bezier(.16,1,.3,1) both; }
+#home-wrap .bx-stage[data-bx-format="wide"] :is(.bx-brief-award,.bx-brief-trade).bx-in>:is(.bx-head,.bx-brief-body) { animation:bx-story-copy 260ms cubic-bezier(.16,1,.3,1) 65ms both; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-trade.bx-in .bx-brief-balance-track>i { animation:bx-story-balance 360ms cubic-bezier(.16,1,.3,1) both; }
+@keyframes bx-story-art { from { opacity:.4; transform:translate3d(0,5px,0); } to { opacity:1; transform:translate3d(0,0,0); } }
+@keyframes bx-story-copy { from { opacity:.35; transform:translate3d(0,3px,0); } to { opacity:1; transform:translate3d(0,0,0); } }
+@keyframes bx-story-balance { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+@media(max-width:360px){
+ #home-wrap .bx-brief-award>.bx-head { font-size:1.5rem; }
+ #home-wrap .bx-brief-award-long>.bx-head { font-size:1.25rem; }
+ #home-wrap .bx-brief-award>.bx-brief-body { font-size:.75rem; }
+ #home-wrap .bx-brief-exchange .bx-brief-package>strong { font-size:.8125rem; }
+}
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-award>:is(.bx-head,.bx-brief-body) { width:100%; max-width:100%; margin-left:0; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-trade-balance { position:static; width:100%; margin-top:4px; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-rated-trade>.bx-head { width:100%; max-width:100%; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-rated-trade>.bx-kicker { width:100%; max-width:100%; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-trade-balance>small { font-size:.75rem; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-packages.bx-brief-exchange { grid-template-columns:minmax(0,1fr); gap:8px; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-exchange .bx-brief-package+ .bx-brief-package::before { content:none; }
+
+#home-wrap .bx-stage:not([data-bx-visible]) .bx-brief.bx-in * { animation-play-state:paused!important; }

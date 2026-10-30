@@ -625,6 +625,7 @@ export function startStage(root, deck, { refresh } = {}) {
   const soft = new Set();
   let dead = false;
   let inViewport = false;
+  let visuallyVisible = false;
   let visibilityFrame = 0;
   let readingStarted = false;
   let refreshing = false;
@@ -866,6 +867,7 @@ export function startStage(root, deck, { refresh } = {}) {
      coming. */
   function markStill() {
     root.classList.toggle("is-paused", userPaused || soft.size > 0);
+    root.toggleAttribute('data-bx-visible',visuallyVisible&&!document.hidden);
   }
 
   function setPaused(on) {
@@ -942,6 +944,10 @@ export function startStage(root, deck, { refresh } = {}) {
     const bottom = nav?.height ? Math.min(innerHeight, nav.top) : innerHeight;
     const box = root.getBoundingClientRect();
     const visible = Math.max(0, Math.min(box.bottom, bottom) - Math.max(box.top, top));
+    // Entrance visibility is independent of the later first-read dwell gate.
+    // A card low in the viewport must not sit at its faded entrance keyframe.
+    visuallyVisible = visible > 0 && bottom > top;
+    root.toggleAttribute('data-bx-visible',visuallyVisible&&!document.hidden);
     const enoughVisible = box.height > 0 && bottom > top && visible >= .75 * Math.min(box.height, bottom - top);
     // On Home, leave the opener alone while attention is still on GameDay
     // above it. The first read starts as the card reaches the upper third.
