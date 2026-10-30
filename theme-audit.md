@@ -1630,3 +1630,17 @@ Real Home and Clubhouse inspected read-only in both themes. Other routes,
 physical iOS behavior and screen-reader speech remain outside this adoption.
 See [interface-foundation-1524.md](docs/interface-foundation-1524.md) and
 [interface-standard.md](docs/interface-standard.md).
+
+# 1.525.0 — Clubhouse fit and shared matchup/player rows
+
+Reviewed current Light/Dark mobile screenshots and the all-tab layout matrix.
+All six Clubhouse section labels fit within their navigation, including narrow
+phones and larger text. The underline follows wrapped rows. Native week values
+and refresh/status controls reflow; no overflow clip hides the final destinations.
+Shared matchup strips use token-based surfaces, team marks, readable names and
+exact tabular scores. Shared player rows retain photos, full names, point/status
+keys and meaningful thermal effects; Home/league portraits share a compact frame.
+Checks cover Compact/Comfortable modes, 100/125/200% text, targets, keyboard/tab
+selection, gestures, exact scores and Home return. Actual Home/Clubhouse checked
+read-only in both themes. Physical Safari behavior and screen-reader speech are
+not measured. Evidence: [matchup-player-polish-1525.md](docs/matchup-player-polish-1525.md).

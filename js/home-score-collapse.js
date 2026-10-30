@@ -23,7 +23,7 @@ export function homeScoreFrame(g,t,top,span){
 // Source layout stays in the document. All moving copies are prepared once;
 // scroll frames never measure the page or create/remove a copy at the endpoints.
 export function mountHomeScoreCollapse(root){
- const dock=document.createElement('button');dock.type='button';dock.className='home-score-dock';dock.hidden=true;dock.inert=true;
+ const dock=document.createElement('button');dock.type='button';dock.className='home-score-dock';dock.dataset.uiScoreStrip='';dock.hidden=true;dock.inert=true;
  dock.innerHTML='<span class="home-score-pair"><span><i data-dock-mark></i><strong data-dock-name></strong><b data-dock-score></b></span><small class="home-score-caption"><span data-dock-caption></span></small><span><i data-dock-mark></i><strong data-dock-name></strong><b data-dock-score></b></span></span>';
  const layer=document.createElement('span');layer.className='home-score-flight';layer.setAttribute('aria-hidden','true');root.append(dock,layer);
  const reduced=matchMedia('(prefers-reduced-motion: reduce)'),marks=[...dock.querySelectorAll('[data-dock-mark]')],scores=[...dock.querySelectorAll('[data-dock-score]')],names=[...dock.querySelectorAll('[data-dock-name]')];

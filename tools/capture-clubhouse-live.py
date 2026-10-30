@@ -35,7 +35,7 @@ def check(name,ok):
  checks.append({'check':name,'pass':bool(ok)});(OUT/'checks.json').write_text(json.dumps(checks,indent=2));assert ok,name;print('PASS '+name,flush=True)
 with sync_playwright() as p:
  browser=p.chromium.launch(executable_path=os.environ.get('DFL_REVIEW_CHROMIUM'),headless=True,args=['--no-sandbox','--disable-dev-shm-usage'])
- for width in [320,390]:
+ for width in ([320,375,390,430,768] if os.environ.get('DFL_CLUBHOUSE_LAYOUT_ONLY') else [320,390]):
   for mode in ['light','dark']:
    c=browser.new_context(viewport={'width':width,'height':844},has_touch=True,is_mobile=True,service_workers='block');c.add_init_script(fixture)
    def route(r):
@@ -70,8 +70,34 @@ with sync_playwright() as p:
     f.page=await import('/js/pages/clubhouse.js');document.getElementById('view').dataset.pulseSystem='1';document.getElementById('view').dataset.pageSystem='1';await f.page.render(document.getElementById('view'));f.stopPageSwipe=(await import('/js/ui-motion.js')).mountPageSwipeTabs(document.getElementById('view'));(await import('/js/player-card-actions.js')).mountPlayerCards();
    }''',mode)
    tag=f'{width}px {mode}';page.wait_for_selector('.gd-lineup-comparison',timeout=20000)
+   if os.environ.get('DFL_CLUBHOUSE_LAYOUT_ONLY'):
+    for size,reader in [(16,'compact'),(16,'comfortable'),(20,'compact'),(32,'compact')]:
+     page.evaluate("([size,reader])=>{document.documentElement.style.fontSize=size+'px';document.documentElement.dataset.readability=reader}",[size,reader]);page.evaluate('document.fonts.ready')
+     for tab in ['matchups','highlights','nfl','leaders','overview','recap']:
+      page.locator(f'[data-clubhouse-tab="{tab}"]').evaluate('e=>e.click()');page.wait_for_timeout(90)
+      metrics=page.locator('.clubhouse-tabs').evaluate('''e=>{
+       const r=e.getBoundingClientRect(),buttons=[...e.querySelectorAll('button')],selected=e.querySelector('[aria-selected="true"]'),b=selected.getBoundingClientRect(),marker=e.querySelector('.clubhouse-tab-indicator');
+       return {width:e.clientWidth,scroll:e.scrollWidth,height:e.clientHeight,allFit:buttons.every(n=>{const a=n.getBoundingClientRect();return a.left>=r.left-1&&a.right<=r.right+1&&a.top>=r.top-1&&a.bottom<=r.bottom+1&&n.scrollWidth<=n.clientWidth+1}),targets:buttons.every(n=>n.getBoundingClientRect().height>=43.5&&n.getBoundingClientRect().width>=43.5),marker:Math.abs(parseFloat(marker.style.top)-(b.bottom-r.top-2))<1&&Math.abs(parseFloat(marker.style.left)-(b.left-r.left))<1};
+      }''')
+      bounds=page.locator('.clubhouse-command-center').evaluate('''e=>{const nodes=[e,...e.querySelectorAll('[role="tabpanel"],.clubhouse-section,.gd-compare-head,.gd-compare-row,.clubhouse-score-strip,.nfl-center-fantasy')].filter(n=>n.getClientRects().length);return nodes.every(n=>{const r=n.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1&&n.clientWidth<=innerWidth})}''')
+      rows=page.locator('.clubhouse-command-center').evaluate('''e=>{
+       const separate=(a,b)=>a.right<=b.left+1||a.left>=b.right-1||a.bottom<=b.top+1||a.top>=b.bottom-1;
+       const strips=[...e.querySelectorAll('.clubhouse-strip-team')].filter(n=>n.getClientRects().length);
+       const players=[...e.querySelectorAll('[data-ui-player-row]')].filter(n=>n.getClientRects().length);
+       const canvas=document.createElement('canvas').getContext('2d');
+       const pickers=[...e.querySelectorAll('.clubhouse-week-picker select')];
+       return strips.every(n=>{const name=n.querySelector('strong'),score=n.querySelector('b');return name.scrollWidth<=name.clientWidth+1&&separate(name.getBoundingClientRect(),score.getBoundingClientRect())})
+        &&players.every(n=>{const tap=n.querySelector('.gameday-player-tap'),score=n.querySelector('[data-ui-player-score]'),name=n.querySelector('.dfl-player-copy');return (!name||name.scrollWidth<=name.clientWidth+1)&&(!tap||!score||separate(tap.getBoundingClientRect(),score.getBoundingClientRect()))})
+        &&pickers.every(n=>{const s=getComputedStyle(n);canvas.font=s.font;return canvas.measureText(n.selectedOptions[0].text).width<=n.clientWidth-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight)+1});
+      }''')
+      check(f'{tag}/{size}px/{reader}/{tab} all tabs, marker, picker values and rows fit '+json.dumps({**metrics,'rows':rows,'bounds':bounds}),metrics['allFit'] and metrics['targets'] and metrics['marker'] and bounds and rows and metrics['scroll']<=metrics['width']+1)
+     page.locator('[data-clubhouse-tab="recap"]').focus();page.keyboard.press('ArrowRight');check(f'{tag}/{size}px/{reader} keyboard wraps to Matchups',page.locator('[data-clubhouse-tab="matchups"]').get_attribute('aria-selected')=='true')
+     if size==16 and reader=='compact' or size==32 and width==320:
+      page.evaluate('scrollTo(0,0)');page.wait_for_timeout(350);page.screenshot(path=str(OUT/f'{width}-{mode}-{size}-layout.png'))
+    check(tag+' no layout browser errors or writes',not errors and not page.evaluate('f.writes'))
+    page.evaluate('f.page.leave()');c.close();continue
    check(tag+' one Clubhouse offers Matchups, Highlights and Leaders',page.locator('[data-clubhouse-tab]').count()==6 and page.locator('.gameday-watch').count()==0)
-   check(tag+' Clubhouse tabs stay on one row and scroll when needed',page.locator('.clubhouse-tabs').evaluate('e=>getComputedStyle(e).flexWrap==="nowrap"&&e.clientHeight<=50&&getComputedStyle(e).overflowX==="auto"'))
+   check(tag+' every Clubhouse tab is fully visible',page.locator('.clubhouse-tabs').evaluate('''e=>{const r=e.getBoundingClientRect();return e.scrollWidth<=e.clientWidth+1&&[...e.querySelectorAll('button')].every(n=>{const b=n.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1&&n.scrollWidth<=n.clientWidth+1})}'''))
    check(tag+' live matchup keeps both starting lineups side by side',page.locator('[data-clubhouse-matchup="1"] [data-gameday-player]').count()>=3)
    check(tag+' hides highlight loading until its tab is opened',page.evaluate('f.clipReads===0'))
    check(tag+' NFL viewing shortcuts are obvious before the week picker',page.locator('[data-clubhouse-nfl-open]').count()==2 and page.locator('.clubhouse-nfl-shortcuts').bounding_box()['y']<page.locator('.clubhouse-context').bounding_box()['y'] and page.locator('[data-clubhouse-nfl-open]').evaluate_all('es=>es.every(e=>e.clientHeight>=44)'))
@@ -100,6 +126,7 @@ with sync_playwright() as p:
     check(tag+' shared interface family, fitting names and touch controls '+json.dumps(interface),all('Inter' in interface[k] for k in ['title','tab','picker']) and interface['names'] and interface['targets'] and not interface['overflow'])
     page.locator('[data-clubhouse-matchup="1"] .clubhouse-game-teams').screenshot(path=str(OUT/f'{width}-{mode}-identity.png'))
     page.locator('[data-clubhouse-matchup="1"] .gd-lineup-comparison').screenshot(path=str(OUT/f'{width}-{mode}-lineup.png'))
+    page.locator('[data-clubhouse-matchup="1"] .clubhouse-score-strip').screenshot(path=str(OUT/f'{width}-{mode}-score-strip.png'))
     page.evaluate('scrollTo(0,0)')
    page.locator('#clubhouse-tab-highlights').click()
    try:page.wait_for_selector('[data-home-reel-clip]',timeout=15000)
