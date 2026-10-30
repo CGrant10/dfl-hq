@@ -8010,3 +8010,122 @@ html[data-ui-motion="off"] #home-wrap .bx-stage[data-bx-format="wide"] .bx-slide
 #view .momentum-events button[aria-pressed=true]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 5%,transparent)}
 .momentum-empty,.momentum-status{color:var(--body-text);font:500 .875rem/1.5 var(--font-body);margin:10px 0}
 .matchup-momentum :is(button,a,input):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+
+/* Source: css/interface-system.css */
+/* First adoption of the shared interface standard: Home + Clubhouse.
+   Story art and sport display type keep their own roles. No new motion. */
+#view.view[data-route="home"] #home-wrap,
+#view.view[data-route="clubhouse"] .clubhouse-command-center {
+ --home-ui-font:var(--font-ui);
+ --font-body:var(--font-ui);
+ --font-display:var(--font-sport);
+ --home-section-title:var(--ui-section);
+ --home-subsection-title:var(--ui-row);
+ --home-body-size:var(--ui-copy);
+ --home-meta-size:var(--ui-meta);
+ --home-section-gap:var(--ui-section-gap);
+ --clubhouse-control-radius:var(--ui-control-radius);
+ font-family:var(--font-ui); font-size:var(--ui-copy); line-height:1.5;
+ letter-spacing:0;
+}
+
+/* Shared families use explicit opt-in attributes, ready for other routes. */
+#view [data-ui-tabs] { border-radius:0; background:transparent; }
+#view [data-ui-tabs]>button {
+ min-height:var(--ui-control-height); min-width:44px; border-radius:0;
+ font:600 var(--ui-meta)/1.35 var(--font-ui); letter-spacing:0;
+ text-transform:none; color:var(--body-text); background:transparent;
+}
+#view [data-ui-tabs]>button:is([aria-selected="true"],[aria-pressed="true"]) { color:var(--text); font-weight:700; }
+#view [data-ui-picker] select {
+ min-height:var(--ui-control-height); border-radius:var(--ui-control-radius);
+ border:1px solid var(--line); background:var(--bg-2); color:var(--text);
+ font:600 var(--ui-input)/1.35 var(--font-ui); letter-spacing:0;
+}
+#view [data-ui-section] h2 {
+ margin:0; color:var(--text); font:700 var(--ui-section)/1.3 var(--font-ui);
+ letter-spacing:-.015em; text-transform:none;
+}
+#view :is([data-ui-tabs]>button,[data-ui-picker] select):focus-visible { outline:2px solid var(--accent); outline-offset:-3px; }
+
+/* Home: content leads, brief metadata recedes, and all rows share one grid. */
+#view.view[data-route="home"] #home-wrap { --home-gutter:var(--ui-gutter); padding-top:16px; }
+#view.view[data-route="home"] #home-wrap .home-newspaper-name h1 { font:700 var(--ui-title)/1.2 var(--font-ui); letter-spacing:-.025em; text-transform:none; }
+#view.view[data-route="home"] #home-wrap .home-newspaper-date { font:500 var(--ui-label)/1.4 var(--font-ui); letter-spacing:.035em; }
+#view.view[data-route="home"] #home-wrap .gameday-card>header :is(h2,.home-game-phase) { font:600 var(--ui-label)/1.4 var(--font-ui); letter-spacing:.055em; }
+#view.view[data-route="home"] #home-wrap .home-team-name strong { font:650 var(--ui-row)/1.25 var(--font-ui); letter-spacing:-.01em; overflow-wrap:break-word; }
+#view.view[data-route="home"] #home-wrap :is(.home-team-record,.home-team-progress) { font:500 var(--ui-meta)/1.35 var(--font-ui); letter-spacing:0; }
+#view.view[data-route="home"] #home-wrap .home-team-total :is(.gd-thermal-number,.home-projected-total) { font-family:var(--font-display); font-variant-numeric:tabular-nums; }
+#view.view[data-route="home"] #home-wrap .home-matchup-entry>strong { font:600 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-route="home"] #home-wrap .home-week-focus :is(.home-lineup-primary,.home-clubhouse-link) { font:600 var(--ui-row)/1.35 var(--font-ui); border-radius:var(--ui-control-radius); }
+#view.view[data-route="home"] #home-wrap .home-newspaper-sections button { font:600 var(--ui-label)/1.4 var(--font-ui); padding-inline:2px; }
+#view.view[data-route="home"] #home-wrap [data-home-week-part="plan"]>summary strong { font:700 var(--ui-section)/1.3 var(--font-ui); letter-spacing:-.015em; }
+#view.view[data-route="home"] #home-wrap .home-weekly-digest :is(.home-week-tabs,.home-position-tabs) { gap:0; }
+#view.view[data-route="home"] #home-wrap .home-weekly-digest .home-week-tabs button { padding:8px 6px; font:600 var(--ui-meta)/1.35 var(--font-ui); }
+#view.view[data-route="home"] #home-wrap .home-weekly-digest .home-position-tabs button { font:600 var(--ui-meta)/1.35 var(--font-ui); }
+#view.view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-headline { font:650 var(--ui-story)/1.3 var(--font-ui); letter-spacing:-.02em; }
+#view.view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid article { grid-template-columns:88px minmax(0,1fr); padding-block:12px; }
+#view.view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid :is(strong,a) { font:600 var(--ui-row)/1.4 var(--font-ui); }
+#view.view[data-route="home"] #home-wrap :is(.home-outlook-title>h3,.home-outlook-player-main .dfl-player-copy strong,.home-outlook-player-main .player-card-trigger) { font:600 var(--ui-row)/1.35 var(--font-ui); }
+#view.view[data-route="home"] #home-wrap .home-weekly-digest .home-outlook-player-main .dfl-player-copy>small { font:400 var(--ui-meta)/1.45 var(--font-ui); }
+#view.view[data-route="home"] #home-wrap .home-weekly-digest .home-outlook-player-main>em strong { font-family:var(--font-display); font-variant-numeric:tabular-nums; }
+#view.view[data-route="home"] #home-wrap :is(.section-title,.home-league-file>header h2,.home-league-desk>header h2) { font:700 var(--ui-section)/1.3 var(--font-ui); letter-spacing:-.015em; text-transform:none; }
+#view.view[data-route="home"] #home-wrap .home-league-story.is-featured h3 { font:650 var(--ui-story)/1.3 var(--font-ui); letter-spacing:-.02em; }
+#view.view[data-route="home"] #home-wrap .home-league-story:not(.is-featured) h3 { font:600 var(--ui-row)/1.4 var(--font-ui); }
+#view.view[data-route="home"] #home-wrap .home-league-story p { font:400 var(--ui-copy)/1.5 var(--font-ui); }
+#view.view[data-route="home"] #home-wrap .home-tool-card { border:0; border-top:1px solid var(--line-soft); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-route="home"] #home-wrap .home-tool-card>strong { font:650 var(--ui-section)/1.3 var(--font-ui); text-transform:none; letter-spacing:-.015em; }
+#view.view[data-route="home"] #home-wrap .power-edition>header h2 { font:700 var(--ui-section)/1.3 var(--font-ui); text-transform:none; letter-spacing:-.015em; }
+#view.view[data-route="home"] #home-wrap .power-team-copy>strong { font:600 var(--ui-row)/1.35 var(--font-ui); }
+#view.view[data-route="home"] #home-wrap .power-team-copy>small { font:400 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-route="home"] #home-wrap .home-weekly-clubhouse h2 { font:600 var(--ui-section)/1.35 var(--font-ui); text-transform:none; letter-spacing:-.015em; }
+/* Broadcast art direction is independent of the interface migration. */
+#view.view[data-route="home"] #home-wrap .bx-stage { --font-body:var(--font-sport); --font-display:var(--font-sport); --home-ui-font:var(--font-sport); }
+
+/* Clubhouse: one title/context, quiet utility controls, aligned identities. */
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-header { padding:0 0 12px; margin:0 0 12px; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-header h1 { font:700 var(--ui-title)/1.2 var(--font-ui); text-transform:none; letter-spacing:-.025em; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-status { font:500 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-nfl-shortcuts { gap:8px; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-nfl-shortcuts button { min-height:44px; padding:8px; border:0; border-radius:var(--ui-control-radius); background:var(--bg-2); box-shadow:none; font:600 var(--ui-meta)/1.35 var(--font-ui); letter-spacing:0; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-week-picker { gap:8px; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-week-picker label { font:500 var(--ui-label)/1.4 var(--font-ui); color:var(--body-text); letter-spacing:.025em; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-week-picker select { padding:8px 24px 8px 10px; font:600 var(--ui-input)/1.35 var(--font-ui); }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-archive-action { font:600 var(--ui-meta)/1.35 var(--font-ui); }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-tabs>button { padding:10px 12px; font:600 var(--ui-meta)/1.35 var(--font-ui); }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-heading h2 { font:700 var(--ui-section)/1.3 var(--font-ui); text-transform:none; letter-spacing:-.015em; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-heading small { font:500 var(--ui-label)/1.4 var(--font-ui); letter-spacing:.04em; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-heading>.clubhouse-status { padding:0; border:0; border-radius:0; background:none; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-toolbar { gap:8px; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-toolbar :is(button,[data-matchup-freshness]) { font:500 var(--ui-label)/1.4 var(--font-ui); border:0; background:transparent; box-shadow:none; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-toolbar button { min-height:44px; padding:8px 4px; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-toolbar button[data-matchup-refresh] { background:transparent; border:0; box-shadow:none; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-scoreboard-game { border-color:var(--line-soft); border-radius:var(--ui-control-radius); padding:12px; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-scoreboard-game[aria-pressed="true"] { border-color:var(--line-soft); box-shadow:inset 2px 0 var(--accent); }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-mini-team>span:not(.dfl-team-mark) { font:550 var(--ui-meta)/1.4 var(--font-ui); letter-spacing:0; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-mini-team>b { font:700 1.125rem/1.2 var(--font-display); font-variant-numeric:tabular-nums; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-mini-phase { font:500 var(--ui-label)/1.4 var(--font-ui); letter-spacing:0; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-game-teams { border:0; border-radius:8px; gap:20px; padding:20px 12px 16px; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-name strong { font:650 var(--ui-row)/1.35 var(--font-ui); letter-spacing:-.015em; overflow-wrap:break-word; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-name>small { font:400 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-game-side>.clubhouse-team-mark { outline:0; border:1px solid var(--line-soft); box-shadow:none; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-game-side>b { font:700 2.5rem/1.1 var(--font-display); font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center :is(.clubhouse-remaining,.clubhouse-score-kind,.clubhouse-score-lead) { font:500 var(--ui-label)/1.4 var(--font-ui); letter-spacing:0; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player .dfl-player-copy :is(strong,.player-card-trigger) { font:600 .75rem/1.35 var(--font-ui); letter-spacing:-.01em; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player .dfl-player-copy small { font:400 var(--ui-label)/1.4 var(--font-ui); }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .gd-player-stat-line { font:400 var(--ui-meta)/1.45 var(--font-ui); }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .gd-player-stat-line .gd-player-week-line { min-height:2.9em; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center [data-clubhouse-leaders] .dfl-player-copy :is(strong,.player-card-trigger) { font:600 var(--ui-row)/1.35 var(--font-ui); }
+#view.view[data-route="clubhouse"] .clubhouse-command-center [data-clubhouse-leaders] .dfl-player-copy small { font:400 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-route="clubhouse"] .clubhouse-command-center [data-clubhouse-leaders] .gameday-player { border-color:var(--line-soft); padding-block:12px; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .home-reel-grid strong { font:600 var(--ui-row)/1.4 var(--font-ui); }
+
+/* Larger reader settings retain the same hierarchy and native reflow. */
+html[data-readability="comfortable"] #view.view[data-route="home"] #home-wrap,
+html[data-readability="comfortable"] #view.view[data-route="clubhouse"] .clubhouse-command-center {
+ --ui-title:1.625rem; --ui-section:1.125rem; --ui-row:1rem;
+ --ui-copy:.875rem; --ui-meta:.875rem; --ui-label:.75rem;
+}
+@media(max-width:360px) { #view.view[data-route="home"] #home-wrap .home-weekly-digest .home-brief-grid article { grid-template-columns:minmax(0,1fr); } }
+@media(min-width:700px) { #view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player .dfl-player-copy :is(strong,.player-card-trigger) { font-size:var(--ui-row); } }

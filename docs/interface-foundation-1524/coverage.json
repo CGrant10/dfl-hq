@@ -1,0 +1,31 @@
+{
+  "homeLayouts": 24,
+  "enlargedHomeCaptures": 6,
+  "weekChecks": 347,
+  "scoreboardChecks": 63,
+  "clubhouseChecks": 252,
+  "broadcastNormalLayouts": 90,
+  "broadcastEnlargedLayouts": 56,
+  "font": "local Inter + Rajdhani sports numerals",
+  "themes": [
+    "light",
+    "dark"
+  ],
+  "homeWidths": [
+    320,
+    390,
+    768
+  ],
+  "clubhouseWidths": [
+    320,
+    390
+  ],
+  "readerModes": [
+    "compact",
+    "comfortable"
+  ],
+  "keyboard": true,
+  "nativeSwipes": true,
+  "motionPreferences": true,
+  "productionWrites": false
+}

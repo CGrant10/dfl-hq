@@ -84,6 +84,23 @@ with sync_playwright() as p:
    check(tag+' native matchup swipes do not switch Clubhouse tabs',rail.evaluate('e=>e.scrollLeft>20') and page.locator('#clubhouse-tab-matchups').get_attribute('aria-selected')=='true')
    rail.evaluate('e=>e.scrollLeft=0');page.evaluate('scrollTo(0,0)');page.wait_for_timeout(750)
    page.screenshot(path=str(OUT/f'{width}-{mode}-clubhouse-entry.png'))
+   if os.environ.get('DFL_INTERFACE_AUDIT'):
+    page.evaluate('document.fonts.ready')
+    rail.locator('button').last.evaluate('e=>e.click()');page.wait_for_timeout(150)
+    check(tag+' selected matchup is visible without moving the whole page rail',rail.evaluate('''e=>{const a=e.querySelector('[aria-pressed="true"]').getBoundingClientRect(),r=e.getBoundingClientRect();return a.left>=r.left-1&&a.right<=r.right+1}'''))
+    rail.locator('button').first.evaluate('e=>e.click()');page.evaluate('scrollTo(0,0)');page.wait_for_timeout(450)
+    interface=page.locator('.clubhouse-command-center').evaluate('''e=>({
+     title:getComputedStyle(e.querySelector('h1')).fontFamily,
+     tab:getComputedStyle(e.querySelector('[data-clubhouse-tab]')).fontFamily,
+     picker:getComputedStyle(e.querySelector('#clubhouse-week')).fontFamily,
+     names:[...e.querySelectorAll('.clubhouse-matchup-name strong')].filter(n=>n.getClientRects().length).every(n=>n.scrollWidth<=n.clientWidth+1),
+     targets:[...e.querySelectorAll('[data-clubhouse-tab],.clubhouse-week-picker select,[data-clubhouse-nfl-open]')].filter(n=>n.getClientRects().length).every(n=>n.getBoundingClientRect().height>=44),
+     overflow:document.documentElement.scrollWidth>innerWidth+1
+    })''')
+    check(tag+' shared interface family, fitting names and touch controls '+json.dumps(interface),all('Inter' in interface[k] for k in ['title','tab','picker']) and interface['names'] and interface['targets'] and not interface['overflow'])
+    page.locator('[data-clubhouse-matchup="1"] .clubhouse-game-teams').screenshot(path=str(OUT/f'{width}-{mode}-identity.png'))
+    page.locator('[data-clubhouse-matchup="1"] .gd-lineup-comparison').screenshot(path=str(OUT/f'{width}-{mode}-lineup.png'))
+    page.evaluate('scrollTo(0,0)')
    page.locator('#clubhouse-tab-highlights').click()
    try:page.wait_for_selector('[data-home-reel-clip]',timeout=15000)
    except Exception:
