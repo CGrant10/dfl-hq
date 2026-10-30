@@ -140,6 +140,7 @@ on:
       - 'css/matchup-momentum.css'
       - 'tools/capture-matchup-momentum.py'
       - 'tools/capture-scoreboard-finish.py'
+      - 'tools/capture-week-ahead-finish.py'
       - 'supabase/migrations/*gameday_score_history*'
       - 'supabase/tests/gameday_score_history.sql'
       - 'js/matchup-highlights*'
@@ -513,4 +514,31 @@ jobs:
         with:
           name: connected-polish-review
           path: connected-polish-output/
+          retention-days: 7
+
+  weekly-desk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright
+      - name: Render isolated Home weekly cases
+        env:
+          DFL_REVIEW_DIR: ${{ github.workspace }}/week-ahead-fixture
+        run: node tools/render-home-review.mjs
+      - name: Check weekly hierarchy, full forecasts, large text and tabs
+        env:
+          DFL_REVIEW_DIR: ${{ github.workspace }}/week-ahead-fixture
+          DFL_WEEK_FINISH_DIR: week-ahead-output
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          python tools/capture-week-ahead-finish.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: week-ahead-review
+          path: week-ahead-output/
           retention-days: 7

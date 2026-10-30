@@ -14,11 +14,11 @@ import { matchupPreviewSlide, tradeAlertSlide, nextMoveSlide, playoffPictureSlid
 import { disclosure } from '../js/page-disclosure.js';
 import { MEDICINE_GROUND, teamPalette } from '../js/team-theme.js';
 import { activityLine } from '../js/activity.js';
-import {startSitContent} from '../js/start-sit-ui.js';
+import {startSitContent,startSitSummary} from '../js/start-sit-ui.js';
 import { playerIdentity } from '../js/player-presentation.js';
 import { playerLiveState } from '../js/live-score.js';
 import { teamPortrait } from '../js/team-presentation.js';
-import {homeWeekReceipt} from '../js/home-week-flow.js';
+import {homeWeekPlan,homeWeekReceipt} from '../js/home-week-flow.js';
 import { HOME_OUTLOOK_POSITIONS } from '../js/home-week-outlook.js';
 import { pickemState } from '../js/pickem-state.js';
 import { esc, money, fmtShort } from '../js/ui.js';
@@ -73,7 +73,7 @@ const rankMarkup = homeSource.slice(homeSource.indexOf('function rankMove('), ho
 const weeklyMarkup = homeSource.slice(homeSource.indexOf('function outlookPlayerRow('), homeSource.indexOf('function wireHomeWeekHub(')).replaceAll('export ', '');
 const tradeMarkup = homeSource.slice(homeSource.indexOf('function tradePackageLine('), homeSource.indexOf('async function weekAheadSlide(')).replaceAll('export ', '');
 const feedMarkup = homeSource.slice(homeSource.indexOf('function snapshot('), homeSource.indexOf('function wireHomeLeagueFeed('));
-const renderHomeReview = Function('powerRankingsMarkup','startSitContent', 'esc', 'money', 'fmtShort', 'teamPortrait', 'playerIdentity', 'playerLiveState', 'HOME_OUTLOOK_POSITIONS', 'activityLine', 'visible', 'hiddenClass', 'editControls', 'addControl', 'adminRow', `${rankMarkup}\n${weeklyMarkup}\n${tradeMarkup}\n${feedMarkup}\nreturn {homeRankingsCard,homeWeeklyDigest,homeWeeklyFocus,homeTradeWire,homeLeagueFeed,snapshot};`)(powerRankingsMarkup,startSitContent, esc, money, fmtShort, teamPortrait, playerIdentity, playerLiveState, HOME_OUTLOOK_POSITIONS, activityLine, (_table, rows) => rows, () => '', () => '', () => '', () => '');
+const renderHomeReview = Function('powerRankingsMarkup','startSitContent','startSitSummary', 'esc', 'money', 'fmtShort', 'teamPortrait', 'playerIdentity', 'playerLiveState', 'HOME_OUTLOOK_POSITIONS', 'activityLine', 'visible', 'hiddenClass', 'editControls', 'addControl', 'adminRow', `${rankMarkup}\n${weeklyMarkup}\n${tradeMarkup}\n${feedMarkup}\nreturn {homeRankingsCard,homeWeeklyDigest,homeWeeklyFocus,homeTradeWire,homeLeagueFeed,snapshot};`)(powerRankingsMarkup,startSitContent,startSitSummary, esc, money, fmtShort, teamPortrait, playerIdentity, playerLiveState, HOME_OUTLOOK_POSITIONS, activityLine, (_table, rows) => rows, () => '', () => '', () => '', () => '');
 const pickemSource = readFileSync(new URL('../js/sportsbook-pickem.js', import.meta.url), 'utf8');
 const homePickem = Function('pickemState', 'fmt', `${pickemSource.slice(pickemSource.indexOf('export function homePickemMarkup(')).replace('export ', '')}\nreturn homePickemMarkup;`)(pickemState, value => new Date(value).toLocaleDateString('en-US'));
 const homeReviewWiring = homeSource.slice(homeSource.indexOf('function wireHomeRankings('), homeSource.indexOf('function outlookPlayerRow('))
@@ -86,6 +86,9 @@ const rankingTeams = ['Grant','Jack-HAMMER','Mike','Klutch Sports Group'].map((t
 const rankingGames = [[1,3,150,100,2,4,80,70],[1,2,120,130,3,4,100,90],[1,4,180,90,2,3,80,70],[1,3,145.38,101.08,2,4,139.2,121.12]].flatMap((r,i)=>[0,4].map(n=>({season:2026,week:i+1,roster1:r[n],score1:r[n+2],roster2:r[n+1],score2:r[n+3]})));
 const rankings = {weeks:14,focus:{id:'1'},allTeams:rankingTeams,powerRankings:buildLeaguePowerRankings({teams:rankingTeams,matchups:rankingGames,currentWeek:5})};
 const weeklyHome = `<div data-home-report-slot>${renderHomeReview.homeWeeklyDigest(outlook,briefing,null,[{impact:'up',name:'Ja’Marr Chase',detail:'Ready for kickoff'}])}</div>`;
+// Additional production-rendered cases for the compact weekly review only.
+const longWeekly = {...outlook,predictions:Array.from({length:6},(_,index)=>({...outlook.predictions[0],isMine:index===0,winner:{name:index===0?'The Very Long Bayou Championship Bombers':'Fixture winner '+index,projection:124.8+index},loser:{name:index===0?'Monday Night Mayhem':'Fixture rival '+index,projection:118.2+index}})),leaders:Object.fromEntries(HOME_OUTLOOK_POSITIONS.map(position=>[position,Array.from({length:3},(_,index)=>({...outlook.leaders[position][0],id:String(7564+index),name:['Ja’Marr Chase','Amon-Ra St. Brown','Justin Jefferson'][index],ownerName:'The Very Long Bayou Championship Bombers',points:24.6-index*2,scoreSource:index?'projected':'actual'}))]))};
+const weekReviewCases = {long:renderHomeReview.homeWeeklyDigest(longWeekly,briefing),empty:renderHomeReview.homeWeeklyDigest({...outlook,predictions:[],leaders:{},startSit:{lineupIsSet:true,teamName:'Fixture team',swaps:[],alarms:[]}},briefing),loading:renderHomeReview.homeWeeklyDigest(null,null,null,[],{loading:true}),unavailable:renderHomeReview.homeWeeklyDigest(null)};
 const pickemHome = `<div data-home-pickem-slot>${homePickem({available:true,week:5,locksAt:'2099-10-10T16:00:00Z',games:[{provider_event_id:'1'}]},esc)}</div>`;
 const expandedHome = `  ${renderHomeReview.snapshot({leagues:[],members:[{display_name:'Grant'},{display_name:'Mike'}],standings:[],dues:[{season:2026,amount_due:100,amount_paid:80}],polls:[]})}
   <div data-home-trade-slot>${renderHomeReview.homeTradeWire([{week:5,href:'#/trade?id=7',teams:[{teamName:'Dream Enders'},{teamName:'Klutch Sports Group'}],packages:[{teamName:'Dream Enders',players:[{name:'Justin Jefferson'}]},{teamName:'Klutch Sports Group',players:[{name:'Travis Kelce'}]}],outcome:{grade:'Close call',tone:'close',closeness:64,detail:'Both teams fill a need heading into the next kickoff.'}}])}</div>
@@ -146,7 +149,7 @@ html = html.replace(/<main id="view"[^>]*>[\s\S]*?<\/main>/, `<main id="view" cl
   ${homeSectionLinks()}
   <section class="home-week-desk" aria-label="Your week">
     <div data-home-week-flow>
-    ${disclosure('home-week','Plan your week','',weeklyHome).replace('data-page-detail="home-week"','data-page-detail="home-week" data-home-week-part="plan"')}
+    ${homeWeekPlan(weeklyHome,{week:outlook.week})}
     <div data-home-live-slot data-home-week-part="live" class="gameday-card home-live-desk"></div>
     <div data-home-recap-slot data-home-week-part="recap"${homeWeekReceipt({model})?'':' hidden'}>${homeWeekReceipt({model})}</div>
     </div>
@@ -205,6 +208,8 @@ html = html.replace('</body>', `<script type="module">
   window.reviewEmptyWeek = ${JSON.stringify({focus:renderHomeReview.homeWeeklyFocus(null),forecast:renderHomeReview.homeWeeklyDigest(null)})};
   window.reviewPowerRankings = ${JSON.stringify(rankings)};
   ${homeReviewWiring}
+  window.reviewWeekCases = ${JSON.stringify(weekReviewCases)};
+  window.reviewMountWeek = html => {const host=document.querySelector("[data-home-report-slot]");host.innerHTML=html;wireHomeWeekHub(host)};
   // END_HOME_REVIEW_HANDLERS
   window.reviewPowerStop=wireHomeRankings(document.querySelector('[data-home-rankings-slot]'),window.reviewPowerRankings);
   wireHomeWeekHub(document.querySelector('#home-wrap'));

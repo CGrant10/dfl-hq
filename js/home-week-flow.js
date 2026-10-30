@@ -1,8 +1,16 @@
 import {esc} from './ui.js';
-import {readPageChoice,savePageChoice} from './page-disclosure.js';
+import {disclosure,readPageChoice,savePageChoice} from './page-disclosure.js';
 
 const finite=value=>value!==null&&value!==undefined&&Number.isFinite(Number(value));
 const validWeek=value=>Number.isInteger(Number(value))&&Number(value)>0&&Number(value)<=18;
+
+/** One heading owns both the disclosure and its loaded forecast. */
+export function homeWeekPlan(body,{week=null}={}){
+ return disclosure('home-week','Week ahead','',body)
+  .replace('data-page-detail="home-week"','data-page-detail="home-week" data-home-week-part="plan"')
+  .replace('<strong>','<strong role="heading" aria-level="2">')
+  .replace('</strong>',`</strong><span data-home-week-label${validWeek(week)?'':' hidden'}>${validWeek(week)?'Week '+esc(week):''}</span>`);
+}
 
 /** NFL events, rather than the weekday or a single team's finish, set Home's priority. */
 export function homeWeekPhase({model=null,leagueState=null,openingNfl=null,openingWeek=null}={},now=Date.now()){
@@ -75,7 +83,10 @@ export function mountHomeWeekFlow(root,{win=window,doc=document}={}){
   // Avoid disconnecting live nodes/listeners when the order is already correct.
   children.forEach((node,index)=>{if(host.children[index]!==node)host.insertBefore(node,host.children[index]||null)});
   root.dataset.homeWeekPhase=phase.key;
-  const title=plan?.querySelector('summary strong');if(title)title.textContent=phase.key==='pregame'?'Plan your week':'Weekly outlook';
+  const title=plan?.querySelector('summary strong');if(title)title.textContent='Week ahead';
+  const label=plan?.querySelector('[data-home-week-label]'),forecastWeek=plan?.querySelector('[data-home-outlook-week]')?.dataset.homeOutlookWeek;
+  const labelWeek=validWeek(forecastWeek)?forecastWeek:phase.week;
+  if(label){label.hidden=!validWeek(labelWeek);label.textContent=validWeek(labelWeek)?'Week '+labelWeek:''}
   if(plan&&phase.week){
    key='home-week.'+phase.season+'.'+phase.week+'.'+(['live','between','settling'].includes(phase.key)?'started':phase.key);
    const fallback=loadingChoice??(phase.key==='pregame');

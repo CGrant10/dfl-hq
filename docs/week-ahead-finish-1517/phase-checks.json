@@ -1,0 +1,117 @@
+{
+  "homeWeekFlow": [
+    {
+      "mode": "light",
+      "width": 320,
+      "phase": "pregame",
+      "overflow": false,
+      "pageOverflow": false,
+      "badNames": 0,
+      "links": true
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "phase": "live",
+      "overflow": false,
+      "pageOverflow": false,
+      "badNames": 0,
+      "links": true
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "phase": "final",
+      "overflow": false,
+      "pageOverflow": false,
+      "badNames": 0,
+      "links": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "phase": "pregame",
+      "overflow": false,
+      "pageOverflow": false,
+      "badNames": 0,
+      "links": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "phase": "live",
+      "overflow": false,
+      "pageOverflow": false,
+      "badNames": 0,
+      "links": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "phase": "final",
+      "overflow": false,
+      "pageOverflow": false,
+      "badNames": 0,
+      "links": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "phase": "pregame",
+      "overflow": false,
+      "pageOverflow": false,
+      "badNames": 0,
+      "links": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "phase": "live",
+      "overflow": false,
+      "pageOverflow": false,
+      "badNames": 0,
+      "links": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "phase": "final",
+      "overflow": false,
+      "pageOverflow": false,
+      "badNames": 0,
+      "links": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "phase": "pregame",
+      "overflow": false,
+      "pageOverflow": false,
+      "badNames": 0,
+      "links": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "phase": "live",
+      "overflow": false,
+      "pageOverflow": false,
+      "badNames": 0,
+      "links": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "phase": "final",
+      "overflow": false,
+      "pageOverflow": false,
+      "badNames": 0,
+      "links": true
+    }
+  ],
+  "focus": "passed",
+  "scrollStability": "passed",
+  "preferences": "passed",
+  "cleanup": "passed",
+  "browserErrors": []
+}

@@ -1,0 +1,99 @@
+{
+  "release": "1.517.0",
+  "public": false,
+  "checks": [
+    {
+      "mode": "light",
+      "week": "8",
+      "panel": "brief",
+      "oneHeading": true,
+      "contrast": true,
+      "fits": true
+    },
+    {
+      "mode": "light",
+      "week": "8",
+      "firstForecast": [
+        {
+          "name": "Deadly\ud83d\udc80",
+          "points": "108.5"
+        },
+        {
+          "name": "Team Lafountain",
+          "points": "100.0"
+        }
+      ]
+    },
+    {
+      "mode": "light",
+      "week": "8",
+      "panel": "picks",
+      "oneHeading": true,
+      "contrast": true,
+      "fits": true
+    },
+    {
+      "mode": "light",
+      "week": "8",
+      "panel": "players",
+      "oneHeading": true,
+      "contrast": true,
+      "fits": true
+    },
+    {
+      "mode": "light",
+      "week": "8",
+      "panel": "startsit",
+      "oneHeading": true,
+      "contrast": true,
+      "fits": true
+    },
+    {
+      "mode": "dark",
+      "week": "8",
+      "panel": "brief",
+      "oneHeading": true,
+      "contrast": true,
+      "fits": true
+    },
+    {
+      "mode": "dark",
+      "week": "8",
+      "firstForecast": [
+        {
+          "name": "Deadly\ud83d\udc80",
+          "points": "108.5"
+        },
+        {
+          "name": "Team Lafountain",
+          "points": "100.0"
+        }
+      ]
+    },
+    {
+      "mode": "dark",
+      "week": "8",
+      "panel": "picks",
+      "oneHeading": true,
+      "contrast": true,
+      "fits": true
+    },
+    {
+      "mode": "dark",
+      "week": "8",
+      "panel": "players",
+      "oneHeading": true,
+      "contrast": true,
+      "fits": true
+    },
+    {
+      "mode": "dark",
+      "week": "8",
+      "panel": "startsit",
+      "oneHeading": true,
+      "contrast": true,
+      "fits": true
+    }
+  ],
+  "errors": []
+}
