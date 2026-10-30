@@ -1544,3 +1544,17 @@ NFL marks retain identity colors. No themes or retired crest accents were added.
 Real-data reviews are read-only, and browser fixtures block production writes.
 Screenshots were inspected. Physical phone pacing and screen-reader speech remain
 unverified. Evidence: [live-game-finish-1518.md](docs/live-game-finish-1518.md).
+
+# 1.519.0 — Smaller, aligned live NFL viewing
+
+Reviewed always-visible source descriptions, compact play headlines/results,
+clock gutters, controls, two-column player names/points/metadata/stat lines,
+consistent row insets and your-team accents in Light/Dark at 320/390/768px.
+Shared intrinsic tracks align both sides; enlarged text moves scores below names.
+200% text, full names/descriptions, exact/unknown scores, neutral nullified plays,
+44px controls and text contrast pass. All new surfaces/text/separators retain
+shared Medicine Wheel tokens; official NFL marks keep identity colors. No palette
+or theme options were added. `pnpm themes`, `pnpm check`, final focused tests,
+type/name checks and build pass. Screenshots and read-only real data inspected.
+Physical phone timing, screen-reader speech and non-subgrid browser layout remain
+unmeasured. Evidence: [live-game-density-1519.md](docs/live-game-density-1519.md).

@@ -1,0 +1,250 @@
+[
+  {
+    "check": "light live feed gets the next play automatically after ten seconds",
+    "pass": true
+  },
+  {
+    "check": "light live feed keeps newest plays at the top without moving the video",
+    "pass": true
+  },
+  {
+    "check": "light live feed adds plays without moving an older play being read",
+    "pass": true
+  },
+  {
+    "check": "light live feed reports new plays without pulling the reader away",
+    "pass": true
+  },
+  {
+    "check": "light live feed Latest returns to the newest play and clears the count",
+    "pass": true
+  },
+  {
+    "check": "light live feed preserves visible source details during refresh",
+    "pass": true
+  },
+  {
+    "check": "light live feed keeps the selected play filter while updating",
+    "pass": true
+  },
+  {
+    "check": "light live feed fantasy stats update in the same live session",
+    "pass": true
+  },
+  {
+    "check": "light live feed pauses reads while the app is hidden",
+    "pass": true
+  },
+  {
+    "check": "light live feed catches up immediately after returning with a forced read",
+    "pass": true
+  },
+  {
+    "check": "light live feed stops offline reads and keeps saved stats visible",
+    "pass": true
+  },
+  {
+    "check": "light live feed reconnects without the Refresh button",
+    "pass": true
+  },
+  {
+    "check": "light live feed preserves the last feed when a live request fails",
+    "pass": true
+  },
+  {
+    "check": "light live feed automatically recovers after a provider error",
+    "pass": true
+  },
+  {
+    "check": "light live feed prevents overlapping polling reads",
+    "pass": true
+  },
+  {
+    "check": "light live feed stops polling a hidden Clubhouse tab",
+    "pass": true
+  },
+  {
+    "check": "light live feed switching back resumes automatic updates",
+    "pass": true
+  },
+  {
+    "check": "light live feed captures the final play then stops polling a finished game",
+    "pass": true
+  },
+  {
+    "check": "light live feed keeps checking upcoming pinned games after the featured game finishes",
+    "pass": true
+  },
+  {
+    "check": "light live feed follows a different pinned live game at the live cadence",
+    "pass": true
+  },
+  {
+    "check": "light live feed stops the shared desk once every pinned game is finished",
+    "pass": true
+  },
+  {
+    "check": "light live feed switching views restores the full play and its reading position",
+    "pass": true
+  },
+  {
+    "check": "light live feed returning to fantasy restores its own stat row",
+    "pass": true
+  },
+  {
+    "check": "light live feed a different game shows only its own teams",
+    "pass": true
+  },
+  {
+    "check": "light live feed a visited game stays readable while its fresh request is pending",
+    "pass": true
+  },
+  {
+    "check": "light live feed switching games restores the exact saved fantasy row",
+    "pass": true
+  },
+  {
+    "check": "light live feed a late game response cannot overwrite the current selection",
+    "pass": true
+  },
+  {
+    "check": "light live feed a player or replay modal pauses background NFL reads",
+    "pass": true
+  },
+  {
+    "check": "light live feed closing the modal resumes the same game immediately",
+    "pass": true
+  },
+  {
+    "check": "light live feed Motion off switches views without moving layers",
+    "pass": true
+  },
+  {
+    "check": "light live feed teardown removes timers and reconnect listeners",
+    "pass": true
+  },
+  {
+    "check": "dark live feed gets the next play automatically after ten seconds",
+    "pass": true
+  },
+  {
+    "check": "dark live feed keeps newest plays at the top without moving the video",
+    "pass": true
+  },
+  {
+    "check": "dark live feed adds plays without moving an older play being read",
+    "pass": true
+  },
+  {
+    "check": "dark live feed reports new plays without pulling the reader away",
+    "pass": true
+  },
+  {
+    "check": "dark live feed Latest returns to the newest play and clears the count",
+    "pass": true
+  },
+  {
+    "check": "dark live feed preserves visible source details during refresh",
+    "pass": true
+  },
+  {
+    "check": "dark live feed keeps the selected play filter while updating",
+    "pass": true
+  },
+  {
+    "check": "dark live feed fantasy stats update in the same live session",
+    "pass": true
+  },
+  {
+    "check": "dark live feed pauses reads while the app is hidden",
+    "pass": true
+  },
+  {
+    "check": "dark live feed catches up immediately after returning with a forced read",
+    "pass": true
+  },
+  {
+    "check": "dark live feed stops offline reads and keeps saved stats visible",
+    "pass": true
+  },
+  {
+    "check": "dark live feed reconnects without the Refresh button",
+    "pass": true
+  },
+  {
+    "check": "dark live feed preserves the last feed when a live request fails",
+    "pass": true
+  },
+  {
+    "check": "dark live feed automatically recovers after a provider error",
+    "pass": true
+  },
+  {
+    "check": "dark live feed prevents overlapping polling reads",
+    "pass": true
+  },
+  {
+    "check": "dark live feed stops polling a hidden Clubhouse tab",
+    "pass": true
+  },
+  {
+    "check": "dark live feed switching back resumes automatic updates",
+    "pass": true
+  },
+  {
+    "check": "dark live feed captures the final play then stops polling a finished game",
+    "pass": true
+  },
+  {
+    "check": "dark live feed keeps checking upcoming pinned games after the featured game finishes",
+    "pass": true
+  },
+  {
+    "check": "dark live feed follows a different pinned live game at the live cadence",
+    "pass": true
+  },
+  {
+    "check": "dark live feed stops the shared desk once every pinned game is finished",
+    "pass": true
+  },
+  {
+    "check": "dark live feed switching views restores the full play and its reading position",
+    "pass": true
+  },
+  {
+    "check": "dark live feed returning to fantasy restores its own stat row",
+    "pass": true
+  },
+  {
+    "check": "dark live feed a different game shows only its own teams",
+    "pass": true
+  },
+  {
+    "check": "dark live feed a visited game stays readable while its fresh request is pending",
+    "pass": true
+  },
+  {
+    "check": "dark live feed switching games restores the exact saved fantasy row",
+    "pass": true
+  },
+  {
+    "check": "dark live feed a late game response cannot overwrite the current selection",
+    "pass": true
+  },
+  {
+    "check": "dark live feed a player or replay modal pauses background NFL reads",
+    "pass": true
+  },
+  {
+    "check": "dark live feed closing the modal resumes the same game immediately",
+    "pass": true
+  },
+  {
+    "check": "dark live feed Motion off switches views without moving layers",
+    "pass": true
+  },
+  {
+    "check": "dark live feed teardown removes timers and reconnect listeners",
+    "pass": true
+  }
+]
