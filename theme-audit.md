@@ -1558,3 +1558,18 @@ or theme options were added. `pnpm themes`, `pnpm check`, final focused tests,
 type/name checks and build pass. Screenshots and read-only real data inspected.
 Physical phone timing, screen-reader speech and non-subgrid browser layout remain
 unmeasured. Evidence: [live-game-density-1519.md](docs/live-game-density-1519.md).
+
+# 1.520.0 — NFL field and team-color plays
+
+Reviewed the wide field, current down/possession, first-down/start markers, team
+end zones, NFL identity rails/codes, selectable headlines, historical return and
+always-visible descriptions in Light/Dark at 320/390/768px and 200% text.
+Controls retain 44px targets. UI text, controls, surfaces and borders use shared
+Medicine Wheel tokens; official team colors come from the existing NFL palette.
+Turf/white field paint and blue/gold sport markers are semantic field artwork,
+not a replacement UI palette. White field text was visually checked on dark turf.
+No retired crest accents or theme options were added. Motion off/Reduced Motion,
+unknown locations and neutral nullified plays pass. `pnpm themes`, `pnpm check`,
+final focused tests/type/name checks and build pass. Screenshots and read-only
+real data inspected. Physical phone pacing and screen-reader speech remain
+unmeasured. Evidence: [nfl-live-field-1520.md](docs/nfl-live-field-1520.md).

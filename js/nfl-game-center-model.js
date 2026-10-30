@@ -1,4 +1,5 @@
 import {footballPlays,footballTeam,candidatePlay} from './live-football-model.js';
+import {nflPlayTeam,nflPlayField,nflBoardAhead} from './nfl-field-model.js';
 const clean=value=>String(value||'').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim().slice(0,500);
 const name=value=>clean(value).normalize('NFKD').replace(/\p{M}/gu,'').replace(/\s+(jr|sr|ii|iii|iv)\.?$/i,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 export const nflGameId=value=>/^\d{1,24}$/.test(String(value||''))?String(value):'';
@@ -12,9 +13,11 @@ export function nflCenterGames(payload,season,week){
  return (payload.events||[]).flatMap(event=>{
   const competition=event.competitions?.[0],status=competition?.status||event.status,teams=competition?.competitors||[];
   if(!nflGameId(event.id)||teams.length!==2||!Number.isFinite(Date.parse(event.date)))return [];
-  const sides=[...teams].sort((a,b)=>Number(a.homeAway==='home')-Number(b.homeAway==='home')).map(side=>({code:footballTeam(side.team?.abbreviation),score:/^\d+$/.test(String(side.score))?Number(side.score):null,home:side.homeAway==='home'}));
+  const sides=[...teams].sort((a,b)=>Number(a.homeAway==='home')-Number(b.homeAway==='home')).map(side=>({id:String(side.team?.id||side.id||''),code:footballTeam(side.team?.abbreviation),score:/^\d+$/.test(String(side.score))?Number(side.score):null,home:side.homeAway==='home'}));
   if(sides.some(side=>!side.code))return [];
-  return [{id:String(event.id),date:event.date,sides,label:sides.map(s=>s.code).join(' @ '),state:status?.type?.state||'pre',status:clean(status?.type?.shortDetail||status?.type?.detail||'Scheduled')}];
+  const live=competition.situation||{},last=live.lastPlay;
+  const lastPlay=last&&nflGameId(last.id)&&clean(last.text)&&nflPlayTeam(last,sides)?{...last,scoringPlay:last.scoringPlay===true||typeof last.scoreValue==='number'&&last.scoreValue>0,period:last.period||{},clock:last.clock||{},end:{...last.end,...(String(live.possession||'')===String(last.end?.team?.id||'')&&live.down!=null?{down:live.down,distance:live.distance,shortDownDistanceText:live.shortDownDistanceText,possessionText:live.possessionText}:{})}}:null;
+  return [{id:String(event.id),lastPlay,date:event.date,sides,label:sides.map(s=>s.code).join(' @ '),state:status?.type?.state||'pre',status:clean(status?.type?.shortDetail||status?.type?.detail||'Scheduled')}];
  });
 }
 export function nflSummaryMatches(summary,game,season){return !!game&&String(summary?.header?.id)===game.id&&Number(summary?.header?.season?.year)===Number(season)&&Number(summary?.header?.season?.type)===2;}
@@ -23,17 +26,20 @@ export function nflSummaryMatches(summary,game,season){return !!game&&String(sum
 export function nflObservedGame(game,summary,season){
  if(!nflSummaryMatches(summary,game,season))return game;
  const observed=summary.header.competitions?.[0],phase={pre:0,in:1,post:2};
- if(!observed||!(phase[observed.status?.type?.state]>=phase[game.state]))return game;
+ if(!observed||!(phase[observed.status?.type?.state]>=phase[game.state])||observed.status?.type?.state===game.state&&nflBoardAhead(summary,game))return game;
  const sides=game.sides.map(side=>{const score=observed.competitors?.find(c=>footballTeam(c.team?.abbreviation)===side.code)?.score;return {...side,score:/^\d+$/.test(String(score))?Number(score):side.score}});
  return {...game,sides,status:observed.status.type.shortDetail||game.status,state:observed.status.type.state};
 }
-export function nflCenterPlays(summary){
+export function nflCenterPlays(summary,game=null){
  const all=[...footballPlays(summary),...(summary?.scoringPlays||[])],unique=new Map();
+ const sides=game?.sides||[...(summary?.header?.competitions?.[0]?.competitors||[])].map(side=>({id:String(side.team?.id||side.id||''),code:footballTeam(side.team?.abbreviation),home:side.homeAway==='home'}));
  for(const play of all){
   if(!nflGameId(play.id)||!clean(play.text))continue;
   const previous=unique.get(String(play.id));unique.set(String(play.id),{...previous,...play});
  }
- return [...unique.values()].sort((a,b)=>Number(a.sequenceNumber||a.id)-Number(b.sequenceNumber||b.id)).map(play=>({id:String(play.id),text:clean(play.text),typeId:String(play.type?.id||''),typeLabel:clean(play.type?.text),yards:typeof play.statYardage==='number'&&Number.isFinite(play.statYardage)?play.statYardage:null,period:Number(play.period?.number)||null,clock:clean(play.clock?.displayValue),score:play.scoringPlay===true,home:typeof play.homeScore==='number'?play.homeScore:null,away:typeof play.awayScore==='number'?play.awayScore:null,big:play.scoringPlay!==true&&candidatePlay(play),voided:/no play|overturned|reversed|nullified/i.test(play.text)}));
+ const ordered=[...unique.values()].sort((a,b)=>Number(a.sequenceNumber||a.id)-Number(b.sequenceNumber||b.id));
+ if(game?.lastPlay&&nflBoardAhead(summary,game))ordered.push({...game.lastPlay,early:true});
+ return ordered.map(play=>({id:String(play.id),team:nflPlayTeam(play,sides)?.code||'',field:nflPlayField(play,sides),early:play.early===true,text:clean(play.text),typeId:String(play.type?.id||''),typeLabel:clean(play.type?.text),yards:typeof play.statYardage==='number'&&Number.isFinite(play.statYardage)?play.statYardage:null,period:Number(play.period?.number)||null,clock:clean(play.clock?.displayValue),score:play.scoringPlay===true,home:typeof play.homeScore==='number'?play.homeScore:null,away:typeof play.awayScore==='number'?play.awayScore:null,big:play.scoringPlay!==true&&candidatePlay(play),voided:/no play|overturned|reversed|nullified/i.test(play.text)}));
 }
 // Keep official NFL stat lines alongside actual Sleeper points. No estimated
 // PPR totals: conversions and unusual scoring must survive intact.

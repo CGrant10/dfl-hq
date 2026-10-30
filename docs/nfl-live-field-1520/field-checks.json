@@ -1,0 +1,302 @@
+[
+  {
+    "check": "light/320 wide field and play text fit",
+    "pass": true
+  },
+  {
+    "check": "light/320 football field has mirrored numbers and real team ends",
+    "pass": true
+  },
+  {
+    "check": "light/320 current possession and next down match the ball position",
+    "pass": true
+  },
+  {
+    "check": "light/320 start and first-down markers are plotted",
+    "pass": true
+  },
+  {
+    "check": "light/320 source descriptions remain visible",
+    "pass": true
+  },
+  {
+    "check": "light/320 both offenses have explicit labels and distinct two-color rails",
+    "pass": true
+  },
+  {
+    "check": "light/320 all interactive targets retain 44px height",
+    "pass": true
+  },
+  {
+    "check": "light/320 UI text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/390 wide field and play text fit",
+    "pass": true
+  },
+  {
+    "check": "light/390 football field has mirrored numbers and real team ends",
+    "pass": true
+  },
+  {
+    "check": "light/390 current possession and next down match the ball position",
+    "pass": true
+  },
+  {
+    "check": "light/390 start and first-down markers are plotted",
+    "pass": true
+  },
+  {
+    "check": "light/390 source descriptions remain visible",
+    "pass": true
+  },
+  {
+    "check": "light/390 both offenses have explicit labels and distinct two-color rails",
+    "pass": true
+  },
+  {
+    "check": "light/390 all interactive targets retain 44px height",
+    "pass": true
+  },
+  {
+    "check": "light/390 UI text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light/768 wide field and play text fit",
+    "pass": true
+  },
+  {
+    "check": "light/768 football field has mirrored numbers and real team ends",
+    "pass": true
+  },
+  {
+    "check": "light/768 current possession and next down match the ball position",
+    "pass": true
+  },
+  {
+    "check": "light/768 start and first-down markers are plotted",
+    "pass": true
+  },
+  {
+    "check": "light/768 source descriptions remain visible",
+    "pass": true
+  },
+  {
+    "check": "light/768 both offenses have explicit labels and distinct two-color rails",
+    "pass": true
+  },
+  {
+    "check": "light/768 all interactive targets retain 44px height",
+    "pass": true
+  },
+  {
+    "check": "light/768 UI text contrast []",
+    "pass": true
+  },
+  {
+    "check": "light field controls and full descriptions fit at 200% text",
+    "pass": true
+  },
+  {
+    "check": "dark/320 wide field and play text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/320 football field has mirrored numbers and real team ends",
+    "pass": true
+  },
+  {
+    "check": "dark/320 current possession and next down match the ball position",
+    "pass": true
+  },
+  {
+    "check": "dark/320 start and first-down markers are plotted",
+    "pass": true
+  },
+  {
+    "check": "dark/320 source descriptions remain visible",
+    "pass": true
+  },
+  {
+    "check": "dark/320 both offenses have explicit labels and distinct two-color rails",
+    "pass": true
+  },
+  {
+    "check": "dark/320 all interactive targets retain 44px height",
+    "pass": true
+  },
+  {
+    "check": "dark/320 UI text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/390 wide field and play text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/390 football field has mirrored numbers and real team ends",
+    "pass": true
+  },
+  {
+    "check": "dark/390 current possession and next down match the ball position",
+    "pass": true
+  },
+  {
+    "check": "dark/390 start and first-down markers are plotted",
+    "pass": true
+  },
+  {
+    "check": "dark/390 source descriptions remain visible",
+    "pass": true
+  },
+  {
+    "check": "dark/390 both offenses have explicit labels and distinct two-color rails",
+    "pass": true
+  },
+  {
+    "check": "dark/390 all interactive targets retain 44px height",
+    "pass": true
+  },
+  {
+    "check": "dark/390 UI text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark/768 wide field and play text fit",
+    "pass": true
+  },
+  {
+    "check": "dark/768 football field has mirrored numbers and real team ends",
+    "pass": true
+  },
+  {
+    "check": "dark/768 current possession and next down match the ball position",
+    "pass": true
+  },
+  {
+    "check": "dark/768 start and first-down markers are plotted",
+    "pass": true
+  },
+  {
+    "check": "dark/768 source descriptions remain visible",
+    "pass": true
+  },
+  {
+    "check": "dark/768 both offenses have explicit labels and distinct two-color rails",
+    "pass": true
+  },
+  {
+    "check": "dark/768 all interactive targets retain 44px height",
+    "pass": true
+  },
+  {
+    "check": "dark/768 UI text contrast []",
+    "pass": true
+  },
+  {
+    "check": "dark field controls and full descriptions fit at 200% text",
+    "pass": true
+  },
+  {
+    "check": "Selecting an old play updates the field without hiding full text",
+    "pass": true
+  },
+  {
+    "check": "An unchanged update preserves the selected historical field",
+    "pass": true
+  },
+  {
+    "check": "Selected play exposes Latest and Back controls",
+    "pass": true
+  },
+  {
+    "check": "Ball movement uses one-shot position animation",
+    "pass": true
+  },
+  {
+    "check": "Back to play restores focus to its source",
+    "pass": true
+  },
+  {
+    "check": "Back to a filtered-out play restores All plays",
+    "pass": true
+  },
+  {
+    "check": "Latest returns to the latest recorded field play",
+    "pass": true
+  },
+  {
+    "check": "Earlier scoreboard play appears before the detailed response completes",
+    "pass": true
+  },
+  {
+    "check": "Newer board status and score are not rolled back by the older summary",
+    "pass": true
+  },
+  {
+    "check": "Confirmed details replace the same early row without duplicating it",
+    "pass": true
+  },
+  {
+    "check": "Confirmed metadata does not replay the same ball movement",
+    "pass": true
+  },
+  {
+    "check": "loss keeps correct field semantics",
+    "pass": true
+  },
+  {
+    "check": "zero keeps correct field semantics",
+    "pass": true
+  },
+  {
+    "check": "turnover keeps correct field semantics",
+    "pass": true
+  },
+  {
+    "check": "touchdown keeps correct field semantics",
+    "pass": true
+  },
+  {
+    "check": "field_goal keeps correct field semantics",
+    "pass": true
+  },
+  {
+    "check": "no_play keeps correct field semantics",
+    "pass": true
+  },
+  {
+    "check": "Nullified plays have no successful ball animation",
+    "pass": true
+  },
+  {
+    "check": "punt keeps correct field semantics",
+    "pass": true
+  },
+  {
+    "check": "kickoff keeps correct field semantics",
+    "pass": true
+  },
+  {
+    "check": "Missing coordinates retain team identity and description without inventing a ball",
+    "pass": true
+  },
+  {
+    "check": "Switching away from the field preserves unrelated UI animation",
+    "pass": true
+  },
+  {
+    "check": "Reduced Motion retains final ball position with no running animation",
+    "pass": true
+  },
+  {
+    "check": "Motion off retains a static field",
+    "pass": true
+  },
+  {
+    "check": "No browser errors or production writes",
+    "pass": true
+  }
+]

@@ -71,6 +71,7 @@ on:
       - 'js/home-highlight*'
       - 'js/highlight-play-link*'
       - 'js/nfl-game-center*'
+      - 'js/nfl-field*'
       - 'js/nfl-fantasy-ui.js'
       - 'js/replay-*'
       - 'js/nfl-play-presentation*'
@@ -87,6 +88,9 @@ on:
       - 'tools/capture-connected-viewing.py'
       - 'tools/fixtures/home-highlight-clips.json'
       - 'tools/fixtures/nfl-game-center-summary.json'
+      - 'tools/fixtures/nfl-field-plays.json'
+      - 'tools/fixtures/nfl-car.png'
+      - 'tools/fixtures/nfl-gb.png'
       - 'tools/fixtures/nfl-highlight-play.json'
       - 'tools/fixtures/nfl-highlight-touchdown.json'
       - 'supabase/functions/game-highlights/**'
@@ -142,6 +146,7 @@ on:
       - 'tools/capture-scoreboard-finish.py'
       - 'tools/capture-week-ahead-finish.py'
       - 'tools/capture-nfl-center-finish.py'
+      - 'tools/capture-nfl-field.py'
       - 'supabase/migrations/*gameday_score_history*'
       - 'supabase/tests/gameday_score_history.sql'
       - 'js/matchup-highlights*'
@@ -559,6 +564,12 @@ jobs:
         run: |
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           python tools/capture-nfl-center-finish.py
+      - name: Check field movement, team identity and early plays
+        env:
+          DFL_NFL_FIELD_DIR: nfl-center-output/field
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          python tools/capture-nfl-field.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

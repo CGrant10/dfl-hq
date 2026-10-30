@@ -1,0 +1,466 @@
+{
+  "source": "ESPN NFL summary 401873023, read-only capture 2026-10-30; original field data",
+  "teams": [
+    {
+      "id": "29",
+      "code": "CAR",
+      "home": false
+    },
+    {
+      "id": "9",
+      "code": "GB",
+      "home": true
+    }
+  ],
+  "plays": {
+    "away_gain": {
+      "id": "401873023339",
+      "sequenceNumber": "33900",
+      "type": {
+        "id": "24",
+        "text": "Pass Reception",
+        "abbreviation": "REC"
+      },
+      "text": "(Shotgun) B.Young pass short right to C.Hubbard pushed ob at CAR 16 for 4 yards (E.Williams).",
+      "start": {
+        "down": 1,
+        "distance": 10,
+        "yardLine": 88,
+        "yardsToEndzone": 88,
+        "downDistanceText": "1st & 10 at CAR 12",
+        "shortDownDistanceText": "1st & 10",
+        "possessionText": "CAR 12",
+        "team": {
+          "id": "29"
+        }
+      },
+      "end": {
+        "down": 2,
+        "distance": 6,
+        "yardLine": 84,
+        "yardsToEndzone": 84,
+        "downDistanceText": "2nd & 6 at CAR 16",
+        "shortDownDistanceText": "2nd & 6",
+        "possessionText": "CAR 16",
+        "team": {
+          "id": "29"
+        }
+      },
+      "period": {
+        "number": 1
+      },
+      "clock": {
+        "displayValue": "10:13"
+      },
+      "statYardage": 4,
+      "isTurnover": false,
+      "isPenalty": false,
+      "scoringPlay": false,
+      "homeScore": 0,
+      "awayScore": 3
+    },
+    "home_gain": {
+      "id": "401873023240",
+      "sequenceNumber": "24000",
+      "type": {
+        "id": "24",
+        "text": "Pass Reception",
+        "abbreviation": "REC"
+      },
+      "text": "(Shotgun) J.Love pass short right to C.Watson to GB 37 for 4 yards (M.Wilson).",
+      "start": {
+        "down": 1,
+        "distance": 10,
+        "yardLine": 33,
+        "yardsToEndzone": 67,
+        "downDistanceText": "1st & 10 at GB 33",
+        "shortDownDistanceText": "1st & 10",
+        "possessionText": "GB 33",
+        "team": {
+          "id": "9"
+        }
+      },
+      "end": {
+        "down": 2,
+        "distance": 6,
+        "yardLine": 37,
+        "yardsToEndzone": 63,
+        "downDistanceText": "2nd & 6 at GB 37",
+        "shortDownDistanceText": "2nd & 6",
+        "possessionText": "GB 37",
+        "team": {
+          "id": "9"
+        }
+      },
+      "period": {
+        "number": 1
+      },
+      "clock": {
+        "displayValue": "11:38"
+      },
+      "statYardage": 4,
+      "isTurnover": false,
+      "isPenalty": false,
+      "scoringPlay": false,
+      "homeScore": 0,
+      "awayScore": 3
+    },
+    "loss": {
+      "id": "401873023170",
+      "sequenceNumber": "17000",
+      "type": {
+        "id": "7",
+        "text": "Sack"
+      },
+      "text": "(Shotgun) B.Young sacked at GB 21 for -6 yards (D.Wyatt).",
+      "start": {
+        "down": 3,
+        "distance": 8,
+        "yardLine": 15,
+        "yardsToEndzone": 15,
+        "downDistanceText": "3rd & 8 at GB 15",
+        "shortDownDistanceText": "3rd & 8",
+        "possessionText": "GB 15",
+        "team": {
+          "id": "29"
+        }
+      },
+      "end": {
+        "down": 4,
+        "distance": 14,
+        "yardLine": 21,
+        "yardsToEndzone": 21,
+        "downDistanceText": "4th & 14 at GB 21",
+        "shortDownDistanceText": "4th & 14",
+        "possessionText": "GB 21",
+        "team": {
+          "id": "29"
+        }
+      },
+      "period": {
+        "number": 1
+      },
+      "clock": {
+        "displayValue": "12:25"
+      },
+      "statYardage": -6,
+      "isTurnover": false,
+      "isPenalty": false,
+      "scoringPlay": false,
+      "homeScore": 0,
+      "awayScore": 0
+    },
+    "turnover": {
+      "id": "4018730231210",
+      "sequenceNumber": "121000",
+      "type": {
+        "id": "29",
+        "text": "Fumble Recovery (Opponent)"
+      },
+      "text": "(Shotgun) J.Love pass short left to C.Watson to CAR 42 for 8 yards (N.Scott). FUMBLES (N.Scott), touched at CAR 40, RECOVERED by CAR-B.Okereke at CAR 37.",
+      "start": {
+        "down": 3,
+        "distance": 4,
+        "yardLine": 50,
+        "yardsToEndzone": 50,
+        "downDistanceText": "3rd & 4 at 50",
+        "shortDownDistanceText": "3rd & 4",
+        "possessionText": "50",
+        "team": {
+          "id": "9"
+        }
+      },
+      "end": {
+        "down": 1,
+        "distance": 10,
+        "yardLine": 63,
+        "yardsToEndzone": 63,
+        "downDistanceText": "1st & 10 at CAR 37",
+        "shortDownDistanceText": "1st & 10",
+        "possessionText": "CAR 37",
+        "team": {
+          "id": "29"
+        }
+      },
+      "period": {
+        "number": 2
+      },
+      "clock": {
+        "displayValue": "12:32"
+      },
+      "statYardage": 0,
+      "isTurnover": true,
+      "isPenalty": false,
+      "scoringPlay": false,
+      "homeScore": 6,
+      "awayScore": 10
+    },
+    "touchdown": {
+      "id": "401873023666",
+      "sequenceNumber": "66600",
+      "type": {
+        "id": "67",
+        "text": "Passing Touchdown",
+        "abbreviation": "TD"
+      },
+      "text": "(Shotgun) J.Love pass short middle to T.Kraft for 12 yards, TOUCHDOWN. T.Smack extra point is No Good, Hit Left Upright, Center-M.Orzech, Holder-D.Whelan.",
+      "start": {
+        "down": 3,
+        "distance": 8,
+        "yardLine": 88,
+        "yardsToEndzone": 12,
+        "downDistanceText": "3rd & 8 at CAR 12",
+        "shortDownDistanceText": "3rd & 8",
+        "possessionText": "CAR 12",
+        "team": {
+          "id": "9"
+        }
+      },
+      "end": {
+        "down": -1,
+        "distance": 10,
+        "yardLine": 100,
+        "yardsToEndzone": 0,
+        "team": {
+          "id": "9"
+        }
+      },
+      "period": {
+        "number": 1
+      },
+      "clock": {
+        "displayValue": "5:08"
+      },
+      "statYardage": 12,
+      "isTurnover": false,
+      "isPenalty": false,
+      "scoringPlay": true,
+      "homeScore": 6,
+      "awayScore": 3
+    },
+    "field_goal": {
+      "id": "401873023190",
+      "sequenceNumber": "19000",
+      "type": {
+        "id": "59",
+        "text": "Field Goal Good",
+        "abbreviation": "FG"
+      },
+      "text": " R.Fitzgerald 39 yard field goal is GOOD, Center-J.Jansen, Holder-S.Martin.",
+      "start": {
+        "down": 4,
+        "distance": 14,
+        "yardLine": 21,
+        "yardsToEndzone": 21,
+        "downDistanceText": "4th & 14 at GB 21",
+        "shortDownDistanceText": "4th & 14",
+        "possessionText": "GB 21",
+        "team": {
+          "id": "29"
+        }
+      },
+      "end": {
+        "down": -1,
+        "distance": 10,
+        "yardLine": 0,
+        "yardsToEndzone": 0,
+        "team": {
+          "id": "29"
+        }
+      },
+      "period": {
+        "number": 1
+      },
+      "clock": {
+        "displayValue": "11:43"
+      },
+      "statYardage": 39,
+      "isTurnover": false,
+      "isPenalty": false,
+      "scoringPlay": true,
+      "homeScore": 0,
+      "awayScore": 3
+    },
+    "no_play": {
+      "id": "401873023440",
+      "sequenceNumber": "44000",
+      "type": {
+        "id": "8",
+        "text": "Penalty",
+        "abbreviation": "PEN"
+      },
+      "text": "PENALTY on GB-J.Jacobs, False Start, 5 yards, enforced at GB 44 - No Play.",
+      "start": {
+        "down": 1,
+        "distance": 10,
+        "yardLine": 44,
+        "yardsToEndzone": 56,
+        "downDistanceText": "1st & 10 at GB 44",
+        "shortDownDistanceText": "1st & 10",
+        "possessionText": "GB 44",
+        "team": {
+          "id": "9"
+        }
+      },
+      "end": {
+        "down": 1,
+        "distance": 15,
+        "yardLine": 39,
+        "yardsToEndzone": 61,
+        "downDistanceText": "1st & 15 at GB 39",
+        "shortDownDistanceText": "1st & 15",
+        "possessionText": "GB 39",
+        "team": {
+          "id": "9"
+        }
+      },
+      "period": {
+        "number": 1
+      },
+      "clock": {
+        "displayValue": "8:41"
+      },
+      "statYardage": -5,
+      "isTurnover": false,
+      "isPenalty": true,
+      "scoringPlay": false,
+      "homeScore": 0,
+      "awayScore": 3
+    },
+    "zero": {
+      "id": "401873023369",
+      "sequenceNumber": "36900",
+      "type": {
+        "id": "5",
+        "text": "Rush",
+        "abbreviation": "RUSH"
+      },
+      "text": "(Shotgun) C.Hubbard left tackle to CAR 16 for no gain (X.McKinney).",
+      "start": {
+        "down": 2,
+        "distance": 6,
+        "yardLine": 84,
+        "yardsToEndzone": 84,
+        "downDistanceText": "2nd & 6 at CAR 16",
+        "shortDownDistanceText": "2nd & 6",
+        "possessionText": "CAR 16",
+        "team": {
+          "id": "29"
+        }
+      },
+      "end": {
+        "down": 3,
+        "distance": 6,
+        "yardLine": 84,
+        "yardsToEndzone": 84,
+        "downDistanceText": "3rd & 6 at CAR 16",
+        "shortDownDistanceText": "3rd & 6",
+        "possessionText": "CAR 16",
+        "team": {
+          "id": "29"
+        }
+      },
+      "period": {
+        "number": 1
+      },
+      "clock": {
+        "displayValue": "9:39"
+      },
+      "statYardage": 0,
+      "isTurnover": false,
+      "isPenalty": false,
+      "scoringPlay": false,
+      "homeScore": 0,
+      "awayScore": 3
+    },
+    "punt": {
+      "id": "401873023313",
+      "sequenceNumber": "31300",
+      "type": {
+        "id": "52",
+        "text": "Punt",
+        "abbreviation": "PUNT"
+      },
+      "text": "D.Whelan punts 49 yards to CAR 11, Center-M.Orzech. T.Etienne to CAR 12 for 1 yard (B.Melton).",
+      "start": {
+        "down": 4,
+        "distance": 3,
+        "yardLine": 40,
+        "yardsToEndzone": 40,
+        "downDistanceText": "4th & 3 at GB 40",
+        "shortDownDistanceText": "4th & 3",
+        "possessionText": "GB 40",
+        "team": {
+          "id": "9"
+        }
+      },
+      "end": {
+        "down": 1,
+        "distance": 10,
+        "yardLine": 88,
+        "yardsToEndzone": 88,
+        "downDistanceText": "1st & 10 at CAR 12",
+        "shortDownDistanceText": "1st & 10",
+        "possessionText": "CAR 12",
+        "team": {
+          "id": "29"
+        }
+      },
+      "period": {
+        "number": 1
+      },
+      "clock": {
+        "displayValue": "10:22"
+      },
+      "statYardage": 1,
+      "isTurnover": false,
+      "isPenalty": false,
+      "scoringPlay": false,
+      "homeScore": 0,
+      "awayScore": 3
+    },
+    "kickoff": {
+      "id": "401873023210",
+      "sequenceNumber": "21000",
+      "type": {
+        "id": "53",
+        "text": "Kickoff",
+        "abbreviation": "K"
+      },
+      "text": "R.Fitzgerald kicks 59 yards from CAR 35 to GB 6. C.Owen to GB 33 for 27 yards (J.Kuwatch).",
+      "start": {
+        "down": 0,
+        "distance": 0,
+        "yardLine": 65,
+        "yardsToEndzone": 65,
+        "team": {
+          "id": "29"
+        }
+      },
+      "end": {
+        "down": 1,
+        "distance": 10,
+        "yardLine": 33,
+        "yardsToEndzone": 67,
+        "downDistanceText": "1st & 10 at GB 33",
+        "shortDownDistanceText": "1st & 10",
+        "possessionText": "GB 33",
+        "team": {
+          "id": "9"
+        }
+      },
+      "period": {
+        "number": 1
+      },
+      "clock": {
+        "displayValue": "11:43"
+      },
+      "statYardage": 27,
+      "isTurnover": false,
+      "isPenalty": false,
+      "scoringPlay": false,
+      "homeScore": 0,
+      "awayScore": 3
+    }
+  }
+}
