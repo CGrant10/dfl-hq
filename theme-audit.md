@@ -1530,3 +1530,17 @@ focused Home tests and production build pass. Screenshots were inspected;
 real-data checks block production mutations. Physical phone frame pacing and
 screen-reader speech remain unverified. Evidence:
 [week-ahead-finish-1517.md](docs/week-ahead-finish-1517.md).
+
+# 1.518.0 — Live NFL plays and fantasy overview
+
+Reviewed the compact picker, refresh/view controls, NFL scoreboard, clock-gutter
+feed, expandable descriptions, scoring/clip actions, two-column fantasy stats,
+owner emphasis and explicit NFL/League/PPR units in Light/Dark at 320/390/768px.
+200% text wraps within both stat columns. Text contrast, 44px controls, keyboard
+details, focus, motion preferences and neutral nullified plays pass. Surfaces,
+text, timeline, dividers and emphasis use shared Medicine Wheel tokens; official
+NFL marks retain identity colors. No themes or retired crest accents were added.
+`pnpm themes`, `pnpm check`, final focused tests/type/name checks and build pass.
+Real-data reviews are read-only, and browser fixtures block production writes.
+Screenshots were inspected. Physical phone pacing and screen-reader speech remain
+unverified. Evidence: [live-game-finish-1518.md](docs/live-game-finish-1518.md).
