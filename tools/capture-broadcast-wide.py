@@ -1,5 +1,5 @@
 """Mobile production broadcast layouts with fixture-only league stories."""
-import json,os,threading
+import base64,json,os,threading
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from playwright.sync_api import sync_playwright
@@ -11,7 +11,7 @@ class Handler(BaseHTTPRequestHandler):
   if not file.is_file():self.send_error(404);return
   self.send_response(200);self.send_header('Content-Type',{'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.webp':'image/webp','.woff':'font/woff'}.get(file.suffix,'application/octet-stream'));self.end_headers();self.wfile.write(file.read_bytes())
  def log_message(self,*args):pass
-server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start();checks=[]
+server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start();checks=[];finish=[];glows=[]
 with sync_playwright() as p:
  browser=p.chromium.launch(executable_path=os.environ.get('DFL_REVIEW_CHROMIUM'),headless=True,args=['--no-sandbox'])
  page=browser.new_page(viewport={'width':390,'height':844},is_mobile=True,has_touch=True);errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
@@ -55,6 +55,25 @@ with sync_playwright() as p:
     if height is None:height=metrics['height']
     assert metrics['height']==height,'Rotation moved the page'
     contrast=page.evaluate('reviewTextContrast()');assert not contrast['failures'],(mode,width,i,contrast['failures'])
+    if width==390:
+     contrast=slide.evaluate("async e=>(await import('./tools/home-review-contrast.js')).reviewTextContrast(e)")
+     targets=stage.locator('button').evaluate_all('ns=>ns.filter(n=>n.getClientRects().length).every(n=>n.getBoundingClientRect().height>=43.5&&n.getBoundingClientRect().width>=43.5)')
+     assert not contrast['failures'] and targets,(mode,i,contrast['failures'],targets)
+     finish.append({'mode':mode,'index':i,'textContrast':True,'targets44':True})
+     if i==9:
+      value=slide.locator('.bx-brief-value strong');assert value.inner_text()=='0.04' and value.evaluate('e=>parseFloat(getComputedStyle(e).fontSize)>=32'),(mode,'rounded archive metric too small')
+     if slide.evaluate("e=>e.matches('.bx-brief-award,.bx-brief-scout')"):
+      visibility=slide.evaluate("e=>[...e.children].map(n=>{const v=n.style.visibility;n.style.visibility='hidden';return v})")
+      raw=slide.screenshot(path=str(OUT/f'glow-{mode}-{i}.png'))
+      sample=page.evaluate('''async encoded=>{
+       const im=new Image();im.src='data:image/png;base64,'+encoded;await im.decode();const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const ctx=c.getContext('2d');ctx.drawImage(im,0,0);const d=ctx.getImageData(0,0,c.width,c.height).data;
+       const at=(x,y)=>[...d.slice((y*c.width+x)*4,(y*c.width+x)*4+3)],base=at(3,Math.floor(c.height/2));let step=0,edge=0;
+       for(const f of [.2,.4,.6,.8]){const y=Math.floor(c.height*f),x=Math.floor(c.width*f);for(let col=10;col<c.width-10;col++)step=Math.max(step,...at(col,y).map((v,k)=>Math.abs(v-at(col-1,y)[k])));for(const p of [at(3,y),at(c.width-4,y),at(x,3),at(x,c.height-4)])edge=Math.max(edge,...p.map((v,k)=>Math.abs(v-base[k])))}
+       return {maxAdjacentChannelStep:step,maxEdgeChannelDifference:edge};
+      }''',base64.b64encode(raw).decode())
+      slide.evaluate("(e,values)=>[...e.children].forEach((n,i)=>n.style.visibility=values[i])",visibility)
+      assert sample['maxAdjacentChannelStep']<=2 and sample['maxEdgeChannelDifference']<=1,(mode,i,'hard glow edge',sample)
+      glows.append({'mode':mode,'index':i,**sample})
     checks.append({'mode':mode,'width':width,'index':i,**metrics});(OUT/'wide-checks.json').write_text(json.dumps(checks,indent=2))
  # Enlarged type must reflow every composition, not just grow a short title.
  enlarged=[]
@@ -80,6 +99,7 @@ with sync_playwright() as p:
     if enlarged_height is None:enlarged_height=current_height
     assert current_height==enlarged_height,'Enlarged text rotation moved the page'
     enlarged.append({'mode':mode,'fontSize':font_size,'index':i,**result})
+ (OUT/'finish-checks.json').write_text(json.dumps({'slides':finish,'glows':glows},indent=2))
  page.evaluate("document.documentElement.style.fontSize=''")
  (OUT/'wide-enlarged-checks.json').write_text(json.dumps(enlarged,indent=2))
  page.set_viewport_size({'width':320,'height':844});page.evaluate("document.documentElement.style.fontSize='20px'");page.locator('[data-bx-go=\"1\"]').evaluate('e=>e.click()');page.wait_for_timeout(450)

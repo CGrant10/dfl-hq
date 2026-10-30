@@ -1,0 +1,234 @@
+{
+  "slides": [
+    {
+      "mode": "light",
+      "index": 0,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "light",
+      "index": 1,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "light",
+      "index": 2,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "light",
+      "index": 3,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "light",
+      "index": 4,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "light",
+      "index": 5,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "light",
+      "index": 6,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "light",
+      "index": 7,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "light",
+      "index": 8,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "light",
+      "index": 9,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "light",
+      "index": 10,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "light",
+      "index": 11,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "light",
+      "index": 12,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "light",
+      "index": 13,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "light",
+      "index": 14,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 0,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 1,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 2,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 3,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 4,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 5,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 6,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 7,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 8,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 9,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 10,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 11,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 12,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 13,
+      "textContrast": true,
+      "targets44": true
+    },
+    {
+      "mode": "dark",
+      "index": 14,
+      "textContrast": true,
+      "targets44": true
+    }
+  ],
+  "glows": [
+    {
+      "mode": "light",
+      "index": 1,
+      "maxAdjacentChannelStep": 2,
+      "maxEdgeChannelDifference": 0
+    },
+    {
+      "mode": "light",
+      "index": 2,
+      "maxAdjacentChannelStep": 2,
+      "maxEdgeChannelDifference": 0
+    },
+    {
+      "mode": "light",
+      "index": 10,
+      "maxAdjacentChannelStep": 1,
+      "maxEdgeChannelDifference": 0
+    },
+    {
+      "mode": "light",
+      "index": 12,
+      "maxAdjacentChannelStep": 2,
+      "maxEdgeChannelDifference": 0
+    },
+    {
+      "mode": "dark",
+      "index": 1,
+      "maxAdjacentChannelStep": 2,
+      "maxEdgeChannelDifference": 0
+    },
+    {
+      "mode": "dark",
+      "index": 2,
+      "maxAdjacentChannelStep": 2,
+      "maxEdgeChannelDifference": 0
+    },
+    {
+      "mode": "dark",
+      "index": 10,
+      "maxAdjacentChannelStep": 1,
+      "maxEdgeChannelDifference": 0
+    },
+    {
+      "mode": "dark",
+      "index": 12,
+      "maxAdjacentChannelStep": 2,
+      "maxEdgeChannelDifference": 0
+    }
+  ]
+}

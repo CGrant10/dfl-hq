@@ -1583,3 +1583,19 @@ and existing theme styles. Compact UI, 200% text and contrast checks pass. Real
 final-game views inspected read-only in both themes. `pnpm check`, final type/name
 checks and build pass. Phone battery savings/frame pacing remain unmeasured.
 Evidence: [nfl-live-efficiency-1521.md](docs/nfl-live-efficiency-1521.md).
+
+# 1.522.0 — Broadcast surface finish
+
+Reviewed fifteen broadcast cases in Light/Dark at 320/390/768px and enlarged text.
+Award/scout lighting now fades fully into the card before its boundaries; eight
+isolated screenshot probes show zero background edge difference and at most a
+1–2 channel step between adjacent pixels. The champion/scout lower artwork edges
+blend softly, with no image/text overlap. The frame keeps its wide mobile height,
+boxy 8px corners, shared text/spacing, 44px controls and integrated story footers.
+All UI fills, strokes and text use shared tokens; existing art keeps its colors.
+Record typography uses the displayed value; exact scores and balances remain.
+No new palette, fonts, assets, timers or animation loops. Contrast, large text,
+swipes, first-read pauses and motion preferences pass. Actual Home slides inspected
+read-only in both themes. `pnpm check` passes. Physical Safari/frame pacing and
+screen-reader speech remain unmeasured. Evidence:
+[broadcast-finish-1522.md](docs/broadcast-finish-1522.md).
