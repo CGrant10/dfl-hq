@@ -7746,6 +7746,45 @@ html[data-readability="comfortable"] [data-nfl-game-center] :is(.nfl-fantasy-own
  [data-nfl-game-center] .nfl-fantasy-value>span { flex-direction:row; align-items:baseline; margin:0; gap:3px; }
 }
 
+/* NFL identity is carried by a two-color rail and an explicit team code. */
+[data-nfl-game-center] .nfl-center-plays li[data-play-team]>.nfl-play-content { border-left:3px solid var(--nfl-team-color); padding-left:8px; }
+[data-nfl-game-center] .nfl-center-plays li[data-play-team]>.nfl-play-content::before { left:-4px; width:6px; height:6px; background:var(--nfl-team-alt); outline:1px solid var(--bg); }
+[data-nfl-game-center] .nfl-play-meta>small>.nfl-play-team { display:flex; align-items:center; gap:4px; color:var(--text); font:700 .6875rem/1.3 var(--font-body); }
+[data-nfl-game-center] .nfl-play-team::before { content:''; flex:none; width:6px; height:12px; border-radius:2px; background:linear-gradient(var(--nfl-team-color) 60%,var(--nfl-team-alt) 60%); outline:1px solid var(--line-soft); }
+#view [data-nfl-game-center] .nfl-play-select,[data-nfl-game-center] .nfl-play-select { display:block; width:100%; min-height:44px; margin:0; padding:3px 0; border:0; border-radius:0; color:inherit; background:transparent; font:inherit; text-align:left; cursor:pointer; }
+[data-nfl-game-center] .nfl-play-select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:3px; }
+[data-nfl-game-center] .nfl-play-select .nfl-play-headline::after { content:''; display:inline-block; vertical-align:middle; width:5px; height:5px; margin:0 3px 2px 7px; border-top:1px solid var(--body-text); border-right:1px solid var(--body-text); transform:rotate(45deg); }
+[data-nfl-game-center] .nfl-field { margin:0; padding:0 0 8px; border-bottom:1px solid var(--line-soft); }
+[data-nfl-game-center] .nfl-field>header,[data-nfl-game-center] .nfl-field>footer { display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; }
+[data-nfl-game-center] .nfl-field>header { min-height:44px; padding:4px 0; }
+[data-nfl-game-center] .nfl-field>header>div { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px; min-width:0; }
+[data-nfl-game-center] .nfl-field>header b { color:var(--text); font:700 .8125rem/1.35 var(--font-body); }
+[data-nfl-game-center] .nfl-field>header :is(span,small),[data-nfl-game-center] .nfl-field>footer { color:var(--body-text); font:500 .75rem/1.4 var(--font-body); }
+[data-nfl-game-center] .nfl-field>header>small { flex:none; color:var(--text); font-weight:700; }
+[data-nfl-game-center] .nfl-field button { flex:none; min-height:44px; padding:6px; border:0; border-radius:4px; color:var(--accent); background:transparent; font:600 .75rem/1.35 var(--font-body); }
+[data-nfl-game-center] .nfl-field button:focus-visible,[data-nfl-game-center] .nfl-field:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+[data-nfl-game-center] .nfl-field-pitch { display:block; width:100%; height:auto; overflow:visible; }
+/* Turf and white field paint are sporting artwork, independent of UI theme. */
+.nfl-field-turf { fill:#153b2b; }
+.nfl-field-zone { opacity:.26; }
+.nfl-field-lines { fill:none; stroke:#fff; stroke-width:1; opacity:.35; }
+.nfl-field-numbers { fill:#fff; font:600 17px var(--font-body); text-anchor:middle; }
+.nfl-field-scrimmage { stroke:#73c9ff; stroke-width:2; }
+.nfl-field-target { stroke:#ffd45b; stroke-width:2; stroke-dasharray:5 3; }
+.nfl-field-travel { fill:none; stroke:var(--nfl-team-alt,#fff); stroke-width:5; stroke-linecap:round; stroke-dasharray:1; opacity:.9; }
+.nfl-field-ball ellipse { fill:#8c4c2c; stroke:#fff; stroke-width:1.6; }
+.nfl-field-ball path { stroke:#fff; stroke-width:1.2; fill:none; }
+[data-field-kind="voided"] .nfl-field-travel { stroke:#fff; stroke-width:2; opacity:.5; }
+[data-field-kind="touchdown"] .nfl-field-travel { stroke-width:7; }
+[data-field-kind="turnover"] .nfl-field-travel { stroke-dasharray:.08 .04; }
+[data-nfl-game-center] .nfl-field>footer { min-height:28px; padding:2px 0 0; }
+[data-nfl-game-center] .nfl-field>footer>span:first-child { min-width:0; overflow-wrap:break-word; }
+[data-nfl-game-center] .nfl-field-key { display:flex; flex:none; gap:4px; align-items:center; font-size:.625rem; }
+.nfl-field-key i { width:2px; height:10px; background:#2275a6; }
+.nfl-field-key i:last-child { margin-left:6px; background:#9c7100; }
+@container nfl-game-view (max-width:14rem){[data-nfl-game-center] .nfl-field>header,[data-nfl-game-center] .nfl-field>footer{flex-wrap:wrap}[data-nfl-game-center] .nfl-field-key{display:none}}
+.nfl-field-arrival { fill:var(--nfl-team-alt,#fff); opacity:.12; }
+
 
 /* Source: css/broadcast-compositions.css */
 /* One broadcast frame; each story gets a composition that suits its facts. */
