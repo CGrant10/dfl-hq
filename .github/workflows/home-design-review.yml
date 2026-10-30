@@ -141,6 +141,7 @@ on:
       - 'tools/capture-matchup-momentum.py'
       - 'tools/capture-scoreboard-finish.py'
       - 'tools/capture-week-ahead-finish.py'
+      - 'tools/capture-nfl-center-finish.py'
       - 'supabase/migrations/*gameday_score_history*'
       - 'supabase/tests/gameday_score_history.sql'
       - 'js/matchup-highlights*'
@@ -541,4 +542,26 @@ jobs:
         with:
           name: week-ahead-review
           path: week-ahead-output/
+          retention-days: 7
+
+  nfl-center-finish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright
+      - name: Check live-game hierarchy and exact fantasy points
+        env:
+          DFL_NFL_FINISH_DIR: nfl-center-output
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          python tools/capture-nfl-center-finish.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nfl-center-review
+          path: nfl-center-output/
           retention-days: 7

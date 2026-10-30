@@ -1,0 +1,43 @@
+{
+  "release": "1.518.0",
+  "public": false,
+  "checks": [
+    {
+      "mode": "plays",
+      "theme": "light",
+      "game": "401873023",
+      "rows": 117,
+      "status": "Live",
+      "contrast": true,
+      "fits": true
+    },
+    {
+      "mode": "fantasy",
+      "theme": "light",
+      "game": "401873023",
+      "rows": 19,
+      "status": "Live",
+      "contrast": true,
+      "fits": true
+    },
+    {
+      "mode": "plays",
+      "theme": "dark",
+      "game": "401873023",
+      "rows": 117,
+      "status": "Live",
+      "contrast": true,
+      "fits": true
+    },
+    {
+      "mode": "fantasy",
+      "theme": "dark",
+      "game": "401873023",
+      "rows": 19,
+      "status": "Live",
+      "contrast": true,
+      "fits": true
+    }
+  ],
+  "errors": []
+}
