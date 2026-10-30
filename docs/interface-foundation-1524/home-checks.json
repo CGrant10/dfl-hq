@@ -1,0 +1,269 @@
+{
+  "cases": [
+    {
+      "mode": "light",
+      "width": 320,
+      "tab": "brief",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "tab": "picks",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "tab": "players",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "tab": "startsit",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "tab": "brief",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "tab": "picks",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "tab": "players",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "tab": "startsit",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "tab": "brief",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "tab": "picks",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "tab": "players",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "light",
+      "width": 768,
+      "tab": "startsit",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "tab": "brief",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "tab": "picks",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "tab": "players",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "tab": "startsit",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "tab": "brief",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "tab": "picks",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "tab": "players",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "tab": "startsit",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "tab": "brief",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "tab": "picks",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "tab": "players",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    },
+    {
+      "mode": "dark",
+      "width": 768,
+      "tab": "startsit",
+      "overflow": false,
+      "labelsFit": true,
+      "font": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "targets": true,
+      "title": "16px",
+      "contrast": true
+    }
+  ],
+  "errors": []
+}

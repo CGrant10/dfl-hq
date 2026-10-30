@@ -25,6 +25,9 @@ on:
       - 'tools/capture-broadcast-wide.py'
       - 'tools/capture-broadcast-polish.py'
       - 'js/broadcast-brief.js'
+      - 'css/interface-system.css'
+      - 'css/tokens.css'
+      - 'tools/capture-interface-system.py'
       - 'js/broadcast-edition*'
       - 'supabase/migrations/*arena*'
       - 'supabase/migrations/*stadium*'
@@ -608,4 +611,37 @@ jobs:
         with:
           name: broadcast-finish-review
           path: broadcast-finish-output/
+          retention-days: 7
+
+  interface-system:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright
+      - name: Render production Home components
+        env:
+          DFL_REVIEW_DIR: interface-review-output
+        run: node tools/render-home-review.mjs
+      - name: Check Home hierarchy, controls, contrast and enlarged text
+        env:
+          DFL_REVIEW_DIR: interface-review-output
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          python tools/capture-interface-system.py
+      - name: Check Clubhouse controls, player rows, clips and live-game views
+        env:
+          DFL_INTERFACE_AUDIT: '1'
+          DFL_CLUBHOUSE_LIVE_REVIEW_DIR: interface-review-output/clubhouse
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          python tools/capture-clubhouse-live.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: interface-system-review
+          path: interface-review-output/
           retention-days: 7

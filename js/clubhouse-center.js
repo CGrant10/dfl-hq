@@ -82,8 +82,24 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  };
  const archiveReady=event=>{const detail=event.detail;if(!current()||detail?.season!==week.season||detail.week!==week.week)return;week.recordArchive=detail.archive;model.recordArchive=detail.archive;paintActive()};
  root.addEventListener('dfl:record-archive-ready',archiveReady);
+ let revealedSelection=null,revealFrame=0;
+ const revealSelection=()=>{
+  if(revealedSelection===selected)return;
+  const rail=root.querySelector('.clubhouse-scoreboard-grid'),button=rail?.querySelector('[aria-pressed="true"]');
+  if(!rail?.clientWidth||!button)return; // A hidden tab will reveal on activation.
+  const r=rail.getBoundingClientRect(),b=button.getBoundingClientRect();
+  if(b.left<r.left||b.right>r.right)rail.scrollLeft+=b.left-r.left-(r.width-b.width)/2;
+  revealedSelection=selected;
+ };
+ const scheduleReveal=()=>{
+  if(revealedSelection===selected||revealFrame)return;
+  // The router applies the destination's layout after render returns. Measure
+  // the rail in the next frame, not in the preceding Home page's geometry.
+  revealFrame=requestAnimationFrame(()=>{revealFrame=0;if(current())revealSelection()});
+ };
  const paintBoard=()=>{
   const board=root.querySelector('[data-clubhouse-scoreboard]');if(board)patchGameDay(board,clubhouseScoreboardHtml(model,selected));
+  scheduleReveal();
   for(const pulse of root.querySelectorAll('[data-clubhouse-pulse]'))patchGameDay(pulse,clubhousePulseHtml(model));
   for(const section of root.querySelectorAll('[data-clubhouse-matchup]'))section.hidden=section.dataset.clubhouseMatchup!==selected;
  };
@@ -101,11 +117,11 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   if(event.target.closest('[data-clubhouse-motion]')){motion=!motion;savePageChoice('gameday-motion',motion?'on':'off');setMotion();return}
  };
  const change=event=>{if(event.target.matches('[data-league-bench]')){includeBench=event.target.checked;paintLeaders()}};
- const onTab=event=>{if(event.detail?.tab==='leaders')paintLeaders();else if(event.detail?.tab==='matchups'){void football.update();void highlights.update()}};
+ const onTab=event=>{if(event.detail?.tab==='leaders')paintLeaders();else if(event.detail?.tab==='matchups'){scheduleReveal();void football.update();void highlights.update()}};
  const onRoute=()=>{if(!active())stop()};
  const onReduce=()=>{if(reduced.matches)stopAnimations()};
  const onVisibility=()=>{if(document.visibilityState!=='visible')stopAnimations()};
- const stop=()=>{if(stopped)return;stopped=true;root.removeEventListener('dfl:record-archive-ready',archiveReady);recordWatch.stop();football.stop();highlights.stop();details.stop();stopAnimations();finish.stop();polish.stop();vfx?.stop();leaderVfx?.stop();spotlight.stop();root.removeEventListener('change',change);root.removeEventListener('dfl:clubhouse-tab',onTab);root.removeEventListener('click',click);window.removeEventListener('hashchange',onRoute);reduced.removeEventListener('change',onReduce);document.removeEventListener('visibilitychange',onVisibility)};
+ const stop=()=>{if(stopped)return;stopped=true;cancelAnimationFrame(revealFrame);root.removeEventListener('dfl:record-archive-ready',archiveReady);recordWatch.stop();football.stop();highlights.stop();details.stop();stopAnimations();finish.stop();polish.stop();vfx?.stop();leaderVfx?.stop();spotlight.stop();root.removeEventListener('change',change);root.removeEventListener('dfl:clubhouse-tab',onTab);root.removeEventListener('click',click);window.removeEventListener('hashchange',onRoute);reduced.removeEventListener('change',onReduce);document.removeEventListener('visibilitychange',onVisibility)};
  root.addEventListener('change',change);root.addEventListener('dfl:clubhouse-tab',onTab);root.addEventListener('click',click);window.addEventListener('hashchange',onRoute);reduced.addEventListener('change',onReduce);document.addEventListener('visibilitychange',onVisibility);
  paintBoard();paintActive();paintLeaders();stopCurrent=stop;
  // Box scores and league slot metadata load independently of the score feed.

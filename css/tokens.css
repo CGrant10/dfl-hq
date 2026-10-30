@@ -56,7 +56,32 @@
                  U+20BF, U+2070-209F, U+2113, U+2C7C, U+2212, U+FEFF, U+FFFD;
 }
 
+/* The interface face is already shipped and precached for share cards. Keep
+   sports display lettering for scores/branding; use real text weights in UI. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../fonts/inter-latin-variable.woff2") format("woff2");
+}
+
 :root {
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sport: "Rajdhani", "Segoe UI Semibold", system-ui, sans-serif;
+  --ui-title: 1.5rem;
+  --ui-story: 1.25rem;
+  --ui-section: 1rem;
+  --ui-row: .8125rem;
+  --ui-copy: .8125rem;
+  --ui-meta: .6875rem;
+  --ui-label: .625rem;
+  --ui-gutter: 16px;
+  --ui-section-gap: 24px;
+  --ui-row-gap: 12px;
+  --ui-control-height: 44px;
+  --ui-input: 1rem;
+  --ui-control-radius: 6px;
   /* ---- families ------------------------------------------------------ */
   --font-display: "Rajdhani", "Segoe UI Semibold", system-ui, sans-serif;
   /* One voice across every route and palette. The previous Fairway-only

@@ -1614,3 +1614,19 @@ contrast and first-read playback are checked. Real Home checked read-only in
 both themes, including visible opacity and the existing score dock. Physical iOS
 frame pacing and screen-reader speech remain unmeasured. Evidence:
 [broadcast-signatures-1523.md](docs/broadcast-signatures-1523.md).
+
+# 1.524.0 — Home and Clubhouse interface foundation
+
+Both themes reviewed with current-run Home and Clubhouse screenshots. The first
+shared interface adoption uses Inter for functional text and Rajdhani for sports
+numerals, consistent title/section/row roles, rem sizing, native 16px selectors,
+44px controls and existing focus/selected states. New UI colors use shared tokens;
+NFL/member identities and semantic status colors retain their meaning. Transparent
+rows/soft dividers and a restrained selected-matchup marker reduce framing.
+The redundant Clubhouse eyebrow is removed. Comfortable mode enlarges shared
+tokens; system text, long names, contrast, keyboard/gesture controls, score-dock
+return, side-by-side stats and broadcast compositions pass browser checks.
+Real Home and Clubhouse inspected read-only in both themes. Other routes,
+physical iOS behavior and screen-reader speech remain outside this adoption.
+See [interface-foundation-1524.md](docs/interface-foundation-1524.md) and
+[interface-standard.md](docs/interface-standard.md).

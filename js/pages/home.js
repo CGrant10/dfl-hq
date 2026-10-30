@@ -162,7 +162,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
   const firstGames = predictions.slice(0, 3);
   const moreGames = predictions.slice(3);
   return `<section class="home-weekly-digest" data-home-outlook-week="${esc(outlook.week)}">
-    <nav class="home-week-tabs" role="tablist" aria-label="Week Ahead views">
+    <nav class="home-week-tabs" data-ui-tabs role="tablist" aria-label="Week Ahead views">
       <button id="home-week-tab-brief" type="button" role="tab" aria-controls="home-week-panel-brief" aria-selected="true" tabindex="0" data-week-tab="brief">Briefing</button>
       <button id="home-week-tab-picks" type="button" role="tab" aria-controls="home-week-panel-picks" aria-selected="false" tabindex="-1" data-week-tab="picks">Predictions</button>
       <button id="home-week-tab-players" type="button" role="tab" aria-controls="home-week-panel-players" aria-selected="false" tabindex="-1" data-week-tab="players">Top Players</button>
@@ -185,7 +185,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
         ${moreGames.length ? `<details class="home-outlook-more"><summary>All ${predictions.length} matchups</summary><div>${moreGames.map(game=>gameRow(game,-1)).join("")}</div></details>` : ""}
       </section>
       <section id="home-week-panel-players" class="home-outlook-block home-outlook-players" role="tabpanel" aria-labelledby="home-week-tab-players" data-week-panel="players" hidden>
-        <nav class="home-position-tabs" aria-label="Player position">${HOME_OUTLOOK_POSITIONS.map((position, index) => `<button type="button" data-position-tab="${position}" aria-pressed="${index === 0}">${position}</button>`).join("")}</nav>
+        <nav class="home-position-tabs" data-ui-tabs aria-label="Player position">${HOME_OUTLOOK_POSITIONS.map((position, index) => `<button type="button" data-position-tab="${position}" aria-pressed="${index === 0}">${position}</button>`).join("")}</nav>
         <div>${HOME_OUTLOOK_POSITIONS.map((position, index) => `<section data-position-panel="${position}" ${index === 0 ? "" : "hidden"}><ol>${(outlook.leaders[position] || []).map(outlookPlayerRow).join("") || `<li class="is-empty">No projection</li>`}</ol></section>`).join("")}</div>
       </section>
       <section id="home-week-panel-startsit" class="home-outlook-block home-outlook-startsit" role="tabpanel" aria-labelledby="home-week-tab-startsit" data-week-panel="startsit" hidden>${swaps.length||alarms.length?`<div class="home-outlook-title"><h3>${esc(startSitSummary(outlook.startSit||{}))}</h3></div>`:''}
