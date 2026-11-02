@@ -1,3 +1,18 @@
+# League interface finish — 1.528.0
+
+Reviewed broadcast awards/news/receipts/results, ranking rows/snapshots/reports,
+member profiles, season archives and Clubhouse state indicators in Light/Dark.
+All new surfaces, borders, text and soft light use shared theme tokens; owned
+award art, NFL/member colors and semantic results retain their meaning. Mobile
+checks cover 320/390px, with wider and enlarged-text cases. Profile/archive
+checks include legacy Medicine Wheel and team themes. Actual compiled Home,
+Profile and History passed 12 read-only mobile cases in both default themes.
+Ranking sheets fit a shortened/offset visible viewport and retain Close while
+scrolling. Motion preferences apply; no new infinite effects. `pnpm themes`
+and `pnpm check` pass. Physical Safari remains unmeasured; local WebKit could
+not launch due to missing host libraries. Evidence:
+[league-interface-1528.md](docs/league-interface-1528.md).
+
 # All games, Trade and Sportsbook — 1.527.0
 
 Reviewed Light/Dark on 320/390/430px phones, plus Trade/network layouts at 768px.

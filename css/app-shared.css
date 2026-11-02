@@ -8255,3 +8255,131 @@ html[data-readability="comfortable"] #view.view[data-route="clubhouse"] .clubhou
 }
 html[data-ui-motion="off"] #view.view[data-route="trade"] .tb-card-actions button,
 html[data-ui-motion="off"] #view.view[data-page-system][data-route="sportsbook"] .sb-outcome { transition:none; scale:1; }
+
+
+/* Source: css/league-interface.css */
+/* Story-specific broadcast compositions inside the existing wide frame.
+   The daily opener retains its own artwork and typography. */
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief {
+ --bx-story-ink:var(--accent);
+ background:var(--bg-2);
+}
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief>.bx-kicker {
+ color:var(--body-text); font:600 var(--ui-label)/1.4 var(--font-ui);
+ letter-spacing:.04em; white-space:normal; overflow:visible;
+}
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief>.bx-head {
+ font-family:var(--font-ui); font-weight:700; letter-spacing:-.025em;
+ text-transform:none;
+}
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-action {
+ color:var(--text); font:600 var(--ui-meta)/1.4 var(--font-ui);
+ border-top-color:var(--line-soft);
+}
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-action .ico-sm { color:var(--bx-story-ink); }
+/* Awards read as a cover: large identity, purpose-cropped house art, soft light. */
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award {
+ gap:6px;
+ background:radial-gradient(ellipse 28% 50% at 74% 49%,color-mix(in srgb,var(--bx-story-ink) 12%,transparent),transparent 82%),var(--bg-2);
+}
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-chip { --bx-story-ink:var(--warn-ink); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award>.bx-head {
+ font-size:clamp(1.375rem,6.4vw,1.75rem); line-height:1.12;
+}
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award-long>:is(.bx-kicker,.bx-head,.bx-brief-body) { width:65%; max-width:65%; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award-long>.bx-head { font-size:1.125rem; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award-long>.bx-brief-art { width:25%; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award>.bx-kicker { color:var(--bx-story-ink); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award-line { font:400 var(--ui-meta)/1.5 var(--font-ui); color:var(--body-text); }
+/* League news is an editorial headline, with copy anchored below it. */
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-news:not(.bx-brief-with-art)>.bx-head {
+ margin-block:auto; max-width:24ch; font-size:1.5rem; line-height:1.12;
+}
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-news>.bx-brief-body p {
+ display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+ overflow:hidden; font:400 var(--ui-copy)/1.45 var(--font-ui); color:var(--body-text);
+}
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-news>.bx-brief-action { justify-content:flex-start; }
+/* A receipt shares the Trade Board's name, portrait and exact-value roles. */
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-trade>.bx-head { font-size:1.125rem; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-package>strong { font:600 var(--ui-row)/1.25 var(--font-ui); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-trade-balance>b { font:700 1.5rem/1 var(--font-sport); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-balance-track { height:2px; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-trade>.bx-brief-action { justify-content:flex-start; }
+/* Score and record stories lead with their real figures. */
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-scores b { font-family:var(--font-sport); font-variant-numeric:tabular-nums; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-scores strong { font:600 var(--ui-row)/1.3 var(--font-ui); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-value strong,
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-series { font-family:var(--font-sport); font-variant-numeric:tabular-nums; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-metric>.bx-head { font-size:1.25rem; line-height:1.15; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-rivals strong { font:600 var(--ui-row)/1.35 var(--font-ui); }
+#home-wrap .bx-stage[data-bx-format="wide"][data-bx-large-text] .bx-brief-news>.bx-head { max-width:100%; }
+#home-wrap .bx-stage[data-bx-format="wide"][data-bx-large-text] .bx-brief-news>.bx-brief-body p { display:block; overflow:visible; }
+#home-wrap .bx-stage[data-bx-format="wide"][data-bx-large-text] .bx-brief-award-long>:is(.bx-kicker,.bx-head,.bx-brief-body,.bx-brief-art) { width:100%; max-width:100%; }
+#home-wrap .bx-stage[data-bx-format="wide"][data-bx-large-text] .bx-brief-action { display:grid; grid-template-columns:minmax(0,1fr); gap:6px; text-align:left; }
+@media(max-width:360px) {
+ #home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-news:not(.bx-brief-with-art)>.bx-head { font-size:1.25rem; }
+}
+
+/* Rankings: one aligned list with a distinct rank, team and rating. Existing
+   snapshot/detail controllers continue to own expansion and focus. */
+#view #home-wrap .power-team-link { min-height:60px; padding-block:10px; }
+#view #home-wrap .power-team-copy>strong { font:600 var(--ui-row)/1.35 var(--font-ui); letter-spacing:-.01em; }
+#view #home-wrap .power-team-copy>small { font:400 var(--ui-meta)/1.4 var(--font-ui); gap:8px; margin-top:3px; }
+#view #home-wrap .power-rank-move { font:600 var(--ui-label)/1.4 var(--font-ui); }
+#view #home-wrap .power-team-link>b { font:700 1.375rem/1 var(--font-sport); font-variant-numeric:tabular-nums; }
+#view #home-wrap .is-power-leader .power-team-link>b { color:var(--accent); }
+#view #home-wrap .power-expand em { font-family:var(--font-sport); }
+#view #home-wrap .power-preview-banter { font:650 var(--ui-row)/1.5 var(--font-ui); }
+#view #home-wrap .power-preview-facts { justify-content:flex-start; gap:12px 28px; }
+.power-detail { --font-body:var(--font-ui); --font-display:var(--font-sport); }
+.power-detail { bottom:var(--dialog-viewport-bottom,0px); max-height:min(90dvh,var(--dialog-viewport-height,90dvh)); padding-right:max(20px,env(safe-area-inset-right)); }
+.power-detail>header { position:sticky; top:0; z-index:3; background:var(--bg-2); }
+.power-detail .power-detail-identity h2 { font:700 1.25rem/1.25 var(--font-ui); letter-spacing:-.02em; }
+@media(min-width:700px) { .power-detail { max-height:min(85dvh,var(--dialog-viewport-height,85dvh)); } }
+
+/* Member identity and history use the same type system as the daily pages,
+   while career figures and season years retain their sports face. */
+#view.view[data-page-system][data-route][data-route="profile"],
+#view.view[data-page-system][data-route][data-route="history"] {
+ --font-body:var(--font-ui); --font-display:var(--font-sport);
+ --desk-title:var(--ui-title); --desk-section:var(--ui-section);
+ --desk-copy:var(--ui-copy); --desk-meta:var(--ui-meta);
+ font:400 var(--ui-copy)/1.5 var(--font-ui);
+}
+#view.view[data-page-system][data-route][data-route="profile"] .profile-head {
+ border-radius:8px; border-color:var(--line-soft); border-left:2px solid var(--accent);
+ background:var(--bg-2); box-shadow:none;
+}
+#view.view[data-page-system][data-route][data-route="profile"] .ph-id .profile-name {
+ font:700 1.25rem/1.25 var(--font-ui); letter-spacing:-.02em; text-transform:none;
+}
+#view.view[data-page-system][data-route][data-route="profile"] .ph-handle { font:400 var(--ui-meta)/1.5 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="profile"] .dfl-bio { font:400 var(--ui-copy)/1.55 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="profile"] .ph-record { border-top:1px solid var(--line-soft); padding-top:12px; margin-top:16px; }
+#view.view[data-page-system][data-route][data-route="profile"] .ph-record b { font:700 1.375rem/1.1 var(--font-sport); }
+#view.view[data-page-system][data-route][data-route="profile"] .ph-record small { font:500 var(--ui-label)/1.4 var(--font-ui); letter-spacing:.04em; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-record strong { font-family:var(--font-sport); }
+#view.view[data-page-system][data-route][data-route="profile"] :is(input,textarea,select),
+#view.view[data-page-system][data-route][data-route="history"] :is(input,textarea,select) { font-size:var(--ui-input); }
+#view.view[data-page-system][data-route][data-route="profile"] :is(.career-record small,.career-support dt) { font:400 var(--ui-meta)/1.5 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="history"] .archive-seasons { gap:10px; }
+#view.view[data-page-system][data-route][data-route="history"] .archive-season { border-radius:8px; border-color:var(--line-soft); padding:14px; }
+#view.view[data-page-system][data-route][data-route="history"] .archive-season.is-featured { border-top:2px solid var(--milestone); background:var(--bg-2); }
+#view.view[data-page-system][data-route][data-route="history"] .archive-cabinet-head h2 { font:700 var(--ui-section)/1.3 var(--font-ui); letter-spacing:-.01em; text-transform:none; }
+#view.view[data-page-system][data-route][data-route="history"] .archive-season-head { margin-bottom:14px; }
+#view.view[data-page-system][data-route][data-route="history"] .archive-season-head strong { font:700 1.875rem/1 var(--font-sport); }
+#view.view[data-page-system][data-route][data-route="history"] .archive-winner>div { font:600 var(--ui-row)/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="history"] .is-featured .archive-winner>div { font-size:var(--ui-section); }
+#view.view[data-page-system][data-route][data-route="history"] .archive-winner .tiny { font:400 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="history"] .archive-runner { grid-template-columns:minmax(0,5.5rem) minmax(0,1fr); gap:8px; }
+#view.view[data-page-system][data-route][data-route="history"] .archive-runner>div { font:500 var(--ui-meta)/1.4 var(--font-ui); }
+
+/* Live state is supplied by the existing matchup model, never by a visual
+   timer. Only a real phase change receives a finite status transition. */
+#view.view[data-route="clubhouse"] .clubhouse-matchup-card[data-matchup-state="upcoming"] .clubhouse-game-teams { background:var(--bg-2); border-top:2px solid var(--line); }
+#view.view[data-route="clubhouse"] .clubhouse-matchup-card[data-matchup-state="live"] .clubhouse-game-teams { border-top:2px solid var(--accent); }
+#view.view[data-route="clubhouse"] .clubhouse-matchup-card[data-matchup-state="final"] .clubhouse-game-teams { background:var(--bg-2); border-top:2px solid var(--milestone); }
+#view.view[data-route="clubhouse"] .clubhouse-matchup-card[data-matchup-state="final"] .clubhouse-game-side[data-lead="true"]>b { text-decoration:underline; text-decoration-color:var(--milestone); text-decoration-thickness:2px; text-underline-offset:8px; }
+#view.view[data-route="clubhouse"] .clubhouse-matchup-card[data-matchup-state="live"] .clubhouse-matchup-state { display:inline-flex; align-items:center; gap:6px; color:var(--text); }
+#view.view[data-route="clubhouse"] .clubhouse-matchup-card[data-matchup-state="live"] .clubhouse-matchup-state::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--accent); }

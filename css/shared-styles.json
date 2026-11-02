@@ -56,5 +56,6 @@
   "css/clubhouse-viewing.css",
   "css/broadcast-compositions.css",
   "css/matchup-momentum.css",
-  "css/interface-system.css"
+  "css/interface-system.css",
+  "css/league-interface.css"
 ]

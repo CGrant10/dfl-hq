@@ -35,7 +35,11 @@ with sync_playwright() as p:
         if expand.get_attribute('aria-expanded')!='true':expand.evaluate('e=>e.click()')
         action=row.locator('[data-power-team]')
         if programmatic:action.evaluate('e=>e.click()')
-        else:action.click()
+        else:
+            # A clipped grid disclosure moves its children until its transition
+            # finishes. Click the final visible target, not its moving midpoint.
+            page.wait_for_function('(id)=>!document.getElementById(id).getAnimations().length',arg=expand.get_attribute('aria-controls'))
+            action.click()
         if not page.locator('dialog.power-detail').count():
             page.screenshot(path=str(out/'power-report-failure.png'))
             raise AssertionError({'errors':errors,'clicks':page.evaluate('window.powerClicks.slice(-5)'), 'state':row.evaluate('e=>({class:e.className,preview:e.querySelector("[data-power-preview]").outerHTML.slice(0,250)})')})
@@ -57,7 +61,11 @@ with sync_playwright() as p:
             page.set_viewport_size({'width':width,'height':900})
             mine=card.locator('.is-me');expand=mine.locator('[data-power-expand]');panel=mine.locator('[data-power-preview]')
             mine.scroll_into_view_if_needed();folded=mine.bounding_box()['height']
-            expand.evaluate('e=>e.click()');page.wait_for_timeout(85);mid=mine.bounding_box()['height'];page.wait_for_timeout(230);full=mine.bounding_box()['height']
+            # Sample the real CSS transition at a controlled time; loaded CI
+            # runners must not turn an 85ms wall-clock wait into a finished frame.
+            properties=expand.evaluate('''e=>{e.click();const panel=e.closest('[data-power-id]').querySelector('[data-power-preview]');getComputedStyle(panel).gridTemplateRows;window.snapshotTransitions=panel.getAnimations();for(const a of snapshotTransitions){a.pause();a.currentTime=Number(a.effect.getTiming().duration)*.35}return snapshotTransitions.map(a=>a.transitionProperty)}''')
+            assert 'grid-template-rows' in properties,(theme,width,'snapshot lost its height transition')
+            mid=mine.bounding_box()['height'];page.evaluate('snapshotTransitions.forEach(a=>a.finish())');full=mine.bounding_box()['height']
             assert folded+2<mid<full-2,(theme,width,folded,mid,full)
             assert expand.get_attribute('aria-expanded')=='true' and not panel.evaluate('e=>e.inert')
             assert panel.locator('.power-preview-form [role=listitem]').count()==3
@@ -87,6 +95,16 @@ with sync_playwright() as p:
             dialog=page.locator('dialog.power-detail')
             dialog.wait_for(state='visible')
             assert dialog.is_visible(),(theme,width,errors,page.locator('.is-me [data-power-expand]').get_attribute('aria-expanded'),page.locator('dialog.power-detail').count())
+            if width==390:
+                page.wait_for_function('!document.querySelector(".power-detail").getAnimations().length')
+                page.evaluate('''()=>{const v=visualViewport;Object.defineProperty(v,'height',{configurable:true,value:320});Object.defineProperty(v,'offsetTop',{configurable:true,value:100});v.dispatchEvent(new Event('resize'))}''');page.wait_for_timeout(70)
+                assert dialog.evaluate('e=>{const r=e.getBoundingClientRect(),b=e.querySelector("[data-power-close]").getBoundingClientRect();return r.top>=100&&r.bottom<=421&&b.top>=r.top&&b.bottom<=r.bottom}')
+                dialog.evaluate('e=>e.scrollTop=e.scrollHeight');page.wait_for_timeout(50)
+                assert dialog.evaluate('e=>{const r=e.getBoundingClientRect(),b=e.querySelector("[data-power-close]").getBoundingClientRect();return b.top>=r.top&&b.bottom<=r.bottom}')
+                dialog.evaluate('e=>e.scrollTop=0')
+                page.evaluate('delete visualViewport.height;delete visualViewport.offsetTop;visualViewport.dispatchEvent(new Event("resize"))');page.wait_for_timeout(70)
+                results.append({'theme':theme,'visibleViewport':'sheet and close control fit a shortened offset viewport'})
+
             page.wait_for_function("()=>document.querySelector('.power-detail-face img')?.complete&&document.querySelector('.power-detail-face.has-photo')")
             assert 'The Bastards of the Very Long Championship Team Name' in dialog.text_content(), dialog.text_content()
             assert dialog.evaluate('e=>e.scrollWidth<=e.clientWidth'),(theme,width)

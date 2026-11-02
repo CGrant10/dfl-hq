@@ -48,13 +48,14 @@ with sync_playwright() as p:
     capture(theme.replace(':','-')+'-'+scale+'-history')
     page.evaluate('window.showProfile()');assert page.locator('.ph-team-mark i').inner_text()=='AV'
     assert page.locator('[data-photo-pick]').evaluate('e=>{const r=e.getBoundingClientRect();return r.width>=44&&r.height>=44}')
+    assert page.locator('.profile-name').evaluate('e=>getComputedStyle(e).fontFamily.includes("Inter")')
     capture(theme.replace(':','-')+'-'+scale+'-profile')
     page.evaluate('window.showMore()');assert page.locator('#more .quicknav a').count()==15
     assert page.locator('#more .quicknav a').evaluate_all('es=>es.every(e=>e.getBoundingClientRect().height>=44)')
     page.locator('#more .quicknav a').last.scroll_into_view_if_needed();assert page.locator('#more .quicknav a').last.is_visible();assert page.locator('#more-close').is_visible();page.locator('#more .quicknav a').first.scroll_into_view_if_needed();capture(theme.replace(':','-')+'-'+scale+'-more');page.locator('#more-close').click()
   page.evaluate("document.documentElement.style.fontSize='100%';window.showHistory(true)")
   assert page.locator('[data-name-pick]').count()==3
-  page.evaluate('window.showProfile()');page.locator('[data-dfl-edit]').click();page.locator('[data-bio]').fill('Draft only');page.locator('[data-dfl-cancel]').click()
+  page.evaluate('window.showProfile()');page.locator('[data-dfl-edit]').click();page.locator('[data-bio]').fill('Draft only');assert page.locator('[data-bio]').evaluate('e=>parseFloat(getComputedStyle(e).fontSize)>=16');page.locator('[data-dfl-cancel]').click()
   assert page.locator('.ph-team-mark i').inner_text()=='AV';assert page.locator('[data-bio]').count()==0
   page.evaluate("window.showProfile('/missing-photo.jpg')")
   page.wait_for_function('!document.querySelector(".ph-team-mark img")');assert page.locator('.ph-team-mark i').is_visible()

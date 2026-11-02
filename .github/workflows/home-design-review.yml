@@ -26,6 +26,10 @@ on:
       - 'tools/capture-broadcast-polish.py'
       - 'js/broadcast-brief.js'
       - 'css/interface-system.css'
+      - 'css/league-interface.css'
+      - 'tools/capture-power-review.py'
+      - 'tools/capture-secondary-review.py'
+      - 'tools/render-secondary-review.mjs'
       - 'css/trade-book-reading.css'
       - 'js/multigame*'
       - 'js/sportsbook-account-motion.js'
@@ -528,6 +532,32 @@ jobs:
         with:
           name: trade-book-interface-review
           path: trade-book-output/
+          retention-days: 7
+
+  league-identity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright
+      - name: Check rankings, profiles and archive on mobile
+        env:
+          DFL_REVIEW_DIR: ${{ github.workspace }}/league-identity-output/home
+          DFL_SECONDARY_REVIEW_DIR: ${{ github.workspace }}/league-identity-output/secondary
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          node tools/render-home-review.mjs
+          python tools/capture-power-review.py
+          node tools/render-secondary-review.mjs
+          python tools/capture-secondary-review.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: league-identity-review
+          path: league-identity-output/
           retention-days: 7
 
   connected-polish:

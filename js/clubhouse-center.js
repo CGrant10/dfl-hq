@@ -23,6 +23,7 @@ import {currentMember} from './members.js';
 import {readPageChoice,savePageChoice} from './page-disclosure.js';
 import {accentOf} from './identity-rules.js';
 import {mountClubhousePolish} from './clubhouse-polish.js';
+import {animateUi} from './ui-motion.js';
 
 let stopCurrent=null;
 export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,loadStats=loadWeeklyStats,loadLeague=id=>sleeper.league(id),autoFinish=true,onClip=null}={}) {
@@ -57,7 +58,11 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   setViewingMatchup(card,viewingMatchup(model,game));
   stopScores();stopScores=()=>{};
   card.style.setProperty('--clubhouse-left',accentOf(game.sides[0].identity));card.style.setProperty('--clubhouse-right',accentOf(game.sides[1].identity));
-  const {lead}=clubhouseGameMetrics(game,model.completed);
+  const {lead,phase}=clubhouseGameMetrics(game,model.completed),previousPhase=card.dataset.matchupState;
+  if(previousPhase!==phase.key){
+   card.dataset.matchupState=phase.key;
+   if(previousPhase)animateUi(card.querySelector('.clubhouse-matchup-state'),[{opacity:.5,transform:'translateY(3px)'},{opacity:1,transform:'none'}],{duration:200,motion:motion&&!reduced.matches});
+  }
   const scoreStrip=card.querySelector('[data-clubhouse-score-strip]');if(scoreStrip)patchGameDay(scoreStrip,clubhouseScoreStripHtml(game,model.completed));
   for(const [i,side] of ['left','right'].entries()){
    const total=card.querySelector(`[data-score-${side}] [data-matchup-score-value]`),value=game.sides[i].score==null?'—':Number(game.sides[i].score).toFixed(2);if(total&&total.textContent!==value)total.textContent=value;
