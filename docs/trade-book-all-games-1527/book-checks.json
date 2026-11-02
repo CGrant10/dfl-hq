@@ -1,0 +1,593 @@
+{
+  "checks": [
+    {
+      "mode": "light",
+      "width": 320,
+      "picks": 1,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 296,
+        "height": 119,
+        "top": 653,
+        "right": 308,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 784.3818969726562,
+        "width": 320,
+        "height": 60,
+        "top": 784.3818969726562,
+        "right": 320,
+        "bottom": 844.3818969726562,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "picks": 2,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 296,
+        "height": 119,
+        "top": 653,
+        "right": 308,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 784,
+        "width": 320,
+        "height": 60,
+        "top": 784,
+        "right": 320,
+        "bottom": 844,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "picks": 6,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 296,
+        "height": 119,
+        "top": 653,
+        "right": 308,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 784,
+        "width": 320,
+        "height": 60,
+        "top": 784,
+        "right": 320,
+        "bottom": 844,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "propsReading": true,
+      "exactQuoteUpdate": true,
+      "stableRowHeight": true,
+      "reducedMotion": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "picks": 1,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 366,
+        "height": 119,
+        "top": 653,
+        "right": 378,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 787.3499755859375,
+        "width": 390,
+        "height": 60,
+        "top": 787.3499755859375,
+        "right": 390,
+        "bottom": 847.3499755859375,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "picks": 2,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 366,
+        "height": 119,
+        "top": 653,
+        "right": 378,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 784,
+        "width": 390,
+        "height": 60,
+        "top": 784,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "picks": 6,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 366,
+        "height": 119,
+        "top": 653,
+        "right": 378,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 784,
+        "width": 390,
+        "height": 60,
+        "top": 784,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "propsReading": true,
+      "exactQuoteUpdate": true,
+      "stableRowHeight": true,
+      "reducedMotion": true
+    },
+    {
+      "mode": "light",
+      "width": 430,
+      "picks": 1,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 406,
+        "height": 119,
+        "top": 653,
+        "right": 418,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 787.3517456054688,
+        "width": 430,
+        "height": 60,
+        "top": 787.3517456054688,
+        "right": 430,
+        "bottom": 847.3517456054688,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "light",
+      "width": 430,
+      "picks": 2,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 406,
+        "height": 119,
+        "top": 653,
+        "right": 418,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 784,
+        "width": 430,
+        "height": 60,
+        "top": 784,
+        "right": 430,
+        "bottom": 844,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "light",
+      "width": 430,
+      "picks": 6,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 406,
+        "height": 119,
+        "top": 653,
+        "right": 418,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 784,
+        "width": 430,
+        "height": 60,
+        "top": 784,
+        "right": 430,
+        "bottom": 844,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "light",
+      "width": 430,
+      "propsReading": true,
+      "exactQuoteUpdate": true,
+      "stableRowHeight": true,
+      "reducedMotion": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "picks": 1,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 296,
+        "height": 119,
+        "top": 653,
+        "right": 308,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 786.3301391601562,
+        "width": 320,
+        "height": 60,
+        "top": 786.3301391601562,
+        "right": 320,
+        "bottom": 846.3301391601562,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "picks": 2,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 296,
+        "height": 119,
+        "top": 653,
+        "right": 308,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 784,
+        "width": 320,
+        "height": 60,
+        "top": 784,
+        "right": 320,
+        "bottom": 844,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "picks": 6,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 296,
+        "height": 119,
+        "top": 653,
+        "right": 308,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 784,
+        "width": 320,
+        "height": 60,
+        "top": 784,
+        "right": 320,
+        "bottom": 844,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "propsReading": true,
+      "exactQuoteUpdate": true,
+      "stableRowHeight": true,
+      "reducedMotion": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "picks": 1,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 366,
+        "height": 119,
+        "top": 653,
+        "right": 378,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 785.626220703125,
+        "width": 390,
+        "height": 60,
+        "top": 785.626220703125,
+        "right": 390,
+        "bottom": 845.626220703125,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "picks": 2,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 366,
+        "height": 119,
+        "top": 653,
+        "right": 378,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 784,
+        "width": 390,
+        "height": 60,
+        "top": 784,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "picks": 6,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 366,
+        "height": 119,
+        "top": 653,
+        "right": 378,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 784,
+        "width": 390,
+        "height": 60,
+        "top": 784,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "propsReading": true,
+      "exactQuoteUpdate": true,
+      "stableRowHeight": true,
+      "reducedMotion": true
+    },
+    {
+      "mode": "dark",
+      "width": 430,
+      "picks": 1,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 406,
+        "height": 119,
+        "top": 653,
+        "right": 418,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 785.1461791992188,
+        "width": 430,
+        "height": 60,
+        "top": 785.1461791992188,
+        "right": 430,
+        "bottom": 845.1461791992188,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "dark",
+      "width": 430,
+      "picks": 2,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 406,
+        "height": 119,
+        "top": 653,
+        "right": 418,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 784,
+        "width": 430,
+        "height": 60,
+        "top": 784,
+        "right": 430,
+        "bottom": 844,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "dark",
+      "width": 430,
+      "picks": 6,
+      "box": {
+        "x": 12,
+        "y": 653,
+        "width": 406,
+        "height": 119,
+        "top": 653,
+        "right": 418,
+        "bottom": 772,
+        "left": 12
+      },
+      "nav": {
+        "x": 0,
+        "y": 784,
+        "width": 430,
+        "height": 60,
+        "top": 784,
+        "right": 430,
+        "bottom": 844,
+        "left": 0
+      },
+      "inside": true,
+      "button": true,
+      "strip": true,
+      "overflow": false,
+      "reviewAndConfirm": true
+    },
+    {
+      "mode": "dark",
+      "width": 430,
+      "propsReading": true,
+      "exactQuoteUpdate": true,
+      "stableRowHeight": true,
+      "reducedMotion": true
+    }
+  ],
+  "errors": []
+}

@@ -21,3 +21,12 @@ export function animateBankroll(node,from,to){
 export function revealTicketResult(node,status){
   return animateUi(node,[{boxShadow:`inset 3px 0 0 ${status==='won'?'var(--milestone)':'var(--accent)'}`,opacity:.8},{boxShadow:'inset 3px 0 0 transparent',opacity:1}],{duration:800});
 }
+
+// Paint the exact new quote immediately; animate its ink without moving the row.
+export function updateBookQuote(node,text){
+ if(!node)return;
+ const value=String(text??'—');if(node.textContent===value)return;
+ node.textContent=value;
+ const r=node.getBoundingClientRect();
+ if(r.width&&r.bottom>44&&r.top<innerHeight-60)animateUi(node,[{opacity:.55,transform:'translateY(2px)'},{opacity:1,transform:'none'}],{duration:180});
+}

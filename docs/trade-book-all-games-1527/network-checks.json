@@ -1,0 +1,434 @@
+[
+  {
+    "check": "320px light shows every game despite legacy pins, with zero scores and actual roster points",
+    "pass": true
+  },
+  {
+    "check": "320px light follows a chosen game with one selected tile",
+    "pass": true
+  },
+  {
+    "check": "320px light no pinning controls or three-game limit remain",
+    "pass": true
+  },
+  {
+    "check": "320px light scoreboard refresh preserves each game button",
+    "pass": true
+  },
+  {
+    "check": "320px light all-game scores add no summary fan-out and retain mounted buttons",
+    "pass": true
+  },
+  {
+    "check": "320px light the followed game is revealed inside its own rail",
+    "pass": true
+  },
+  {
+    "check": "320px light timeline orders actual saved moments oldest first",
+    "pass": true
+  },
+  {
+    "check": "320px light selecting a lead change shows both recorded scores",
+    "pass": true
+  },
+  {
+    "check": "320px light recorded touchdown opens its exact active video",
+    "pass": true
+  },
+  {
+    "check": "320px light refreshing preserves the open timeline and selected receipt",
+    "pass": true
+  },
+  {
+    "check": "320px light banter cites a real streak and links to its archived matchup",
+    "pass": true
+  },
+  {
+    "check": "320px light memory and timeline actions retain 44px targets",
+    "pass": true
+  },
+  {
+    "check": "320px light theme fits phone edges",
+    "pass": true
+  },
+  {
+    "check": "320px light event identity respects reduced motion",
+    "pass": true
+  },
+  {
+    "check": "320px light scout finds an actual legal two-way upgrade through the full search",
+    "pass": true
+  },
+  {
+    "check": "320px light scout shows both packages, value balance and both projected gains",
+    "pass": true
+  },
+  {
+    "check": "320px light scout review opens the existing fully evaluated ticket",
+    "pass": true
+  },
+  {
+    "check": "320px light no browser errors or backend writes",
+    "pass": true
+  },
+  {
+    "check": "320px dark shows every game despite legacy pins, with zero scores and actual roster points",
+    "pass": true
+  },
+  {
+    "check": "320px dark follows a chosen game with one selected tile",
+    "pass": true
+  },
+  {
+    "check": "320px dark no pinning controls or three-game limit remain",
+    "pass": true
+  },
+  {
+    "check": "320px dark scoreboard refresh preserves each game button",
+    "pass": true
+  },
+  {
+    "check": "320px dark all-game scores add no summary fan-out and retain mounted buttons",
+    "pass": true
+  },
+  {
+    "check": "320px dark the followed game is revealed inside its own rail",
+    "pass": true
+  },
+  {
+    "check": "320px dark timeline orders actual saved moments oldest first",
+    "pass": true
+  },
+  {
+    "check": "320px dark selecting a lead change shows both recorded scores",
+    "pass": true
+  },
+  {
+    "check": "320px dark recorded touchdown opens its exact active video",
+    "pass": true
+  },
+  {
+    "check": "320px dark refreshing preserves the open timeline and selected receipt",
+    "pass": true
+  },
+  {
+    "check": "320px dark banter cites a real streak and links to its archived matchup",
+    "pass": true
+  },
+  {
+    "check": "320px dark memory and timeline actions retain 44px targets",
+    "pass": true
+  },
+  {
+    "check": "320px dark theme fits phone edges",
+    "pass": true
+  },
+  {
+    "check": "320px dark event identity respects reduced motion",
+    "pass": true
+  },
+  {
+    "check": "320px dark scout finds an actual legal two-way upgrade through the full search",
+    "pass": true
+  },
+  {
+    "check": "320px dark scout shows both packages, value balance and both projected gains",
+    "pass": true
+  },
+  {
+    "check": "320px dark scout review opens the existing fully evaluated ticket",
+    "pass": true
+  },
+  {
+    "check": "320px dark no browser errors or backend writes",
+    "pass": true
+  },
+  {
+    "check": "390px light shows every game despite legacy pins, with zero scores and actual roster points",
+    "pass": true
+  },
+  {
+    "check": "390px light follows a chosen game with one selected tile",
+    "pass": true
+  },
+  {
+    "check": "390px light no pinning controls or three-game limit remain",
+    "pass": true
+  },
+  {
+    "check": "390px light scoreboard refresh preserves each game button",
+    "pass": true
+  },
+  {
+    "check": "390px light all-game scores add no summary fan-out and retain mounted buttons",
+    "pass": true
+  },
+  {
+    "check": "390px light the followed game is revealed inside its own rail",
+    "pass": true
+  },
+  {
+    "check": "390px light timeline orders actual saved moments oldest first",
+    "pass": true
+  },
+  {
+    "check": "390px light selecting a lead change shows both recorded scores",
+    "pass": true
+  },
+  {
+    "check": "390px light recorded touchdown opens its exact active video",
+    "pass": true
+  },
+  {
+    "check": "390px light refreshing preserves the open timeline and selected receipt",
+    "pass": true
+  },
+  {
+    "check": "390px light banter cites a real streak and links to its archived matchup",
+    "pass": true
+  },
+  {
+    "check": "390px light memory and timeline actions retain 44px targets",
+    "pass": true
+  },
+  {
+    "check": "390px light theme fits phone edges",
+    "pass": true
+  },
+  {
+    "check": "390px light event identity respects reduced motion",
+    "pass": true
+  },
+  {
+    "check": "390px light scout finds an actual legal two-way upgrade through the full search",
+    "pass": true
+  },
+  {
+    "check": "390px light scout shows both packages, value balance and both projected gains",
+    "pass": true
+  },
+  {
+    "check": "390px light scout review opens the existing fully evaluated ticket",
+    "pass": true
+  },
+  {
+    "check": "390px light no browser errors or backend writes",
+    "pass": true
+  },
+  {
+    "check": "390px dark shows every game despite legacy pins, with zero scores and actual roster points",
+    "pass": true
+  },
+  {
+    "check": "390px dark follows a chosen game with one selected tile",
+    "pass": true
+  },
+  {
+    "check": "390px dark no pinning controls or three-game limit remain",
+    "pass": true
+  },
+  {
+    "check": "390px dark scoreboard refresh preserves each game button",
+    "pass": true
+  },
+  {
+    "check": "390px dark all-game scores add no summary fan-out and retain mounted buttons",
+    "pass": true
+  },
+  {
+    "check": "390px dark the followed game is revealed inside its own rail",
+    "pass": true
+  },
+  {
+    "check": "390px dark timeline orders actual saved moments oldest first",
+    "pass": true
+  },
+  {
+    "check": "390px dark selecting a lead change shows both recorded scores",
+    "pass": true
+  },
+  {
+    "check": "390px dark recorded touchdown opens its exact active video",
+    "pass": true
+  },
+  {
+    "check": "390px dark refreshing preserves the open timeline and selected receipt",
+    "pass": true
+  },
+  {
+    "check": "390px dark banter cites a real streak and links to its archived matchup",
+    "pass": true
+  },
+  {
+    "check": "390px dark memory and timeline actions retain 44px targets",
+    "pass": true
+  },
+  {
+    "check": "390px dark theme fits phone edges",
+    "pass": true
+  },
+  {
+    "check": "390px dark event identity respects reduced motion",
+    "pass": true
+  },
+  {
+    "check": "390px dark scout finds an actual legal two-way upgrade through the full search",
+    "pass": true
+  },
+  {
+    "check": "390px dark scout shows both packages, value balance and both projected gains",
+    "pass": true
+  },
+  {
+    "check": "390px dark scout review opens the existing fully evaluated ticket",
+    "pass": true
+  },
+  {
+    "check": "390px dark no browser errors or backend writes",
+    "pass": true
+  },
+  {
+    "check": "768px light shows every game despite legacy pins, with zero scores and actual roster points",
+    "pass": true
+  },
+  {
+    "check": "768px light follows a chosen game with one selected tile",
+    "pass": true
+  },
+  {
+    "check": "768px light no pinning controls or three-game limit remain",
+    "pass": true
+  },
+  {
+    "check": "768px light scoreboard refresh preserves each game button",
+    "pass": true
+  },
+  {
+    "check": "768px light all-game scores add no summary fan-out and retain mounted buttons",
+    "pass": true
+  },
+  {
+    "check": "768px light the followed game is revealed inside its own rail",
+    "pass": true
+  },
+  {
+    "check": "768px light timeline orders actual saved moments oldest first",
+    "pass": true
+  },
+  {
+    "check": "768px light selecting a lead change shows both recorded scores",
+    "pass": true
+  },
+  {
+    "check": "768px light recorded touchdown opens its exact active video",
+    "pass": true
+  },
+  {
+    "check": "768px light refreshing preserves the open timeline and selected receipt",
+    "pass": true
+  },
+  {
+    "check": "768px light banter cites a real streak and links to its archived matchup",
+    "pass": true
+  },
+  {
+    "check": "768px light memory and timeline actions retain 44px targets",
+    "pass": true
+  },
+  {
+    "check": "768px light theme fits phone edges",
+    "pass": true
+  },
+  {
+    "check": "768px light event identity respects reduced motion",
+    "pass": true
+  },
+  {
+    "check": "768px light scout finds an actual legal two-way upgrade through the full search",
+    "pass": true
+  },
+  {
+    "check": "768px light scout shows both packages, value balance and both projected gains",
+    "pass": true
+  },
+  {
+    "check": "768px light scout review opens the existing fully evaluated ticket",
+    "pass": true
+  },
+  {
+    "check": "768px light no browser errors or backend writes",
+    "pass": true
+  },
+  {
+    "check": "768px dark shows every game despite legacy pins, with zero scores and actual roster points",
+    "pass": true
+  },
+  {
+    "check": "768px dark follows a chosen game with one selected tile",
+    "pass": true
+  },
+  {
+    "check": "768px dark no pinning controls or three-game limit remain",
+    "pass": true
+  },
+  {
+    "check": "768px dark scoreboard refresh preserves each game button",
+    "pass": true
+  },
+  {
+    "check": "768px dark all-game scores add no summary fan-out and retain mounted buttons",
+    "pass": true
+  },
+  {
+    "check": "768px dark the followed game is revealed inside its own rail",
+    "pass": true
+  },
+  {
+    "check": "768px dark timeline orders actual saved moments oldest first",
+    "pass": true
+  },
+  {
+    "check": "768px dark selecting a lead change shows both recorded scores",
+    "pass": true
+  },
+  {
+    "check": "768px dark recorded touchdown opens its exact active video",
+    "pass": true
+  },
+  {
+    "check": "768px dark refreshing preserves the open timeline and selected receipt",
+    "pass": true
+  },
+  {
+    "check": "768px dark banter cites a real streak and links to its archived matchup",
+    "pass": true
+  },
+  {
+    "check": "768px dark memory and timeline actions retain 44px targets",
+    "pass": true
+  },
+  {
+    "check": "768px dark theme fits phone edges",
+    "pass": true
+  },
+  {
+    "check": "768px dark event identity respects reduced motion",
+    "pass": true
+  },
+  {
+    "check": "768px dark scout finds an actual legal two-way upgrade through the full search",
+    "pass": true
+  },
+  {
+    "check": "768px dark scout shows both packages, value balance and both projected gains",
+    "pass": true
+  },
+  {
+    "check": "768px dark scout review opens the existing fully evaluated ticket",
+    "pass": true
+  },
+  {
+    "check": "768px dark no browser errors or backend writes",
+    "pass": true
+  }
+]

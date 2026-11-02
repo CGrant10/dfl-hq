@@ -1,9 +1,10 @@
 """DFL timeline, memory, multigame and scout: actual controllers, isolated fixtures."""
 import json,os,threading
+from datetime import datetime,timezone
 from pathlib import Path
 from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
 from playwright.sync_api import sync_playwright
-ROOT=Path(__file__).resolve().parents[1];OUT=Path(os.environ.get('DFL_NETWORK_REVIEW_DIR','/tmp/dfl-network-1503'));OUT.mkdir(parents=True,exist_ok=True);TRADE=Path('/workspace/dfl-trade-review')
+ROOT=Path(__file__).resolve().parents[1];OUT=Path(os.environ.get('DFL_NETWORK_REVIEW_DIR','/tmp/dfl-network-1503'));OUT.mkdir(parents=True,exist_ok=True);TRADE=Path(os.environ.get('DFL_NETWORK_TRADE_DIR','/workspace/dfl-trade-review'))
 head=(ROOT/'index.html').read_text().split('<head>')[1].split('</head>')[0]
 html='<!doctype html><html lang="en"><head>'+head+'</head><body><main id="view" class="view" data-route="clubhouse" data-pulse-system="1"><h1>DFL Sunday desk</h1><section id="desk"></section><div id="timeline"></div><div id="memory"></div><div id="award"></div></main></body></html>'
 class Handler(SimpleHTTPRequestHandler):
@@ -26,11 +27,13 @@ with sync_playwright() as p:
  for width in [320,390,768]:
   for theme in ['light','dark']:
    c=b.new_context(viewport={'width':width,'height':844},has_touch=True,is_mobile=True,service_workers='block')
+   summary_reads=[]
    def route(r):
+    if 'site.api.espn.com/' in r.request.url and '/summary?' in r.request.url:summary_reads.append(r.request.url)
     if r.request.url.startswith(base):return r.continue_()
     if r.request.resource_type=='image':return r.fulfill(content_type='image/png',body=(ROOT/'tools/fixtures/player-portrait.png').read_bytes())
     return r.abort()
-   c.route('**/*',route);pg=c.new_page();errors=[];pg.on('pageerror',lambda e:errors.append(str(e)));pg.goto(base+'/network-review.html#/clubhouse',wait_until='domcontentloaded')
+   c.route('**/*',route);pg=c.new_page();pg.clock.install(time=datetime(2026,10,26,20,tzinfo=timezone.utc));errors=[];pg.on('pageerror',lambda e:errors.append(str(e)));pg.goto(base+'/network-review.html#/clubhouse',wait_until='domcontentloaded')
    pg.evaluate('''async theme=>{
     (await import('/js/theme.js')).pinMode(theme);
     const f=window.f={reads:0,selected:[],active:true};
@@ -43,15 +46,18 @@ with sync_playwright() as p:
     const event=(id,teams,state='in')=>({id,date:'2026-10-25T17:00:00Z',status:{type:{state,shortDetail:'Q3 8:20'}},competitions:[{competitors:teams.map((code,i)=>({homeAway:i?'home':'away',team:{abbreviation:code},score:i?'14':'0'}))}]});
     f.board={season:{year:2026,type:2},week:{number:7},events:[event('401873011',['NO','PIT']),event('401900001',['WAS','NYG']),event('401900002',['BUF','KC']),event('401900003',['SF','SEA'],'pre')]};
     const summary=await(await fetch('/tools/fixtures/nfl-game-center-summary.json')).json();
-    f.desk=(await import('/js/multigame.js')).mountMultigame(document.getElementById('desk'),{getContext:()=>({...f.model,players:[{id:'1',name:'Tyler Shough',position:'QB',nflTeam:'NO',points:22,isMine:true}]}),active:()=>f.active,member:()=>12,onSelect:id=>{f.selected.push(id);f.desk.select(id)},loadSummary:async game=>{f.reads++;return {summary:game.id==='401873011'?summary:{header:{id:game.id}},fetchedAt:Date.now()}}});await f.desk.update(f.board,'401873011');
+    localStorage.setItem('dfl.nfl.pins.v1.12.2026:7','["401873011"]');
+    f.desk=(await import('/js/multigame.js')).mountMultigame(document.getElementById('desk'),{getContext:()=>({...f.model,players:[{id:'1',name:'Tyler Shough',position:'QB',nflTeam:'NO',points:22,isMine:true}]}),active:()=>f.active,onSelect:id=>{f.selected.push(id);f.desk.select(id)}});f.desk.update(f.board,'401873011');
     document.getElementById('award').innerHTML=(await import('/js/weekly-clubhouse-ui.js')).weeklyAwardsHtml({week:7,awards:[{key:'high-score',label:'Final boss',winners:[{name:'Bastards of the Realm'}],detail:'142.32 points'}]});
    }''',theme)
    tag=f'{width}px {theme}';pg.wait_for_selector('.multigame-card')
-   check(tag+' shows three games with zero scores and actual roster points',pg.locator('.multigame-card').count()==3 and '22.0' in pg.locator('.multigame-card').first.inner_text() and pg.locator('.multigame-score b').first.inner_text()=='0')
+   check(tag+' shows every game despite legacy pins, with zero scores and actual roster points',pg.locator('.multigame-card').count()==4 and '22.0' in pg.locator('.multigame-card').first.inner_text() and pg.locator('.multigame-score b').first.inner_text()=='0')
    pg.locator('[data-desk-game="401900001"]').click();check(tag+' follows a chosen game with one selected tile',pg.evaluate('f.selected.at(-1)==="401900001"') and pg.locator('[data-desk-game][aria-pressed="true"]').count()==1)
-   pg.locator('#multigame-edit>summary').click();check(tag+' a full desk disables adding a fourth game',pg.locator('[data-desk-pin="401900003"]').is_disabled())
-   pg.locator('[data-desk-pin="401900002"]').uncheck();pg.locator('[data-desk-pin="401900003"]').check();pg.locator('#multigame-edit>summary').click()
-   check(tag+' replaces pinned games without overflowing the three-game limit',pg.locator('[data-desk-game="401900003"]').count()==1 and pg.locator('.multigame-card').count()==3)
+   check(tag+' no pinning controls or three-game limit remain',pg.locator('[data-desk-pin],#multigame-edit').count()==0 and pg.locator('[data-desk-game="401900003"]').count()==1)
+   pg.evaluate("window.deskButton=document.querySelector('[data-desk-game]');f.desk.update(f.board,'401900003')");pg.wait_for_timeout(80)
+   check(tag+' scoreboard refresh preserves each game button',pg.locator('.multigame-card').count()==4 and pg.locator('[data-desk-game="401900003"]').get_attribute('aria-pressed')=='true')
+   check(tag+' all-game scores add no summary fan-out and retain mounted buttons',not summary_reads and pg.evaluate('deskButton===document.querySelector("[data-desk-game]")'))
+   check(tag+' the followed game is revealed inside its own rail',pg.locator('.multigame-grid').evaluate('e=>{const a=e.querySelector("[aria-pressed=true]").getBoundingClientRect(),r=e.getBoundingClientRect();return a.left>=r.left-1&&a.right<=r.right+1}'))
    pg.screenshot(path=str(OUT/f'{width}-{theme}-desk.png'))
    pg.locator('.matchup-timeline>summary').click();check(tag+' timeline orders actual saved moments oldest first',pg.locator('[data-timeline-moment]').first.get_attribute('data-timeline-moment')=='10')
    pg.locator('[data-timeline-moment="12"]').click();check(tag+' selecting a lead change shows both recorded scores', '52.00' in pg.locator('.timeline-detail').inner_text() and '45.00' in pg.locator('.timeline-detail').inner_text())
