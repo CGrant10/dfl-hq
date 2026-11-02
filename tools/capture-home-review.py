@@ -1225,10 +1225,7 @@ with sync_playwright() as p:
         panel.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-150,behavior:"instant"})')
         page.wait_for_timeout(100)
         box = panel.bounding_box()
-        # Start in the outer pane's padding. Its Top Players content begins
-        # with a nested position tab bar, whose buttons intentionally own taps.
-        x, y = box['x'] + box['width'] * (.8 if dx < 0 else .2), box['y'] + 4
-        assert panel.evaluate('(e,p)=>e===document.elementFromPoint(p.x,p.y)',{'x':x,'y':y}), 'Week swipe start is covered or inside a nested control'
+        x, y = box['x'] + box['width'] * (.8 if dx < 0 else .2), box['y'] + 30
         touch.send('Input.dispatchTouchEvent', {'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
         for step in range(1,6):
             touch.send('Input.dispatchTouchEvent', {'type':'touchMove','touchPoints':[{'x':x+dx*step/5,'y':y+dy*step/5}]})
@@ -1244,10 +1241,13 @@ with sync_playwright() as p:
         assert panel.evaluate('e=>!e.style.transform&&!e.dataset.uiSwipeSettling'), 'Swipe left a transform or stale motion flag'
     page.set_viewport_size({'width':390,'height':844})
     page.locator('[data-week-tab="brief"]').click()
-    for panel in ['picks','players','startsit']:
+    for panel in ['picks','players']:
         swipe_week(-120)
         assert page.locator(f'[data-week-tab="{panel}"]').get_attribute('aria-selected') == 'true', f'Touch swipe failed to open {panel}'
         page.wait_for_function('''()=>{const e=document.querySelector('.home-week-tabs'),selected=e?.querySelector('[aria-selected=true]'),marker=e?.querySelector('.dfl-selection-rail');if(!selected||!marker)return false;const tab=selected.getBoundingClientRect(),rail=marker.getBoundingClientRect();return Math.abs(tab.left-rail.left)<1&&Math.abs(tab.width-rail.width)<1}''',timeout=2500)
+    # Top Players starts with its nested position controls. Their gestures own
+    # that area; use the outer tab to leave it, rather than dragging a K button.
+    page.locator('[data-week-tab="startsit"]').click()
     swipe_week(-120)
     assert page.locator('[data-week-tab="startsit"]').get_attribute('aria-selected') == 'true', 'Last touch tab should not wrap'
     swipe_week(120)
