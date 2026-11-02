@@ -709,6 +709,13 @@ export async function render(view) {
   window.addEventListener("dfl:home-coverage",coverageChanged);
   deferredStops.push(()=>{refreshEdition=null;window.removeEventListener("dfl:home-coverage",coverageChanged)});
 
+  // League awards/history do not depend on player analysis or fixture reads.
+  // Join the already-mounted stage as soon as that source is ready.
+  void lorePromise.then(got=>{
+    if(mine!==generation||!view.isConnected||got?.error)return;
+    lore=got;startHomeStage(build(golfDayNow));
+  }).catch(()=>{});
+
   Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertsPromise, injuryPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlerts, injuries]) => {
     if (mine !== generation) return;
     if (!view.isConnected) return;

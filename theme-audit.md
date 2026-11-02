@@ -1,3 +1,15 @@
+# Expanded broadcast edition — 1.531.0
+
+Existing broadcast compositions and tokens are retained. Reviewed the expanded
+deck and both award treatments in Light/Dark at phone widths; component checks
+cover 90 normal and 56 enlarged-text layouts with full names, artwork containment,
+44px controls and no overlap. Both league awards and varied history can now
+appear together; they retain their original art and semantic accent roles.
+`pnpm check` passes 2,422 tests, theme scan and build. Actual compiled capture
+observed nine slides. No new network polling or continuous motion. Physical
+Safari remains unmeasured. Evidence:
+[broadcast-edition-1531.md](docs/broadcast-edition-1531.md).
+
 # Matchups, markets and tickets — 1.530.0
 
 Reviewed compact Clubhouse matchup identities/scores, matchup selection, folded
