@@ -48,6 +48,12 @@ with sync_playwright() as p:
    assert page.locator('[data-bet-outcome]').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-100'),(mode,width,'market hidden by setup')
    page.screenshot(path=str(OUT/f'{mode}-{width}-book.png'))
    checks.append({'mode':mode,'width':width,'markets':2,'balance':420,'fit':True,'fiveDestinations':True})
+ assert page.locator('#sportsbook-wrap>.sb-tabs [data-sb-view]').count()==3 and page.locator('.sb-product-tabs').count()==0
+ page.locator('[data-sb-view="tickets"]').click();assert page.locator('#sb-tickets').is_visible() and not page.locator('#sb-markets').is_visible()
+ page.keyboard.press('ArrowRight');assert page.locator('#sb-pickem-panel').is_visible() and not page.locator('.sb-book-extras').is_visible()
+ page.keyboard.press('Home');assert page.locator('#sb-markets').is_visible() and not page.locator('#sb-pickem-panel').is_visible()
+ page.locator('[data-market-activity="props"]').click();assert page.locator('#sb-market-panel-props').is_visible()
+ page.locator('[data-market-activity="fantasy"]').click()
  assert not page.locator('#sb-claim').is_visible()
  page.locator('.sb-wallet-options>summary').click();assert page.locator('#sb-claim').is_visible();page.keyboard.press('Escape');assert not page.locator('.sb-wallet-options').evaluate('e=>e.open')
  page.locator('[data-bet-outcome]').first.click();page.locator('[data-slip-open]').click();page.wait_for_selector('.sb-slip[open]');assert page.locator('.sb-slip-pick').count()==1

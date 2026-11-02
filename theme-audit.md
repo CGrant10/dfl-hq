@@ -1,3 +1,21 @@
+# Matchups, markets and tickets — 1.530.0
+
+Reviewed compact Clubhouse matchup identities/scores, matchup selection, folded
+league scores, lineup-first reading order, consolidated Book navigation,
+fantasy market rows, compact Trade tickets and their Lineup & risk disclosure
+in Light/Dark. Shared tokens supply surfaces, borders, metadata, selection and
+risk cues; meaningful team and result colors remain intact. Phone captures
+cover 320/390/430px; component layout coverage includes 375/768px and 200% text.
+The compiled app passed 18 read-only route checks in both themes. Actual member
+captures remain local. Book account actions use an isolated fixture; live wallet
+writes and physical iPhone Safari remain unmeasured. `pnpm check` passes 2,420
+tests; the final lineup-order adjustment also passes its six focused unit tests,
+and final CSS/build/theme checks pass. Motion checks cover interrupted tabs,
+rapid press feedback, Reduced Motion and saved motion preferences. Scroll bars
+yield to body-mounted detail dialogs and restore after removal, with no extra
+polling or continuous effects. Evidence:
+[competition-reading-1530.md](docs/competition-reading-1530.md).
+
 # League Wire — 1.529.0
 
 Reviewed the shared header/navigation, compact Home matchup, three-thumbnail

@@ -5,7 +5,7 @@ export function mountClubhousePolish(root,{getMotion=()=>true,active=()=>root.is
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let stopped=false,frame=null,waiting=null,waitTimer=null,selection=null;
  const current=()=>!stopped&&root.isConnected&&active();
- const disclosures=mountDisclosureMotion(root,{selector:'.matchup-timeline,.banter-memory,.clubhouse-position-stats,.gd-compare-bench,.clubhouse-profile-awards,.weekly-roast-receipts details',getMotion,active:current});
+ const disclosures=mountDisclosureMotion(root,{selector:'.matchup-timeline,.banter-memory,.clubhouse-position-stats,.gd-compare-bench,.clubhouse-profile-awards,.weekly-roast-receipts details,.clubhouse-all-scores',getMotion,active:current});
  const canPlay=()=>current()&&getMotion()&&!reduced.matches&&document.visibilityState==='visible';
  const visible=node=>{
   if(!node||node.closest('[hidden]')||!node.getClientRects().length)return false;

@@ -1,0 +1,56 @@
+{
+  "layouts": [
+    {
+      "mode": "light",
+      "width": 320,
+      "markets": 2,
+      "balance": 420,
+      "fit": true,
+      "fiveDestinations": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "markets": 2,
+      "balance": 420,
+      "fit": true,
+      "fiveDestinations": true
+    },
+    {
+      "mode": "light",
+      "width": 430,
+      "markets": 2,
+      "balance": 420,
+      "fit": true,
+      "fiveDestinations": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "markets": 2,
+      "balance": 420,
+      "fit": true,
+      "fiveDestinations": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "markets": 2,
+      "balance": 420,
+      "fit": true,
+      "fiveDestinations": true
+    },
+    {
+      "mode": "dark",
+      "width": 430,
+      "markets": 2,
+      "balance": 420,
+      "fit": true,
+      "fiveDestinations": true
+    }
+  ],
+  "slip": true,
+  "enlargedText": true,
+  "errors": [],
+  "writes": []
+}

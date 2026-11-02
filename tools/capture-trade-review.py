@@ -93,7 +93,7 @@ with sync_playwright() as p:
         page.evaluate("scrollTo({top:0,behavior:'instant'})")
         page.screenshot(path=str(output/f'trade-{width}-workbench.png'))
         # Price, actual roster fit and data risk remain separate on each offer.
-        assert 'Value balance' in page.locator('.tb-offer .tb-offer-summary').first.inner_text()
+        assert 'Value balance' in page.locator('.tb-offer .tb-offer-balance').first.inner_text()
         assert page.locator('.tb-offer .tb-offer-horizon').first.is_visible()
         # Upcoming schedules fail honestly and retry without silently keeping
         # a Next 4 weeks label on rest-of-season numbers.
