@@ -11,6 +11,12 @@ sports figures; names retain a 44px tap target. Slip fields reflow at larger tex
 Retained offers keep their actual DOM and portraits across result batches;
 only new visible cards enter. Changed quotes show exact values immediately.
 
+Rankings, member profiles and the season archive adopt these roles in 1.528.0.
+Broadcast briefs use Inter headlines/identities and Rajdhani figures; the daily
+opener retains its own art direction. Ranking reports follow the visible
+viewport and keep their header available while scrolling. Profile/archive
+native fields use the shared 16px input role.
+
 ## Type roles
 
 | Role | Compact size | Face / weight | Use |
@@ -24,7 +30,7 @@ only new visible cards enter. Changed quotes show exact values immediately.
 | Short labels | 10px | Inter 500–600 | Week/status captions |
 | Text input / select | 16px | Inter 600 | Native picker text; mobile focus stays usable |
 | Scores | Existing stat scale | Rajdhani 700, tabular | Matchup totals, player scores, ratings |
-| Broadcast | Existing composition scale | Rajdhani / Anton | Dedicated story art direction |
+| Broadcast briefs | Story-specific scale | Inter headlines, Rajdhani figures | Award, news, receipt and score stories |
 
 All sizes are rem-based. Comfortable mode raises row text to 16px, body and
 metadata to 14px, labels to 12px, and section headings to 18px. System text scaling
@@ -80,7 +86,8 @@ not in visual CSS.
 ## Motion and verification
 
 Reuse the existing press, tab-slide, sheet and score transitions. This migration
-adds no animation loop, polling or JavaScript controller. Decorative motion must
+adds no animation loop or polling. Matchup phase changes in 1.528.0 use a finite
+200ms status transition supplied by the existing model. Decorative motion must
 respect Motion off and Reduced Motion, and it must leave labels readable.
 
 Before extending this standard, capture the actual production components in both
@@ -90,3 +97,6 @@ scores and routes against their source; visual cleanup must not alter either.
 
 See the [1.524 review](interface-foundation-1524.md) for current-run screenshots,
 coverage and limits.
+
+See the [1.528 review](league-interface-1528.md) for the league-page and broadcast
+adoption, viewport checks and current browser limits.

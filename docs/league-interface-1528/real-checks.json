@@ -1,0 +1,77 @@
+{
+  "checks": [
+    {
+      "route": "home",
+      "mode": "light",
+      "width": 320,
+      "fit": true
+    },
+    {
+      "route": "home",
+      "mode": "light",
+      "width": 390,
+      "fit": true
+    },
+    {
+      "route": "home",
+      "mode": "dark",
+      "width": 320,
+      "fit": true
+    },
+    {
+      "route": "home",
+      "mode": "dark",
+      "width": 390,
+      "fit": true
+    },
+    {
+      "route": "profile",
+      "mode": "light",
+      "width": 320,
+      "fit": true
+    },
+    {
+      "route": "profile",
+      "mode": "light",
+      "width": 390,
+      "fit": true
+    },
+    {
+      "route": "profile",
+      "mode": "dark",
+      "width": 320,
+      "fit": true
+    },
+    {
+      "route": "profile",
+      "mode": "dark",
+      "width": 390,
+      "fit": true
+    },
+    {
+      "route": "history",
+      "mode": "light",
+      "width": 320,
+      "fit": true
+    },
+    {
+      "route": "history",
+      "mode": "light",
+      "width": 390,
+      "fit": true
+    },
+    {
+      "route": "history",
+      "mode": "dark",
+      "width": 320,
+      "fit": true
+    },
+    {
+      "route": "history",
+      "mode": "dark",
+      "width": 390,
+      "fit": true
+    }
+  ],
+  "errors": []
+}

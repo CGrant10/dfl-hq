@@ -4,6 +4,7 @@ import {connectArtwork} from './connected-artwork.js';
 import {animateUi,cancelUiMotion,cancelUiExit} from './ui-motion.js';
 import {enterSheet,exitSheet,mountSheetDrag} from './sheet-drag.js';
 import {loadingRows} from './loading-presentation.js';
+import {fitDialogToViewport} from './dialog-viewport.js';
 const fixed=n=>n==null?'—':Number(n).toFixed(1);
 const movement=r=>r.previousRank==null?'NEW':r.movement>0?`↑${r.movement}`:r.movement<0?`↓${Math.abs(r.movement)}`:'—';
 const moveLabel=r=>r.previousRank==null?'First edition':r.movement?`${r.movement>0?'Up':'Down'} ${Math.abs(r.movement)} places from ${r.previousRank}`:`Unchanged at ${r.rank}`;
@@ -86,6 +87,7 @@ export function mountPowerRankings(root,view,members=[]){
   close();dialog=document.createElement('dialog');dialog.className='power-detail';dialog.setAttribute('aria-labelledby','power-detail-title');
   const team=teamFor(view,row,members);dialog.innerHTML=powerDetailMarkup(row,board,boards[index-1],team.powerForecast,team);document.body.append(dialog);
   const current=dialog,source=opener.closest('[data-power-id]')?.querySelector('.dfl-team-mark'),target=current.querySelector('.power-detail-face');
+  const stopViewport=fitDialogToViewport(current);
   let stopConnection=()=>{};
   dismiss=(options={})=>{
    // Page teardown must remove the top-layer surface synchronously; the
@@ -97,7 +99,7 @@ export function mountPowerRankings(root,view,members=[]){
   };
   const drag=mountSheetDrag(current,{handle:current.querySelector('header'),dismiss,onStart:()=>stopConnection()});
   let cleaned=false;
-  const cleanup=()=>{if(cleaned)return;cleaned=true;stopConnection();drag.stop();cancelUiExit(current);cancelUiMotion(current);current.remove();if(dialog===current)dialog=null;if(!stopped&&opener.isConnected)opener.focus({preventScroll:true});};
+  const cleanup=()=>{if(cleaned)return;cleaned=true;stopConnection();stopViewport?.();drag.stop();cancelUiExit(current);cancelUiMotion(current);current.remove();if(dialog===current)dialog=null;if(!stopped&&opener.isConnected)opener.focus({preventScroll:true});};
   current.addEventListener('close',cleanup,{once:true});
   current.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();current.querySelector('[data-power-close]').focus({preventScroll:true});}});
   current.addEventListener('cancel',e=>{e.preventDefault();dismiss();});
