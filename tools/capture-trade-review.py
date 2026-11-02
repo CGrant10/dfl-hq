@@ -58,14 +58,10 @@ with sync_playwright() as p:
                 page.wait_for_function('!document.querySelector(".trade-player-picker")?.open')
             else:node.select_option(value)
         assert page.locator('[data-tb-tier="fair"]').evaluate('e=>e.open')
-        # Extra setup starts closed, but both primary player pickers remain usable.
+        # Offers lead; Edit search reveals the complete player controls.
         assert not page.locator('.tb-setup').evaluate('e=>e.open')
-        assert page.locator('[data-trade-picker="send"]').is_visible()
-        assert page.locator('[data-trade-picker="league"]').is_visible()
-        # Primary player selectors stay visible with advanced preferences closed.
-        assert not page.locator('.tb-refine').evaluate('e=>e.open')
-        assert page.locator('[data-trade-picker="send"]').is_visible()
-        assert page.locator('[data-trade-picker="league"]').is_visible()
+        assert not page.locator('[data-trade-picker="send"]').is_visible()
+        assert not page.locator('[data-trade-picker="league"]').is_visible()
         # Each count comes from its own intent's completed search, including
         # empty tiers. Switching cached tabs keeps those counts intact.
         def settled_counts():
@@ -73,9 +69,14 @@ with sync_playwright() as p:
             return page.locator('.tb-intent-options [data-tb-intent]').evaluate_all("es=>Object.fromEntries(es.map(e=>[e.dataset.tbIntent,Number(e.querySelector('[data-tb-intent-count]').textContent.replace(/[()]/g,''))]))")
         counts=settled_counts()
         assert page.locator('.tb-offer').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-44')
-        assert page.locator('[data-trade-picker="send"]').evaluate('e=>e.getBoundingClientRect().height>=44')
         assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
         page.screenshot(path=str(output/f'trade-{width}-entry.png'))
+        click('.tb-setup > summary')
+        assert not page.locator('.tb-refine').evaluate('e=>e.open')
+        assert page.locator('[data-trade-picker="send"]').is_visible()
+        assert page.locator('[data-trade-picker="league"]').is_visible()
+        assert page.locator('[data-trade-picker="send"]').evaluate('e=>e.getBoundingClientRect().height>=44')
+        assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
         click('[data-tb-view-offers]')
         assert not page.locator('.tb-setup').evaluate('e=>e.open')
         assert page.locator('[data-tb-intent="fair"]').evaluate('e=>e===document.activeElement')
@@ -167,6 +168,8 @@ with sync_playwright() as p:
         assert page.locator('.td-ticket').count(),f'{width}: Analyze offer did not open a ticket'
         page.evaluate('window.renderReview()');settled_counts()
         assert not page.locator('.tb-setup').evaluate('e=>e.open'), 'A saved expanded search must not reopen setup on a new visit'
+        assert not page.locator('[data-trade-picker="send"]').is_visible()
+        click('.tb-setup > summary')
         assert page.locator('[data-trade-picker="send"]').is_visible()
         assert page.locator('[data-ta-shop-partner]').input_value()=='all'
         assert page.locator('[data-trade-picker="league"]').count()==1

@@ -8383,3 +8383,191 @@ html[data-ui-motion="off"] #view.view[data-page-system][data-route="sportsbook"]
 #view.view[data-route="clubhouse"] .clubhouse-matchup-card[data-matchup-state="final"] .clubhouse-game-side[data-lead="true"]>b { text-decoration:underline; text-decoration-color:var(--milestone); text-decoration-thickness:2px; text-underline-offset:8px; }
 #view.view[data-route="clubhouse"] .clubhouse-matchup-card[data-matchup-state="live"] .clubhouse-matchup-state { display:inline-flex; align-items:center; gap:6px; color:var(--text); }
 #view.view[data-route="clubhouse"] .clubhouse-matchup-card[data-matchup-state="live"] .clubhouse-matchup-state::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--accent); }
+
+
+/* Source: css/league-wire.css */
+/* League Wire: a shared mobile composition, grounded in the selected design.
+   Existing controllers still own scores, carousel gestures and sheet motion. */
+.topbar .topbar-inner .brand-lockup { display:flex; flex:none; gap:8px; min-width:0; }
+.topbar .brand-lockup .brand-mark { display:block; width:30px; height:30px; object-fit:contain; }
+.topbar .brand-lockup .brand-text { display:block; }
+.topbar .brand-lockup .brand-text .brand-word { background:none!important; color:var(--shell-ink)!important; -webkit-text-fill-color:var(--shell-ink)!important; font:750 1.125rem/1 var(--font-ui); letter-spacing:.01em; }
+.topbar .brand-lockup :is(.creed,.brand-word>span) { display:none; }
+.topbar .topbar-inner .topbar-actions { width:auto; }
+#tabbar.is-in-season :is(a,.tabmore) { font:500 .6875rem/1.3 var(--font-ui); }
+#tabbar::before { border-radius:0; }
+
+/* Home is a media-led league daily. Reading order also follows this order. */
+#view #home-wrap[data-home-layout="wire"] { --home-section-gap:24px; padding-top:0; }
+#view #home-wrap[data-home-layout="wire"] .home-newspaper-masthead { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0; padding:0 0 10px; border:0; }
+#view #home-wrap[data-home-layout="wire"] .home-newspaper-date { padding:0; border:0; font:500 var(--ui-meta)/1.4 var(--font-ui); letter-spacing:.02em; }
+#view #home-wrap[data-home-layout="wire"] .home-newspaper-name { display:block; flex:none; padding:0; border:0; }
+#view #home-wrap[data-home-layout="wire"] .home-newspaper-name h1 { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+#view #home-wrap[data-home-layout="wire"] .home-newspaper-edition { margin:0; padding:0; border:0; font:600 var(--ui-label)/1.4 var(--font-ui); }
+#view #home-wrap[data-home-layout="wire"] .home-newspaper-edition.is-anniversary { width:auto; min-height:0; gap:4px; }
+#view #home-wrap[data-home-layout="wire"] .dfl-anniversary__number { font:700 1rem/1 var(--font-sport); }
+#view #home-wrap[data-home-layout="wire"] .dfl-anniversary__label { max-width:5.5rem; font:600 .5625rem/1.25 var(--font-ui); letter-spacing:.05em; }
+#view #home-wrap[data-home-layout="wire"] .home-frontpage { display:block; margin:0; padding:0; border:0; }
+#view #home-wrap[data-home-layout="wire"] .home-personal-desk { margin:0; padding:0; }
+#view #home-wrap[data-home-layout="wire"] [data-home-gameday-slot]>.gameday-card { margin:0; padding:0 0 12px; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view #home-wrap[data-home-layout="wire"] .gameday-card>header { min-height:24px; padding:0; margin:0 0 8px; }
+#view #home-wrap[data-home-layout="wire"] .gameday-card>header :is(h2,.home-game-phase) { font:500 var(--ui-label)/1.4 var(--font-ui); letter-spacing:.035em; }
+#view #home-wrap[data-home-layout="wire"] .gameday-matchup { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px 12px; margin:0; padding:0; border:0; }
+#view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team { display:grid; grid-template-columns:28px minmax(0,1fr) auto; align-items:center; gap:6px; padding:0; border:0; min-width:0; }
+#view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team:nth-of-type(2) { grid-template-columns:auto minmax(0,1fr) 28px; }
+#view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team .gameday-faceoff-mark { grid-column:1; grid-row:1; width:28px; height:28px; min-width:28px; border:0; }
+#view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team:nth-of-type(2) .gameday-faceoff-mark { grid-column:3; }
+#view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team .home-team-name { grid-column:2; grid-row:1; min-width:0; text-align:left; font:600 var(--ui-row)/1.25 var(--font-ui); }
+#view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team:nth-of-type(2) .home-team-name { text-align:right; }
+#view #home-wrap[data-home-layout="wire"] .home-team-name strong { font:inherit; }
+#view #home-wrap[data-home-layout="wire"] .home-team-name small { font:400 var(--ui-label)/1.35 var(--font-ui); }
+#view #home-wrap[data-home-layout="wire"] .home-team-record { display:none; }
+#view #home-wrap[data-home-layout="wire"] .home-team-total { grid-column:3; grid-row:1; margin:0; padding:0; align-self:center; }
+#view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team:nth-of-type(2) .home-team-total { grid-column:1; }
+#view #home-wrap[data-home-layout="wire"] .home-team-total :is(.gd-thermal-number,.home-projected-total) { font:700 1.375rem/1 var(--font-sport); letter-spacing:0; }
+#view #home-wrap[data-home-layout="wire"] .home-matchup-entry { grid-column:1/-1; padding:0; margin:0; border:0; min-height:24px; }
+#view #home-wrap[data-home-layout="wire"] .home-matchup-entry strong { font:500 var(--ui-label)/1.4 var(--font-ui); color:var(--body-text); }
+#view #home-wrap[data-home-layout="wire"] [data-home-rhythm-flow] { display:block; padding-top:16px; }
+#view #home-wrap[data-home-layout="wire"] [data-home-rhythm-flow]>*+* { margin-top:24px; }
+#view #home-wrap[data-home-layout="wire"] [data-home-rhythm-flow]>:empty { margin:0; }
+#view #home-wrap[data-home-layout="wire"] .home-broadcast { margin:0; padding:0; }
+#view #home-wrap[data-home-layout="wire"] .bx-stage { border-radius:6px; border-color:var(--line-soft); box-shadow:none; }
+#view #home-wrap[data-home-layout="wire"] .bx-home-feature { left:0; right:0; padding-inline:14px; box-sizing:border-box; }
+#view #home-wrap[data-home-layout="wire"] .bx-home-week { max-width:65%; font:600 var(--ui-label)/1.4 var(--font-ui); }
+#view #home-wrap[data-home-layout="wire"] .bx-home-title { width:62%; max-width:62%; margin:0; font:700 1.625rem/1.02 var(--font-sport); letter-spacing:-.02em; }
+#view #home-wrap[data-home-layout="wire"] .bx-home-art { top:0; right:0; bottom:0; left:auto; width:70%; height:100%; opacity:1; object-fit:cover; object-position:right center; }
+#view #home-wrap[data-home-layout="wire"] :is(.home-week-desk,.home-league-desk) { margin:0; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+#view #home-wrap[data-home-layout="wire"] .home-week-desk { padding-top:20px; border-top:1px solid var(--line); }
+#view #home-wrap[data-home-layout="wire"] .home-week-focus { margin:0 0 12px; }
+#view #home-wrap[data-home-layout="wire"] .home-newspaper-sections { display:flex; flex-wrap:wrap; gap:0 16px; margin-top:24px; padding:0; border:0; border-top:1px solid var(--line-soft); }
+#view #home-wrap[data-home-layout="wire"] .home-newspaper-sections button { flex:1; min-width:44px; }
+#view #home-wrap[data-home-layout="wire"] .home-league-desk { margin-top:20px; }
+#view #home-wrap[data-home-layout="wire"] .power-edition>header { min-height:44px; padding:0; }
+#view #home-wrap[data-home-layout="wire"] .home-rankings-card { padding-block:0; }
+
+/* Three real previews, with the complete reel one action away. */
+#view #home-wrap .home-reel-feature { margin:0; padding:0; border:0; background:transparent; }
+#view #home-wrap .home-reel-feature>header { min-height:44px; margin:0 0 8px; padding:0; align-items:center; }
+#view #home-wrap .home-reel-feature>header h2 { font:700 var(--ui-section)/1.3 var(--font-ui); text-transform:none; letter-spacing:-.015em; }
+#view #home-wrap .home-reel-feature>header button { display:flex; align-items:center; gap:6px; min-height:44px; padding:0; font:600 var(--ui-meta)/1.4 var(--font-ui); }
+#view #home-wrap .home-reel-feature .home-reel-cards { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); grid-template-rows:repeat(2,minmax(0,1fr)); gap:6px; width:100%; height:170px; min-height:0; margin:0; padding:0; overflow:visible; scroll-snap-type:none; }
+#view #home-wrap .home-reel-feature .home-reel-cards>li { min-width:0; width:auto; height:auto; }
+#view #home-wrap .home-reel-feature .home-reel-cards>li:first-child { grid-column:1; grid-row:1/3; }
+#view #home-wrap .home-reel-feature[data-reel-preview-count="1"] .home-reel-cards { grid-template-columns:minmax(0,1fr); }
+#view #home-wrap .home-reel-feature[data-reel-preview-count="2"] .home-reel-cards>li:nth-child(2) { grid-row:1/3; }
+#view #home-wrap .home-reel-feature .home-reel-cards button { display:block; width:100%; height:100%; padding:0; border:0; border-radius:6px; background:var(--bg-2); }
+#view #home-wrap .home-reel-feature .home-reel-poster { width:100%; height:100%; aspect-ratio:auto; margin:0; border-radius:6px; border:1px solid var(--line-soft); }
+#view #home-wrap .home-reel-feature .home-reel-poster img { width:100%; height:100%; object-fit:cover; }
+#view #home-wrap .home-reel-feature .home-reel-cards :is(strong,.home-reel-kind,.home-reel-matchup) { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+#view #home-wrap .home-reel-feature .home-reel-play { width:28px; height:28px; left:8px; bottom:8px; border-radius:4px; background:var(--bg); color:var(--text); }
+#view #home-wrap .home-reel-feature .home-reel-duration { right:6px; bottom:8px; padding:3px 4px; color:var(--text); background:var(--bg); font:600 var(--ui-label)/1.2 var(--font-ui); }
+#view #home-wrap .home-reel-feature-headline { margin:10px 0 0; font:600 var(--ui-row)/1.45 var(--font-ui); color:var(--text); }
+
+/* Clubhouse opens on competition; the occasional controls share one drawer. */
+#view.view[data-route="clubhouse"] .clubhouse-header { margin:0; padding-bottom:8px; border:0; }
+#view.view[data-route="clubhouse"] .clubhouse-context { padding:0; margin:0 0 8px; border:0; border-bottom:1px solid var(--line-soft); background:transparent; }
+#view.view[data-route="clubhouse"] .clubhouse-context>summary { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:44px; cursor:pointer; list-style:none; color:var(--body-text); font:500 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-route="clubhouse"] .clubhouse-context>summary::-webkit-details-marker { display:none; }
+#view.view[data-route="clubhouse"] .clubhouse-context>summary svg { rotate:90deg; transition:rotate 200ms ease; }
+#view.view[data-route="clubhouse"] .clubhouse-context[open]>summary svg { rotate:-90deg; }
+#view.view[data-route="clubhouse"] .clubhouse-context-body { padding-bottom:16px; }
+#view.view[data-route="clubhouse"] .clubhouse-context .clubhouse-week-picker { margin:0; }
+#view.view[data-route="clubhouse"] .clubhouse-context .clubhouse-context-links { margin:8px 0; }
+#view.view[data-route="clubhouse"] .clubhouse-analyzer-action { display:flex; align-items:center; justify-content:space-between; min-height:44px; font:600 var(--ui-row)/1.4 var(--font-ui); }
+#view.view[data-route="clubhouse"] .clubhouse-context .clubhouse-nfl-shortcuts { margin:8px 0 0; }
+#view.view[data-route="clubhouse"] .clubhouse-context :is(a,button,select) { min-height:44px; }
+#view.view[data-route="clubhouse"] .clubhouse-section { border-radius:0; box-shadow:none; }
+
+/* Trade search remains complete; its editor no longer precedes every offer. */
+#view.view[data-page-system][data-route][data-route="trade"] .tb-head-row { display:flex; justify-content:space-between; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:8px; padding-block:0 8px; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-head h1 { font:700 var(--ui-title)/1.2 var(--font-ui); letter-spacing:-.025em; text-transform:none; }
+#view.view[data-page-system][data-route][data-route="trade"] .td-external-tools { display:flex; flex:1; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:4px 12px; }
+#view.view[data-page-system][data-route][data-route="trade"] .td-external-tools>a.btn { min-height:44px; padding:4px 0; border:0; background:transparent; font:500 var(--ui-meta)/1.3 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="trade"] .td-intentions-tools { min-width:0; font:500 var(--ui-meta)/1.3 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="trade"] .td-intentions-tools>summary { display:flex; align-items:center; min-height:44px; cursor:pointer; list-style:none; color:var(--body-text); }
+#view.view[data-page-system][data-route][data-route="trade"] .td-intentions-tools>summary::-webkit-details-marker { display:none; }
+#view.view[data-page-system][data-route][data-route="trade"] .td-intentions-tools[open] { flex-basis:100%; }
+#view.view[data-page-system][data-route][data-route="trade"] .td-intentions-tools [data-ti-host] { width:100%; padding-bottom:12px; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-setup { margin:8px 0 12px; border:0; border-block:1px solid var(--line-soft); border-radius:0; background:transparent; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-setup-summary { min-height:60px; padding:8px 0; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-setup-summary small { display:none; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-setup-summary strong { font:600 var(--ui-row)/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-setup-summary em { margin-top:4px; font:400 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-setup-body { padding:12px 0; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-setup-body .tb-quick-targets { margin-top:12px; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-intent { margin:0 0 12px; }
+
+/* Book shares the same header, compact rows and quiet metadata. */
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-masthead { align-items:center; gap:12px; min-height:0; padding:0 0 12px; margin:0 0 8px; border:0; border-bottom:1px solid var(--line-soft); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-brand>small { display:none; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-brand h1 { font:700 var(--ui-title)/1.2 var(--font-ui); text-transform:none; letter-spacing:-.025em; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-brand>span { font:400 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-wallet { padding:0; border:0; border-radius:0; background:transparent; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-wallet strong { font:700 1.5rem/1 var(--font-sport); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-wallet :is(small,span) { font:500 var(--ui-label)/1.3 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-product-tabs { margin:0 0 8px; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-bankroll { margin-bottom:8px; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-section-head h2 { font:700 var(--ui-section)/1.3 var(--font-ui); text-transform:none; letter-spacing:-.01em; }
+@media(max-width:360px) {
+ #view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team { grid-template-columns:24px minmax(0,1fr); gap:4px 6px; }
+ #view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team:nth-of-type(2) { grid-template-columns:minmax(0,1fr) 24px; }
+ #view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team .gameday-faceoff-mark { width:24px; height:24px; min-width:24px; }
+ #view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team:nth-of-type(2) .gameday-faceoff-mark { grid-column:2; }
+ #view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team:nth-of-type(2) .home-team-name { grid-column:1; }
+ #view #home-wrap[data-home-layout="wire"] .home-team-total { grid-column:1/-1; grid-row:2; text-align:left; }
+ #view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team:nth-of-type(2) .home-team-total { grid-column:1/-1; text-align:right; }
+ #view #home-wrap .home-reel-feature .home-reel-cards { height:148px; }
+}
+@media(min-width:800px) { #view #home-wrap .home-reel-feature .home-reel-cards { height:260px; } }
+@media(prefers-reduced-motion:reduce) { #view.view[data-route="clubhouse"] .clubhouse-context>summary svg { transition:none; } }
+html[data-ui-motion="off"] #view.view[data-route="clubhouse"] .clubhouse-context>summary svg { transition:none; }
+
+/* Keep the original team-name and score flight; only its source geometry changes. */
+#view #home-wrap[data-home-layout="wire"] .gameday-matchup>i { display:none; }
+#view #home-wrap[data-home-layout="wire"] [data-home-rhythm-flow]>.home-broadcast { margin-top:24px; }
+#view #home-wrap[data-home-layout="wire"] [data-home-rhythm-flow]>.home-week-desk { margin-top:24px; }
+#view #home-wrap[data-home-layout="wire"] [data-home-highlights-slot]:empty+.home-broadcast { margin-top:0; }
+#view #home-wrap .home-reel-feature-skeleton { display:grid; grid-template-columns:2fr 1fr; grid-template-rows:1fr 1fr; gap:6px; height:170px; }
+#view #home-wrap .home-reel-feature-skeleton>span { border-radius:6px; background:var(--bg-2); }
+#view #home-wrap .home-reel-feature-skeleton>span:first-child { grid-row:1/3; }
+#view.view[data-route="clubhouse"] .clubhouse-header::before,
+#view.view[data-route="clubhouse"] .clubhouse-header::after { display:none; }
+#view.view[data-route="clubhouse"] #clubhouse-panel-matchups>.clubhouse-section>.clubhouse-heading small { display:none; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-offer { border:0; border-top:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+
+#view #home-wrap[data-home-layout="wire"] .dfl-anniversary__label { max-width:none; font:600 var(--ui-label)/1.3 var(--font-ui); }
+#view.view[data-route="clubhouse"] .clubhouse-context { padding:0; }
+#view #home-wrap[data-home-layout="wire"] .gameday-card>header { min-height:18px; margin-bottom:6px; }
+#view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team { grid-template-rows:auto; }
+#view #home-wrap[data-home-layout="wire"] .home-matchup-entry { min-height:16px; }
+#view #home-wrap[data-home-layout="wire"] [data-home-rhythm-flow] { padding-top:8px; }
+#view #home-wrap .home-reel-feature>header { margin-bottom:4px; }
+#view #home-wrap .home-reel-feature :is(.home-reel-cards,.home-reel-feature-skeleton) { height:160px; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-head-row { min-height:0; flex-direction:row; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-head-row .tb-head { width:auto; flex:0 0 auto; margin:0; padding:0; }
+#view.view[data-page-system][data-route][data-route="trade"] .td-external-tools { width:auto; min-width:0; flex:0 1 auto; }
+#view.view[data-page-system][data-route][data-route="trade"] .td-external-tools>:first-child { flex:0 0 auto; width:auto; }
+#view #home-wrap .home-reel-feature>header { flex-wrap:wrap; gap:0 12px; }
+@media(min-width:800px) { #view #home-wrap .home-reel-feature :is(.home-reel-cards,.home-reel-feature-skeleton) { height:260px; } }
+#view #home-wrap[data-home-layout="wire"] .gameday-matchup { align-items:stretch; }
+@media(max-width:360px) {
+ #view #home-wrap[data-home-layout="wire"] .gameday-faceoff-team { grid-template-rows:minmax(0,1fr) auto; align-self:stretch; }
+ #view #home-wrap[data-home-layout="wire"] .home-team-total { align-self:end; }
+}
+.topbar .topbar-actions #whoami { flex:0 1 auto; min-width:44px; max-width:11rem; }
+.topbar .topbar-actions #whoami-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-masthead { position:relative; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-wallet-options>summary { display:flex; align-items:center; gap:4px; min-height:44px; cursor:pointer; list-style:none; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-wallet-options>summary::-webkit-details-marker { display:none; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-wallet-options>summary svg { width:12px; height:12px; rotate:90deg; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-wallet-actions { position:absolute; z-index:12; top:100%; right:0; width:min(260px,calc(100vw - 32px)); padding:12px; border:1px solid var(--line); border-radius:6px; background:var(--bg-2); box-shadow:var(--shadow); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-wallet-actions .sb-bankroll { margin:0; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-wallet-actions .sb-claim-row { flex-wrap:wrap; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-board-head h2,
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-market .card-heading { font:600 var(--ui-row)/1.4 var(--font-ui); text-transform:none; letter-spacing:0; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-outcome-label { display:grid; align-content:center; gap:3px; min-width:0; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-outcome-name { font:600 var(--ui-row)/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-outcome-label>small { font:400 var(--ui-meta)/1.35 var(--font-ui); color:var(--body-text); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-market-status { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; font:400 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-fantasy-slate .sb-market { padding:12px 0; border:0; border-top:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-fantasy-slate .sb-your-matchup { padding-left:12px; border-left:2px solid var(--accent); }

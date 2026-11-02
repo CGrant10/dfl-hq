@@ -1,12 +1,20 @@
 import {describe,it,expect} from 'vitest';
 import {homePrimaryAction} from './home-primary-action.js';
 import {homeGameDayPhase} from './home-presentation.js';
-import {homeScoreProgress,homeScoreFrame} from './home-score-collapse.js';
+import {homeScoreProgress,homeScoreFrame,homeScoreInset} from './home-score-collapse.js';
 import {watchScoreCompact} from './watch-score-collapse.js';
 import {broadcastArtworkOffset,broadcastSettleDuration} from './broadcast-gesture-motion.js';
 describe('Home phase and connected motion',()=>{
  it('keeps lineup preparation primary until this matchup starts',()=>{for(const phase of ['upcoming','unknown'])expect(homePrimaryAction(phase)).toEqual({label:'Review lineup',watch:false});const sides=[{live:0,known:true,starters:[{state:'upcoming'}]},{live:0,known:true,starters:[{state:'upcoming'}]}];expect(homePrimaryAction(homeGameDayPhase({live:true,games:[{isMine:true,sides}]}).key).watch).toBe(false)});
  it('uses one stable primary action during and after the matchup',()=>{for(const phase of ['live','ongoing'])expect(homePrimaryAction(phase)).toEqual({label:'Watch matchup',watch:true});expect(homePrimaryAction('final')).toEqual({label:'View result',watch:true})});
+ it('keeps a compact opening score strip at rest until the reader scrolls',()=>{
+  const top=44,cardTop=116,inset=homeScoreInset(cardTop,top);
+  expect(inset).toBe(56);
+  expect(homeScoreProgress(top,cardTop,80,inset)).toBe(0);
+  expect(homeScoreProgress(top,cardTop-16,80,inset)).toBe(0);
+  expect(homeScoreProgress(top,cardTop-64,80,inset)).toBeCloseTo(.5);
+  expect(homeScoreInset(280,top)).toBe(104);
+ });
  it('moves continuously in either scroll direction and bounds long jumps',()=>{const values=[240,200,160,120,80,40,0,-300].map(top=>homeScoreProgress(44,top,180));expect(values[0]).toBe(0);expect(values.at(-1)).toBe(1);for(let i=1;i<values.length;i++)expect(values[i]).toBeGreaterThanOrEqual(values[i-1]);expect(homeScoreProgress(44,120,180)).toBeGreaterThan(0);expect(homeScoreProgress(44,120,180)).toBeLessThan(1);expect(homeScoreProgress(44,120,180)).toBe(homeScoreProgress(44,120,180));expect(homeScoreProgress(44,1000,0)).toBe(0)});
  it('eases into both ends without lag or a jump when reversing',()=>{const p=x=>homeScoreProgress(44,148-x*156,180);expect(p(0)).toBe(0);expect(p(1)).toBe(1);expect(p(.01)).toBeLessThan(.001);expect(1-p(.99)).toBeLessThan(.001);expect(p(.5)).toBeCloseTo(.5)});
  it('lands a score exactly at both measured endpoints and fades its copies at the handoffs',()=>{

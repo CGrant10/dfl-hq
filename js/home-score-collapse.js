@@ -1,7 +1,8 @@
 import {scrollChromeBottom} from './scroll-chrome.js';
 const clamp=n=>Math.max(0,Math.min(1,n));
 const ease=p=>p*p*p*(p*(p*6-15)+10);
-export const homeScoreProgress=(top,cardTop,height)=>ease(clamp((top+104-cardTop)/Math.max(96,height-24)));
+export const homeScoreInset=(cardTop,top)=>Math.min(104,Math.max(0,cardTop-top-16));
+export const homeScoreProgress=(top,cardTop,height,inset=104)=>ease(clamp((top+inset-cardTop)/Math.max(96,height-24)));
 export const homeScoreHandoff=p=>ease(clamp(p));
 const mix=(a,b,p)=>a+(b-a)*p;
 const text=node=>node?.textContent.trim()||'';
@@ -11,11 +12,19 @@ const style=(node,key,value)=>{if(node.style[key]!==value)node.style[key]=value}
 
 // The same sampled path drives the compositor and the cached-geometry fallback.
 // Names keep a constant font and wrapping; the two original labels cross-fade.
-export function homeScoreFrame(g,t,top,span){
+export function homeScoreFrame(g,t,top,span,inset=104){
  t=clamp(t);const p=ease(t),name=g.kind==='name';
  const scale=name?1:mix(1,g.scale,p);
- const x=mix(g.from.left+g.from.width/2,g.to.left+g.to.width/2,p)-g.width*scale/2;
- const y=mix(top+104-span*t+g.from.top+g.from.height/2,g.to.top+g.to.height/2,p)-g.height*scale/2;
+ let x=mix(g.from.left+g.from.width/2,g.to.left+g.to.width/2,p)-g.width*scale/2;
+ // Compact source labels can be narrower than the fixed destination label.
+ // Keep a full-size traveling name outside its own moving team mark.
+ if(name&&g.markEdge){const edge=mix(g.markEdge.from,g.markEdge.to,p);x=g.markEdge.side==='left'?Math.max(x,edge+6):Math.min(x,edge-g.width-6);}
+ let y=mix(top+inset-span*t+g.from.top+g.from.height/2,g.to.top+g.to.height/2,p)-g.height*scale/2;
+ if(name&&g.scorePath){
+  const score=g.scorePath,scoreHeight=score.from.height*mix(1,score.scale,p);
+  const scoreTop=mix(top+inset-span*t+score.from.top+score.from.height/2,score.to.top+score.to.height/2,p)-scoreHeight/2;
+  y=Math.min(y,scoreTop-g.height-4);
+ }
  const opacity=Math.min(homeScoreHandoff(t/.07),homeScoreHandoff((1-t)/.07))*(name?clamp((p-.08)/.32):1);
  return {transform:`translate3d(${x}px,${y}px,0) scale(${scale})`,opacity};
 }
@@ -51,7 +60,7 @@ export function mountHomeScoreCollapse(root){
   // Read the source before positioning the destination; never mix these reads
   // with scroll-frame writes. Live scores, photos and fonts refresh this cache.
   const box=source.getBoundingClientRect(),bounds=root.getBoundingClientRect(),top=scrollChromeBottom();
-  const span=Math.max(96,box.height-24),sourceStyles=parts.map(part=>getComputedStyle(part.score));
+  const span=Math.max(96,box.height-24),inset=homeScoreInset(box.top+window.scrollY,top),sourceStyles=parts.map(part=>getComputedStyle(part.score));
   dock.dataset.scoreLayout=bounds.width<18*parseFloat(getComputedStyle(document.documentElement).fontSize)?'rows':'columns';
   dock.hidden=false;style(dock,'left',`${bounds.left}px`);style(dock,'width',`${bounds.width}px`);style(dock,'top',`${top}px`);style(dock,'opacity','0');
   const scoreType=text(source.querySelector('.home-team-total > small')),week=text(root.querySelector('[data-gameday-week]'));
@@ -69,12 +78,15 @@ export function mountHomeScoreCollapse(root){
   const height=dock.offsetHeight;
   if(root.style.getPropertyValue('--dfl-scroll-top')!==`${top}px`)root.style.setProperty('--dfl-scroll-top',`${top}px`);
   if(root.style.getPropertyValue('--dfl-scroll-height')!==`${height}px`)root.style.setProperty('--dfl-scroll-height',`${height}px`);
-  layout={top,span,start:box.top+window.scrollY-top-104,divider:source.querySelector(':scope > i'),header:source.closest('.gameday-card')?.querySelector(':scope > header')};viewportWidth=innerWidth;
+  layout={top,span,inset,start:box.top+window.scrollY-top-inset,divider:source.querySelector(':scope > i'),header:source.closest('.gameday-card')?.querySelector(':scope > header')};viewportWidth=innerWidth;
   if(!motion())return;
   const lanes=parts.flatMap((part,i)=>[{kind:'mark',from:part.mark,to:marks[i]},{kind:'name',from:part.name,to:names[i]},{kind:'score',from:part.score,to:scores[i]}]);
-  geometry=lanes.map(({kind,from,to})=>{
+  geometry=lanes.map(({kind,from,to},lane)=>{
    const start=from.getBoundingClientRect(),end=to.getBoundingClientRect(),font=getComputedStyle(from),target=getComputedStyle(to),name=kind==='name';
+   const side=Math.floor(lane/3),sourceMark=name?parts[side].mark.getBoundingClientRect():null,targetMark=name?marks[side].getBoundingClientRect():null;
+   const sourceScore=name?parts[side].score.getBoundingClientRect():null,targetScore=name?scores[side].getBoundingClientRect():null;
    return {kind,from:{left:start.left,top:start.top-box.top,width:start.width,height:start.height},to:{left:end.left,top:end.top,width:end.width,height:end.height},
+    ...(name?{markEdge:{side:side?'right':'left',from:side?sourceMark.left:sourceMark.right,to:side?targetMark.left:targetMark.right},scorePath:{from:{top:sourceScore.top-box.top,height:sourceScore.height},to:{top:targetScore.top,height:targetScore.height},scale:parseFloat(getComputedStyle(scores[side]).fontSize)/parseFloat(sourceStyles[side].fontSize)}}:{}),
     width:name?end.width:start.width,height:name?end.height:start.height,scale:kind==='score'?parseFloat(target.fontSize)/parseFloat(font.fontSize):end.width/Math.max(1,start.width),
     font:name?target.fontSize:font.fontSize,family:name?target.fontFamily:font.fontFamily,weight:name?target.fontWeight:font.fontWeight,lineHeight:name?target.lineHeight:font.lineHeight,spacing:name?target.letterSpacing:font.letterSpacing,align:target.textAlign};
   });
@@ -92,13 +104,13 @@ export function mountHomeScoreCollapse(root){
   const targetFrames=times.map(t=>({offset:t,opacity:1-homeScoreHandoff((1-t)/.07)}));
   if(typeof globalThis.ViewTimeline==='function'&&CSS.supports('animation-range','exit-crossing 0% exit-crossing 100%')){
    try{
-    const timeline=new ViewTimeline({subject:source,axis:'block',inset:[CSS.px(top+104),CSS.px(0)]}),rangeEnd=span/box.height*100;
+    const timeline=new ViewTimeline({subject:source,axis:'block',inset:[CSS.px(top+inset),CSS.px(0)]}),rangeEnd=span/box.height*100;
     if(timeline.source!==document.scrollingElement)throw Error('The document must own score scrolling');
     animate(dock,times.map(t=>({offset:t,opacity:ease(t)})),timeline,rangeEnd);
     parts.forEach(part=>{animate(part.team,teamFrames,timeline,rangeEnd);animate(part.mark,sourceFrames,timeline,rangeEnd);animate(part.score,sourceFrames,timeline,rangeEnd)});
     if(divider)animate(divider,teamFrames,timeline,rangeEnd);if(header)animate(header,teamFrames,timeline,rangeEnd);
     [...marks,...names,...scores].forEach(node=>animate(node,targetFrames,timeline,rangeEnd));
-    flights.forEach((node,i)=>animate(node,times.map(t=>({offset:t,...homeScoreFrame(geometry[i],t,top,span)})),timeline,rangeEnd));
+    flights.forEach((node,i)=>animate(node,times.map(t=>({offset:t,...homeScoreFrame(geometry[i],t,top,span,inset)})),timeline,rangeEnd));
     native=true;layer.dataset.scrollDriver='native';
    }catch{
     for(const effect of effects)effect.cancel();effects=[];
@@ -119,7 +131,7 @@ export function mountHomeScoreCollapse(root){
   parts.forEach(part=>{write(part.team,'opacity',String(1-clamp(p*2.5)));write(part.mark,'opacity',String(1-homeScoreHandoff(t/.07)));write(part.score,'opacity',String(1-homeScoreHandoff(t/.07)))});
   for(const node of [layout.divider,layout.header])if(node)write(node,'opacity',String(1-clamp(p*2.5)));
   [...marks,...names,...scores].forEach(node=>write(node,'opacity',String(1-homeScoreHandoff((1-t)/.07))));
-  flights.forEach((node,i)=>{const value=homeScoreFrame(geometry[i],t,layout.top,layout.span);style(node,'transform',value.transform);style(node,'opacity',String(value.opacity))});
+  flights.forEach((node,i)=>{const value=homeScoreFrame(geometry[i],t,layout.top,layout.span,layout.inset);style(node,'transform',value.transform);style(node,'opacity',String(value.opacity))});
  };
  const schedule=()=>{if(!stopped&&!frame)frame=requestAnimationFrame(paint)};
  const invalidate=()=>{dirty=true;schedule()};

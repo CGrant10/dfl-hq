@@ -1,3 +1,4 @@
+import {homeHighlightMarkup} from '../js/home-highlight-ui.js';
 import {powerRankingsMarkup} from '../js/league-power-ui.js';
 // Browser review fixture: the production renderers with the selected mock's
 // sample scores. It lives outside the app and never writes to league data.
@@ -104,6 +105,7 @@ const model = { season: 2026, week: 5, completed: true, starters: players, games
   { roster: '1', name: 'Klutch Sports Group', record: '3 – 1', score: 124.8, identity: { display_name: 'Grant',team_name:'Klutch Sports Group' } },
   { roster: '2', name: 'The Bayou Bombers', record: '2 – 2', score: 118.2, identity: { display_name: 'Mike',team_name:'The Bayou Bombers' } },
 ] }] };
+const highlightClips=JSON.parse(readFileSync(new URL('./fixtures/home-highlight-clips.json',import.meta.url),'utf8')).sort((a,b)=>Date.parse(b.published_at)-Date.parse(a.published_at));
 const reviewUpcoming = process.env.DFL_REVIEW_STATE === 'upcoming';
 const reviewWeekly = {season:2026,week:5,teams:[{sleeper_user_id:'me',projection:124.8,lineupIsSet:true},{sleeper_user_id:'them',projection:118.2,lineupIsSet:true}]};
 const reviewBriefing = reviewUpcoming ? {lineup:'Set your lineup, compare projections and get ready for Week 5.'} : briefing;
@@ -137,17 +139,19 @@ let html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 html = html.replace(/<div id="splash"[\s\S]*?<\/div><span class="sp-sweep"[^>]*><\/span><\/div>/, '');
 html = html.replace('<html lang="en">', '<html lang="en" data-mode="light">');
-html = html.replace(/<main id="view"[^>]*>[\s\S]*?<\/main>/, `<main id="view" class="view" data-route="home" data-pulse-system="1"><div id="home-wrap">
+html = html.replace(/<main id="view"[^>]*>[\s\S]*?<\/main>/, `<main id="view" class="view" data-route="home" data-pulse-system="1"><div id="home-wrap" data-home-layout="wire">
   ${homeNewspaperMasthead({ now: new Date('2026-10-07T12:00:00Z') })}
   <div class="home-frontpage">
   <div class="home-personal-desk">
   <div data-home-gameday-slot><section class="gameday-card" data-gameday-card data-motion="off"><header><div><small class="sr-only">Your matchup</small><h2 data-gameday-week>Week 5</h2></div><div class="gameday-controls"><span class="home-game-phase">${reviewUpcoming?'Upcoming':'Final'}</span></div></header><div data-gameday-content>${homeGameDayMatchup(model,reviewWeekly)}</div><details class="home-live-details" data-page-detail="gameday-live"><summary>Game day &amp; player leaders</summary><div data-gameday-extra-content>${homeThermalBoard(model)}<details class="gameday-home-detail"><summary>Player trackers &amp; score controls</summary><div class="gameday-status"><strong>Final whistle</strong><span>2026 · Week 5</span></div><ul class="gameday-players">${playerRows(players)}</ul></details></div><details class="home-score-tools"><summary>Score controls</summary><div><button type="button" class="linkbtn" data-gameday-motion>Motion off</button><button type="button" class="btn ghost small" data-gameday-refresh>Refresh</button></div></details></details></section></div>
-    <div data-home-focus-slot>${renderHomeReview.homeWeeklyFocus(outlook,reviewBriefing)}</div>
   </div>
+  </div>
+  <div data-home-rhythm-flow>
+  <div data-home-highlights-slot data-home-rhythm-part="highlights">${homeHighlightMarkup(highlightClips,Date.now(),{layout:'feature'})}</div>
   <section class="home-broadcast">${renderStage(deck, { editorial: true })}</section>
-  </div>
-  ${homeSectionLinks()}
-  <section class="home-week-desk" aria-label="Your week">
+  <div data-home-rankings-slot>${renderHomeReview.homeRankingsCard(rankings)}</div>
+  <section class="home-week-desk" data-home-rhythm-part="week" aria-label="Your week">
+    <div data-home-focus-slot>${renderHomeReview.homeWeeklyFocus(outlook,reviewBriefing)}</div>
     <div data-home-week-flow>
     ${homeWeekPlan(weeklyHome,{week:outlook.week})}
     <div data-home-live-slot data-home-week-part="live" class="gameday-card home-live-desk"></div>
@@ -156,8 +160,9 @@ html = html.replace(/<main id="view"[^>]*>[\s\S]*?<\/main>/, `<main id="view" cl
     ${pickemHome}
     ${homeLeagueTools()}
   </section>
+  </div>
+  ${homeSectionLinks()}
   <section class="home-league-desk" aria-label="Around the league">
-    <div data-home-rankings-slot>${renderHomeReview.homeRankingsCard(rankings)}</div>
     <section class="home-weekly-clubhouse card"><div><small>LEAGUE NEWS</small><h2>Anniversary golf weekend</h2><p>The next chapter starts on the first tee.</p></div><button type="button" class="linkbtn home-text-action" data-open-home-news><span>Read league news</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button></section>
     ${disclosure('home-league','More from the league','News, trades and league updates',expandedHome)}
   </section>

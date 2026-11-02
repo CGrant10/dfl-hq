@@ -451,20 +451,21 @@ export async function render(view) {
     Calendar and Polls each have their own add control, so deleting the
     sections loses nothing and takes the CSS hack with it.
   */
-  view.innerHTML = `<div id="home-wrap">
+  view.innerHTML = `<div id="home-wrap" data-home-layout="wire">
     ${homeNewspaperMasthead({ founded: LEAGUE_FOUNDED })}
     <div class="home-frontpage">
     <div class="home-personal-desk">
     <div data-home-gameday-slot data-home-personal-part="matchup"></div>
-    <div data-home-focus-slot data-home-personal-part="decisions">${homeWeeklyFocus(null,null,{loading:true})}</div>
     </div>
+    </div>
+    <div data-home-rhythm-flow>
+    <div data-home-highlights-slot data-home-rhythm-part="highlights"></div>
     <section class="home-broadcast is-loading" data-content-state="loading" aria-busy="true" aria-label="League broadcast">
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
     </section>
-    </div>
-    ${homeSectionLinks()}
-    <div data-home-rhythm-flow>
+    <div data-home-rankings-slot data-content-state="loading" aria-busy="true">${powerRankingsLoading()}</div>
     <section class="home-week-desk" data-home-rhythm-part="week" aria-label="Your week">
+    <div data-home-focus-slot data-home-personal-part="decisions">${homeWeeklyFocus(null,null,{loading:true})}</div>
     <div data-home-week-flow>
     ${homeWeekPlan(`<div data-home-report-slot data-content-state="loading" aria-busy="true">${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`)}
     <div data-home-recap-slot data-home-week-part="recap" hidden></div>
@@ -472,10 +473,9 @@ export async function render(view) {
     <div data-home-pickem-slot></div>
     ${homeLeagueTools()}
     </section>
-    <div data-home-highlights-slot data-home-rhythm-part="highlights"></div>
     </div>
+    ${homeSectionLinks()}
     <section class="home-league-desk" aria-label="Around the league">
-    <div data-home-rankings-slot data-content-state="loading" aria-busy="true">${powerRankingsLoading()}</div>
     ${announcements.data?.[0] ? `<section class="home-weekly-clubhouse card"><div><small>LEAGUE NEWS</small><h2>${esc(announcements.data[0].title)}</h2><p>${esc(String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news.").slice(0,160))}</p></div><button type="button" class="linkbtn home-text-action" data-open-home-news><span>Read league news</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button></section>` : ""}
     ${disclosure("home-league","More from the league","News, trades and league updates",`
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
@@ -546,7 +546,7 @@ export async function render(view) {
     const phase=rhythm.update(homeEdition);
     if(phase?.layoutAllowed)weekFlow.update(homeEdition,{phase});
   };
-  homeHighlightReel=mountHomeHighlights(view.querySelector('[data-home-highlights-slot]'),{getContext:()=>homeEdition.model,active:()=>mine===generation&&view.isConnected&&location.hash.startsWith('#/home'),getPlayers:()=>homeEdition.model?.games.flatMap(game=>game.sides.flatMap(side=>[...side.lineup,...side.bench]))||[]});deferredStops.push(homeHighlightReel.stop);
+  homeHighlightReel=mountHomeHighlights(view.querySelector('[data-home-highlights-slot]'),{previewLayout:'feature',getContext:()=>homeEdition.model,active:()=>mine===generation&&view.isConnected&&location.hash.startsWith('#/home'),getPlayers:()=>homeEdition.model?.games.flatMap(game=>game.sides.flatMap(side=>[...side.lineup,...side.bench]))||[]});deferredStops.push(homeHighlightReel.stop);
   deferredStops.push(mountHomeMatchupPreview(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,onModel:edition=>{homeEdition=edition;homeHighlightReel?.updatePlayers();updateWeekFlow();refreshEdition?.();requestAnimationFrame(()=>requestAnimationFrame(startAnalysis))},active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
   // Archive stories load independently of the live weekly model.
   lorePromise.then(got => {
@@ -750,7 +750,7 @@ export async function render(view) {
        dashboard's "Power Ranks" and "Report" tabs were removed: they drew
        the same two views from the same two objects, one scroll apart. */
     const focusSlot=view.querySelector("[data-home-focus-slot]");
-    if(focusSlot){focusSlot.innerHTML=homeWeeklyFocus(outlook,briefing);const owner=focusSlot.closest('.home-personal-desk');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown');}
+    if(focusSlot){focusSlot.innerHTML=homeWeeklyFocus(outlook,briefing);const owner=focusSlot.closest('#home-wrap');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown');}
     const homeRankingsSlot = view.querySelector("[data-home-rankings-slot]");
     const homeReportSlot = view.querySelector("[data-home-report-slot]");
     const homeTradeSlot = view.querySelector("[data-home-trade-slot]");
@@ -799,7 +799,7 @@ export async function render(view) {
     if (mine === generation && view.isConnected) {
       const focus = view.querySelector("[data-home-focus-slot]");
       const report = view.querySelector("[data-home-report-slot]");
-      if (focus){focus.innerHTML=homeWeeklyFocus(null);const owner=focus.closest('.home-personal-desk');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown');}
+      if (focus){focus.innerHTML=homeWeeklyFocus(null);const owner=focus.closest('#home-wrap');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown');}
       if (report) report.innerHTML = homeWeeklyDigest(null);
       const rankingSlot=view.querySelector('[data-home-rankings-slot]');
       if(rankingSlot?.querySelector('.power-edition-loading'))rankingSlot.innerHTML=homeRankingsCard(null);

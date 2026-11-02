@@ -50,7 +50,7 @@ with sync_playwright() as p:
     assert page.locator('[data-photo-pick]').evaluate('e=>{const r=e.getBoundingClientRect();return r.width>=44&&r.height>=44}')
     assert page.locator('.profile-name').evaluate('e=>getComputedStyle(e).fontFamily.includes("Inter")')
     capture(theme.replace(':','-')+'-'+scale+'-profile')
-    page.evaluate('window.showMore()');assert page.locator('#more .quicknav a').count()==15
+    page.evaluate('window.showMore()');assert page.locator('#more .quicknav a').count()==16
     assert page.locator('#more .quicknav a').evaluate_all('es=>es.every(e=>e.getBoundingClientRect().height>=44)')
     page.locator('#more .quicknav a').last.scroll_into_view_if_needed();assert page.locator('#more .quicknav a').last.is_visible();assert page.locator('#more-close').is_visible();page.locator('#more .quicknav a').first.scroll_into_view_if_needed();capture(theme.replace(':','-')+'-'+scale+'-more');page.locator('#more-close').click()
   page.evaluate("document.documentElement.style.fontSize='100%';window.showHistory(true)")
@@ -68,7 +68,7 @@ with sync_playwright() as p:
   for scale in ['100%','200%']:
    page.evaluate('(s)=>document.documentElement.style.fontSize=s',scale);page.evaluate("scrollTo({top:0,behavior:'instant'})");capture('analyzer-'+scale)
   assert not errors,errors
-  results.append({'width':width,'themes':4,'textScales':2,'titleRecords':3,'allMenuRoutes':15,'brokenPhotoFallback':True,'profileCancel':True,'analyzerGradeMatch':True,'errors':errors})
+  results.append({'width':width,'themes':4,'textScales':2,'titleRecords':3,'allMenuRoutes':16,'brokenPhotoFallback':True,'profileCancel':True,'analyzerGradeMatch':True,'errors':errors})
   context.close()
  browser.close()
 server.shutdown();(output/'review.json').write_text(json.dumps(results,indent=2));print(json.dumps(results,indent=2))

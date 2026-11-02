@@ -84,6 +84,8 @@ with sync_playwright() as p:
    check(tag+' populated matchup history cannot widen its outer grid',page.locator('[data-layout-probe]').evaluate('''e=>[e,...e.querySelectorAll('[data-clubhouse-matchup],.clubhouse-matchup-card,.matchup-momentum,.momentum-plot,.momentum-events')].every(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth})'''))
    page.locator('[data-layout-probe]').screenshot(path=str(OUT/f'{width}-{mode}-populated-history.png'))
    page.locator('[data-layout-probe]').evaluate('e=>e.remove()')
+   check(tag+' opens on competition with week tools folded',not page.locator('.clubhouse-context').evaluate('e=>e.open') and page.locator('[href="#/analyzer"]').count()>0)
+   page.locator('.clubhouse-context>summary').click()
    if os.environ.get('DFL_CLUBHOUSE_LAYOUT_ONLY'):
     page.locator('#view').evaluate("e=>e.style.paddingInline='16px'")
     for size,reader in [(16,'compact'),(16,'comfortable'),(20,'compact'),(32,'compact')]:
@@ -117,7 +119,7 @@ with sync_playwright() as p:
    page.wait_for_function('document.querySelector("[data-clubhouse-matchup=\\"1\\"] .clubhouse-matchup-card")?.dataset.matchupState==="live"')
    check(tag+' live styling follows the actual NFL phase',page.locator('[data-clubhouse-matchup="1"] .clubhouse-matchup-state').inner_text()=='Live')
    check(tag+' hides highlight loading until its tab is opened',page.evaluate('f.clipReads===0'))
-   check(tag+' NFL viewing shortcuts are obvious before the week picker',page.locator('[data-clubhouse-nfl-open]').count()==2 and page.locator('.clubhouse-nfl-shortcuts').bounding_box()['y']<page.locator('.clubhouse-context').bounding_box()['y'] and page.locator('[data-clubhouse-nfl-open]').evaluate_all('es=>es.every(e=>e.clientHeight>=44)'))
+   check(tag+' week tools retain both NFL viewing shortcuts with full touch targets',page.locator('.clubhouse-context [data-clubhouse-nfl-open]').count()==2 and page.locator('[data-clubhouse-nfl-open]').evaluate_all('es=>es.every(e=>e.clientHeight>=44)'))
    check(tag+' matchup chooser is a compact native horizontal rail',page.locator('.clubhouse-scoreboard-grid').evaluate('e=>getComputedStyle(e).gridAutoFlow==="column"&&getComputedStyle(e).overflowX==="auto"&&e.clientHeight<180'))
    rail=page.locator('.clubhouse-scoreboard-grid');rail.scroll_into_view_if_needed();page.wait_for_timeout(150)
    bounds=rail.bounding_box();first=rail.locator('button').first.bounding_box();x=min(first['x']+first['width']+5,bounds['x']+bounds['width']-8);y=first['y']+first['height']/2

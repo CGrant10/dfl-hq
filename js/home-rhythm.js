@@ -26,7 +26,7 @@ export function mountHomeRhythm(root,{win=window,doc=document}={}){
    engaged ||= win.scrollY>24;
    chosen={...phase,layoutAllowed:!engaged&&!root?.contains(doc.activeElement)};
    // A default desk stays in place if the initial data arrives after engagement.
-   if(host&&chosen.layoutAllowed){
+   if(host&&chosen.layoutAllowed&&root.dataset.homeLayout!=='wire'){
     const personal=root.querySelector('.home-personal-desk');
     const priorities=phase.mode==='pregame'?['decisions','matchup']:['matchup','decisions'];
     priorities.forEach((key,index)=>{const node=personal?.querySelector('[data-home-personal-part="'+key+'"]');if(node&&personal.children[index]!==node)personal.insertBefore(node,personal.children[index]||null)});

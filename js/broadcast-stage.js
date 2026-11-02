@@ -676,8 +676,28 @@ export function startStage(root, deck, { refresh } = {}) {
     if(wide){
       // Enlarged type reflows into more rows; reserve the same room for every
       // story so long award names never clip or move the surrounding Home.
-      const scale=Math.max(1,parseFloat(getComputedStyle(document.documentElement).fontSize)/16),height=Math.ceil(Math.max(items.length>1?232:200,Math.min(300,root.clientWidth/1.9+(items.length>1?44:8)))*scale+64*(scale-1));
+      const scale=Math.max(1,parseFloat(getComputedStyle(document.documentElement).fontSize)/16),base=Math.ceil(Math.max(items.length>1?232:200,Math.min(300,root.clientWidth/1.9+(items.length>1?44:8)))*scale+64*(scale-1));
       root.toggleAttribute('data-bx-large-text',scale>1.05);
+      const key=`wide:${root.clientWidth}:${scale}:${JSON.stringify(items)}`;
+      if(key!==layoutKey){
+        // Reserve exceptional wrapping once for the edition. Rotation must
+        // never clip a real team name or move the content below the stage.
+        root.style.height=`${base}px`;
+        const probe=document.createElement('div');probe.inert=true;probe.setAttribute('aria-hidden','true');
+        probe.style.cssText='position:absolute;inset:0;visibility:hidden;pointer-events:none';
+        const template=document.createElement('template');template.innerHTML=items.map(item=>renderItem(item,{editorial:true,wide:true})).join('');
+        for(const image of template.content.querySelectorAll('img')){image.removeAttribute('src');image.removeAttribute('srcset');}
+        probe.append(template.content);root.append(probe);deckHeight=base;
+        try{
+          for(const candidate of probe.querySelectorAll('.bx-brief')){
+            const box=candidate.getBoundingClientRect(),flow=[...candidate.children].filter(node=>!['absolute','fixed'].includes(getComputedStyle(node).position));
+            const bottom=Math.max(box.top,...flow.map(node=>node.getBoundingClientRect().bottom));
+            deckHeight=Math.max(deckHeight,base+Math.max(0,bottom-box.bottom+2));
+          }
+        }finally{probe.remove();}
+        layoutKey=key;
+      }
+      const height=Math.ceil(deckHeight);
       if(root.style.height!==`${height}px`)root.style.height=`${height}px`;
       const dot=root.querySelector('[aria-current="true"]'),dots=dot?.parentElement;
       // Keep the active segment visible when a large edition needs a rail.

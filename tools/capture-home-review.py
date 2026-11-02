@@ -951,7 +951,7 @@ with sync_playwright() as p:
     page.locator('.bx-prev').click()
     page.wait_for_timeout(350)
     assert page.locator('[data-bx-go="0"]').get_attribute('aria-current') == 'true', 'Previous slide did not return'
-    assert all(page.locator(f'#tabbar [data-route="{route}"] svg use').get_attribute('href').startswith('#dfl-nav-') for route in ['home','clubhouse','sportsbook','trade','analyzer'])
+    assert all(page.locator(f'#tabbar [data-route="{route}"] svg use').get_attribute('href').startswith('#dfl-nav-') for route in ['home','clubhouse','trade','sportsbook'])
     assert page.evaluate('document.querySelector("#dfl-nav-house").namespaceURI') == 'http://www.w3.org/2000/svg'
     assert metrics['leaderCore'] < 420, 'Weekly stat lines must keep the four-player Home preview compact'
     assert page.locator('.home-thermal-leaders .gameday-player').evaluate_all('es=>es.every(e=>e.offsetHeight<=100&&e.querySelector(".gd-player-week-line")&&e.querySelector(".gd-player-week-average"))'), 'Every Home leader needs a compact weekly line and PPR average'
@@ -969,7 +969,7 @@ with sync_playwright() as p:
     metrics['renderer'] = page.locator('canvas.gd-vfx-canvas').get_attribute('data-renderer')
     assert metrics['renderer'] == 'webgl', 'Animated score renderer did not start'
     metrics['fonts'] = page.evaluate('({headline:getComputedStyle(document.querySelector(".bx-home-title")).fontFamily,score:getComputedStyle(document.querySelector(".gd-thermal-value")).fontFamily,stroke:getComputedStyle(document.querySelector(".gd-thermal-value")).webkitTextStrokeWidth,loaded:document.fonts.check("30px Anton")})')
-    assert metrics['fonts']['loaded'] and 'Anton' in metrics['fonts']['headline'] and 'DFL Broadcast' not in metrics['fonts']['score'], 'Pixel display font is still active'
+    assert metrics['fonts']['loaded'] and 'Rajdhani' in metrics['fonts']['headline'] and 'DFL Broadcast' not in metrics['fonts']['score'], 'Pixel display font is still active'
     assert metrics['fonts']['stroke'] == '0px', 'Synthetic score stroke is still active'
     metrics['refinement'] = page.evaluate("""() => ({playerFont:parseFloat(getComputedStyle(document.querySelector('.home-thermal-leaders .gd-thermal-number')).fontSize),paper:getComputedStyle(document.querySelector('#home-wrap')).getPropertyValue('--bg').trim(),hero:document.querySelector('.bx-home-art').complete,visibleLore:!document.querySelector('[data-home-lore-slot]').closest('details'),visibleWall:!document.querySelector('[data-wall-slot]').closest('details')})""")
     assert metrics['refinement']['hero'] and page.evaluate("getComputedStyle(document.querySelector('#home-wrap')).getPropertyValue('--bg').trim()===getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()"), 'Home must use the shared app palette and retain broadcast artwork'
@@ -988,8 +988,8 @@ with sync_playwright() as p:
         metrics['unevenTeamNames'].append({'width':width,'rows':names})
     page.set_viewport_size({'width':390,'height':844})
     metrics['readingOrder'] = page.evaluate("""() => {
-      const selectors=['.home-frontpage','.home-week-desk','.home-league-desk','.home-injury-panel','[data-home-lore-slot]','.home-banter'];
-      const root=document.querySelector('#home-wrap'),children=[...root.children];
+      const selectors=['.home-frontpage','[data-home-highlights-slot]','.home-broadcast','[data-home-rankings-slot]','.home-week-desk','.home-league-desk','.home-injury-panel','[data-home-lore-slot]','.home-banter'];
+      const root=document.querySelector('#home-wrap'),children=[...root.querySelectorAll('*')];
       return selectors.map(selector=>({selector,index:children.indexOf(root.querySelector(selector))}));
     }""")
     assert all(x['index']>=0 for x in metrics['readingOrder']) and [x['index'] for x in metrics['readingOrder']] == sorted(x['index'] for x in metrics['readingOrder']), 'Home sections are out of reading order'
@@ -1003,11 +1003,11 @@ with sync_playwright() as p:
         typography = page.evaluate('''() => {
             const type=s=>{const e=document.querySelector(s),c=getComputedStyle(e);return {size:parseFloat(c.fontSize),family:c.fontFamily,weight:Number(c.fontWeight),line:parseFloat(c.lineHeight),transform:c.textTransform}};
             const labelElements=[...document.querySelectorAll('.home-rank-head span')],labels=labelElements.map(e=>e.getBoundingClientRect());
-            return {width:innerWidth,fontLoaded:document.fonts.check('600 15px "Rajdhani"'),heading:type('.home-rankings-card h2'),body:type('.home-league-story p'),name:type('.home-thermal-leaders .dfl-player-copy strong'),metadata:type('.home-thermal-leaders .dfl-player-copy small'),detail:type('[data-page-detail="home-week"] summary strong'),rankLabelsFit:labelElements.every(e=>e.scrollWidth<=e.clientWidth+1)&&labels.every((r,i)=>!i||labels[i-1].right<=r.left+1),masthead:document.querySelector('.home-newspaper-masthead').offsetHeight};
+            return {width:innerWidth,fontLoaded:document.fonts.check('600 13px "Inter"'),heading:type('.home-rankings-card h2'),body:type('.home-league-story p'),name:type('.home-thermal-leaders .dfl-player-copy strong'),metadata:type('.home-thermal-leaders .dfl-player-copy small'),detail:type('[data-page-detail="home-week"] summary strong'),rankLabelsFit:labelElements.every(e=>e.scrollWidth<=e.clientWidth+1)&&labels.every((r,i)=>!i||labels[i-1].right<=r.left+1),masthead:document.querySelector('.home-newspaper-masthead').offsetHeight};
         }''')
-        assert typography['fontLoaded'] and all('Rajdhani' in typography[k]['family'] for k in ['heading','body','name','metadata','detail']), f'Home type did not load consistently: {typography}'
-        assert typography['heading']['size'] == 18 and typography['body']['size'] == 14 and typography['name']['size'] == 15 and typography['metadata']['size'] == 12, f'Home text scale is inconsistent: {typography}'
-        assert typography['heading']['weight'] == 700 and typography['name']['weight'] == 600 and typography['heading']['transform'] == 'uppercase' and typography['name']['transform'] == 'none' and typography['rankLabelsFit'], f'Home headings or rank columns are crowded: {typography}'
+        assert typography['fontLoaded'] and all('Inter' in typography[k]['family'] for k in ['heading','body','name','metadata','detail']), f'Home type did not load consistently: {typography}'
+        assert typography['heading']['size'] == 16 and typography['body']['size'] == 13 and typography['name']['size'] == 15 and typography['metadata']['size'] == 12, f'Home text scale is inconsistent: {typography}'
+        assert typography['heading']['weight'] == 700 and typography['name']['weight'] == 600 and typography['heading']['transform'] == 'none' and typography['name']['transform'] == 'none' and typography['rankLabelsFit'], f'Home headings or rank columns are crowded: {typography}'
         metrics['mobileType'].append(typography)
     page.set_viewport_size({'width':390,'height':844})
     assert page.locator('[data-page-detail="home-week"]').evaluate('e=>!e.open') and page.locator('[data-page-detail="home-league"]').evaluate('e=>!e.open'), 'Secondary detail should start collapsed'
@@ -1231,7 +1231,7 @@ with sync_playwright() as p:
             touch.send('Input.dispatchTouchEvent', {'type':'touchMove','touchPoints':[{'x':x+dx*step/5,'y':y+dy*step/5}]})
             page.wait_for_timeout(20)
         if dx and not dy:
-            assert panel.evaluate('e=>getComputedStyle(e).transform!=="none"'), 'Tab content did not follow the finger'
+            assert panel.evaluate('e=>getComputedStyle(e).transform!=="none"'), 'Tab content did not follow the finger: '+str(page.evaluate('(p)=>({target:document.elementFromPoint(p.x,p.y)?.outerHTML,motion:document.documentElement.dataset.uiMotion,reduce:matchMedia("(prefers-reduced-motion:reduce)").matches})',{'x':x,'y':y}))
         touch.send('Input.dispatchTouchEvent', {'type':'touchEnd','touchPoints':[]})
         if dx and not dy:
             page.wait_for_timeout(50)
@@ -1241,10 +1241,13 @@ with sync_playwright() as p:
         assert panel.evaluate('e=>!e.style.transform&&!e.dataset.uiSwipeSettling'), 'Swipe left a transform or stale motion flag'
     page.set_viewport_size({'width':390,'height':844})
     page.locator('[data-week-tab="brief"]').click()
-    for panel in ['picks','players','startsit']:
+    for panel in ['picks','players']:
         swipe_week(-120)
         assert page.locator(f'[data-week-tab="{panel}"]').get_attribute('aria-selected') == 'true', f'Touch swipe failed to open {panel}'
         page.wait_for_function('''()=>{const e=document.querySelector('.home-week-tabs'),selected=e?.querySelector('[aria-selected=true]'),marker=e?.querySelector('.dfl-selection-rail');if(!selected||!marker)return false;const tab=selected.getBoundingClientRect(),rail=marker.getBoundingClientRect();return Math.abs(tab.left-rail.left)<1&&Math.abs(tab.width-rail.width)<1}''',timeout=2500)
+    # Top Players starts with its nested position controls. Their gestures own
+    # that area; use the outer tab to leave it, rather than dragging a K button.
+    page.locator('[data-week-tab="startsit"]').click()
     swipe_week(-120)
     assert page.locator('[data-week-tab="startsit"]').get_attribute('aria-selected') == 'true', 'Last touch tab should not wrap'
     swipe_week(120)

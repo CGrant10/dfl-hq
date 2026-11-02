@@ -17,7 +17,8 @@ def check(label,ok):
  checks.append({'check':label,'pass':bool(ok)});(OUT/'checks.json').write_text(json.dumps(checks,indent=2));assert ok,label;print('PASS '+label,flush=True)
 def settle(page):
  page.wait_for_timeout(90)
- page.evaluate('''()=>{const s=document.querySelector('.gameday-matchup').getBoundingClientRect(),top=document.querySelector('.topbar').getBoundingClientRect().bottom;scrollTo({top:Math.max(0,s.top+scrollY-top-104+Math.max(96,s.height-24)*1.1),behavior:'instant'})}''')
+ # Scroll beyond the entire flight, independent of the source-dependent inset.
+ page.evaluate('''()=>{const s=document.querySelector('.gameday-matchup').getBoundingClientRect(),top=document.querySelector('.topbar').getBoundingClientRect().bottom;scrollTo({top:Math.max(0,s.top+scrollY-top+Math.max(96,s.height-24)+24),behavior:'instant'})}''')
  page.wait_for_function('''()=>{const b=document.querySelector('.home-score-dock');return b&&!b.inert&&Number(getComputedStyle(b).opacity)>.999}''')
 with sync_playwright() as p:
  browser=p.chromium.launch(executable_path=os.environ.get('DFL_REVIEW_CHROMIUM','/usr/bin/chromium'),headless=True,args=['--no-sandbox','--disable-dev-shm-usage'])

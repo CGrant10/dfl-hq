@@ -57,5 +57,6 @@
   "css/broadcast-compositions.css",
   "css/matchup-momentum.css",
   "css/interface-system.css",
-  "css/league-interface.css"
+  "css/league-interface.css",
+  "css/league-wire.css"
 ]
