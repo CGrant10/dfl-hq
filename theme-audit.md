@@ -1,3 +1,17 @@
+# All games, Trade and Sportsbook — 1.527.0
+
+Reviewed Light/Dark on 320/390/430px phones, plus Trade/network layouts at 768px.
+Trade offers, detail/edit flows, Sportsbook props, bet slips, results and the
+Clubhouse NFL rail use the existing Medicine Wheel tokens. Inter identities and
+metadata pair with Rajdhani figures; NFL/member identity and result colors retain
+their meaning. New quote/card/press motion respects Reduced Motion and motion
+preferences. Slip and prop layouts were checked at 200% text. Actual Clubhouse
+and Trade also checked read-only in both themes; all 14 NFL games are available.
+Actual Sportsbook wallet mutation is blocked in live review; its controllers are
+checked with isolated fixtures. Physical Safari is unmeasured. `pnpm themes`
+and `pnpm check` pass. Evidence:
+[trade-book-all-games-1527.md](docs/trade-book-all-games-1527.md).
+
 # Clubhouse matchup fit and Leaders effects — 1.526.0
 
 Reviewed the populated Bayou Bombers / Bastards matchup and Leaders in Light and

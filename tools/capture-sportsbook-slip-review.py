@@ -37,6 +37,11 @@ with sync_playwright() as p:
      assert page.evaluate('firstSlipPick===document.querySelector(".sb-slip-pick")'), 'Typing rebuilt the pick list'
      assert page.locator('[data-footer-stake]').inner_text()=='75 SIN'
      assert page.locator('[data-footer-return]').inner_text()==page.locator('[data-return]').inner_text()
+     page.evaluate('document.documentElement.style.fontSize="32px"');page.wait_for_timeout(100)
+     assert page.locator('.sb-slip-content').evaluate('e=>e.scrollWidth<=e.clientWidth+1')
+     assert page.locator('.sb-slip-fields input,.sb-slip-fields output,.sb-slip-totals b').evaluate_all('es=>es.every(e=>{const r=e.getBoundingClientRect(),d=e.closest("dialog").getBoundingClientRect();return r.left>=d.left&&r.right<=d.right&&e.scrollWidth<=e.clientWidth+1})')
+     page.screenshot(path=str(OUT/f'slip-large-{mode}-{width}.png'))
+     page.evaluate('document.documentElement.style.fontSize=""');page.wait_for_timeout(100)
     page.locator('.sb-slip-submit').click();assert 'Confirm' in page.locator('.sb-slip-submit').inner_text()
     assert page.evaluate('rpcCalls')==0,'Review placed a wager'
     if count==6:
@@ -58,6 +63,23 @@ with sync_playwright() as p:
    page.locator('[data-bet-outcome="2"]').click();page.locator('[data-slip-open]').click();page.wait_for_selector('.sb-slip[open]')
    assert page.locator('.sb-slip-pick').count()==1,'Rebuilt review button lost its handler'
    page.locator('.sb-slip [data-close]').click();page.wait_for_function('!document.querySelector("dialog[open]")')
+   page.evaluate('showReviewProps()');page.evaluate('document.fonts.ready')
+   assert page.locator('.sb-player-props').count()==3
+   assert page.locator('.sb-player-props h3 button').evaluate_all('es=>es.every(e=>getComputedStyle(e).fontFamily.includes("Inter")&&parseFloat(getComputedStyle(e).fontSize)===13&&e.getBoundingClientRect().height>=44&&e.scrollWidth<=e.clientWidth+1)')
+   assert page.locator('.sb-player-line').evaluate_all('es=>es.every(e=>e.scrollWidth<=e.clientWidth+1)')
+   page.screenshot(path=str(OUT/f'props-{mode}-{width}.png'))
+   quote=page.locator('.sb-player-prices .sb-price').first
+   page.evaluate('window.quoteNode=document.querySelector(".sb-player-prices .sb-price");window.quoteRowHeight=quoteNode.closest(".sb-player-line").getBoundingClientRect().height')
+   page.evaluate('async()=>{window.quoteUpdate=(await import("/js/sportsbook-account-motion.js")).updateBookQuote;quoteUpdate(quoteNode,"-115")}')
+   assert quote.inner_text()=='-115' and page.evaluate('quoteNode===document.querySelector(".sb-player-prices .sb-price")&&quoteNode.closest(".sb-player-line").getBoundingClientRect().height===quoteRowHeight')
+   page.wait_for_timeout(220);assert quote.evaluate('e=>!e.getAnimations().length')
+   page.emulate_media(reduced_motion='reduce');page.evaluate('quoteUpdate(quoteNode,"+100")')
+   assert quote.inner_text()=='+100' and quote.evaluate('e=>!e.getAnimations().length')
+   page.emulate_media(reduced_motion='no-preference')
+   page.evaluate('document.documentElement.style.fontSize="32px"');page.wait_for_timeout(100)
+   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+   page.evaluate('document.documentElement.style.fontSize=""')
+   checks.append({'mode':mode,'width':width,'propsReading':True,'exactQuoteUpdate':True,'stableRowHeight':True,'reducedMotion':True})
  assert not errors,errors
  browser.close()
 server.shutdown();(OUT/'slipbar-checks.json').write_text(json.dumps({'checks':checks,'errors':errors},indent=2));print(json.dumps({'layouts':len(checks),'errors':errors}))

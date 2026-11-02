@@ -4,6 +4,13 @@ First adoption: Home and Clubhouse in 1.524.0. Source owners are
 `css/tokens.css` and `css/interface-system.css`; the combined stylesheet remains
 one request. Existing feature-specific art and motion keep their own ownership.
 
+Trade and Sportsbook adopt the row, metadata and numeric roles in 1.527.0.
+Trade offer portraits retain their framing, with 28px width on narrow phones
+and 32px otherwise. Sportsbook props use 13px names, 11px metadata and 18px
+sports figures; names retain a 44px tap target. Slip fields reflow at larger text.
+Retained offers keep their actual DOM and portraits across result batches;
+only new visible cards enter. Changed quotes show exact values immediately.
+
 ## Type roles
 
 | Role | Compact size | Face / weight | Use |

@@ -1,0 +1,65 @@
+{
+  "checks": [
+    {
+      "mode": "light",
+      "width": 320,
+      "allGames": 14,
+      "selectedVisible": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "allGames": 14,
+      "selectedVisible": true
+    },
+    {
+      "mode": "light",
+      "width": 430,
+      "allGames": 14,
+      "selectedVisible": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "allGames": 14,
+      "selectedVisible": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "allGames": 14,
+      "selectedVisible": true
+    },
+    {
+      "mode": "dark",
+      "width": 430,
+      "allGames": 14,
+      "selectedVisible": true
+    },
+    {
+      "route": "trade",
+      "mode": "light",
+      "width": 320,
+      "fit": true
+    },
+    {
+      "route": "trade",
+      "mode": "light",
+      "width": 390,
+      "fit": true
+    },
+    {
+      "route": "trade",
+      "mode": "dark",
+      "width": 320,
+      "fit": true
+    },
+    {
+      "route": "trade",
+      "mode": "dark",
+      "width": 390,
+      "fit": true
+    }
+  ],
+  "errors": []
+}

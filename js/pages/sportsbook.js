@@ -13,7 +13,7 @@ import { loadPropIndex, loadPropGame, loadMarketOutcomes } from "../sportsbook-l
 import { readBookState, writeBookState } from "../sportsbook-view-state.js";
 import {mountSportsbookLive} from '../sportsbook-live.js';
 import {createSettlementTracker,loadBookAccount,loadBookWallet} from '../sportsbook-settlement.js';
-import {animateBankroll,revealTicketResult} from '../sportsbook-account-motion.js';
+import {animateBankroll,revealTicketResult,updateBookQuote} from '../sportsbook-account-motion.js';
 import {patchGameDay} from '../game-day-dom.js';
 // =====================================================================
 // DFL Sportsbook - fake SIN, real DFL consequences.
@@ -281,10 +281,10 @@ export async function render(view){
       if(!quote||!market)continue;
       if(!presentOutcomes.has(String(quote.id)))market.status='locked';
       button.disabled=!present.has(String(market.id))||!isOpen(market);
-      const price=button.querySelector('.sb-price');if(price)price.textContent=fmtOdds(quote.odds_american);
+      const price=button.querySelector('.sb-price');if(price)updateBookQuote(price,fmtOdds(quote.odds_american));
       const name=button.querySelector('.sb-outcome-name');if(name?.firstChild?.nodeType===3)name.firstChild.textContent=quote.label;
       const line=button.closest('.sb-player-line');
-      if(line){line.querySelector('.sb-player-stat strong').textContent=propLine(market);const meta=propMarketMeta(market,[quote]);button.setAttribute('aria-label',`${meta.player}, ${meta.stat}, ${quote.label}, ${fmtOdds(quote.odds_american)}`);}
+      if(line){updateBookQuote(line.querySelector('.sb-player-stat strong'),propLine(market));const meta=propMarketMeta(market,[quote]);button.setAttribute('aria-label',`${meta.player}, ${meta.stat}, ${quote.label}, ${fmtOdds(quote.odds_american)}`);}
       const card=button.closest('.sb-market'),state=card?.querySelector('.sb-market-state');
       const heading=card?.querySelector('.card-heading');if(heading)heading.textContent=market.title;
       const locks=card?.querySelector('.sb-locks');if(locks&&market.closes_at)locks.textContent=`${button.disabled?'Locked':'Locks'} ${fmtTime(market.closes_at)}`;
@@ -487,7 +487,7 @@ function fantasySlateHtml(slate,clock,byMarket,canBook,picked,held,members,membe
 }
 
 function propPlayersMarkup(rows,byMarket,picked,held,favorites){
-  return groupPropPlayers(rows).map(player=>`<article class="sb-player-props" data-prop-player="${esc(player.meta.player)}"><header><div><small>${esc([player.meta.team,player.meta.position].filter(Boolean).join(' · '))}</small><h3><button type="button" class="player-card-trigger" data-player-card="" data-player-name="${esc(player.meta.player)}" data-player-team="${esc(player.meta.team)}">${esc(player.meta.player)}</button></h3></div></header><div class="sb-player-lines">${player.rows.map(({market,meta})=>{
+  return groupPropPlayers(rows).map(player=>`<article class="sb-player-props" data-prop-player="${esc(player.meta.player)}"><header data-ui-player-row><div class="dfl-player-copy"><h3><button type="button" class="player-card-trigger" data-player-card="" data-player-name="${esc(player.meta.player)}" data-player-team="${esc(player.meta.team)}">${esc(player.meta.player)}</button></h3><small>${esc([player.meta.position,player.meta.team].filter(Boolean).join(' · '))}</small></div></header><div class="sb-player-lines">${player.rows.map(({market,meta})=>{
     const choices=byMarket.get(String(market.id))||[],line=propLine(market);
     return `<div class="sb-player-line" data-prop-card data-prop-key="${esc(meta.key)}"><div class="sb-player-stat"><span>${esc(meta.stat)}</span><strong>${esc(line)}</strong></div><div class="sb-player-prices">${choices.map(outcome=>{
       const side=outcome.provider_side || (/^over\b/i.test(outcome.label)?'over':/^under\b/i.test(outcome.label)?'under':'');

@@ -26,6 +26,13 @@ on:
       - 'tools/capture-broadcast-polish.py'
       - 'js/broadcast-brief.js'
       - 'css/interface-system.css'
+      - 'css/trade-book-reading.css'
+      - 'js/multigame*'
+      - 'js/sportsbook-account-motion.js'
+      - 'tools/capture-dfl-network.py'
+      - 'tools/capture-trade-offer-reading.py'
+      - 'tools/capture-sportsbook-slip-review.py'
+      - 'tools/render-sheet-review.mjs'
       - 'css/tokens.css'
       - 'tools/capture-interface-system.py'
       - 'js/broadcast-edition*'
@@ -492,6 +499,36 @@ jobs:
           psql -h localhost -U postgres -d dfl_highlight_test -v ON_ERROR_STOP=1 -f supabase/tests/home_highlights.sql
           psql -h localhost -U postgres -c 'create database dfl_player_cache_test'
           psql -h localhost -U postgres -d dfl_player_cache_test -v ON_ERROR_STOP=1 -f supabase/tests/player_directory.sql
+
+  trade-book-interface:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright
+      - name: Check Trade, Book and every NFL game at mobile widths
+        env:
+          DFL_TRADE_REVIEW_DIR: ${{ github.workspace }}/trade-book-fixture
+          DFL_NETWORK_TRADE_DIR: ${{ github.workspace }}/trade-book-fixture
+          DFL_TRADE_READING_DIR: trade-book-output/trade
+          DFL_SHEET_REVIEW_DIR: ${{ github.workspace }}/trade-book-output/book
+          DFL_NETWORK_REVIEW_DIR: trade-book-output/network
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          node tools/render-trade-review.mjs
+          python tools/capture-trade-offer-reading.py
+          node tools/render-sheet-review.mjs
+          python tools/capture-sportsbook-slip-review.py
+          python tools/capture-dfl-network.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trade-book-interface-review
+          path: trade-book-output/
+          retention-days: 7
 
   connected-polish:
     runs-on: ubuntu-latest

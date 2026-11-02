@@ -57,7 +57,3 @@
 [data-ui-motion=off] .ti-dialog,[data-ui-motion=off] .ti-dialog::backdrop {animation:none;}
 [data-ui-motion=off] .ti-entry,[data-ui-motion=off] .ti-entry i,[data-ui-motion=off] .ti-needs button {transition:none;}
 @media(prefers-reduced-motion:reduce){.ti-dialog[open],.ti-dialog.is-closing,.ti-dialog::backdrop{animation:none}.ti-entry,.ti-entry i,.ti-needs button{transition:none}}
-
-.tb-offers-ready {animation:ti-fade 180ms ease-out both;}
-[data-ui-motion=off] .tb-offers-ready {animation:none;}
-@media(prefers-reduced-motion:reduce){.tb-offers-ready{animation:none}}

@@ -1,7 +1,8 @@
 import {describe,it,expect} from 'vitest';
 import {matchupTimeline,timelinePlayHref,timelineMarkup} from './matchup-timeline.js';
 import {banterMemory} from './banter-memory.js';
-import {multigameRows,defaultGamePins,reconcileGamePins} from './multigame-model.js';
+import {multigameRows} from './multigame-model.js';
+import {multigameMarkup} from './multigame.js';
 import {tradeOpportunities,scoutSnapshot,readScoutBaseline} from './trade-opportunities.js';
 const sides=[{roster:'1',uid:'a',name:'Alpha'},{roster:'2',uid:'b',name:'Bravo'}],game={id:'5',sides};
 const lead=(key,at,roster='1')=>({key,at,kind:'lead',roster,matchupId:'5',text:'Alpha moves ahead',recap:{sides:[{team_name:'Alpha',points:40},{team_name:'Bravo',points:36}]}});
@@ -51,8 +52,8 @@ describe('a bounded multigame desk',()=>{
   const context={season:2026,week:7,players:[{id:'other',name:'Other receiver',position:'WR',nflTeam:'NO',points:99},{id:'p',name:'Chris Olave',position:'WR',nflTeam:'NO',isMine:true},{position:'DEF',nflTeam:'NO'}]};
   const rows=multigameRows(payload,context);expect(rows[0].sides[0].score).toBe(0);expect(rows[0].players).toHaveLength(2);expect(rows[0].players[0].isMine).toBe(true);expect(multigameRows(payload,{...context,week:8})).toEqual([]);
  });
- it('limits pinning to three valid unique games and retains an intentional empty desk',()=>{
-  const rows=multigameRows(payload,{season:2026,week:7});expect(defaultGamePins(rows)).toHaveLength(3);expect(reconcileGamePins(['1','1','2','3','4','invalid'],rows)).toEqual(['1','2','3']);expect(reconcileGamePins([],rows)).toEqual([]);
+ it('shows every NFL game with one selected game and no pinning controls',()=>{
+  const rows=multigameRows(payload,{season:2026,week:7}),html=multigameMarkup(rows,'4');expect(html.match(/data-desk-game=/g)).toHaveLength(4);expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);expect(html).toContain('All NFL games');expect(html).not.toContain('data-desk-pin');expect(html).not.toContain('Edit games');
  });
 });
 describe('opportunity scout quality gates',()=>{

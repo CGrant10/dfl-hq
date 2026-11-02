@@ -10,7 +10,3 @@ export function multigameRows(payload,context,summaries=new Map()){
   return {...nflObservedGame(game,summary,context?.season),players:people,latest:presentation?.headline||'',playId:latest?.id||'',failed:!!entry?.failed};
  });
 }
-export function defaultGamePins(games){
- return [...games].sort((a,b)=>Number(b.state==='in')-Number(a.state==='in')||Number(b.players.some(p=>p.isMine))-Number(a.players.some(p=>p.isMine))||b.players.length-a.players.length||Date.parse(a.date)-Date.parse(b.date)).slice(0,3).map(g=>g.id);
-}
-export function reconcileGamePins(saved,games){return [...new Set((Array.isArray(saved)?saved:defaultGamePins(games)).map(String))].filter(id=>games.some(g=>g.id===id)).slice(0,3)}

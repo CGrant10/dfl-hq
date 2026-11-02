@@ -1,3 +1,5 @@
+import {patchGameDay} from '../game-day-dom.js';
+import {animateUi} from '../ui-motion.js';
 import {tradeOpportunities,scoutSnapshot,readScoutBaseline,saveScoutBaseline} from '../trade-opportunities.js';
 import {tradeOpportunitiesMarkup} from '../trade-opportunities-ui.js';
 import {tradeOfferKey,availableTradeOffers,tradeOfferAnchors} from '../trade-offer-actions.js';
@@ -71,7 +73,7 @@ function offerPlayerRows(ids, pool, routing=null) {
   return ids.map(id => {
     const player = pool.get(String(id)) || {id,name:String(id)};
     const recipient=routing?.parties.find(t=>String(t.id)===String(routing.destinations?.[id]));
-    return `<span class="tb-player"><button type="button" class="tb-player-link" data-player-card="${esc(id)}" aria-label="View ${esc(player.name)} player card">${playerPortrait(player)}<span><strong>${esc(player.name)}</strong><small>${esc([player.position,player.nflTeam].filter(Boolean).join(' · '))}</small>${routing?`<small class="tb-player-destination">→ ${esc(recipient?teamName(recipient):'Choose recipient')}</small>`:''}</span></button></span>`;
+    return `<span class="tb-player" data-ui-player-row><button type="button" class="tb-player-link" data-player-card="${esc(id)}" aria-label="View ${esc(player.name)} player card">${playerPortrait(player)}<span class="dfl-player-copy"><strong>${esc(player.name)}</strong><small>${esc([player.position,player.nflTeam].filter(Boolean).join(' · '))}</small>${routing?`<small class="tb-player-destination">→ ${esc(recipient?teamName(recipient):'Choose recipient')}</small>`:''}</span></button></span>`;
   }).join("");
 }
 
@@ -95,7 +97,7 @@ function offerMarkup(offer, pool) {
   if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerSummary(offer,pool)}${offerPreview(offer)}<footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze trade <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer></article>`;
   const call = tradeAssessment(offer).price.headline.toUpperCase();
   return `<article class="tb-offer" data-offer-key="${esc(offerKey(offer))}">
-    <header><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<strong>${esc(teamName(offer.other))}</strong></small><span>${shapeLabel(offer)}</span><b>${call}</b></header>
+    <header><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<strong>${esc(teamName(offer.other))}</strong></small><b>${call}</b></header>
     <div class="tb-offer-flow">${offerPackage(offer.sendA,pool,'YOU SEND')}${offerPackage(offer.sendB,pool,'YOU GET')}</div>
     ${offerSummary(offer,pool)}${offerPreview(offer)}
     <footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(','))}" data-send-b="${esc(offer.sendB.join(','))}" data-weekly-delta="${Number(offer.weeklyDeltaA)||0}">Analyze trade <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer>
@@ -373,12 +375,19 @@ function page(data, tradeAlerts = []) {
           if(!old.querySelector('[data-ti-search-status]')){const status=document.createElement('p');status.className='tb-search-status';status.dataset.tiSearchStatus='';status.setAttribute('role','status');status.textContent='Updating offers…';old.querySelector('.tb-offers-card')?.prepend(status);}
           return;
         }
-        next.classList.add('tb-offers-ready');
+        const previousCards=new Map([...old.querySelectorAll('[data-offer-key]')].map(card=>[card.dataset.offerKey,card])),entering=[];
+        for(const fresh of next.querySelectorAll('[data-offer-key]')){
+          const retained=previousCards.get(fresh.dataset.offerKey);
+          if(retained){patchGameDay(retained,fresh.innerHTML);fresh.replaceWith(retained)}else entering.push(fresh);
+        }
         old.replaceWith(next);wireOfferTiers(next);
+        // Retained offers stay fully painted. Only visible new cards enter.
+        for(const card of entering){const r=card.getBoundingClientRect();if(r.bottom>80&&r.top<innerHeight-60)animateUi(card,[{opacity:.65,transform:'translateY(4px)'},{opacity:1,transform:'none'}],{duration:180})}
         if(!restoreOfferPosition()){
           const retained=anchorKey&&next.querySelector(`[data-offer-key="${CSS.escape(anchorKey)}"]`);
           if(retained)window.scrollBy({top:retained.getBoundingClientRect().top-anchorTop,behavior:'instant'});
-          if(focused){const card=focusKey?next.querySelector(`[data-offer-key="${CSS.escape(focusKey)}"]`):next;(focusAction?card?.querySelector(focusAction):null)?.focus({preventScroll:true});if(!next.contains(document.activeElement))next.focus({preventScroll:true});}
+          if(focused&&focusNode?.isConnected)focusNode.focus({preventScroll:true});
+          else if(focused){const card=focusKey?next.querySelector(`[data-offer-key="${CSS.escape(focusKey)}"]`):next;(focusAction?card?.querySelector(focusAction):null)?.focus({preventScroll:true});if(!next.contains(document.activeElement))next.focus({preventScroll:true});}
         }
       };
       const newCatalog=()=>createTradeOfferCatalog({search:createTradeOfferSearch({teams:data.teams,pool:data.pool}),

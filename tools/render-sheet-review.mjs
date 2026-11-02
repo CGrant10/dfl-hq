@@ -7,7 +7,9 @@ const start=source.indexOf('function openSlip('),end=source.indexOf('\n}\n',star
 if(start<0||end<=start)throw Error('Bet slip controller not found');
 const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const head=index.slice(index.indexOf('<head>')+6,index.indexOf('</head>')).replace('</title>','</title><link rel="stylesheet" href="css/sportsbook.css">');
-const fixture=`import {mountSheetDrag,enterSheet,exitSheet} from './js/sheet-drag.js';
+const fixture=`import {groupPropPlayers} from './js/sportsbook-featured-props.js';
+import {propLine} from './js/sportsbook-core-props.js';
+import {mountSheetDrag,enterSheet,exitSheet} from './js/sheet-drag.js';
 import {animateUi,cancelUiMotion,cancelUiExit,exitUi,startUiMotion} from './js/ui-motion.js';
 import {fitDialogToViewport} from './js/dialog-viewport.js';
 import {esc} from './js/ui.js';
@@ -25,6 +27,7 @@ const MAX_PICKS=6;
 const outcomes=new Map([['1',{id:1,market_id:1,label:'Ja’Marr Chase over 89.5 receiving yards',odds_american:-110}],['2',{id:2,market_id:2,label:'Joe Burrow over 1.5 passing touchdowns',odds_american:120}]]);
 const markets=new Map([['1',{title:'Bengals receiving',status:'open'}],['2',{title:'Bengals passing',status:'open'}]]);
 ${source.slice(start,end)}
+${source.slice(source.indexOf("function propPlayersMarkup("),source.indexOf("function wirePropFilters("))}
 ${source.slice(source.indexOf('function slipBar('),source.indexOf('\n}\n',source.indexOf('function slipBar('))+3)}
 ${source.slice(source.indexOf('function wireSlipAndPicks('),source.indexOf('\n}\n',source.indexOf('function wireSlipAndPicks('))+3)}
 window.showReviewBoard=()=>{
@@ -32,6 +35,11 @@ window.showReviewBoard=()=>{
  slip=[];document.querySelector('#view').dataset.pageSystem='';
  document.querySelector('#view').innerHTML='<div id="sportsbook-wrap"><h1>The Book</h1><section class="sb-market"><h2>Player props</h2>'+[...outcomes.values()].map(o=>'<button type="button" class="sb-outcome" data-bet-outcome="'+o.id+'"><span class="sb-team-mark">DFL</span><span class="sb-outcome-label">'+o.label+'</span><span class="sb-price">+120</span></button>').join('')+'</section><div style="height:1200px"></div><p id="board-last">Last market</p></div><nav id="fixture-nav" style="position:fixed;bottom:0;left:0;width:100%;height:60px;background:var(--bg-2)">DFL · Sportsbook</nav>';
  wireSlipAndPicks(document.querySelector('#view'),outcomes,markets,{balance:500});
+};
+window.showReviewProps=()=>{
+ const rows=['Ja’Marr Chase','Amon-Ra St. Brown','Marvin Harrison Jr.'].map((player,i)=>({market:{id:20+i,status:'open',provider_line:89.5},meta:{player,team:['CIN','DET','ARI'][i],position:'WR',stat:'Receiving yards',key:'prop-'+i}}));
+ const prices=new Map(rows.map(({market},i)=>[String(market.id),[{id:100+i*2,label:'Over',provider_side:'over',odds_american:-110},{id:101+i*2,label:'Under',provider_side:'under',odds_american:120}]]));
+ const view=document.querySelector('#view');view.dataset.pageSystem='';view.innerHTML='<div id="sportsbook-wrap"><h1>The Book</h1><div class="sb-prop-games"><div class="sb-market-grid">'+propPlayersMarkup(rows,prices,new Set(),new Set(),new Set())+'</div></div></div>';
 };
 startUiMotion();saveMode('medicine');
 window.reviewTheme=mode=>saveMode(mode);
