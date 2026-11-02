@@ -16,7 +16,7 @@ body{margin:0}.topbar{position:fixed;top:0;height:44px;width:100%;background:var
 </style></head><body><header class="topbar">DFL · scroll review</header><main id="view" class="view"></main><script type="module">
 import{mountPageScrollMotion}from './js/page-scroll-motion.js';import{animateUi,cancelUiMotion}from './js/ui-motion.js';
 const themes=__THEMES__;window.setTheme=theme=>{document.documentElement.dataset.mode=theme;document.documentElement.dataset.palette=theme;document.documentElement.style.colorScheme=theme;for(const[k,v]of Object.entries(themes[theme]))document.documentElement.style.setProperty(k,v)};setTheme('dark');let stop;const root=document.querySelector('#view');
-window.fixture=route=>{stop?.();scrollTo(0,0);root.dataset.route=route;root.innerHTML=`<div class="${route==='home'?'home-broadcast':'tb-head-row'}"><h1>${route==='home'?'Home':'Trade board'}</h1></div>${route==='home'?'<div data-home-gameday-slot><span data-gameday-week>Week 6</span><div class="gameday-matchup" tabindex="-1">'+['Bayou Bombers','Klutch Sports Group'].map((name,i)=>'<div class="gameday-faceoff-team"><span class="gameday-faceoff-mark">'+(i?'KS':'BB')+'</span><span class="home-team-name"><strong>'+name+'</strong></span><span class="home-team-total"><small>Live</small><b class="home-projected-total">'+(i?'104.25':'98.50')+'</b></span></div>').join('')+'</div></div>':''}${Array.from({length:8},(_,i)=>'<section class="story"><h2>Section '+(i+1)+'</h2><p>Sample league content</p></section>').join('')}`;stop=mountPageScrollMotion(root,{animate:animateUi,cancel:cancelUiMotion})};
+window.fixture=route=>{stop?.();scrollTo(0,0);root.dataset.route=route;root.innerHTML=`<div class="${route==='home'?'home-broadcast':'tb-head-row'}"><h1>${route==='home'?'Home':'Trade board'}</h1></div>${route==='home'?'<div data-home-gameday-slot><span data-gameday-week>Week 6</span><div class="gameday-matchup" tabindex="-1">'+['Bayou Bombers','Klutch Sports Group'].map((name,i)=>'<div class="gameday-faceoff-team"><span class="gameday-faceoff-mark">'+(i?'KS':'BB')+'</span><span class="home-team-name"><strong>'+name+'</strong></span><span class="home-team-total"><small>Live</small><b class="home-projected-total">'+(i?'104.25':'98.50')+'</b></span></div>').join('')+'</div></div>':''}${Array.from({length:8},(_,i)=>'<section class="story"><h2>Section '+(i+1)+'</h2><p>Sample league content</p></section>').join('')}`;window.headingEntrances=[];stop=mountPageScrollMotion(root,{animate:(node,frames,options)=>{const animation=animateUi(node,frames,options);if(animation&&node.matches('h2'))headingEntrances.push({node,duration:options.duration});return animation},cancel:cancelUiMotion})};
 window.stopFixture=()=>stop?.();const original=Element.prototype.getBoundingClientRect;window.headingReads=0;Element.prototype.getBoundingClientRect=function(){if(this.tagName==='H2')headingReads++;return original.call(this)};fixture('home');window.ready=true;
 </script></body></html>'''
 class Handler(SimpleHTTPRequestHandler):
@@ -62,11 +62,12 @@ with sync_playwright() as p:
  page.evaluate('fixture("home")');page.wait_for_timeout(150)
  intro=page.evaluate("()=>{const h=document.querySelectorAll('.story h2')[1];return {y:h.getBoundingClientRect().top+scrollY-400,height:document.documentElement.scrollHeight}}")
  page.evaluate('y=>scrollTo(0,y)',intro['y']-600)
- revealed=False
  for delta in range(0,601,24):
-  page.evaluate('y=>scrollTo(0,y)',intro['y']-600+delta);page.wait_for_timeout(30)
-  revealed |= page.evaluate("document.querySelectorAll('.story h2')[1].getAnimations().length>0")
- check('Gentle scrolling reveals a major heading once',revealed)
+  page.evaluate('y=>scrollTo(0,y)',intro['y']-600+delta);page.wait_for_timeout(int(os.environ.get('DFL_SCROLL_SAMPLE_MS','30')))
+ # A completed 260ms entrance can fall between remote samples. Record the
+ # real animations when created, then assert once after observer delivery.
+ page.evaluate('async()=>{await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame)}')
+ check('Gentle scrolling reveals a major heading once',page.evaluate("headingEntrances.filter(event=>event.node===document.querySelectorAll('.story h2')[1]&&event.duration===260).length===1"))
  check('Home reveals section headings while keeping the compact scoreboard',page.evaluate("document.querySelector('#view').classList.contains('has-home-score-dock')&&document.querySelector('.dfl-scroll-context').hidden"))
  page.wait_for_timeout(500)
  check('Section reveal settles without shifting the document',page.evaluate('height=>document.documentElement.scrollHeight===height&&getComputedStyle(document.querySelectorAll(".story h2")[1]).opacity==="1"',intro['height']))
