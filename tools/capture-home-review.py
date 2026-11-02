@@ -1225,7 +1225,10 @@ with sync_playwright() as p:
         panel.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-150,behavior:"instant"})')
         page.wait_for_timeout(100)
         box = panel.bounding_box()
-        x, y = box['x'] + box['width'] * (.8 if dx < 0 else .2), box['y'] + 30
+        # Start in the outer pane's padding. Its Top Players content begins
+        # with a nested position tab bar, whose buttons intentionally own taps.
+        x, y = box['x'] + box['width'] * (.8 if dx < 0 else .2), box['y'] + 4
+        assert panel.evaluate('(e,p)=>e===document.elementFromPoint(p.x,p.y)',{'x':x,'y':y}), 'Week swipe start is covered or inside a nested control'
         touch.send('Input.dispatchTouchEvent', {'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
         for step in range(1,6):
             touch.send('Input.dispatchTouchEvent', {'type':'touchMove','touchPoints':[{'x':x+dx*step/5,'y':y+dy*step/5}]})
