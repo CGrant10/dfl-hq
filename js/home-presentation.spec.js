@@ -7,14 +7,14 @@ const player = (id, points, state = 'final', position = 'WR', afterHalftime = fa
   ({ id, roster: '1', name: `Player ${id}`, points, state, position, afterHalftime });
 
 describe('selected Home presentation', () => {
-  it('leads with current stories and gives awards, anniversary and history one rotating slot', () => {
+  it('leads with current stories and keeps a fuller, stable mix of awards and history', () => {
     const current=[{id:'trade',pinned:true,kind:'trade'},{id:'custom',source:'manual',kind:'record'},{id:'featured',featured:true,kind:'record'}];
     const archive=['champion','chip','past','record','fact','season'].map(kind=>({id:kind,kind}));
     const now=new Date('2026-10-08T12:00:00Z'),deck=homeBroadcastDeck([...current,...archive],{now});
-    expect(deck.filter(item=>archive.includes(item))).toHaveLength(1);
+    expect(deck.filter(item=>archive.includes(item))).toHaveLength(6);
     expect(current.every(item=>deck.includes(item))).toBe(true);
     expect(homeBroadcastDeck(deck,{now})).toEqual(deck);
-    expect(homeBroadcastDeck([...current,...archive],{now:new Date('2026-10-09T12:00:00Z')}).at(-1)).not.toBe(deck.at(-1));
+    const orders=Array.from({length:7},(_,i)=>homeBroadcastDeck([...current,...archive],{now:new Date(`2026-10-${10+i}T12:00:00Z`)}).map(s=>s.id||s.key).join(','));expect(new Set(orders).size).toBeGreaterThan(1);
   });
   it('keeps the original broadcast slides through refresh without duplicating the opener', () => {
     const original = [{ key: 'manual', headline: 'Commissioner update' }, { key: 'slate' }];

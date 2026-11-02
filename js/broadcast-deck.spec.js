@@ -15,6 +15,12 @@ describe('Arena broadcast removal',()=>{
 
 
 describe('award artwork ownership',()=>{
+ it('keeps automatic story identity when fresh stories join ahead of the current slide',()=>{
+  const ctx={leagues:[{season:2025,champion_user_id:'winner'}],name:()=>({memberId:'member',label:'Klutch Sports Group',sub:'Owner'})};
+  const off=new Set(GENERATORS.map(([id])=>id).filter(id=>id!=='champion'));
+  const first=buildDeck(ctx,{off,max:10}),fresh=buildDeck(ctx,{off,max:10,custom:[{id:'late',source:'manual',treatment:'announcement',priority:9999,headline:'New league story'}]});
+  expect(fresh.find(story=>story.kind==='champion').id).toBe(first[0].id);
+ });
  it('keeps current and past champions independent of member photos',()=>{
   vi.mocked(memberImage).mockClear();
   const ctx={leagues:[{season:2025,champion_user_id:'winner',last_place_user_id:'loser'},{season:2024,champion_user_id:'past'}],members:[{id:'member',profile_image:'https://example.com/member-profile.jpg',broadcast_image:'https://example.com/member-broadcast.jpg'}],name:()=>({memberId:'member',label:'Current team name',sub:'Owner'})};

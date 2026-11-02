@@ -867,7 +867,7 @@ export function buildDeck(ctx, { off = new Set(), max = 8, custom = [], override
 
   /* A stable id so the rotation can remember what it has shown without
      holding a reference to the object. */
-  return picked.map((it, i) => ({ ...it, id: it.id ?? `${it.generator || it.source}:${i}` }));
+  return picked.map(it => ({ ...it, id: it.id ?? `${it.generator || it.source}:${JSON.stringify([it.kind,it.kicker,it.storyKind,it.href,it.headline,it.sides?.map(side=>side.name)])}` }));
 }
 
 /*

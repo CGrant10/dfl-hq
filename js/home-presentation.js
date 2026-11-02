@@ -23,7 +23,7 @@ export function homeSectionLinks() {
   return `<nav class="home-newspaper-sections" aria-label="Home sections"><button type="button" data-home-jump="scores">Matchup</button><button type="button" data-home-jump="lead">Broadcast</button><button type="button" data-home-jump="week">Your week</button><button type="button" data-home-jump="league">League</button><button type="button" data-home-jump="archive">Archive</button></nav>`;
 }
 
-/** Current stories lead; the archive gets one dated, rotating feature. */
+/** Current stories lead a fuller edition with league awards and rotating history. */
 export function homeBroadcastDeck(deck = [], { now = new Date(), coveredTrade = "" } = {}) {
   // Scores already own the desk above this stage. Retire old injected
   // matchup cards on refresh too, while keeping authored league stories.
