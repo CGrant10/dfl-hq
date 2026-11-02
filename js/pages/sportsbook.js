@@ -174,10 +174,9 @@ export async function render(view){
   if(slip.length<before)toast(`${before-slip.length} pick${before-slip.length===1?"":"s"} dropped: the line closed`,true);
 
   view.innerHTML=`<div id="sportsbook-wrap"${slip.length?' class="has-slip"':""}>
-    <header class="sb-masthead page-identity"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>${esc(sportsbookWeekCaption(leagueWeek))}</span></div><div class="sb-wallet" aria-label="Available SIN"><small>BANKROLL</small><strong data-book-balance>${num(wallet?.balance)}</strong><span>SIN</span></div></header>
+    <header class="sb-masthead page-identity"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>${esc(sportsbookWeekCaption(leagueWeek))}</span></div><details class="sb-wallet sb-wallet-options"><summary aria-label="Bankroll actions"><small>BANKROLL</small><strong data-book-balance>${num(wallet?.balance)}</strong><span>SIN</span><svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></summary><div class="sb-wallet-actions">${bankrollCard(me,wallet,open,autoReady)}</div></details></header>
     <div class="sb-product-tabs" role="tablist" aria-label="Game type"><button type="button" role="tab" aria-selected="true" data-sb-product="book">SIN Sportsbook</button><button type="button" role="tab" aria-selected="false" data-sb-product="pickem">NFL Pick'em</button></div>
     <div id="sb-book-panel" role="tabpanel">
-    ${bankrollCard(me,wallet,open,autoReady)}
     <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Betting board</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
     ${categoryBoard([...open,...lockedMatchups],byMarket,bets,canBook,outcomeMap,marketMap,members,me.id,leagueWeek)}
@@ -199,6 +198,9 @@ export async function render(view){
   </div>`;
   /* The share and pull handlers need the rows behind the buttons they drew. */
   view.__bets=bets;
+  const walletOptions=view.querySelector('.sb-wallet-options');
+  walletOptions?.addEventListener('toggle',()=>{const panel=walletOptions.querySelector('.sb-wallet-actions');cancelUiMotion(panel);if(walletOptions.open)animateUi(panel,[{opacity:0,transform:'translateY(-3px)'},{opacity:1,transform:'none'}],{duration:160,motion:readPageChoice('gameday-motion',['on','off'],'on')==='on'});});
+  walletOptions?.addEventListener('keydown',event=>{if(event.key==='Escape'&&walletOptions.open){event.preventDefault();event.stopPropagation();walletOptions.open=false;walletOptions.querySelector('summary').focus({preventScroll:true});}});
   const refreshSlip=wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
   rememberView(view,me.id);
   wireProductTabs(view,me.id);wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
@@ -367,7 +369,7 @@ function bankrollCard(me,wallet,open,autoReady){
       ${claimable>0
         ? `<button type="button" class="btn sb-claim" id="sb-claim">Claim ${claimable} SIN${days>1?` &middot; ${days} days`:""}</button>`
         : `<span class="muted tiny">Next 50 SIN ${esc(fmtTime(wallet?.next_daily_at))}</span>`}
-      ${autoReady?`<span class="pill">${open.length} live</span>`:""}
+      ${autoReady?`<span class="pill">${open.length} lines</span>`:""}
     </div>
   </section>`;
 }

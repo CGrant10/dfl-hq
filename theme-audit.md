@@ -1,3 +1,18 @@
+# League Wire — 1.529.0
+
+Reviewed the shared header/navigation, compact Home matchup, three-thumbnail
+reel, wide broadcast, rankings, Clubhouse controls, Trade search/offers and Book
+bankroll/markets in both default Medicine Wheel themes. New surfaces, dividers,
+labels and play/time chips use shared tokens. Semantic results and member/NFL
+identity colors retain their meaning. Compiled Home/Clubhouse/Trades passed 18
+read-only mobile cases at 320/390/430px; More retains the current route and the
+single Team Analyzer destination. Isolated Book checks cover those widths,
+keyboard dismissal, bet review and enlarged text. Reduced Motion and saved
+motion preferences apply. `pnpm themes` and `pnpm check` pass; final CSS was
+rebuilt and captured again. No new polling or continuous effects. Actual live
+Book wallet writes and physical Safari remain unmeasured. Evidence:
+[league-wire-1529.md](docs/league-wire-1529.md).
+
 # League interface finish — 1.528.0
 
 Reviewed broadcast awards/news/receipts/results, ranking rows/snapshots/reports,

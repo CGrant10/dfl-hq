@@ -42,7 +42,7 @@ with sync_playwright() as p:
     const f=window.f={base:Date.parse('2026-10-25T22:00:00Z'),wall:Date.now(),rows,loads:0,fail:false,hold:false,active:true};f.now=()=>f.base+Date.now()-f.wall;f.time=at=>{f.base=at;f.wall=Date.now()};
     for(let i=0;i<2;i++)f.rows.push({...rows[0],id:'95000'+i,source_url:'https://www.espn.com/video/clip/_/id/95000'+i,published_at:new Date(f.base-60000+i).toISOString(),headline:'Fixture late-day big play '+i});
     f.rows.sort((a,b)=>Date.parse(b.published_at)-Date.parse(a.published_at));
-    f.roster=[{id:'qb',name:'Tyler Shough',position:'QB',nflTeam:'NO'},{id:'wr',name:'DK Metcalf',position:'WR',nflTeam:'PIT'},{id:'te',name:'Darnell Washington',position:'TE',nflTeam:'PIT'}];f.root=document.getElementById('reel');f.mount=()=>mountHomeHighlights(f.root,{getPlayers:()=>f.roster,now:f.now,active:()=>f.active,load:async()=>{f.loads++;if(f.hold)await new Promise(r=>f.release=r);if(f.fail)throw Error('Fixture unavailable');return [...f.rows].reverse()}});f.c=f.mount();
+    f.roster=[{id:'qb',name:'Tyler Shough',position:'QB',nflTeam:'NO'},{id:'wr',name:'DK Metcalf',position:'WR',nflTeam:'PIT'},{id:'te',name:'Darnell Washington',position:'TE',nflTeam:'PIT'}];f.root=document.getElementById('reel');f.mount=()=>mountHomeHighlights(f.root,{previewLayout:f.layout||'rail',getPlayers:()=>f.roster,now:f.now,active:()=>f.active,load:async()=>{f.loads++;if(f.hold)await new Promise(r=>f.release=r);if(f.fail)throw Error('Fixture unavailable');return [...f.rows].reverse()}});f.c=f.mount();
    }''',theme)
    tag=f'{width}px {theme}';page.wait_for_selector('[data-home-reel-open]');page.evaluate('document.fonts.ready')
    check(tag+' shows the first eight clips and the complete ten-clip reel',page.locator('[data-home-reel-clip]').count()==8 and '10 clips' in page.locator('.home-reel-total').inner_text())
@@ -196,6 +196,23 @@ with sync_playwright() as p:
    page.evaluate('f.c.refresh()');page.wait_for_timeout(100);check(tag+' expired cached clips cannot reappear after refresh',page.locator('[data-home-reel-open]').count()==0)
    page.evaluate('f.c.stop();f.time(Date.parse("2026-10-25T22:00:00Z"));f.hold=true;f.c=f.mount()');page.wait_for_function('typeof f.release==="function"');page.evaluate('f.c.stop();f.active=false;f.release()');page.wait_for_timeout(100)
    check(tag+' late responses do not revive a stopped Home reel',page.locator('[data-home-reel-open]').count()==0 and page.locator('.home-reel-player').count()==0)
+   page.evaluate("f.active=true;f.time(Date.parse(f.rows.find(row=>row.id==='960001').published_at)+2000);f.layout='feature';f.hold=true;f.fail=false;f.release=null;document.querySelector('#home-wrap').dataset.homeLayout='wire';f.c=f.mount()")
+   page.wait_for_function('typeof f.release==="function"')
+   check(tag+' feature skeleton can start its visibility-gated loader',page.locator('.home-reel-feature-skeleton').is_visible() and page.locator('#reel').get_attribute('aria-busy')=='true')
+   page.evaluate('f.hold=false;f.release()');page.wait_for_selector('[data-reel-layout="feature"] [data-home-reel-clip]')
+   check(tag+' feature shows only three newest real previews',page.locator('[data-home-reel-clip]').count()==3 and page.evaluate('document.querySelector("[data-home-reel-clip]").dataset.homeReelClip==="960001"'))
+   check(tag+' feature uses an asymmetric grid inside the phone',page.locator('.home-reel-cards').evaluate('e=>{const a=e.children[0].getBoundingClientRect(),b=e.children[1].getBoundingClientRect();return getComputedStyle(e).display==="grid"&&a.height>b.height*1.7&&a.width>b.width*1.7&&e.scrollWidth<=e.clientWidth+1}') and page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
+   check(tag+' filtering remains in the complete browser',page.locator('#reel [data-reel-player-filter]').count()==0 and page.locator('video,iframe').count()==0)
+   page.locator('[data-home-reel-clip]').nth(2).click();sheet=page.locator('.home-reel-player')
+   check(tag+' each feature tile opens its actual clip',sheet.locator('[data-reel-count]').inner_text()=='3 / 11')
+   page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open')
+   page.locator('[data-home-reel-open]').click()
+   check(tag+' Browse opens all clips at the latest with filters intact',sheet.locator('[data-reel-count]').inner_text()=='1 / 11' and sheet.locator('[data-reel-players] button').count()>1)
+   page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open')
+   page.evaluate("scrollTo(0,0)");page.screenshot(path=str(OUT/f'feature-{width}-{theme}.png'))
+   page.evaluate("document.documentElement.style.fontSize='32px'")
+   check(tag+' feature headline and controls reflow at enlarged text',page.evaluate('document.documentElement.scrollWidth<=innerWidth') and page.locator('[data-home-reel-open]').evaluate('e=>e.getBoundingClientRect().height>=44'))
+   page.evaluate("document.documentElement.style.fontSize='';f.c.stop()")
    check(tag+' no page errors or unauthorized writes',not errors);context.close()
  browser.close()
 server.shutdown()

@@ -27,6 +27,8 @@ on:
       - 'js/broadcast-brief.js'
       - 'css/interface-system.css'
       - 'css/league-interface.css'
+      - 'css/league-wire.css'
+      - 'tools/capture-league-wire-book.py'
       - 'tools/capture-power-review.py'
       - 'tools/capture-secondary-review.py'
       - 'tools/render-secondary-review.mjs'
@@ -532,6 +534,34 @@ jobs:
         with:
           name: trade-book-interface-review
           path: trade-book-output/
+          retention-days: 7
+
+  league-wire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright
+      - name: Check the media-led Home, score motion and Book
+        env:
+          DFL_REVIEW_DIR: ${{ github.workspace }}/league-wire-output/home
+          DFL_SCORE_REVIEW_DIR: ${{ github.workspace }}/league-wire-output/score
+          DFL_HOME_HIGHLIGHTS_REVIEW_DIR: ${{ github.workspace }}/league-wire-output/clips
+          DFL_WIRE_BOOK_DIR: ${{ github.workspace }}/league-wire-output/book
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          node tools/render-home-review.mjs
+          python tools/capture-home-score-review.py
+          python tools/capture-home-highlights.py
+          python tools/capture-league-wire-book.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: league-wire-review
+          path: league-wire-output/
           retention-days: 7
 
   league-identity:

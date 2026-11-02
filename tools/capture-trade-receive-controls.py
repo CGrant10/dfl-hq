@@ -25,6 +25,8 @@ with sync_playwright() as p:
    tag=f'{width}px {theme}'
    def settled():page.wait_for_function(r"[...document.querySelectorAll('.tb-intent-options [data-tb-intent-count]')].length===3&&[...document.querySelectorAll('.tb-intent-options [data-tb-intent-count]')].every(e=>/^\(\d+\)$/.test(e.textContent))&&!document.querySelector('.tb-offers-card[aria-busy=true]')",timeout=20000)
    def incoming_ok(positions):return page.locator('.tb-offer-flow .tb-package [data-player-card]').evaluate_all('(es,positions)=>es.every(e=>positions.includes(window.reviewData.pool.get(e.dataset.playerCard).position))',positions)
+   check(tag+' keeps full search editing behind Edit search',not page.locator('.tb-setup').evaluate('e=>e.open'))
+   page.locator('.tb-setup>summary').click()
    settled();check(tag+' starts with every trade position enabled',page.locator('[data-tb-receive-position]:checked').count()==4)
    check(tag+' uses 44px checkbox labels and preset actions',page.locator('.tb-receive-options label,[data-tb-receive-preset]').evaluate_all('es=>es.every(e=>e.getBoundingClientRect().height>=44&&e.getBoundingClientRect().width>=44)'))
    check(tag+' has no horizontal overflow',page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
@@ -32,7 +34,7 @@ with sync_playwright() as p:
    # Select a TE target and goal through the real production handlers.
    page.locator('[data-tb-add-anchor=send]').evaluate("e=>{e.value='1-5';e.dispatchEvent(new Event('change',{bubbles:true}))}");settled()
    page.locator('[data-tb-league-target]').evaluate("e=>{e.value='2-5';e.dispatchEvent(new Event('change',{bubbles:true}))}");settled()
-   page.locator('.tb-setup').evaluate('e=>e.open=true');page.locator('.tb-refine').evaluate('e=>e.open=true');page.locator('[data-tb-goal]').select_option('TE');settled();page.locator('.tb-setup').evaluate('e=>e.open=false')
+   page.locator('.tb-setup').evaluate('e=>e.open=true');page.locator('.tb-refine').evaluate('e=>e.open=true');page.locator('[data-tb-goal]').select_option('TE');settled();page.locator('.tb-setup').evaluate('e=>e.open=true')
    page.locator('[data-tb-receive-position="TE"]').scroll_into_view_if_needed();page.evaluate('window.receiveInput=document.querySelector("[data-tb-receive-position=TE]");window.sendPicker=document.querySelector("[data-trade-picker=send]");window.returnPicker=document.querySelector("[data-trade-picker=receive]");window.sendSelect=document.querySelector("[data-tb-add-anchor=send]");window.returnSelect=document.querySelector("[data-tb-add-anchor=receive]")')
    page.locator('[data-tb-receive-position="TE"]').uncheck();settled()
    check(tag+' retains both pickers, native selects and checkbox DOM during filtering',page.evaluate('receiveInput===document.querySelector("[data-tb-receive-position=TE]")&&sendPicker===document.querySelector("[data-trade-picker=send]")&&returnPicker===document.querySelector("[data-trade-picker=receive]")&&sendSelect===document.querySelector("[data-tb-add-anchor=send]")&&returnSelect===document.querySelector("[data-tb-add-anchor=receive]")'))

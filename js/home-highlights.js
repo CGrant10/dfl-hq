@@ -17,7 +17,11 @@ import {readPageChoice} from './page-disclosure.js';
 import {animateUi,cancelUiMotion,exitUi,cancelUiExit} from './ui-motion.js';
 import {fitDialogToViewport} from './dialog-viewport.js';
 
-export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadHomeHighlights,now=()=>Date.now(),markup=homeHighlightMarkup,title='Weekend reel',getPlayers=()=>[],getContext=()=>null}={}){
+export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadHomeHighlights,now=()=>Date.now(),markup=homeHighlightMarkup,title='Weekend reel',previewLayout='rail',getPlayers=()=>[],getContext=()=>null}={}){
+ if(previewLayout==='feature'){
+  root.setAttribute('aria-busy','true');
+  root.innerHTML='<section class="home-highlight-reel home-reel-feature"><header><h2>Weekend reel</h2></header><div class="home-reel-feature-skeleton" aria-hidden="true"><span></span><span></span><span></span></div></section>';
+ }
  let stopped=false,nearby=typeof IntersectionObserver==='undefined',clips=[],selected='',dialog=null,opener=null,expiryTimer=null,stopViewport=()=>{},request=0,player='',search='',playerCache={key:'',options:[]};
  let returnPoint=null;
  let game='',pageSearch='',gameCenter=null,browserMode='clips',layout=null,media=null,modeRequest=0,replayContext=null,centerGame='',browseScroll=0;
@@ -156,15 +160,15 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
  };
  const paint=()=>{
   if(!current())return;
-  clips=visibleClips();const options=playerOptions(),rows=browseHighlightClips(clips,{player,players:options,query:pageSearch}).filter(c=>!game||c.game_id===game);patchGameDay(root,markup(rows,now(),{players:options,player,total:clips.length,game,games:clips,query:pageSearch}));drawPlayer();scheduleExpiry();
+  clips=visibleClips();const options=playerOptions(),rows=browseHighlightClips(clips,{player,players:options,query:pageSearch}).filter(c=>!game||c.game_id===game);patchGameDay(root,markup(rows,now(),{players:options,player,total:clips.length,game,games:clips,query:pageSearch,layout:previewLayout}));drawPlayer();scheduleExpiry();
  };
  const refreshRows=async()=>{
   const token=++request,rows=await load({now:now()});if(!current()||token!==request)return;
-  clips=activeHighlightClips(rows,now());if(savedBrowse){player=String(savedBrowse.player||'');game=String(savedBrowse.game||'');pageSearch=String(savedBrowse.pageSearch||'').slice(0,80);savedBrowse=null}paint();
+  clips=activeHighlightClips(rows,now());if(savedBrowse){player=String(savedBrowse.player||'');game=String(savedBrowse.game||'');pageSearch=String(savedBrowse.pageSearch||'').slice(0,80);savedBrowse=null}root.removeAttribute('aria-busy');paint();
  };
- const loop=mountLiveScoreRefresh({active:()=>current()&&nearby,interval:120000,refresh:refreshRows,onError:()=>{if(current())paint()}});
+ const loop=mountLiveScoreRefresh({active:()=>current()&&nearby,interval:120000,refresh:refreshRows,onError:()=>{if(current()){root.removeAttribute('aria-busy');paint()}}});
  const remember=()=>writeJourneyChoice('reel:'+title,{player,game,pageSearch});
- let savedBrowse=readJourneyChoice(root,'reel:'+title);
+ let savedBrowse=previewLayout==='feature'?null:readJourneyChoice(root,'reel:'+title);
  const change=event=>{if(event.target.matches('[data-home-reel-game]')){game=event.target.value;remember();paint()}};
  const input=event=>{if(event.target.matches('[data-home-reel-search]')){pageSearch=event.target.value.slice(0,80);remember();paint()}};
  const click=event=>{const filter=event.target.closest('[data-reel-player-filter]');if(filter){player=filter.dataset.reelPlayerFilter;remember();paint();return}const button=event.target.closest('[data-home-reel-open],[data-home-reel-clip]');if(button)open(button.dataset.homeReelClip,button)};

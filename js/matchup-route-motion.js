@@ -6,7 +6,7 @@ export function mountMatchupRouteMotion(){
  document.addEventListener('click',event=>{
   if(event.defaultPrevented||event.button>0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
   const link=event.target.closest('a[data-home-clubhouse-link]');if(!link?.closest('#home-wrap'))return;
-  const card=link.closest('.home-personal-desk')?.querySelector('.gameday-matchup');
+  const card=(link.closest('.home-personal-desk')||link.closest('#home-wrap'))?.querySelector('.gameday-matchup');
   selected={hash:link.getAttribute('href'),at:performance.now(),projected:!!card?.classList.contains('is-projected'),sides:[...(card?.querySelectorAll('[data-gameday-team]')||[])]};
  },true);
  const stop=()=>active?.skipTransition();window.addEventListener('resize',stop);window.addEventListener('pagehide',stop);window.addEventListener('dfl:ui-motion-change',()=>{if(!allowed())stop()});document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});

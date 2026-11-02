@@ -23,8 +23,8 @@ SETUP='''async ({phase,theme,defer=false})=>{
  window.reviewSetTheme(theme);
  const root=document.querySelector('#home-wrap'),week=document.querySelector('.home-week-desk');
  document.querySelector('[data-home-week-part="live"]').remove();
- const flow=document.createElement('div');flow.dataset.homeRhythmFlow='';week.before(flow);week.dataset.homeRhythmPart='week';flow.append(week);
- const highlights=document.createElement('div');highlights.dataset.homeHighlightsSlot='';highlights.dataset.homeRhythmPart='highlights';flow.append(highlights);
+ const flow=root.querySelector('[data-home-rhythm-flow]');week.dataset.homeRhythmPart='week';
+ const highlights=flow.querySelector('[data-home-highlights-slot]');
  const now=Date.UTC(2026,9,28,17),player={id:'wr1',name:'Justin Jefferson',position:'WR',points:31.42,state:'final'};
  const sides=(id,a,b)=>({id,sides:[{uid:'a'+id,name:'The Very Long Bayou Championship Fantasy Football Bombers',score:a,bench:[player]},{uid:'b'+id,name:'Klutch Sports Group',score:b,bench:[]}]});
  const model={season:2026,week:8,scoreStatus:'ready',checkedAt:now,completed:phase==='aftermath',live:phase==='live',events:[{state:phase==='live'?'live':phase==='aftermath'?'final':'upcoming',kickoff:phase==='pregame'?now+3600000:now-3600000}],games:[sides('close',111.04,111),sides('wide',140,80)]};
@@ -54,8 +54,8 @@ with sync_playwright() as p:
      elif 'a.espncdn.com' in r.request.url:r.fulfill(status=200,content_type='image/webp',body=(ROOT/'assets/dfl-daily-rivalry.webp').read_bytes())
      else:r.abort()
     c.route('**/*',route);pg.goto(url);pg.wait_for_function('!!window.reviewWeekFlow');pg.evaluate(SETUP,{'phase':phase,'theme':mode});pg.wait_for_timeout(100)
-    order=pg.locator('[data-home-rhythm-flow]').evaluate('e=>[...e.children].map(n=>n.dataset.homeRhythmPart)')
-    assert order==(['highlights','week'] if phase=='live' else ['week','highlights']),(phase,order)
+    order=pg.locator('[data-home-rhythm-flow]').evaluate('e=>[...e.children].filter(n=>n.dataset.homeRhythmPart).map(n=>n.dataset.homeRhythmPart)')
+    assert order==['highlights','week'],(phase,order)
     assert pg.locator('[data-home-week-part="plan"]').evaluate('e=>e.open')==(phase=='pregame')
     assert pg.locator('.home-banter').evaluate("e=>e.previousElementSibling.hasAttribute('data-home-lore-slot')")
     # The first card stays independent; the selected event fits the existing wide composition.
@@ -71,10 +71,10 @@ with sync_playwright() as p:
     # A background phase change cannot reshuffle a visit, including after returning to top.
     before=pg.evaluate('scrollY');pg.evaluate("rhythmReview.apply({model:{...rhythmReview.edition.model,completed:true,live:false}})");pg.wait_for_timeout(80)
     assert abs(pg.evaluate('scrollY')-before)<2
-    assert pg.locator('[data-home-rhythm-flow]').evaluate('e=>[...e.children].map(n=>n.dataset.homeRhythmPart)')==order
+    assert pg.locator('[data-home-rhythm-flow]').evaluate('e=>[...e.children].filter(n=>n.dataset.homeRhythmPart).map(n=>n.dataset.homeRhythmPart)')==order
     if width==390:pg.screenshot(path=str(OUT/f'{mode}-{phase}-desk.png'))
     pg.evaluate("scrollTo({top:0,behavior:'instant'});rhythmReview.apply({model:{...rhythmReview.edition.model,completed:false,live:true,events:[{state:'live'}]}})");pg.wait_for_timeout(80)
-    assert pg.locator('[data-home-rhythm-flow]').evaluate('e=>[...e.children].map(n=>n.dataset.homeRhythmPart)')==order
+    assert pg.locator('[data-home-rhythm-flow]').evaluate('e=>[...e.children].filter(n=>n.dataset.homeRhythmPart).map(n=>n.dataset.homeRhythmPart)')==order
     # Cover every generated roast type without squeezing extra cards into production.
     if phase=='aftermath':
      for kind in ['bench','close','blowout']:
@@ -88,7 +88,7 @@ with sync_playwright() as p:
  for reason in ['pointer','scroll','focus']:
   c=b.new_context(viewport={'width':390,'height':844},service_workers='block');pg=c.new_page();c.route('**/*',lambda r:r.continue_() if r.request.url.startswith(url) else r.abort());pg.goto(url);pg.wait_for_function('!!window.reviewWeekFlow');pg.evaluate(SETUP,{'phase':'live','theme':'dark','defer':True})
   pg.evaluate("reason=>{if(reason==='pointer')document.querySelector('#home-wrap').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));if(reason==='scroll')scrollTo({top:600,behavior:'instant'});if(reason==='focus')document.querySelector('[data-home-week-part=plan]>summary').focus();rhythmReview.apply(rhythmReview.edition)}",reason);pg.wait_for_timeout(100)
-  assert pg.locator('[data-home-rhythm-flow]').evaluate("e=>e.firstElementChild.dataset.homeRhythmPart")=='week',reason
+  assert pg.locator('[data-home-rhythm-flow]').evaluate("e=>e.firstElementChild.dataset.homeRhythmPart")=='highlights',reason
   c.close()
  b.close()
 server.shutdown();(OUT/'checks.json').write_text(json.dumps({'cases':checks,'lateDataGuards':['pointer','scroll','focus']},indent=2));print(json.dumps({'cases':len(checks),'lateDataGuards':3,'errors':0,'screenshots':str(OUT)}))

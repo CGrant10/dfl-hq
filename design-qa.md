@@ -1,28 +1,64 @@
-# Broadcast implementation QA
+# League Wire visual QA — 1.529.0
 
-Source visual truth: `/workspace/dfl-broadcast-audit-2026-10-08/01-slide.png`, the live Bring the Receipts opener selected by the user. The same run's champion, rivalry and Chip Eater screenshots document the defects to fix. This is an improvement of an existing app, preserving its assets and shared controls, rather than a literal clone of every old layout.
+Selected target: option 3, `/workspace/generated_images/exec-bc774bf5-73c0-48bd-a4d6-a867f66e883c.png`.
+This is the exact displayed selection, not a different ideation direction.
 
-Implementation: `/workspace/dfl-broadcast-trade-1333/01-slide.png`, `05-slide.png`, `07-slide.png`, `08-slide.png` and `premerge-trade-model-evidence.png`. Full-view comparison evidence: `/workspace/dfl-broadcast-trade-1333/visual-comparison.png`, opened with before/after states together. Focused evidence is the actual carousel crop in each saved image: all text, illustration bounds and controls are readable at their native density. The opener was separately inspected before and after.
+The 852 × 1846 reference was normalized to the rendered 390 × 844 phone
+viewport. Both views show Home at scroll zero in Dark, the same teams and
+scores, with no dialog open and the first broadcast story visible. Compiled
+capture: `/tmp/dfl-1529-real/home-dark-390.png`. The reference and implementation
+were inspected together in `/tmp/dfl-1529-qa/comparison.png`; the focused header,
+score and media comparison is `/tmp/dfl-1529-qa/detail-comparison.png`. Both
+comparison inputs were opened after the final CSS build and capture.
 
-Viewport: 390 × 844 CSS px, density 1. Carousel source width 358px; the implementation has the same width. Carousel height intentionally follows the longest readable story in its curated deck, so the before/after heights differ. No screenshot rescaling was used. Theme, route, guest state, Week 5, champion and Chip Eater identities match. The trading data changed between captures; trade-copy/value differences are not claimed as visual fidelity differences.
+## Findings and corrections
 
-## Findings and comparison history
+| Priority | Finding | Resolution |
+| --- | --- | --- |
+| P1 | An empty media slot could suppress its visibility-gated loader. | Reserve the three-tile loading geometry; remove the empty-slot hiding rule. The real compiled app loads three previews. |
+| P1 | The previous score threshold began the flight before the compact source scrolled. | Cache the source-dependent inset for native and fallback paths; moving copies and dock remain invisible at scroll zero. |
+| P2 | Full-size traveling names crossed their moving avatars and totals. | Cache avatar edges and score paths; constrain names during the same flight. Phone captures and reversing-scroll assertions pass. |
+| P2 | Long broadcast result names could push the footer into carousel controls. | Measure exceptional intrinsic flow once per edition/width/text scale and reserve stable height. Normal and enlarged-text layouts pass. |
+| P2 | Legacy rank padding left extra space below the broadcast. | Remove the nested vertical padding while retaining the shared section gap. Recaptured compiled Home. |
+| P2 | Book status and lock time ran together. | Apply the shared compact metadata role with an explicit wrapping gap. Recaptured both themes. |
 
-- Earlier P1: faded, small square artwork at the bottom and a repeated crest. Fixed with large contained award subjects at .98 opacity, real traded players and relevant archive/rivalry images. The combined comparison confirms the arm remains visible and art ends above the controls.
-- Earlier P1: handles dominated the rivalry headline and split mid-name. Fixed with a short label, meeting count, team names and the 6–6 series in supporting text. Post-fix `07-slide.png` shows the complete, readable story.
-- Earlier P2: repeated historical champion layouts dominated the deck. Fixed with one daily archive feature and one brand slot, preserving current awards and authored/featured content. The current live-data preview has eight slides.
-- Earlier P2: unlabelled/over-precise figures. Fixed with value-balance labels and consistent two-decimal record formatting; covered by regression tests and the browser fixture.
+## Final comparison
 
-## Required fidelity surfaces
+- **Composition:** compact shared header, anniversary/date, matchup, asymmetric
+  three-image grid, wide daily art, flat ranking surface and five destinations
+  follow the selected direction. Clubhouse, Trades and Book use the same type
+  and spacing roles. Occasional tools fold away without removing features.
+- **Typography:** Inter supplies compact identities, sections and metadata;
+  Rajdhani supplies sports figures and the daily art headline. Long real names
+  wrap. Enlarged text reflows; native form inputs retain their mobile size.
+- **Color/surfaces:** both Medicine Wheel defaults use shared tokens for text,
+  canvas, selection, borders and metadata. Owned art, team identity and semantic
+  results retain their existing colors. The round logo is used in the header.
+- **Images/copy:** the supplied DFL art and mark are reused. Real newest clip
+  thumbnails/headlines replace the reference's illustrative football stills.
+  Existing rotating daily banter replaces its fixed sample headline. No fake
+  clip, score, team or ranking data was introduced to match the illustration.
+- **Spacing:** 16px phone gutters and compact rows are consistent. Real captions
+  can use two lines. The live broadcast keeps accessible 44px controls and its
+  stable deck height, so rankings start lower than in the static illustration.
+  Ranking edition/report controls and full results are retained.
+- **Interactions:** preview tiles open the actual selected clip, Browse exposes
+  the complete reel, score motion reverses, tools expand, Trade retains all
+  controls, Book opens the slip, and More keeps the active route underneath it.
 
-- Fonts/typography: the existing Anton headlines and boxy UI type remain; full-width award names and 15px supporting text establish hierarchy. Long handles are supporting content rather than display headlines.
-- Spacing/layout rhythm: shared gutters and 44px controls remain. Award subjects end above navigation; full-width story copy uses readable widths. Rotation keeps the stage height stable.
-- Colors/tokens: existing app palettes and semantic accents remain. Six palette variants pass the browser review's text-contrast checks.
-- Image quality/assets: original DFL art is reused, sharp and contained for awards; no replacement CSS/SVG illustrations. Trade photos are real player portraits with the existing initials fallback on loading failure.
-- Copy/content: stories use actual league facts and labelled metrics. Trade explanations separate forward estimates, value balance and input support. Existing share-card styles remain intact.
+## Coverage and limits
 
-Primary interactions verified: arrows, dots, keyboard selection, swipe, pause/play, reduced motion and deck refresh; player selection, anchored offers, recipient routing, before/after lineups, data-support disclosure, saved deals and sharing. Home and Trade browser runs reported no page errors. Repository checks passed (129 files / 1,169 tests).
+Inspected compiled Home, Clubhouse and Trades in Light/Dark at
+320/390/430px, plus the full Book renderer with isolated data at those widths.
+Focused production-component suites cover text enlargement, contrast, touch
+targets, search/editing, playback, score fallback and motion preferences.
+`pnpm check` passes 2,420 tests; final CSS was rebuilt and `pnpm themes` passes.
+Screens containing actual member data stay local; committed release evidence
+uses isolated fixtures. Actual live Book account writes were blocked during
+read-only review. Physical iPhone Safari remains unmeasured.
 
-No actionable P0/P1/P2 findings remain. Injury duration and opponent/bye/playoff forecasting remain model limitations, documented separately. A screenshot check does not establish complete accessibility compliance.
+No unresolved P0/P1/P2 findings remain. P3 follow-up: evaluate the retained
+broadcast control strip's density on a physical phone before changing its
+existing gesture and accessibility behavior.
 
 final result: passed

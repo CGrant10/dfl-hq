@@ -16,10 +16,10 @@ describe("regular-season navigation", () => {
     expect(SECONDARY_SEASON_ROUTES.find(item => item.route === "facts").label).toBe("DFL Lore");
     expect(secondarySeasonNavMarkup().match(/href="#\/stakes"/g)).toHaveLength(1);
   });
-  it("puts the analyzer in the primary bar with the weekly league tools", () => {
+  it("keeps four primary destinations and the analyzer reachable in More", () => {
     expect(PRIMARY_SEASON_ROUTES.map((item) => item.route))
-      .toEqual(["home", "clubhouse", "sportsbook", "trade", "analyzer"]);
-    expect(PRIMARY_SEASON_ROUTES.find((item) => item.lead)?.route).toBe("analyzer");
+      .toEqual(["home", "clubhouse", "trade", "sportsbook"]);
+    expect(secondarySeasonNavMarkup()).toContain('href="#/analyzer"');
   });
 
   /* Rules gave up its slot to the trade desk - a reference you read once a
@@ -34,13 +34,13 @@ describe("regular-season navigation", () => {
     const icons = PRIMARY_SEASON_ROUTES.map((item) => item.icon);
     expect(new Set(icons).size).toBe(icons.length);
     expect(PRIMARY_SEASON_ROUTES.find((i) => i.route === "trade").icon).toBe("trade");
-    expect(PRIMARY_SEASON_ROUTES.find((i) => i.route === "analyzer").icon).toBe("analyzer");
+    expect(SECONDARY_SEASON_ROUTES.find((i) => i.route === "analyzer").icon).toBe("analyzer");
   });
 
   it("keeps completed-season and occasional tools in More", () => {
     const secondary = SECONDARY_SEASON_ROUTES.map((item) => item.route);
     expect(secondary).toEqual(expect.arrayContaining(["keepers", "golf", "polls", "admin", "facts", "finances"]));
-    expect(secondary).not.toContain("analyzer");
+    expect(secondary).toContain("analyzer");
     expect(secondary).not.toContain("sportsbook");
     expect(secondary).toContain("wall");
     expect(secondary).not.toContain("clubhouse");
@@ -50,8 +50,8 @@ describe("regular-season navigation", () => {
     const routes = [...PRIMARY_SEASON_ROUTES, ...SECONDARY_SEASON_ROUTES].map((item) => item.route);
     expect(new Set(routes).size).toBe(routes.length);
     expect(primarySeasonNavMarkup()).toContain('id="more-btn"');
-    expect(primarySeasonNavMarkup()).toContain('data-route="analyzer"');
-    expect(primarySeasonNavMarkup()).toContain("Analyzer");
+    expect(primarySeasonNavMarkup()).not.toContain('data-route="analyzer"');
+    expect(secondarySeasonNavMarkup()).toContain("Team Analyzer");
     expect(secondarySeasonNavMarkup()).toContain('href="#/golf"');
   });
 });

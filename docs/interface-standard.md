@@ -4,6 +4,25 @@ First adoption: Home and Clubhouse in 1.524.0. Source owners are
 `css/tokens.css` and `css/interface-system.css`; the combined stylesheet remains
 one request. Existing feature-specific art and motion keep their own ownership.
 
+League Wire in 1.529.0 coordinates the four daily pages through
+`css/league-wire.css`, appended after the component sheets. Home, Clubhouse,
+Trades, Book and More are the five primary destinations. Team Analyzer belongs
+in Clubhouse's Week & tools and More. The shared header uses the supplied round
+DFL mark; the shield remains reserved for the icon/update screen.
+
+Home's fixed reading order is matchup, three-preview media grid, wide broadcast,
+rankings and weekly tools. Phase updates must not shuffle that composition.
+Wall stays last. Real clip thumbnails and headlines supply the media content;
+loading reserves its geometry and never mounts video on first paint. Browse
+retains the full reel and its filters. Keep real long names and current data
+readable rather than freezing illustrative reference copy into the app.
+
+Occasional controls use a visible native disclosure: Clubhouse Week & tools,
+Trade Edit search and Book bankroll actions. Keep the current search/balance
+visible while closed. Clubhouse and Trade use the shared reversible expansion;
+Book's small menu entrance uses the finite UI animation helper and Escape
+restores summary focus. Preserve 44px targets and motion preferences.
+
 Trade and Sportsbook adopt the row, metadata and numeric roles in 1.527.0.
 Trade offer portraits retain their framing, with 28px width on narrow phones
 and 32px otherwise. Sportsbook props use 13px names, 11px metadata and 18px

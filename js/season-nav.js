@@ -3,15 +3,15 @@
 export const PRIMARY_SEASON_ROUTES = [
   { route: "home", label: "Home", icon: "home" },
   { route: "clubhouse", label: "Clubhouse", icon: "record" },
-  { route: "sportsbook", label: "Book", icon: "versus" },
   /* The trade desk earned the slot Rules had. Rules is a reference you read
      once a season; a trade is a decision with a clock on it, and it was two
      taps deep inside another page. Rules keeps its place in More. */
   { route: "trade", label: "Trades", icon: "trade" },
-  { route: "analyzer", label: "Analyzer", icon: "analyzer", lead: true },
+  { route: "sportsbook", label: "Book", icon: "versus" },
 ];
 
 export const SECONDARY_SEASON_ROUTES = [
+  { route: "analyzer", label: "Team Analyzer", icon: "analyzer" },
   { route: "wall", label: "Wall", icon: "polls" },
   { route: "facts", label: "DFL Lore", icon: "record" },
   { route: "finances", label: "Fees", icon: "finances" },
@@ -30,7 +30,7 @@ export const SECONDARY_SEASON_ROUTES = [
 ];
 
 export const SECONDARY_SEASON_GROUPS = [
-  { label: "Football & records", routes: ["stakes", "history", "facts", "keepers"] },
+  { label: "Football & records", routes: ["analyzer", "stakes", "history", "facts", "keepers"] },
   { label: "League business", routes: ["calendar", "finances", "rules", "proposals"] },
   { label: "League life", routes: ["arena", "golf", "polls", "wall"] },
   { label: "Your account", routes: ["notifications", "profile", "admin"] },
