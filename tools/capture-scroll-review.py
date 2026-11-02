@@ -82,6 +82,9 @@ with sync_playwright() as p:
  page.evaluate('document.documentElement.dataset.uiMotion="on";dispatchEvent(new Event("dfl:ui-motion-change"));fixture("trade")');page.wait_for_timeout(120)
  result=page.evaluate('''async()=>{scrollTo(0,600);await new Promise(r=>setTimeout(r,400));headingReads=0;for(let y=610;y<850;y+=8){scrollTo(0,y);await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame)}return headingReads}''');check('Scroll frames reuse section offsets',result==0)
  page.evaluate('document.querySelector(".story").style.height="600px"');page.wait_for_function('headingReads>0');check('Layout changes refresh section offsets')
+ page.evaluate("window.modalProbe=document.createElement('dialog');modalProbe.textContent='Player details';document.body.append(modalProbe);modalProbe.showModal()")
+ page.wait_for_function('document.querySelector(".dfl-scroll-context").hidden');check('detail sheets suppress the fixed scroll reference',page.locator('.dfl-scroll-context').evaluate('e=>e.hidden&&e.inert&&!e.getAnimations().length'))
+ page.evaluate('modalProbe.close();modalProbe.remove()');page.wait_for_function('!document.querySelector(".dfl-scroll-context").hidden');check('closing a body portal restores the current scroll reference')
  page.evaluate('stopFixture()');check('Cleanup removes docks and restores heading',page.locator('.home-score-dock,.home-score-flight,.dfl-scroll-context,[data-scroll-title]').count()==0)
  # Decorative easing uses CSS between scroll frames; it never delays the
  # actual page, photos in the scoreboard or a finger-driven broadcast swipe.

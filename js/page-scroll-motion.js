@@ -133,6 +133,13 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
   }
   function paint(){
     frame=0;if(!current()||document.hidden)return;
+    // Detail sheets own the viewport. Stop the page's fixed reference and
+    // pending entrances until the sheet closes, including portals under body.
+    if(root.inert||document.querySelector('dialog[open]')){
+      cancel?.(dock);cancel?.(section);cancel?.(scores);
+      for(const node of rising)cancel?.(node);rising.clear();
+      shown=false;dock.hidden=true;dock.inert=true;return;
+    }
     if(dirty)scan();
     if(root.classList.contains('has-home-score-dock')){show(false);return;}
     if(!displayed(hero)){compact=false;show(false);return;}
@@ -221,14 +228,18 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
   };
   const reset=()=>{dirty=true;if(!allowed()){intersection?.disconnect();observed.clear();for(const node of rising)cancel?.(node);cancel?.(dock);cancel?.(section);cancel?.(scores);dock.hidden=!shown;}schedule();};
   const visibility=()=>{if(!document.hidden){dirty=true;schedule();}};
+  const modalToggle=event=>{if(event.target instanceof HTMLDialogElement){dirty=true;schedule();}};
+  const modals=new MutationObserver(records=>{if(records.some(record=>[...record.addedNodes,...record.removedNodes].some(node=>node.nodeType===1&&(node.matches('dialog')||node.querySelector('dialog'))))){dirty=true;schedule();}});
+  modals.observe(document.body,{childList:true});
   dock.addEventListener('click',jump);dock.addEventListener('focusout',schedule);
   const layout=()=>{dirty=true;schedule()};
   window.addEventListener('scroll',scroll,{passive:true});window.addEventListener('dfl:scroll-chrome',schedule);window.addEventListener('resize',layout);
   window.addEventListener('dfl:ui-motion-change',reset);document.addEventListener('visibilitychange',visibility);
+  document.addEventListener('toggle',modalToggle,true);
   reduced.addEventListener('change',reset);document.fonts?.addEventListener('loadingdone',layout);
   paint();
   return ()=>{
-    stopped=true;stopHomeScore();cancelAnimationFrame(frame);observer.disconnect();resize.disconnect();intersection?.disconnect();
+    stopped=true;stopHomeScore();cancelAnimationFrame(frame);observer.disconnect();modals.disconnect();resize.disconnect();intersection?.disconnect();
     cancel?.(dock);cancel?.(section);cancel?.(scores);for(const node of rising)cancel?.(node);restoreHeading();dock.remove();observed.clear();rising.clear();
     for(const restore of focusRestores.values())restore();focusRestores.clear();
     root.style.removeProperty('--dfl-scroll-top');root.style.removeProperty('--dfl-scroll-height');
@@ -236,5 +247,6 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
     dock.removeEventListener('click',jump);dock.removeEventListener('focusout',schedule);
     window.removeEventListener('scroll',scroll);window.removeEventListener('dfl:scroll-chrome',schedule);window.removeEventListener('resize',layout);window.removeEventListener('dfl:ui-motion-change',reset);
     document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',reset);document.fonts?.removeEventListener('loadingdone',layout);
+    document.removeEventListener('toggle',modalToggle,true);
   };
 }

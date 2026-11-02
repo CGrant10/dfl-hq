@@ -71,7 +71,7 @@ with sync_playwright() as p:
  check('reversing an unfinished arrival returns to preceding section',page.locator('[data-week-tab="picks"]').get_attribute('aria-selected')=='true')
  drag('[data-week-panel="picks"]',-24);clean()
  check('short pull returns without selecting another tab',page.locator('[data-week-tab="picks"]').get_attribute('aria-selected')=='true')
- for name,selector,tab in [('Home reverse','[data-week-panel="picks"]','[data-week-tab="brief"]'),('Clubhouse','[id="clubhouse-panel-overview"]','[data-clubhouse-tab="matchups"]'),('Book view','#sb-markets','[data-sb-tab="tickets"]'),('Book product','#sb-book-panel .review-bankroll','[data-sb-product="pickem"]')]:
+ for name,selector,tab in [('Home reverse','[data-week-panel="picks"]','[data-week-tab="brief"]'),('Clubhouse','[id="clubhouse-panel-overview"]','[data-clubhouse-tab="matchups"]'),('Book view','#sb-markets','[data-sb-tab="tickets"]'),('Book Pick’em','#sb-tickets','[data-sb-product="pickem"]')]:
   drag(selector,90 if name=='Home reverse' else -90);clean();check(name+' selects destination',page.locator(tab).get_attribute('aria-selected')=='true')
   if name=='Book view':page.locator('#fixture-stake').fill('83');page.evaluate('window.savedStakeNode=document.querySelector("#fixture-stake")')
  # A resize or preference change clears a held gesture immediately.
@@ -88,7 +88,7 @@ with sync_playwright() as p:
  page.emulate_media(reduced_motion='no-preference')
  check('drafts retain original nodes and values' ,page.locator('#fixture-stake').input_value()=='83' and page.evaluate('savedStakeNode===document.querySelector("#fixture-stake")') and page.locator('#draft-overview').input_value()=='Saved overview draft')
  page.emulate_media(reduced_motion='reduce');page.wait_for_timeout(100)
- drag('#sb-pickem-panel',90);clean();check('reduced motion keeps native tab navigation',page.locator('[data-sb-product="book"]').get_attribute('aria-selected')=='true')
+ drag('#sb-pickem-panel',90);clean();check('reduced motion keeps native tab navigation',page.locator('[data-sb-view="tickets"]').get_attribute('aria-selected')=='true')
  page.emulate_media(reduced_motion='no-preference')
  page.evaluate('window.stopTabReview()');check('teardown removes previews and flags',page.locator('.dfl-tab-preview,.dfl-tab-grab,[data-ui-swipe-settling]').count()==0)
  check('no browser errors',not errors)

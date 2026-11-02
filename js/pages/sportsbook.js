@@ -175,9 +175,8 @@ export async function render(view){
 
   view.innerHTML=`<div id="sportsbook-wrap"${slip.length?' class="has-slip"':""}>
     <header class="sb-masthead page-identity"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>${esc(sportsbookWeekCaption(leagueWeek))}</span></div><details class="sb-wallet sb-wallet-options"><summary aria-label="Bankroll actions"><small>BANKROLL</small><strong data-book-balance>${num(wallet?.balance)}</strong><span>SIN</span><svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></summary><div class="sb-wallet-actions">${bankrollCard(me,wallet,open,autoReady)}</div></details></header>
-    <div class="sb-product-tabs" role="tablist" aria-label="Game type"><button type="button" role="tab" aria-selected="true" data-sb-product="book">SIN Sportsbook</button><button type="button" role="tab" aria-selected="false" data-sb-product="pickem">NFL Pick'em</button></div>
-    <div id="sb-book-panel" role="tabpanel">
-    <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Betting board</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
+    <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-view="markets" data-sb-tab="markets" data-sb-product="book">Board</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-view="tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button><button type="button" role="tab" aria-selected="false" aria-controls="sb-pickem-panel" id="sb-tab-pickem" data-sb-view="pickem" data-sb-product="pickem" tabindex="-1">NFL Pick'em</button></div>
+    <div id="sb-book-panel">
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
     ${categoryBoard([...open,...lockedMatchups],byMarket,bets,canBook,outcomeMap,marketMap,members,me.id,leagueWeek)}
     ${!open.length?'<p class="sb-empty">No open lines right now. Check back for the next matchup.</p>':""}
@@ -185,16 +184,17 @@ export async function render(view){
     <div id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden>
     ${ticketsMarkup(bets,marketMap,outcomeMap)}
     </div>
-    ${disclosure("sportsbook-trends","Trending picks",`${trends.length} picks`,trendingPicks(trends))}
+    <div class="sb-book-extras">${disclosure("sportsbook-trends","Trending picks",`${trends.length} picks`,trendingPicks(trends))}
     ${recap?.available ? `<details class="sb-secondary"><summary>Last week’s sportsbook recap</summary>${weeklyRecapMarkup(recap)}</details>` : ""}
     ${canBook&&rulings.length?rulingQueue(rulings,byMarket):""}
     ${canBook?`<details class="sb-secondary sb-book-tools"><summary>Book controls</summary>${refreshFeedControl(feedStatus)}${sleeperPropImporterMarkup()}</details>`:""}
     ${canBook?commissionerBook():""}
     <details class="sb-secondary"><summary>SIN leaderboard</summary><section class="block"><div class="card"><div class="card-body">${leaders.length?leaders.slice(0,12).map((r,i)=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${i+1}.</strong> ${esc(r.display_name)}</span><strong>${num(r.balance)} SIN</strong></div>`).join(""):`<span class="muted">No bankrolls yet.</span>`}</div></div></section></details>
     <details class="card"><summary class="card-title">Receipts</summary><div class="card-body" data-book-ledger>${ledgerMarkup(ledger)}</div></details>
+    </div>
+    <div id="sb-pickem-panel" role="tabpanel" aria-labelledby="sb-tab-pickem" hidden>${pickemMarkup(pickem,esc,canBook)}</div>
     ${slipBar(slip,outcomeMap,marketMap)}
     </div>
-    <div id="sb-pickem-panel" role="tabpanel" hidden>${pickemMarkup(pickem,esc,canBook)}</div>
   </div>`;
   /* The share and pull handlers need the rows behind the buttons they drew. */
   view.__bets=bets;
@@ -203,7 +203,7 @@ export async function render(view){
   walletOptions?.addEventListener('keydown',event=>{if(event.key==='Escape'&&walletOptions.open){event.preventDefault();event.stopPropagation();walletOptions.open=false;walletOptions.querySelector('summary').focus({preventScroll:true});}});
   const refreshSlip=wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
   rememberView(view,me.id);
-  wireProductTabs(view,me.id);wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
+  wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
   wireMarketActivities(view);wirePageDisclosures(view);wireBookTabs(view,me.id);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me,()=>view._refreshFantasy?.({paint:false}));wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);revealSportsbookTicket(view);
   if(canBook)wireCommissioner(view);
   const noticeSettlements=createSettlementTracker(bets,globalThis.localStorage,me.id),recentSettled=new Set();
@@ -847,20 +847,17 @@ function wireTicketActions(view,marketMap,outcomeMap,me,refreshFantasy=async()=>
 }
 
 function wireBookTabs(view,memberId) {
-  const tabs=[...view.querySelectorAll('[data-sb-tab]')];
-  if(!tabs.length)return;
-  const select=tab=>{for(const button of tabs){const active=button===tab;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;view.querySelector('#sb-'+button.dataset.sbTab).hidden=!active;}writeBookState(memberId,{tab:tab.dataset.sbTab});};
-  select(tabs.find(tab=>tab.dataset.sbTab===readBookState(memberId).tab)||tabs[0]);
+  const tabs=[...view.querySelectorAll('[data-sb-view]')];if(!tabs.length)return;
+  const select=tab=>{
+    const key=tab.dataset.sbView;
+    for(const button of tabs){const on=button===tab;button.setAttribute('aria-selected',String(on));button.tabIndex=on?0:-1;view.querySelector('#'+button.getAttribute('aria-controls')).hidden=!on;}
+    const extras=view.querySelector('.sb-book-extras');if(extras)extras.hidden=key==='pickem';
+    writeBookState(memberId,{product:key==='pickem'?'pickem':'book',tab:key==='tickets'?'tickets':'markets'});
+  };
+  const requested=new URLSearchParams(location.hash.split('?')[1]||'');
+  const saved=readBookState(memberId),key=requested.has('player')?'markets':(requested.get('product')||saved.product)==='pickem'?'pickem':saved.tab==='tickets'?'tickets':'markets';
+  select(tabs.find(tab=>tab.dataset.sbView===key)||tabs[0]);
   tabs.forEach((tab,index)=>{tab.addEventListener('click',()=>select(tab));tab.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;select(tabs[next]);tabs[next].focus();});});
-}
-
-function wireProductTabs(view,memberId){
-  const tabs=[...view.querySelectorAll("[data-sb-product]")];
-  if(!tabs.length)return;
-  const select=tab=>{for(const item of tabs){const active=item===tab;item.setAttribute("aria-selected",String(active));item.tabIndex=active?0:-1;item.id=`sb-product-${item.dataset.sbProduct}`;item.setAttribute("aria-controls",`sb-${item.dataset.sbProduct}-panel`);const panel=view.querySelector(`#sb-${item.dataset.sbProduct}-panel`);panel.hidden=!active;panel.setAttribute("role","tabpanel");panel.setAttribute("aria-labelledby",item.id)}writeBookState(memberId,{product:tab.dataset.sbProduct})};
-  tabs.forEach((tab,index)=>{tab.addEventListener("click",()=>select(tab));tab.addEventListener("keydown",event=>{if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;event.preventDefault();const next=event.key==="Home"?0:event.key==="End"?tabs.length-1:(index+(event.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length;select(tabs[next]);tabs[next].focus()})});
-  const requested=new URLSearchParams(location.hash.split("?")[1]||"").get("product");
-  select(tabs.find(tab=>tab.dataset.sbProduct===(requested||readBookState(memberId).product))||tabs[0]);
 }
 
 let stopRemembering=null;

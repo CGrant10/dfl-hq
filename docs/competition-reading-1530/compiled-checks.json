@@ -1,0 +1,116 @@
+{
+  "checks": [
+    {
+      "route": "home",
+      "mode": "light",
+      "width": 320,
+      "fit": true
+    },
+    {
+      "route": "home",
+      "mode": "light",
+      "width": 390,
+      "fit": true
+    },
+    {
+      "route": "home",
+      "mode": "light",
+      "width": 430,
+      "fit": true
+    },
+    {
+      "route": "home",
+      "mode": "dark",
+      "width": 320,
+      "fit": true
+    },
+    {
+      "route": "home",
+      "mode": "dark",
+      "width": 390,
+      "fit": true
+    },
+    {
+      "route": "home",
+      "mode": "dark",
+      "width": 430,
+      "fit": true
+    },
+    {
+      "route": "clubhouse",
+      "mode": "light",
+      "width": 320,
+      "fit": true
+    },
+    {
+      "route": "clubhouse",
+      "mode": "light",
+      "width": 390,
+      "fit": true
+    },
+    {
+      "route": "clubhouse",
+      "mode": "light",
+      "width": 430,
+      "fit": true
+    },
+    {
+      "route": "clubhouse",
+      "mode": "dark",
+      "width": 320,
+      "fit": true
+    },
+    {
+      "route": "clubhouse",
+      "mode": "dark",
+      "width": 390,
+      "fit": true
+    },
+    {
+      "route": "clubhouse",
+      "mode": "dark",
+      "width": 430,
+      "fit": true
+    },
+    {
+      "route": "trade",
+      "mode": "light",
+      "width": 320,
+      "fit": true
+    },
+    {
+      "route": "trade",
+      "mode": "light",
+      "width": 390,
+      "fit": true
+    },
+    {
+      "route": "trade",
+      "mode": "light",
+      "width": 430,
+      "fit": true
+    },
+    {
+      "route": "trade",
+      "mode": "dark",
+      "width": 320,
+      "fit": true
+    },
+    {
+      "route": "trade",
+      "mode": "dark",
+      "width": 390,
+      "fit": true
+    },
+    {
+      "route": "trade",
+      "mode": "dark",
+      "width": 430,
+      "fit": true
+    }
+  ],
+  "fiveDestinations": true,
+  "drawers": true,
+  "moreRetainsTrade": true,
+  "errors": []
+}

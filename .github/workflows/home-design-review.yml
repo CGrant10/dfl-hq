@@ -545,18 +545,25 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install playwright
-      - name: Check the media-led Home, score motion and Book
+      - name: Check daily layouts, scroll references and reversible motion
         env:
           DFL_REVIEW_DIR: ${{ github.workspace }}/league-wire-output/home
           DFL_SCORE_REVIEW_DIR: ${{ github.workspace }}/league-wire-output/score
           DFL_HOME_HIGHLIGHTS_REVIEW_DIR: ${{ github.workspace }}/league-wire-output/clips
           DFL_WIRE_BOOK_DIR: ${{ github.workspace }}/league-wire-output/book
+          DFL_TAB_REVIEW_DIR: ${{ github.workspace }}/league-wire-output/tabs
+          DFL_SCROLL_REVIEW_DIR: ${{ github.workspace }}/league-wire-output/scroll
+          DFL_MOTION_REVIEW_DIR: ${{ github.workspace }}/league-wire-output/motion
         run: |
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           node tools/render-home-review.mjs
           python tools/capture-home-score-review.py
           python tools/capture-home-highlights.py
           python tools/capture-league-wire-book.py
+          node tools/render-tab-review.mjs
+          python tools/capture-tab-review.py
+          python tools/capture-scroll-review.py
+          python tools/capture-motion-quality.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

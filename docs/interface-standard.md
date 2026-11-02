@@ -38,6 +38,18 @@ native fields use the shared 16px input role.
 
 ## Type roles
 
+The 1.530.0 competition pass puts Clubhouse lineups before supporting panels.
+The chosen matchup has one compact identity/score block; the global scroll
+reference carries that context after it leaves. League scores expand in place.
+Book uses one Board/My bets/Pick'em navigator with market filters scoped inside
+Board. Trade tickets keep complete packages and the value/time line visible;
+deeper impact and risk use the shared disclosure motion. Full metrics and risk
+details remain available rather than being removed for density.
+
+Page scroll references yield to open detail dialogs, including body portals.
+Pending section entrances stop while covered and the current reference returns
+after dismissal. Keep this behavior when adding new sheet destinations.
+
 | Role | Compact size | Face / weight | Use |
 | --- | --- | --- | --- |
 | Page title | 24px | Inter 700 | The DFL Daily, Clubhouse |

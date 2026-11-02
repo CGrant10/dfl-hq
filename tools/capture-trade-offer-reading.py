@@ -29,6 +29,7 @@ with sync_playwright() as p:
    assert page.locator('.tb-setup [data-tb-receive-position]').first.is_visible()
    editor.locator(':scope>summary').click();page.wait_for_function('!document.querySelector(".tb-setup").open')
    tag=f'{width}px {theme}';card=page.locator('.tb-offer').first;summary=card.locator('.tb-offer-preview>summary');details=card.locator('.tb-offer-preview')
+   check(tag+' compact balance stays visible and deeper metrics start folded',card.locator('.tb-offer-balance').is_visible() and not card.locator('.tb-offer-summary').is_visible())
    check(tag+' starter previews are lazy',page.locator('[data-offer-lineup]>div').count()==0)
    card.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-90,behavior:"instant"})');page.screenshot(path=str(OUT/f'offers-{width}-{theme}.png'))
    check(tag+' collapsed offer remains compact '+str(card.evaluate('e=>e.getBoundingClientRect().height')),card.evaluate('e=>e.getBoundingClientRect().height<280'))

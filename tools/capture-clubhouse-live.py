@@ -85,6 +85,11 @@ with sync_playwright() as p:
    page.locator('[data-layout-probe]').screenshot(path=str(OUT/f'{width}-{mode}-populated-history.png'))
    page.locator('[data-layout-probe]').evaluate('e=>e.remove()')
    check(tag+' opens on competition with week tools folded',not page.locator('.clubhouse-context').evaluate('e=>e.open') and page.locator('[href="#/analyzer"]').count()>0)
+   page.evaluate('scrollTo(0,0)');page.wait_for_timeout(700);page.screenshot(path=str(OUT/f'{width}-{mode}-clubhouse-default.png'))
+   check(tag+' starting players are visible on the first phone screen',page.locator('[data-clubhouse-matchup="1"] .gd-lineup-pairs .gd-compare-row').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-70'))
+   if os.environ.get('DFL_CLUBHOUSE_ENTRY_ONLY'):
+    check(tag+' entry has no overflow, browser errors or writes',page.evaluate('document.documentElement.scrollWidth<=innerWidth') and not errors and not page.evaluate('f.writes'))
+    page.evaluate('f.page.leave()');c.close();continue
    page.locator('.clubhouse-context>summary').click()
    if os.environ.get('DFL_CLUBHOUSE_LAYOUT_ONLY'):
     page.locator('#view').evaluate("e=>e.style.paddingInline='16px'")
@@ -115,11 +120,17 @@ with sync_playwright() as p:
     page.evaluate('f.page.leave()');c.close();continue
    check(tag+' one Clubhouse offers Matchups, Highlights and Leaders',page.locator('[data-clubhouse-tab]').count()==6 and page.locator('.gameday-watch').count()==0)
    check(tag+' every Clubhouse tab is fully visible',page.locator('.clubhouse-tabs').evaluate('''e=>{const r=e.getBoundingClientRect();return e.scrollWidth<=e.clientWidth+1&&[...e.querySelectorAll('button')].every(n=>{const b=n.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1&&n.scrollWidth<=n.clientWidth+1})}'''))
+   check(tag+' player rows lead the live scoring targets',page.locator('[data-clubhouse-matchup="1"] .gd-lineup-comparison').evaluate('e=>{const players=e.querySelector(".gd-lineup-pairs"),targets=e.querySelector(".matchup-targets");return !!players&&(!targets||!!(players.compareDocumentPosition(targets)&Node.DOCUMENT_POSITION_FOLLOWING))}'))
    check(tag+' live matchup keeps both starting lineups side by side',page.locator('[data-clubhouse-matchup="1"] [data-gameday-player]').count()>=3)
    page.wait_for_function('document.querySelector("[data-clubhouse-matchup=\\"1\\"] .clubhouse-matchup-card")?.dataset.matchupState==="live"')
    check(tag+' live styling follows the actual NFL phase',page.locator('[data-clubhouse-matchup="1"] .clubhouse-matchup-state').inner_text()=='Live')
    check(tag+' hides highlight loading until its tab is opened',page.evaluate('f.clipReads===0'))
    check(tag+' week tools retain both NFL viewing shortcuts with full touch targets',page.locator('.clubhouse-context [data-clubhouse-nfl-open]').count()==2 and page.locator('[data-clubhouse-nfl-open]').evaluate_all('es=>es.every(e=>e.clientHeight>=44)'))
+   check(tag+' league scores start folded with a native matchup selector',not page.locator('.clubhouse-all-scores').evaluate('e=>e.open') and page.locator('[data-matchup-select] option').count()==2)
+   page.locator('[data-matchup-select]').select_option('2');check(tag+' native selector changes the exact matchup',not page.locator('[data-clubhouse-matchup="2"]').get_attribute('hidden'))
+   page.locator('[data-matchup-step="-1"]').click();check(tag+' previous matchup restores the first game',page.locator('[data-matchup-select]').input_value()=='1')
+   check(tag+' lineups precede team status and supporting details',page.locator('[data-clubhouse-matchup="1"] .clubhouse-matchup-card').evaluate('e=>!!(e.querySelector("[data-clubhouse-lineup]").compareDocumentPosition(e.querySelector("[data-clubhouse-team-stats]"))&Node.DOCUMENT_POSITION_FOLLOWING)'))
+   page.locator('.clubhouse-all-scores>summary').click();page.wait_for_timeout(350)
    check(tag+' matchup chooser is a compact native horizontal rail',page.locator('.clubhouse-scoreboard-grid').evaluate('e=>getComputedStyle(e).gridAutoFlow==="column"&&getComputedStyle(e).overflowX==="auto"&&e.clientHeight<180'))
    rail=page.locator('.clubhouse-scoreboard-grid');rail.scroll_into_view_if_needed();page.wait_for_timeout(150)
    bounds=rail.bounding_box();first=rail.locator('button').first.bounding_box();x=min(first['x']+first['width']+5,bounds['x']+bounds['width']-8);y=first['y']+first['height']/2
