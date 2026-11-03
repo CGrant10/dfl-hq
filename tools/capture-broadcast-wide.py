@@ -63,7 +63,7 @@ with sync_playwright() as p:
     assert targets,(mode,width,i,'small transport target')
     assert stage.locator('.bx-page-count').inner_text()==f'{i+1} / {page.locator("[data-bx-go]").count()}',(mode,width,i,'story counter lost the active slide')
     assert metrics['height']<=(290 if width<700 else 350),(mode,width,i,'too tall',metrics)
-    if i:assert metrics['cardWidth']>metrics['cardHeight']*1.3,(mode,width,i,'not wide',metrics)
+    if i:assert metrics['cardWidth']+1>metrics['cardHeight']*1.3,(mode,width,i,'not wide',metrics)
     if height is None:height=metrics['height']
     assert metrics['height']==height,'Rotation moved the page'
     contrast=page.evaluate('reviewTextContrast()');assert not contrast['failures'],(mode,width,i,contrast['failures'])

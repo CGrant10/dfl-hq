@@ -1,6 +1,7 @@
+import {matchupStoryHref} from './story-destinations.js';
 import {headToHead,weeklyHeadlineSlide} from './home-slides.js';
 const finite=n=>n!==null&&n!==undefined&&Number.isFinite(Number(n));
-const receiptLink=(model,game)=>`#/clubhouse?season=${model.season}&week=${model.week}&tab=matchups&matchup=${encodeURIComponent(game.id)}`;
+const receiptLink=(model,game)=>matchupStoryHref({season:model.season,week:model.week,matchup:game.id??game.matchup_id,owner:game.sides?.[0]?.uid??game.winner?.uid});
 const eligibleGame=g=>g.sides?.length===2&&g.sides.every(t=>t&&finite(t.score));
 
 /** Edition copy uses scored games and dated receipts, never projected wins. */
@@ -70,7 +71,7 @@ export function homeLeagueStory(report,{history=[],season,week,meSleeperId=null,
   const lead=homeLeagueStory(report,{history,season,week,meSleeperId}),pairs=new Set();
   const candidates=[lead,...games.map(game=>{
    const margin=game.winner.value-game.loser.value;
-   return {...base,storyKey:`matchup-file:${report.season}:${report.week}:${game.winner.uid}`,
+   return {...base,href:matchupStoryHref({season:report.season,week:report.week,matchup:game.id??game.matchup_id,owner:game.winner.uid}),storyKey:`matchup-file:${report.season}:${report.week}:${game.winner.uid}`,
     kicker:`${report.season} · WEEK ${report.week} · MATCHUP FILE`,
     headline:margin<=5?'Way too fucking close.':margin>=30?'Keep the group chat receipts.':'Somebody had to take the L.',
     figure:margin.toFixed(2),figureLabel:'Winning margin',
@@ -122,7 +123,7 @@ export function homeLeagueStory(report,{history=[],season,week,meSleeperId=null,
  if(!chosen)return base;
  const {game,type,figure,figureLabel,headline}=chosen;
  const labels={'revenge':'RIVALRY RECEIPT','season-high':'NEW SEASON HIGH','losing-run':'THE LOSING STREAK','winning-run':'ON A RUN'};
- return {...base,storyKey:`weekly:${report.season}:${report.week}:${type}:${game.winner.uid}`,storySignal:type,
+ return {...base,href:matchupStoryHref({season:report.season,week:report.week,matchup:game.id??game.matchup_id,owner:game.winner.uid}),storyKey:`weekly:${report.season}:${report.week}:${type}:${game.winner.uid}`,storySignal:type,
   kicker:`${report.season} · WEEK ${report.week} · ${labels[type]}`,figure,figureLabel,headline,
   subtitle:`${game.winner.name} ${game.winner.value.toFixed(2)} · ${game.loser.name} ${game.loser.value.toFixed(2)}`,
   sides:[game.winner,game.loser].map((side,index)=>({name:side.name,score:side.value.toFixed(2),up:index===0,down:index===1,

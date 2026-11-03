@@ -1,0 +1,65 @@
+{
+  "version": "1.536.0",
+  "checks": [
+    {
+      "index": 0,
+      "kind": "bx-slide bx-home-feature is-announcement bx-in",
+      "informational": true
+    },
+    {
+      "index": 1,
+      "kind": "bx-slide bx-brief bx-brief-result bx-in",
+      "route": "#/clubhouse",
+      "identityPreserved": true
+    },
+    {
+      "index": 2,
+      "kind": "bx-slide bx-brief bx-brief-metric bx-brief-with-art bx-in",
+      "route": "#/stakes",
+      "identityPreserved": true
+    },
+    {
+      "index": 3,
+      "kind": "bx-slide bx-brief bx-brief-award bx-brief-with-art bx-in",
+      "route": "#/history",
+      "identityPreserved": true
+    },
+    {
+      "index": 4,
+      "kind": "bx-slide bx-brief bx-brief-award bx-brief-with-art bx-in",
+      "route": "#/history",
+      "identityPreserved": true
+    },
+    {
+      "index": 5,
+      "kind": "bx-slide bx-brief bx-brief-award bx-brief-chip bx-brief-with-art bx-in",
+      "route": "#/history",
+      "identityPreserved": true
+    },
+    {
+      "index": 6,
+      "kind": "bx-slide bx-brief bx-brief-metric bx-brief-with-art bx-in",
+      "route": "#/history",
+      "identityPreserved": true
+    },
+    {
+      "index": 7,
+      "kind": "bx-slide bx-brief bx-brief-metric bx-brief-with-art bx-in",
+      "route": "#/facts",
+      "identityPreserved": true
+    },
+    {
+      "index": 8,
+      "kind": "bx-slide bx-brief bx-brief-season bx-brief-with-art bx-in",
+      "route": "#/history",
+      "identityPreserved": true
+    },
+    {
+      "index": 9,
+      "kind": "bx-slide bx-brief bx-brief-metric bx-brief-with-art bx-in",
+      "route": "#/history",
+      "identityPreserved": true
+    }
+  ],
+  "pageErrors": []
+}

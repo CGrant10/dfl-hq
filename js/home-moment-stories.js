@@ -9,7 +9,7 @@ const copy={
  close:['Check the fucking decimals.','A loss that ruins your Tuesday.','That decimal is a personal attack.','One more catch. Tough shit.'],
  blowout:['A public ass-whipping.','Hope lasted until kickoff.','The scoreboard filed a complaint.','Absolutely fucking buried.'],
 };
-const href=(season,week,id)=>`#/clubhouse?season=${season}&week=${week}&tab=matchups${id&&id!=='undefined'?'&matchup='+encodeURIComponent(id):''}`;
+const href=(season,week,id,owner)=>`#/clubhouse?season=${season}&week=${week}&tab=matchups${id&&id!=='undefined'?'&matchup='+encodeURIComponent(id):owner?'&owner='+encodeURIComponent(owner):''}`;
 
 /** Only actual offensive player scores and confirmed final matchups make roasts. */
 export function homeMomentStories({edition={},report=null,meSleeperId=null,now=new Date()}={}){
@@ -36,7 +36,7 @@ export function homeMomentStories({edition={},report=null,meSleeperId=null,now=n
    .sort((a,b)=>Number(b.points)-Number(a.points));
   if(players[0]){const p=players[0];add('bench',`${team.uid||team.roster}:${p.id||p.name}`,{
    figure:Number(p.points).toFixed(2),figureLabel:'On the bench',subtitle:`${p.name} · ${team.name}`,
-   href:href(year,week,game.id),actionLabel:'Open the matchup',momentPriority:3});}
+   href:href(year,week,game.id)+'&player='+encodeURIComponent(p.id),actionLabel:'Open the matchup',momentPriority:3});}
  }
  let finalReport=null;
  if(model.completed&&games.length&&games.every(g=>g.sides.every(t=>valid(t.score)))){
@@ -60,7 +60,7 @@ export function homeMomentStories({edition={},report=null,meSleeperId=null,now=n
    stories.push({id,key:id,source:'auto',generator:'leagueMoment',kind:'league-story',treatment:'stat',pinned:true,temporal:'final',priority:700,dwell:4200,
     storySignal:type,momentPriority:type==='close'?2:1,kicker:`${season} · WEEK ${round} · ${type==='close'?'CLOSE CALL':'BEATDOWN'}`,
     headline:copy[type][hash(id+date)%copy[type].length],sides:[a,b].map((t,i)=>({name:t.name,score:Number(t.value).toFixed(2),up:i===0,down:i===1})),
-    href:href(season,round,game.id),actionLabel:'View matchup'});
+    href:href(season,round,game.id,a.uid),actionLabel:'View matchup'});
   }
  }
  return stories.sort((a,b)=>b.momentPriority-a.momentPriority||a.id.localeCompare(b.id));
@@ -81,11 +81,14 @@ export function selectHomeMoment(stories,{scope='league',now=new Date(),storage}
  return chosen;
 }
 
-export function createHomeMomentEdition({scope='league',storage,now=()=>new Date()}={}){
- let selected=false,id=null;
+const visitEditions=new Map();
+export function createHomeMomentEdition({scope='league',visitKey=null,storage,now=()=>new Date()}={}){
+ const key=visitKey==null?null:scope+':'+visitKey;
+ const state=key&&visitEditions.get(key)||{selected:false,id:null};
+ if(key){visitEditions.set(key,state);while(visitEditions.size>40)visitEditions.delete(visitEditions.keys().next().value)}
  return {update(context){
   const stories=homeMomentStories({...context,now:now()});
-  if(!selected&&stories.length){id=selectHomeMoment(stories,{scope,storage,now:now()})?.id||null;selected=true}
-  return id?stories.find(story=>story.id===id)||null:null;
+  if(!state.selected&&stories.length){state.id=selectHomeMoment(stories,{scope,storage,now:now()})?.id||null;state.selected=true}
+  return state.id?stories.find(story=>story.id===state.id)||null:null;
  }};
 }

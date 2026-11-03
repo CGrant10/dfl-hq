@@ -4,7 +4,7 @@ import {normalizeReceivePositions,receivePackageAllowed} from './trade-receive-c
 import {offerPlayerLimit} from './trade-package-limits.js';
 import { scorePlayer } from "./dfl-scoring.js";
 import {tradeTransfers} from './trade-routing.js';
-import {productionProfile, packageEvidence, comparableStarPremium} from './trade-player-evidence.js';
+import {productionProfile, packageEvidence, packageValue, comparableStarPremium} from './trade-player-evidence.js';
 import {matchExpertRankings,expertValueIndex} from './expert-rankings-model.js';
 import {tradeAssessment} from './trade-assessment.js';
 import {targetedTradePackages,tradeGoalScore} from './trade-target-search.js';
@@ -353,7 +353,10 @@ export function optimalLineup(playerIds = [], pool = new Map(), { starterIds = [
   */
   const projected = starters.map(player => player.projectedPoints).filter(value => value != null);
   const sleeperPoints = projected.length ? projected.reduce((sum, value) => sum + value, 0) : null;
-  const depthScore = bench.slice(0, 5).reduce((sum, player, index) => sum + player.expectedPoints * DEPTH_WEIGHTS[index], 0);
+  let backupQbs=0;
+  const depth=bench.map(player=>({player,weight:player.position==='QB'&&player.oneQbValueFactor!=null?(backupQbs++===0?.15:0):1}))
+    .filter(item=>item.weight>0).sort((a,b)=>b.player.expectedPoints*b.weight-a.player.expectedPoints*a.weight);
+  const depthScore = depth.slice(0, 5).reduce((sum, item, index) => sum + item.player.expectedPoints * item.weight * DEPTH_WEIGHTS[index], 0);
   return {
     starters,
     bench,
@@ -556,19 +559,21 @@ function tradeRosterPlan(original, outgoing, incoming, pool, unavailable=new Set
  return {next,drops,adds,openSlots:Math.max(0,original.length-next.length)};
 }
 
-function packageFit(ids, recipientBaseIds, recipientNextIds, pool, recipient) {
+function packageFit(ids, recipientBaseIds, recipientNextIds, pool, recipient, preparedLineup=null) {
   const incoming = sortedPlayers(ids, pool).sort((a, b) => b.tradeValue - a.tradeValue);
   const kept = new Set(recipientNextIds.map(String));
-  const lineup = optimalLineup(recipientNextIds, pool);
+  const lineup = preparedLineup||optimalLineup(recipientNextIds, pool);
   const starters = new Set(lineup.starters.map(player => player.id));
   const coreDepth = new Set(lineup.bench.slice(0, 5).map(player => player.id));
   const starterFloor = Object.fromEntries(ANALYZER_POSITIONS.map(position => [position,
     Math.min(...lineup.starters.filter(player => player.position === position).map(player => player.expectedPoints))]));
   const holes = depthHoles(recipientBaseIds, pool);
+  const backupQb=lineup.bench.find(p=>p.position==='QB');
   const ranked = incoming.map(player => {
     let role = 0;
     if (kept.has(player.id)) {
       if (starters.has(player.id)) role = 1;
+      else if(player.position==='QB'&&player.oneQbValueFactor!=null)role=String(player.id)===String(backupQb?.id)? .2 : .05;
       else if (recipient?.need === player.position || holes.has(player.position)) role = .72;
       else if (coreDepth.has(player.id) && Number.isFinite(starterFloor[player.position])
         && player.expectedPoints >= starterFloor[player.position] * .55) role = .5;
@@ -605,7 +610,7 @@ export function evaluateTrade({ teamA, teamB, sendA = [], sendB = [], pool = new
   const nextA=planA.next,nextB=planB.next;
   const beforeA = optimalLineup(teamA.playerIds, pool), beforeB = optimalLineup(teamB.playerIds, pool);
   const afterA = optimalLineup(nextA, pool), afterB = optimalLineup(nextB, pool);
-  const fitA = packageFit(sendB, baseA, nextA, pool, teamA), fitB = packageFit(sendA, baseB, nextB, pool, teamB);
+  const fitA = packageFit(sendB, baseA, nextA, pool, teamA,afterA), fitB = packageFit(sendA, baseB, nextB, pool, teamB,afterB);
   const incomingEvidence=packageEvidence(sendB,pool), outgoingEvidence=packageEvidence(sendA,pool);
   const valueToA = incomingEvidence.value, valueToB = outgoingEvidence.value;
   const impactA = rosterImpact(beforeA, afterA), impactB = rosterImpact(beforeB, afterB);
@@ -651,7 +656,7 @@ export function evaluateMultiTeamTrade({ teams = [], sends = [], destinations = 
   const next=plans.map(p=>p.next);
   const before = teams.map(team => optimalLineup(team.playerIds, pool));
   const after = next.map(ids => optimalLineup(ids, pool));
-  const fits = teams.map((team, index) => packageFit(receives[index], bases[index], next[index], pool, team));
+  const fits = teams.map((team, index) => packageFit(receives[index], bases[index], next[index], pool, team,after[index]));
   const incomingEvidence=receives.map(ids=>packageEvidence(ids,pool)), outgoingEvidence=packages.map(ids=>packageEvidence(ids,pool));
   const values = incomingEvidence.map(e=>e.value);
   const outgoingValues=outgoingEvidence.map(e=>e.value);
@@ -745,7 +750,7 @@ function tradePackages(players, size, required = [], cap = 100) {
 }
 
 function rawPackageValue(ids, pool) {
-  return ids.reduce((sum, id) => sum + (Number(pool.get(String(id))?.tradeValue) || 0), 0);
+  return packageValue(ids,pool);
 }
 
 // Sampling all roster combinations spends most of a Steal search on players
@@ -1103,6 +1108,9 @@ export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlay
 
 export function isPlausibleTradeSuggestion(result) {
   if (!result || result.fairness < 40 || result.projectionEvidence?.missing?.length) return false;
+  if(result.cutIncomingA?.length||result.cutIncomingB?.length||result.cutIncoming?.some(ids=>ids.length))return false;
+  const padded=(ids,useful,surplus)=>ids?.length>=4&&surplus?.length>=2&&useful?.length<Math.ceil(ids.length/2);
+  if(padded(result.sendB,result.usefulIncomingA,result.surplusIncomingA)||padded(result.sendA,result.usefulIncomingB,result.surplusIncomingB)||result.receives?.some((ids,i)=>padded(ids,result.usefulIncoming?.[i],result.surplusIncoming?.[i])))return false;
   const a = Number(result.weeklyDeltaA) || 0, b = Number(result.weeklyDeltaB) || 0;
   const fitA = Number.isFinite(Number(result.rosterImpactA)) ? Number(result.rosterImpactA) : a;
   const fitB = Number.isFinite(Number(result.rosterImpactB)) ? Number(result.rosterImpactB) : b;

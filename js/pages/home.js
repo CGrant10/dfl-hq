@@ -409,6 +409,12 @@ export async function render(view) {
   try { [bootstrap, settings] = await Promise.all([loadHomeBootstrap(today), loadSettings()]); }
   catch (error) { view.innerHTML = errorBox(error); return; }
   const events = { data: bootstrap.events || [] }, announcements = { data: bootstrap.announcements || [] };
+  const announcementId=new URLSearchParams(location.hash.split('?')[1]||'').get('announcement');
+  if(announcementId){
+    const article=visible('announcements',announcements.data).find(a=>String(a.id)===announcementId);
+    view.innerHTML=`<header class="page-head"><div><h1>League news</h1></div><a class="linkbtn" href="#/home">Home →</a></header>${article?`<article class="home-announcement-story" data-route-focus tabindex="-1"><time>${esc(fmtShort(article.created_at))}</time><h2>${esc(article.title)}</h2><p>${esc(article.content)}</p></article>`:'<p role="status">This announcement is no longer available.</p>'}`;
+    return;
+  }
   const polls = { data: bootstrap.polls || [] }, leagues = { data: bootstrap.leagues || [] };
   const dues = { data: bootstrap.dues || [] }, standings = { data: bootstrap.standings || [] };
   const memberRows = bootstrap.members || [];
@@ -536,7 +542,7 @@ export async function render(view) {
   }).catch(err => { console.warn("Completed week report unavailable", err); return null; });
   let homeEdition = {}, refreshEdition = null, homeCompletedReport = null, homeHighlightReel = null;
   const rhythm=mountHomeRhythm(view.querySelector("#home-wrap"));
-  const momentEdition=createHomeMomentEdition({scope:String(leagues.data?.[0]?.sleeper_league_id||"dfl")});
+  const momentEdition=createHomeMomentEdition({scope:String(leagues.data?.[0]?.sleeper_league_id||"dfl"),visitKey:view.dataset.routeVisitId?`${view.dataset.routeVisitId}:${myMember?.id||'league'}`:null});
   const weekFlow=mountHomeWeekFlow(view.querySelector(".home-week-desk"));
   deferredStops.push(()=>{rhythm.stop();weekFlow.stop()});
   const updateWeekFlow=()=>{

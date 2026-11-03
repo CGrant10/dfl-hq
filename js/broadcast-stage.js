@@ -691,7 +691,7 @@ export function startStage(root, deck, { refresh } = {}) {
         for(const image of template.content.querySelectorAll('img')){image.removeAttribute('src');image.removeAttribute('srcset');}
         probe.append(template.content);root.append(probe);deckHeight=base;
         try{
-          for(const candidate of probe.querySelectorAll('.bx-brief')){
+          for(const candidate of probe.querySelectorAll('.bx-brief,.bx-home-feature')){
             const box=candidate.getBoundingClientRect(),flow=[...candidate.children].filter(node=>!['absolute','fixed'].includes(getComputedStyle(node).position));
             const bottom=Math.max(box.top,...flow.map(node=>node.getBoundingClientRect().bottom));
             deckHeight=Math.max(deckHeight,base+Math.max(0,bottom-box.bottom+2));

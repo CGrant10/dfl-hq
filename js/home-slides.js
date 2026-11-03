@@ -1,3 +1,4 @@
+import {matchupStoryHref} from './story-destinations.js';
 /*
   home-slides.js - the two Home stories that became stage slides.
 
@@ -62,7 +63,7 @@ export function weeklyHeadlineSlide(report,{season,week,meSleeperId=null}={}){
     headline:narrow?'Check the fucking decimals.':blowout?'A public ass-whipping.':'Put the league on notice.',
     figure:(narrow||blowout?margin(game):game.winner.value).toFixed(2),figureLabel:narrow||blowout?'Winning margin':'Fantasy points',
     subtitle:`${game.winner.name} ${game.winner.value.toFixed(2)} · ${game.loser.name} ${game.loser.value.toFixed(2)}`,
-    href:`#/clubhouse?season=${report.season}&week=${report.week}&tab=matchups`,
+    href:matchupStoryHref({season:report.season,week:report.week,matchup:game.id??game.matchup_id,owner:game.winner.uid}),
     sides:[game.winner,game.loser].map((side,i)=>({name:side.name,score:side.value.toFixed(2),up:i===0,down:i===1})),
   };
 }
@@ -96,6 +97,7 @@ export function nextMoveSlide(move) {
   return {
     source: "auto", pinned: true, id: "next-move", generator: "nextMove",
     scoutPlayer: move.trade?.player || move.waiver?.player,
+    scoutAction: move.trade?'trade':'player',
     kind: "move", treatment: "announcement", temporal: "upcoming",
     priority: P.MINE - 10, dwell: 3000,
     kicker: `WEEK ${move.week} · AUTO-SCOUT`,
@@ -135,7 +137,7 @@ export function playoffPictureSlide(stakes, meSleeperId) {
     kicker: `${stakes.season} · WEEK ${stakes.week} · PLAYOFF PICTURE`,
     figure: `${odds}%`, figureLabel:'Playoff odds', headline: stakeLine(mine),
     subtitle: `${mine.name} · Projected ${ordinal(Math.round(Number(mine.projection.seed) || mine.rank || 1))} seed.`,
-    href: "#/stakes",
+    href: `#/stakes?owner=${encodeURIComponent(meSleeperId)}`,
   };
 }
 
@@ -184,7 +186,7 @@ export function matchupPreviewSlide({ pairing, weekly, meSleeperId, season, week
     whereText: favoured
       ? `${favoured === pairing.mine ? "You" : favoured.name} projected by ${spread.toFixed(2)}`
       : "Projected dead even",
-    href: "#/analyzer",
+    href: matchupStoryHref({season,week,matchup:pairing.matchup_id,owner:pairing.mine.sleeper_user_id}),
     sides: [
       { name: pairing.mine.name, score: mine.toFixed(2), up: mine > theirs, down: mine < theirs, identity: pairing.mine.identity },
       { name: pairing.theirs.name, score: theirs.toFixed(2), up: theirs > mine, down: theirs < mine, identity: pairing.theirs.identity },
@@ -324,7 +326,7 @@ export function weekSlateSlide({ fixtures = [], season, week, meSleeperId, live 
     kicker: `${season} · Week ${week}`,
     headline: "Around the league",
     subtitle: null,
-    href: "#/analyzer",
+    href: matchupStoryHref({season,week}),
     fixtures: rows,
   };
 }

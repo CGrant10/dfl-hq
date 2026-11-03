@@ -1,3 +1,4 @@
+import {historyMomentKey,markStoryTarget} from '../story-destinations.js';
 import {readPageChoice,savePageChoice} from '../page-disclosure.js';
 // =====================================================================
 // History - everything backward-looking, in one place.
@@ -48,7 +49,10 @@ let season = null;
 
 export async function render(view) {
   tab=readPageChoice('history-tab',['fame','moments','seasons','alltime','records'],'fame');
-  const requestedEntry=Number(new URLSearchParams(location.hash.split("?")[1]||"").get("entry"));
+  const storyParams=new URLSearchParams(location.hash.split('?')[1]||'');
+  const storyTab=storyParams.get('tab');if(['fame','moments','seasons','alltime','records'].includes(storyTab))tab=storyTab;
+  const storySeason=Number(storyParams.get('season'));if(Number.isInteger(storySeason)&&storySeason>=2010&&storySeason<=2100){season=storySeason;savePageChoice('history-season',String(season));}
+  const requestedEntry=Number(storyParams.get('entry'));
   if(requestedEntry)tab="fame";
   view.innerHTML = `<header class="utility-head"><small>DFL ARCHIVE</small><h1>History</h1><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Weekly archive →</a></header>` + loading("Reading the record book…");
 
@@ -90,7 +94,10 @@ export async function render(view) {
   `;
 
   const body = view.querySelector("#hist-body");
+  const linkedMoment=storyParams.get('moment')&&moments(data).find(m=>historyMomentKey(m)===storyParams.get('moment'));
   const paint = () => {
+    if(tab==='moments'&&storyParams.has('moment')&&!linkedMoment){body.innerHTML='<section class="state" role="status" data-route-focus tabindex="-1">This archive entry has changed. <a class="linkbtn" href="#/history?tab=moments">Latest moments →</a></section>';return;}
+    if(tab==='moments'&&linkedMoment){body.innerHTML=`<section class="card" data-route-focus tabindex="-1">${momentRow(linkedMoment)}<a class="linkbtn" href="#/history?tab=moments">All moments →</a></section>`;return;}
     if (tab === "records") return recordsView(body, data);
     body.innerHTML = tab === "fame"    ? fameView(data)
                    : tab === "moments" ? momentsView(data)
@@ -141,6 +148,8 @@ export async function render(view) {
   });
 
   paint();
+  if(storyParams.get('owner'))markStoryTarget([...view.querySelectorAll('[data-history-owner]')].find(n=>n.dataset.historyOwner===storyParams.get('owner')));
+  else if(storyParams.has('season'))markStoryTarget(view.querySelector('.yb-champ'));
   if(requestedEntry){const entry=view.querySelector(`[data-history-entry="${requestedEntry}"]`);if(entry){entry.setAttribute("data-route-focus","");entry.tabIndex=-1;}}
   /* Arriving back on a tab that sits off the right of a phone screen should
      not look like the first tab is selected. */
@@ -448,7 +457,7 @@ function standingsCard(y, played) {
           </thead>
           <tbody>
             ${y.standings.map((s) => `
-              <tr>
+              <tr data-history-owner="${esc(s.sleeper_user_id)}">
                 <td>
                   ${played ? (s.rank ?? "—") : "—"}
                   ${played && s.made_playoffs ? `<span class="pill green tiny">P</span>` : ""}

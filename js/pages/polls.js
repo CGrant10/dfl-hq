@@ -59,9 +59,11 @@ export async function render(view) {
   const votes   = votesRes.data || [];
   const members = new Map((membersRes.data || []).map((m) => [String(m.id), m]));
 
-  const shown  = visible("polls", polls);
-  const open   = shown.filter((p) => p.active);
-  const closed = shown.filter((p) => !p.active);
+  const requestedPoll=new URLSearchParams(location.hash.split('?')[1]||'').get('poll');
+  const shown=visible('polls',polls).filter(p=>!requestedPoll||String(p.id)===requestedPoll);
+  if(requestedPoll&&!shown.length){view.innerHTML='<header class="page-head"><h1>Polls</h1></header><section class="state" role="status">This poll is no longer available. <a class="linkbtn" href="#/polls">All polls →</a></section>';return;}
+  const open=requestedPoll?shown:shown.filter(p=>p.active);
+  const closed=requestedPoll?[]:shown.filter(p=>!p.active);
 
   /*
     OPEN POLLS ARE THE PAGE. The heading above them is only worth its space
@@ -99,7 +101,7 @@ export async function render(view) {
   view.innerHTML = `
     <div id="poll-list" class="polls-page">
       <header class="page-head">
-        <h1>Polls</h1>
+        <h1>Polls</h1>${requestedPoll?'<a class="linkbtn" href="#/polls">All polls →</a>':''}
         ${addControl("polls", "Add poll")}
       </header>
       ${needsMigration ? `<div class="card note">
@@ -217,7 +219,7 @@ function pollCard(poll, allVotes, members, me, admin) {
   const myVote  = me ? votes.find((v) => sameMember(v, me)) : null;
 
   return `
-    <article class="card poll ${poll.active ? "is-open" : ""} ${hiddenClass("polls", poll)}">
+    <article data-story-poll="${esc(poll.id)}" ${new URLSearchParams(location.hash.split('?')[1]||'').get('poll')===String(poll.id)?'data-route-focus tabindex="-1"':''} class="card poll ${poll.active ? "is-open" : ""} ${hiddenClass("polls", poll)}">
       <header class="poll-head">
         <h3 class="poll-q">${esc(poll.question)}</h3>
         <div class="meta-row">

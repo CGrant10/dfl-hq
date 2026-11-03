@@ -30,7 +30,7 @@ describe('award artwork ownership',()=>{
   expect(deck.map(item=>item.generator)).toEqual(expect.arrayContaining([...enabled]));
   expect(deck.filter(item=>item.variant!=='chip').every(item=>item.image==='assets/dfl-daily-champion.webp')).toBe(true);
   expect(deck.find(item=>item.variant==='chip')?.image).toBe('assets/dfl-daily-chip-eater.webp');
-  expect(deck.every(item=>item.headline==='Current team name'&&item.href==='#/history')).toBe(true);
+  expect(deck.every(item=>item.headline==='Current team name'&&item.href.startsWith('#/history?tab=seasons&season='))).toBe(true);
   expect(memberImage).not.toHaveBeenCalled();
  });
 });

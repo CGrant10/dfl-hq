@@ -70,3 +70,15 @@ describe('wide broadcast previews',()=>{
  });
 
 });
+
+it('keeps the complete rendered story copy instead of silently slicing it',()=>{
+ const body='A clear league announcement. '.repeat(8)+'Read this final sentence.';
+ const html=renderBroadcastBrief({headline:'League business',body,href:'#/home?announcement=42'});
+ expect(html).toContain(body);expect(html).toContain('href="#/home?announcement=42"');
+});
+it('opens a waiver scout player directly while preserving routed trade targets',()=>{
+ const base={generator:'nextMove',scoutPlayer:{id:'123',name:'Target',position:'WR'},headline:'Upgrade radar',href:'#/analyzer?owner=me'};
+ expect(renderBroadcastBrief({...base,scoutAction:'player'})).toContain('data-player-card="123"');
+ expect(renderBroadcastBrief({...base,scoutAction:'trade',href:'#/trade?target=123'})).toContain('href="#/trade?target=123"');
+ expect(renderBroadcastBrief({...base,scoutAction:'trade'})).not.toContain('data-player-card="123"');
+});

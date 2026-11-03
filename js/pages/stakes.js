@@ -62,7 +62,7 @@ function gameCard(game) {
 function teamRow(row, mine, berths, opponents = []) {
   const identity = row.identity || {};
   const movement = row.rank ? row.rank - row.projectedSeed : 0;
-  return `<article class="stakes-team ${mine ? "is-mine" : ""}">
+  return `<article ${new URLSearchParams(location.hash.split('?')[1]||'').get('owner')===String(row.sleeperUserId)?'data-route-focus tabindex="-1"':''} class="stakes-team ${mine ? "is-mine" : ""}">
     <div class="stakes-seed"><small>PROJ.</small><strong>${row.projectedSeed}</strong><em aria-label="${movement ? `${movement > 0 ? 'Up' : 'Down'} ${Math.abs(movement)} from current rank` : 'No change from current rank'}" class="${movement > 0 ? "is-up" : movement < 0 ? "is-down" : ""}">${movement ? `${movement > 0 ? "▲" : "▼"}${Math.abs(movement)}` : "—"}</em></div>
     ${teamPortrait({ identity, team_name: row.name }, { className: "stakes-logo" })}
     <div class="stakes-team-copy"><strong>${esc(row.name)}</strong><span>${row.wins}-${row.losses}${row.ties ? `-${row.ties}` : ""} · ${esc(playoffChance(row))} playoffs${row.status==='alive'?' · estimate':''}</span></div>

@@ -1,3 +1,4 @@
+import {historyMomentHref,matchupStoryHref} from './story-destinations.js';
 /* =====================================================================
    broadcast-deck.js - what the DFL is about to put on the big screen
    ---------------------------------------------------------------------
@@ -501,7 +502,7 @@ function fantasyItems(ctx) {
       kind: "fantasy", treatment: "event", temporal: "upcoming", priority: P.UPCOMING - 120,
       kicker: "DFL Fantasy", headline: `${f.season} Season`,
       subtitle: f.status === "drafting" ? "Drafting now" : "Not drafted yet",
-      href: "#/history",
+      href: `#/history?tab=seasons&season=${f.season}`,
     })];
   }
 
@@ -522,7 +523,7 @@ function fantasyItems(ctx) {
       kicker: `${t.season} · Week ${t.week}`,
       headline: "The final",
       moodText: "", whereText: `${champ.label} by ${t.margin.toFixed(2)}`,
-      href: "#/history",
+      href: `#/history?tab=seasons&season=${f.season}`,
       sides: [
         { name: champ.label, score: t.champScore.toFixed(2), up: true },
         { name: runner.label, score: t.runnerScore.toFixed(2), down: true },
@@ -576,7 +577,7 @@ function myMatchupItem(ctx) {
     moodText: "",
     whereText: mine.s === theirs.s ? "Tied"
       : `${mine.s > theirs.s ? "You" : ctx.name(theirs.u, season, theirs.r).label} by ${Math.abs(mine.s - theirs.s).toFixed(2)}`,
-    href: "#/profile",
+    href: matchupStoryHref({season,week,matchup:row.matchup_id,owner:mine.u}),
     sides: [
       { name: ctx.name(mine.u, season, mine.r).label, score: mine.s.toFixed(2), up: mine.s > theirs.s, down: mine.s < theirs.s },
       { name: ctx.name(theirs.u, season, theirs.r).label, score: theirs.s.toFixed(2), up: theirs.s > mine.s, down: theirs.s < mine.s },
@@ -601,7 +602,7 @@ function eventItems(ctx) {
          "Sat, Aug 29 · 7:00 PM" is the whole point of storing it. */
       headline: e.title, subtitle: fmtWhen(e.event_date, e.event_time),
       body: e.description || relDate(e.event_date),
-      href: "#/calendar",
+      href: `#/calendar?event=${encodeURIComponent(e.id)}`,
     }));
   }
   return out.slice(0, 2);
@@ -614,7 +615,7 @@ function pollItem(ctx) {
     kind: "poll", treatment: "stat", temporal: "live", priority: P.ACTIVITY,
     kicker: "Open poll", figure: String(ctx.polls.length),
     headline: ctx.polls.length === 1 ? "Poll open" : "Polls open",
-    subtitle: p.question, href: "#/polls",
+    subtitle: p.question, href: `#/polls?poll=${encodeURIComponent(p.id)}`,
   })];
 }
 
@@ -627,7 +628,7 @@ function newsItem(ctx) {
     kind: "news", treatment: "announcement", temporal: "recent",
     priority: P.ACTIVITY * decay(age, 21),
     publishedAt:a.created_at,kicker: "From the commissioner", headline: a.title || "Announcement",
-    body: a.content || "", subtitle: fmtDate(a.created_at), href: "#/home",
+    body: a.content || "", subtitle: fmtDate(a.created_at), href: `#/home?announcement=${encodeURIComponent(a.id)}`,
   })];
 }
 
@@ -647,7 +648,7 @@ function championItem(ctx) {
     headline: orphan ? `The ${l.season} champion` : who.label,
     subtitle: orphan ? `${who.label} — the Sleeper account was deleted` : (who.sub || ""),
     ...(art ? { image: art, background: "image" } : {}),
-    href: "#/history",
+    href: `#/history?tab=seasons&season=${l.season}`,
   })];
 }
 
@@ -661,7 +662,7 @@ function pastChampionItems(ctx) {
       kind: "past", treatment: "champion", temporal: "historical", priority: P.HISTORY,
       kicker: `${l.season} Champion`, headline: who.label, subtitle: who.sub || "",
       ...(art ? { image: art, background: "image" } : {}),
-      href: "#/history",
+      href: `#/history?tab=seasons&season=${l.season}`,
     });
   });
 }
@@ -702,7 +703,7 @@ function chipEaterItem(ctx) {
        and it goes in the kicker, so this line stays factual. */
     subtitle: who.sub || "",
     ...(art ? { image: art, background: "image" } : {}),
-    href: "#/history",
+    href: `#/history?tab=seasons&season=${l.season}&owner=${encodeURIComponent(l.last_place_user_id)}`,
   })];
 }
 
@@ -717,7 +718,7 @@ function recordItems(ctx) {
     kicker: m.kind === "high" ? "Highest week ever" : "From the record book",
     figure: m.figure != null ? Number(m.figure).toFixed(Number.isInteger(Number(m.figure)) ? 0 : 2) : null,
     storyKind: m.kind,
-    headline: m.headline, subtitle: m.detail, href: "#/history",
+    headline: m.headline, subtitle: m.detail, href: historyMomentHref(m),
   }));
 }
 
@@ -726,7 +727,7 @@ function seasonStatItem(ctx) {
     kind: "season", treatment: "stat", temporal: "none", priority: P.STAT,
     figure: String(ctx.seasonNumber), headline: "Seasons",
     kicker: "DFL", subtitle: `${LEAGUE_FOUNDED} → ${new Date(ctx.now).getFullYear()}`,
-    href: "#/history",
+    href: "#/history?tab=fame",
   })];
 }
 
@@ -737,7 +738,7 @@ function duesItem(ctx) {
   if (!owed) return [];
   return [item({
     kind: "dues", treatment: "stat", temporal: "none", priority: P.STAT - 50,
-    figure: money(owed), headline: "Owed", kicker: "League fees", href: "#/finances",
+    figure: money(owed), headline: "Owed", kicker: "League fees", href: `#/finances?season=${season}`,
   })];
 }
 
@@ -746,7 +747,7 @@ function loreItems(ctx) {
   return rows.slice(0, 2).map((h) => item({
     kind: "lore", treatment: "announcement", temporal: "historical", priority: P.HISTORY,
     kicker: `${h.year} · ${h.category}`, headline: h.winner || h.category,
-    body: h.notes || "", href: "#/history",
+    body: h.notes || "", href: `#/history?entry=${encodeURIComponent(h.id)}`,
   }));
 }
 
@@ -775,7 +776,7 @@ function funFactItem(ctx) {
     storySeries: f.series || '',
     body: f.detail,
     subtitle: f.season ? String(f.season) : "",
-    href: "#/facts",
+    href: `#/facts?fact=${encodeURIComponent(f.id)}`,
   })];
 }
 
@@ -790,7 +791,7 @@ function identityItem(ctx) {
     kicker: decade ? `${n}th Anniversary Season` : "DFL HQ",
     headline: "Draft · Golf · Sin · Fold",
     subtitle: "Forged by sinners. Fueled by rivalries.",
-    href: "#/history",
+    href: "#/history?tab=fame",
   })];
 }
 
