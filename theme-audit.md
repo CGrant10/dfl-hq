@@ -1,3 +1,16 @@
+## 1.535.0 — ESPN-inspired Clubhouse matchup structure
+
+Reviewed compact matchup chips, score-first team header and paired player rows
+at 320/390px in both Medicine Wheel themes, including compiled actual-league
+captures. Active chip outlines use text/surface tokens; semantic live/final/lead
+colors and existing player effects remain meaningful. No ESPN palette, image,
+font or theme option is introduced. Full names retain their accessible labels.
+
+2,425 tests pass. 313 interface checks include contrast and scroll-reference
+identity; 320 layout checks cover five widths and up to 200% text. The final
+compact entry is visually inspected in both themes. Evidence and unmeasured
+physical-device states: [clubhouse-matchup-layout-1535.md](docs/clubhouse-matchup-layout-1535.md).
+
 ## 1.534.0 — visible matchup strip and logo landing motion
 
 Reviewed the new Clubhouse matchup strip and main matchup in Light/Dark at

@@ -47,6 +47,14 @@ describe('Clubhouse matchup context',()=>{
   const g=game();const pulse=clubhouseLeaguePulse({games:[g],starters:[player('rb','RB',25),player('def','DEF',40)]});
   expect(pulse.high.roster).toBe('2');expect(pulse.player.id).toBe('rb');expect(pulse.close.margin).toBe(4);
  });
+ it('keeps full identities and exact scores accessible in logo-only matchup chips',()=>{
+  const g=game(null,103.45);g.sides[0].name='Bombers & Boys';g.sides[1].name='The <Realm>';
+  const html=clubhouseScoreboardHtml({games:[g]},'1',{strip:true});
+  expect(html).toContain('aria-pressed="true"');
+  expect(html).toContain('aria-label="View Bombers &amp; Boys versus The &lt;Realm&gt;: — to 103.45"');
+  expect(html).toContain('title="Bombers &amp; Boys vs The &lt;Realm&gt;"');
+  expect(html).not.toContain('clubhouse-mini-phase');
+ });
  it('escapes current team names and exposes every selectable game accessibly',()=>{
   const g=game();g.sides[0].name='<b>My team</b>';
   const html=clubhouseScoreboardHtml({games:[g,{...g,id:'2'}]},'2');
