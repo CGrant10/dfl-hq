@@ -1,3 +1,4 @@
+import {replaceStableContent,updateStableContent} from '../stable-content.js';
 import {mountHomeRhythm} from '../home-rhythm.js';
 import {createHomeMomentEdition} from '../home-moment-stories.js';
 import {mountHomeHighlights} from '../home-highlights.js';
@@ -548,7 +549,7 @@ export async function render(view) {
   const updateWeekFlow=()=>{
     const slot=view.querySelector("[data-home-recap-slot]");
     const markup=homeWeekReceipt({model:homeEdition.model,report:homeCompletedReport});
-    if(slot&&slot.innerHTML!==markup){slot.innerHTML=markup;slot.hidden=!markup;}
+    if(slot&&slot.innerHTML!==markup){updateStableContent(slot,()=>{slot.innerHTML=markup;slot.hidden=!markup});}
     const phase=rhythm.update(homeEdition);
     if(phase?.layoutAllowed)weekFlow.update(homeEdition,{phase});
   };
@@ -571,7 +572,7 @@ export async function render(view) {
   pickemPromise.then(board => {
     if (mine !== generation || !view.isConnected) return;
     const slot = view.querySelector("[data-home-pickem-slot]");
-    if (slot) slot.innerHTML = homePickemMarkup(board, esc);
+    if (slot) replaceStableContent(slot,homePickemMarkup(board, esc));
   });
 
   /* Lower-page social and draft data no longer compete with the broadcast,
@@ -585,7 +586,7 @@ export async function render(view) {
     try {
       const posts = await loadWall(3);
       if (mine !== generation || !slot.isConnected||request!==wallRequest) return false;
-      updateWall(slot,posts,{ compact: true,...options });
+      updateStableContent(slot,()=>updateWall(slot,posts,{ compact: true,...options }));
       wireWall(slot, redrawWall);
       finishLoadingContent(slot);
       return true;
@@ -615,7 +616,7 @@ export async function render(view) {
       activity = [];
     }
     if (mine !== generation || !feedSlot?.isConnected) return;
-    feedSlot.innerHTML = homeLeagueFeed(announcements.data || [], activity);
+    replaceStableContent(feedSlot,homeLeagueFeed(announcements.data || [], activity));
     wireHomeLeagueFeed(feedSlot);
     finishLoadingContent(feedSlot);
   }));
@@ -630,7 +631,7 @@ export async function render(view) {
       members: memberRows, meSleeperId: myMember?.sleeper_user_id || null,
       leagueStatus: leagues.data?.[0]?.status || "",
     }));
-    draftSlot.innerHTML = panel || "";
+    replaceStableContent(draftSlot,panel || "");
   }));
 
   const alive = view.querySelector("[data-alive]");
@@ -699,8 +700,7 @@ export async function render(view) {
     if(chirp)chirp.hidden=!!ordered[0]?.storyKey?.startsWith("rivalry:");
     if(stage&&host.querySelector('[data-bx-stage]')){stage.update(ordered);return;}
     try { stage?.stop(); } catch {}
-    host.classList.remove("is-loading");
-    host.innerHTML = renderStage(ordered, { editorial: true,wide:true });
+    updateStableContent(host,()=>{host.classList.remove("is-loading");host.innerHTML=renderStage(ordered, { editorial: true,wide:true });});
     const root = host.querySelector("[data-bx-stage]");
     if (root) stage = startStage(root, ordered, { refresh });
     finishLoadingContent(host);
@@ -763,17 +763,17 @@ export async function render(view) {
        dashboard's "Power Ranks" and "Report" tabs were removed: they drew
        the same two views from the same two objects, one scroll apart. */
     const focusSlot=view.querySelector("[data-home-focus-slot]");
-    if(focusSlot){focusSlot.innerHTML=homeWeeklyFocus(outlook,briefing);const owner=focusSlot.closest('#home-wrap');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown');}
+    if(focusSlot){replaceStableContent(focusSlot,homeWeeklyFocus(outlook,briefing));const owner=focusSlot.closest('#home-wrap');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown');}
     const homeRankingsSlot = view.querySelector("[data-home-rankings-slot]");
     const homeReportSlot = view.querySelector("[data-home-report-slot]");
     const homeTradeSlot = view.querySelector("[data-home-trade-slot]");
     if (homeRankingsSlot) {
-      homeRankingsSlot.innerHTML = homeRankingsCard(pulse, memberRows);
+      replaceStableContent(homeRankingsSlot,homeRankingsCard(pulse, memberRows));
       deferredStops.push(wireHomeRankings(homeRankingsSlot,pulse,memberRows));
       finishLoadingContent(homeRankingsSlot);
     }
     if (homeReportSlot) {
-      homeReportSlot.innerHTML = homeWeeklyDigest(outlook, briefing, null, signalChanges);
+      replaceStableContent(homeReportSlot,homeWeeklyDigest(outlook, briefing, null, signalChanges));
       wireHomeWeekHub(homeReportSlot);
       finishLoadingContent(homeReportSlot);
       const briefTeam=analysis?.teams?.find(team=>String(team.sleeper_user_id)===String(myMember?.sleeper_user_id));
@@ -786,14 +786,14 @@ export async function render(view) {
             const coach=await loadRosterCoach({data:analysis,team:briefTeam,season:analysis.projectionSeason,week:outlook.week});
             if(mine!==generation||!view.isConnected)return;
             const next=buildWeeklyBriefing({outlook,stakes:pulse?.stakes,move,coach,meSleeperId:myMember.sleeper_user_id});
-            applyWeeklyBriefing(homeReportSlot,next);
+            updateStableContent(homeReportSlot,()=>applyWeeklyBriefing(homeReportSlot,next));
           },onError:()=>adviceUnavailable('Roster refresh unavailable'),
           onOffline:()=>adviceUnavailable('Offline · refresh before making a move'),
         });
         briefRefresh.start();deferredStops.push(()=>briefRefresh.stop());
       }
     }
-    if (homeTradeSlot) { homeTradeSlot.innerHTML = homeTradeWire(seasonTradeViews); finishLoadingContent(homeTradeSlot); }
+    if (homeTradeSlot) { replaceStableContent(homeTradeSlot,homeTradeWire(seasonTradeViews)); finishLoadingContent(homeTradeSlot); }
     /* Both slots just replaced their contents, so the parts the driver was
        holding are detached. Re-bind against what is actually on the page. */
     try { dropAssembly?.(); } catch { }
@@ -812,10 +812,10 @@ export async function render(view) {
     if (mine === generation && view.isConnected) {
       const focus = view.querySelector("[data-home-focus-slot]");
       const report = view.querySelector("[data-home-report-slot]");
-      if (focus){focus.innerHTML=homeWeeklyFocus(null);const owner=focus.closest('#home-wrap');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown');}
-      if (report) report.innerHTML = homeWeeklyDigest(null);
+      if (focus){replaceStableContent(focus,homeWeeklyFocus(null));const owner=focus.closest('#home-wrap');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown');}
+      if (report) replaceStableContent(report,homeWeeklyDigest(null));
       const rankingSlot=view.querySelector('[data-home-rankings-slot]');
-      if(rankingSlot?.querySelector('.power-edition-loading'))rankingSlot.innerHTML=homeRankingsCard(null);
+      if(rankingSlot?.querySelector('.power-edition-loading'))replaceStableContent(rankingSlot,homeRankingsCard(null));
       for (const selector of ['[data-home-report-slot]', '[data-home-rankings-slot]', '[data-home-trade-slot]']) finishLoadingContent(view.querySelector(selector));
     }
     startHomeStage(fallbackDeck);

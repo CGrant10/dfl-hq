@@ -33,7 +33,13 @@ export function broadcastEdition(stories=[],date='',{now=Date.parse(date+'T12:00
   if(group)groups.set(group,current.length);current.push(story);
  }
  const pinned=current.filter(story=>story.pinned||story.featured),rest=current.filter(story=>!pinned.includes(story));
- const live=[...pinned,...rest.slice(0,Math.max(0,6-pinned.length))];
+ const freshness=story=>{
+  if(story.temporal==='live')return 0;
+  const stamp=story.publishedAt??story.occurredAt,at=typeof stamp==='number'?stamp:Date.parse(stamp);
+  return ['news','trade'].includes(story.kind)&&Number.isFinite(at)&&at<=Number(now)?1:2;
+ };
+ const ranked=rest.map((story,index)=>({story,index})).sort((a,b)=>freshness(a.story)-freshness(b.story)||a.index-b.index).map(item=>item.story);
+ const live=[...pinned,...ranked.slice(0,Math.max(0,6-pinned.length))];
  const picks=archivePicks(archive,date,Math.max(0,BROADCAST_STORY_LIMIT-live.length-awards.size));
  // Separate the two awards with another subject when one is available.
  return [...live,...(awards.has('champion')?[awards.get('champion')]:[]),...picks.slice(0,1),...(awards.has('chip')?[awards.get('chip')]:[]),...picks.slice(1)];

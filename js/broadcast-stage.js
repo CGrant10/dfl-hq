@@ -1,4 +1,6 @@
 import {broadcastEditionKey} from './broadcast-edition.js';
+import {patchGameDay} from './game-day-dom.js';
+import {updateStableContent} from './stable-content.js';
 import {renderBroadcastBrief,broadcastRecordHeading} from './broadcast-brief.js';
 /* =====================================================================
    broadcast-stage.js - the big screen
@@ -669,7 +671,7 @@ export function startStage(root, deck, { refresh } = {}) {
       + (parseFloat(style.top) || 0) + (parseFloat(style.bottom) || 0)
       + (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0) + 2;
   }
-  function fitLayout() {
+  function measureLayout() {
     layoutFrame = 0;
     if (dead || !layer) return;
     const slide = [...layer.children].find(el => !el.classList.contains("bx-leaving"));
@@ -745,6 +747,7 @@ export function startStage(root, deck, { refresh } = {}) {
     const dots = dot?.parentElement;
     if (dot && dots && dots.scrollWidth > dots.clientWidth) dots.scrollLeft = dot.offsetLeft - dots.clientWidth / 2 + dot.offsetWidth / 2;
   }
+  const fitLayout=()=>updateStableContent(root,measureLayout);
   const scheduleLayout = () => { if (!dead && !layoutFrame) layoutFrame = requestAnimationFrame(fitLayout); };
   const resize = typeof ResizeObserver === "function" ? new ResizeObserver(scheduleLayout) : null;
   resize?.observe(root);
@@ -1035,7 +1038,7 @@ export function startStage(root, deck, { refresh } = {}) {
       const picker=root.querySelector('.bx-story-picker[open]');if(picker)picker.open=false;
     }
   };
-  const onPickerToggle=e=>{if(e.target.matches('.bx-story-picker'))softPause('picker',e.target.open)};
+  const onPickerToggle=e=>{if(e.target.matches('.bx-story-picker')){softPause('picker',e.target.open);if(!e.target.open&&pendingDeck&&!swipe.tracking&&!settling.size){const next=pendingDeck;pendingDeck=null;update(next)}}};
 
   /* =====================================================================
      SWIPE. Pointer events, no library, about thirty lines.
@@ -1183,7 +1186,7 @@ export function startStage(root, deck, { refresh } = {}) {
    */
   function update(next) {
     if (dead) return;
-    if (swipe.tracking || settling.size) { pendingDeck = next; return; }
+    if (swipe.tracking || settling.size || root.querySelector('.bx-story-picker[open]')) { pendingDeck = next; return; }
     const fresh = (next || []).slice();
     if (!fresh.length) return;
     const currentItem = items[i];
@@ -1199,7 +1202,23 @@ export function startStage(root, deck, { refresh } = {}) {
     rebuildDots();
     /* Adding or reordering OTHER cards must not replay the active slide's
        entrance. That was the home-page shutter during async startup. */
-    if (!currentUnchanged) paint();
+    if (!currentUnchanged) {
+      const slide=layer.querySelector('.bx-slide:not(.bx-leaving):not(.bx-preview)');
+      if(wide&&found>=0&&slide){
+        // A score or story correction updates the card already being read.
+        // Keep its element, focus and images; entrance motion belongs to paging.
+        const template=document.createElement('template');template.innerHTML=renderItem(items[i],{editorial,wide});
+        const freshSlide=template.content.firstElementChild;
+        if(slide.classList.contains('bx-in'))freshSlide.classList.add('bx-in');
+        if(slide.classList.contains('bx-enter'))freshSlide.classList.add('bx-enter');
+        if(slide.tagName===freshSlide.tagName){
+          for(const attr of [...slide.attributes])if(!freshSlide.hasAttribute(attr.name))slide.removeAttribute(attr.name);
+          for(const attr of freshSlide.attributes)if(slide.getAttribute(attr.name)!==attr.value)slide.setAttribute(attr.name,attr.value);
+          patchGameDay(slide,freshSlide.innerHTML);fitHeadlines(slide);
+          root.classList.toggle('bx-on-light',(items[i]?.background||'')==='light');
+        }else paint();
+      }else paint();
+    }
     arm();
   }
 
@@ -1221,7 +1240,7 @@ export function startStage(root, deck, { refresh } = {}) {
        an eight-item one, so this has to be able to create them as well as
        replace them - arrows included, or a deck that grew would rotate with
        no way to step through it. */
-    if (wrap) wrap.outerHTML = controls(items, i, wide);
+    if (wrap) {const template=document.createElement('template');template.innerHTML=controls(items,i,wide);patchGameDay(wrap,template.content.firstElementChild.innerHTML);}
     else root.insertAdjacentHTML("beforeend", controls(items, i, wide));
     if (!root.querySelector("[data-bx-step]")) root.insertAdjacentHTML("beforeend", arrows(editorial));
     paintButton();

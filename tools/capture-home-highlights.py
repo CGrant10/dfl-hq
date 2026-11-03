@@ -64,6 +64,18 @@ with sync_playwright() as p:
    page.locator('#reel [data-reel-player-filter=""]').click()
    page.screenshot(path=str(OUT/f'{width}-{theme}-home.png'))
    page.locator('[data-home-reel-open]').click();sheet=page.locator('.home-reel-player');page.wait_for_selector('.home-reel-player[open]')
+   page.wait_for_timeout(380)
+   def pull(distance,dx=0):
+    box=sheet.locator('header').bounding_box();x=box['x']+18;y=box['y']+18
+    page.mouse.move(x,y);page.mouse.down();page.mouse.move(x+dx,y+distance,steps=12);page.wait_for_timeout(120);page.mouse.up()
+   pull(28);page.wait_for_timeout(250)
+   check(tag+' short header pull returns cleanly without closing',sheet.is_visible() and sheet.evaluate('e=>!e.dataset.sheetMoving&&getComputedStyle(e).transform==="none"'))
+   pull(3,100);page.wait_for_timeout(100)
+   check(tag+' sideways header movement does not dismiss the studio',sheet.is_visible())
+   pull(170);page.wait_for_function('!document.querySelector(".home-reel-player").open');page.wait_for_timeout(40)
+   check(tag+' header swipe dismisses and releases playback',sheet.locator('video').evaluate_all('es=>es.every(e=>e.paused&&!e.hasAttribute("src"))') and page.locator('[data-home-reel-open]').evaluate('e=>e===document.activeElement'))
+   page.locator('[data-home-reel-open]').click();page.wait_for_timeout(380)
+   check(tag+' reopening after a pull restores a clean studio',sheet.evaluate('e=>e.open&&!e.dataset.sheetMoving&&!e.dataset.uiClosing&&getComputedStyle(e).transform==="none"'))
    def browse():
     if sheet.get_attribute('data-reel-snap')=='watch':sheet.locator('[data-reel-layout="browse"]').click();page.wait_for_timeout(300)
    def people():

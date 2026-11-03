@@ -16,6 +16,7 @@ import {mountLiveScoreRefresh} from './live-score-refresh.js';
 import {readPageChoice} from './page-disclosure.js';
 import {animateUi,cancelUiMotion,exitUi,cancelUiExit} from './ui-motion.js';
 import {fitDialogToViewport} from './dialog-viewport.js';
+import {mountSheetDrag,exitSheet} from './sheet-drag.js';
 
 export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadHomeHighlights,now=()=>Date.now(),markup=homeHighlightMarkup,title='Weekend reel',previewLayout='rail',getPlayers=()=>[],getContext=()=>null}={}){
  if(previewLayout==='feature'){
@@ -23,7 +24,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
   root.innerHTML='<section class="home-highlight-reel home-reel-feature"><header><h2>Weekend reel</h2></header><div class="home-reel-feature-skeleton" aria-hidden="true"><span></span><span></span><span></span></div></section>';
  }
  let stopped=false,nearby=typeof IntersectionObserver==='undefined',clips=[],selected='',dialog=null,opener=null,expiryTimer=null,stopViewport=()=>{},request=0,player='',search='',playerCache={key:'',options:[]};
- let returnPoint=null;
+ let returnPoint=null,sheetDrag=null;
  let game='',pageSearch='',gameCenter=null,browserMode='clips',layout=null,media=null,modeRequest=0,replayContext=null,centerGame='',browseScroll=0;
  const posterError=event=>{
   const image=event.target;if(image.tagName!=='IMG'||image.hasAttribute('data-poster-source')||image.dataset.posterFallback)return;
@@ -35,6 +36,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
  const stopVideo=()=>{if(!isReplayDocked(media))media?.release()};
  const close=({animated=false}={})=>{
   modeRequest++;if(isReplayDocked(media))return;media?.pause();gameCenter?.pause();if(!dialog?.open){stopVideo();return}
+  if(dialog.dataset.sheetMoving){exitSheet(dialog,()=>{sheetDrag.reset();stopVideo();dialog.close()},{immediate:!animated||!motion()});return;}
   const target=opener?.isConnected?opener.getBoundingClientRect():null,box=dialog.getBoundingClientRect();
   const transform=target&&target.width&&target.top<innerHeight&&target.bottom>0?`translate(${(target.x+target.width/2-box.x-box.width/2)*.2}px,${(target.y+target.height/2-box.y-box.height/2)*.2}px) scale(.92)`:'translateY(10px) scale(.97)';
   const screen=dialog.querySelector('[data-reel-screen]'),frame=screen.getBoundingClientRect(),visible=target&&target.width&&target.top<innerHeight&&target.bottom>0;
@@ -140,7 +142,8 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
   dialog.addEventListener('keydown',event=>{if(browserMode!=='clips'||event.target.closest('input,textarea,select,video')||!['ArrowLeft','ArrowRight'].includes(event.key))return;const rows=browseRows(),index=rows.findIndex(clip=>clip.id===selected),clip=rows[index+(event.key==='ArrowRight'?1:-1)];if(clip){event.preventDefault();choose(clip.id)}});
   dialog.addEventListener('cancel',event=>{event.preventDefault();const picker=dialog.querySelector('.reel-people-picker');if(picker.open)picker.open=false;else close({animated:true})});
   dialog.querySelector('[data-reel-queue]').addEventListener('scroll',()=>{if(dialog.dataset.reelSnap!=='watch')browseScroll=dialog.querySelector('[data-reel-queue]').scrollTop},{passive:true});
-  dialog.addEventListener('close',()=>{if(dialog.open)return;cancelUiExit(dialog);stopVideo();stopViewport();cancelUiMotion(dialog);if(current()&&!isReplayDocked(media)){
+  sheetDrag=mountSheetDrag(dialog,{handle:dialog.querySelector('header'),dismiss:()=>close({animated:true}),onStart:()=>{cancelUiMotion(dialog);cancelUiMotion(dialog.querySelector('[data-reel-screen]'))}});
+  dialog.addEventListener('close',()=>{if(dialog.open)return;sheetDrag.reset();cancelUiExit(dialog);stopVideo();stopViewport();cancelUiMotion(dialog);if(current()&&!isReplayDocked(media)){
     const target=opener?.isConnected?opener:root.querySelector('[data-home-reel-open],[data-home-reel-search]');
     if(returnPoint&&target===opener&&target.getClientRects().length)window.scrollBy({top:target.getBoundingClientRect().top-returnPoint.top,behavior:'instant'});
     target?.focus({preventScroll:true});returnPoint=null;
@@ -176,5 +179,5 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
  root.addEventListener('error',posterError,true);root.addEventListener('click',click);root.addEventListener('change',change);root.addEventListener('input',input);document.addEventListener('visibilitychange',hidden);
  const observer=typeof IntersectionObserver==='undefined'?null:new IntersectionObserver(entries=>{nearby=entries.some(entry=>entry.isIntersecting);if(nearby)loop.wake()},{rootMargin:'120px 0px'});observer?.observe(root);
  loop.start();scheduleExpiry();
- return {filterPlayer(id,query=''){player=String(id||'');pageSearch=String(query||'').slice(0,80);remember();paint()},openClip(id,options={}){if(!visibleClips().some(c=>c.id===String(id)))return false;player='';game='';search='';open(String(id),options.source||root.querySelector(`[data-home-reel-clip="${id}"]`)||root.querySelector('[data-home-reel-open]'),options);return true},updatePlayers:()=>paint(),refresh:()=>refreshRows().catch(()=>{if(current())paint()}),close:()=>close(),reset(){request++;clips=[];player='';game='';pageSearch='';search='';close();paint()},stop(){stopped=true;request++;clearTimeout(expiryTimer);modeRequest++;observer?.disconnect();loop.stop();root.removeEventListener('error',posterError,true);root.removeEventListener('click',click);root.removeEventListener('change',change);root.removeEventListener('input',input);document.removeEventListener('visibilitychange',hidden);stopViewport();layout?.stop();if(isReplayDocked(media))detachReplayDock(media);else media?.stop();gameCenter?.stop();close();dialog?.remove()}};
+ return {filterPlayer(id,query=''){player=String(id||'');pageSearch=String(query||'').slice(0,80);remember();paint()},openClip(id,options={}){if(!visibleClips().some(c=>c.id===String(id)))return false;player='';game='';search='';open(String(id),options.source||root.querySelector(`[data-home-reel-clip="${id}"]`)||root.querySelector('[data-home-reel-open]'),options);return true},updatePlayers:()=>paint(),refresh:()=>refreshRows().catch(()=>{if(current())paint()}),close:()=>close(),reset(){request++;clips=[];player='';game='';pageSearch='';search='';close();paint()},stop(){stopped=true;request++;sheetDrag?.stop();clearTimeout(expiryTimer);modeRequest++;observer?.disconnect();loop.stop();root.removeEventListener('error',posterError,true);root.removeEventListener('click',click);root.removeEventListener('change',change);root.removeEventListener('input',input);document.removeEventListener('visibilitychange',hidden);stopViewport();layout?.stop();if(isReplayDocked(media))detachReplayDock(media);else media?.stop();gameCenter?.stop();close();dialog?.remove()}};
 }

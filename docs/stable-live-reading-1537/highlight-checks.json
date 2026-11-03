@@ -1,0 +1,1110 @@
+[
+  {
+    "check": "320px light shows the first eight clips and the complete ten-clip reel",
+    "pass": true
+  },
+  {
+    "check": "320px light Home previews start with the newest published clip",
+    "pass": true
+  },
+  {
+    "check": "320px light keeps the first Home load free of embedded players",
+    "pass": true
+  },
+  {
+    "check": "320px light cards fit the phone with a clear next-card peek",
+    "pass": true
+  },
+  {
+    "check": "320px light poster service failures fall back to the validated publisher image",
+    "pass": true
+  },
+  {
+    "check": "320px light primary actions retain 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "320px light secondary labels and duration meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "320px light weekend heading is visible",
+    "pass": true
+  },
+  {
+    "check": "320px light Home player chips filter clips before opening a video",
+    "pass": true
+  },
+  {
+    "check": "320px light short header pull returns cleanly without closing",
+    "pass": true
+  },
+  {
+    "check": "320px light sideways header movement does not dismiss the studio",
+    "pass": true
+  },
+  {
+    "check": "320px light header swipe dismisses and releases playback",
+    "pass": true
+  },
+  {
+    "check": "320px light reopening after a pull restores a clean studio",
+    "pass": true
+  },
+  {
+    "check": "320px light opens the complete newest-first reel",
+    "pass": true
+  },
+  {
+    "check": "320px light plays a native inline video with controls and a safe publisher source",
+    "pass": true
+  },
+  {
+    "check": "320px light retains a safe explicit publisher fallback",
+    "pass": true
+  },
+  {
+    "check": "320px light player sheet stays inside mobile edges",
+    "pass": true
+  },
+  {
+    "check": "320px light Watch uses a natural video frame without tall empty letterboxing",
+    "pass": true
+  },
+  {
+    "check": "320px light clip navigation sits outside the footage",
+    "pass": true
+  },
+  {
+    "check": "320px light Browse reveals filters without replacing video",
+    "pass": true
+  },
+  {
+    "check": "320px light clip picker uses a compact two-column grid",
+    "pass": true
+  },
+  {
+    "check": "320px light Watch restores the larger video frame",
+    "pass": true
+  },
+  {
+    "check": "320px light Watch keeps a usable clip list below the controls",
+    "pass": true
+  },
+  {
+    "check": "320px light splitter supports keyboard resizing",
+    "pass": true
+  },
+  {
+    "check": "320px light dragging continuously resizes the panes without recreating playback",
+    "pass": true
+  },
+  {
+    "check": "320px light next/back move one clip with a selected clip list item",
+    "pass": true
+  },
+  {
+    "check": "320px light new highlights preserve the open clip instead of interrupting it",
+    "pass": true
+  },
+  {
+    "check": "320px light readable clip rows include the headline and game",
+    "pass": true
+  },
+  {
+    "check": "320px light player gallery uses larger portraits and accessible targets",
+    "pass": true
+  },
+  {
+    "check": "320px light returning to Watch closes the gallery and restores the list",
+    "pass": true
+  },
+  {
+    "check": "320px light player chips show available clip counts",
+    "pass": true
+  },
+  {
+    "check": "320px light search finds that player without replacing the video",
+    "pass": true
+  },
+  {
+    "check": "320px light empty search offers a clear recovery",
+    "pass": true
+  },
+  {
+    "check": "320px light clearing search restores the queue without restarting the clip",
+    "pass": true
+  },
+  {
+    "check": "320px light a player filter starts their first clip in order",
+    "pass": true
+  },
+  {
+    "check": "320px light clip names, counts and search placeholders meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "320px light grid has room for several complete previews",
+    "pass": true
+  },
+  {
+    "check": "320px light at least four clip images are visible together",
+    "pass": true
+  },
+  {
+    "check": "320px light selected clip has one visible Playing badge",
+    "pass": true
+  },
+  {
+    "check": "320px light first preview image is fully visible in the lower list",
+    "pass": true
+  },
+  {
+    "check": "320px light browser actions have 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "320px light closing stops playback and releases the source",
+    "pass": true
+  },
+  {
+    "check": "320px light close restores the originating Home control",
+    "pass": true
+  },
+  {
+    "check": "320px light a card opens that specific clip",
+    "pass": true
+  },
+  {
+    "check": "320px light first Home card starts at clip one with Previous disabled",
+    "pass": true
+  },
+  {
+    "check": "320px light changing player then closing restores a visible Home control",
+    "pass": true
+  },
+  {
+    "check": "320px light playback advances to the next clip on ended",
+    "pass": true
+  },
+  {
+    "check": "320px light reopening the reel resets playback and the clip list to the start",
+    "pass": true
+  },
+  {
+    "check": "320px light a failed refresh retains current unexpired clips",
+    "pass": true
+  },
+  {
+    "check": "320px light playback errors show the source fallback without breaking the reel",
+    "pass": true
+  },
+  {
+    "check": "320px light missing video metadata still opens the exact source clip",
+    "pass": true
+  },
+  {
+    "check": "320px light reduced motion opens directly without running entrance effects",
+    "pass": true
+  },
+  {
+    "check": "320px light retains the open reel and playback source at 2026-10-27T11:00:00Z",
+    "pass": true
+  },
+  {
+    "check": "320px light retains the open reel and playback source at 2026-10-28T22:00:00Z",
+    "pass": true
+  },
+  {
+    "check": "320px light retains the open reel and playback source at 2026-10-29T10:59:00Z",
+    "pass": true
+  },
+  {
+    "check": "320px light Thursday morning expiry removes the Home reel and closes an open clip",
+    "pass": true
+  },
+  {
+    "check": "320px light expired cached clips cannot reappear after refresh",
+    "pass": true
+  },
+  {
+    "check": "320px light late responses do not revive a stopped Home reel",
+    "pass": true
+  },
+  {
+    "check": "320px light feature skeleton can start its visibility-gated loader",
+    "pass": true
+  },
+  {
+    "check": "320px light feature shows only three newest real previews",
+    "pass": true
+  },
+  {
+    "check": "320px light feature uses an asymmetric grid inside the phone",
+    "pass": true
+  },
+  {
+    "check": "320px light filtering remains in the complete browser",
+    "pass": true
+  },
+  {
+    "check": "320px light each feature tile opens its actual clip",
+    "pass": true
+  },
+  {
+    "check": "320px light Browse opens all clips at the latest with filters intact",
+    "pass": true
+  },
+  {
+    "check": "320px light feature headline and controls reflow at enlarged text",
+    "pass": true
+  },
+  {
+    "check": "320px light no page errors or unauthorized writes",
+    "pass": true
+  },
+  {
+    "check": "320px dark shows the first eight clips and the complete ten-clip reel",
+    "pass": true
+  },
+  {
+    "check": "320px dark Home previews start with the newest published clip",
+    "pass": true
+  },
+  {
+    "check": "320px dark keeps the first Home load free of embedded players",
+    "pass": true
+  },
+  {
+    "check": "320px dark cards fit the phone with a clear next-card peek",
+    "pass": true
+  },
+  {
+    "check": "320px dark poster service failures fall back to the validated publisher image",
+    "pass": true
+  },
+  {
+    "check": "320px dark primary actions retain 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "320px dark secondary labels and duration meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "320px dark weekend heading is visible",
+    "pass": true
+  },
+  {
+    "check": "320px dark Home player chips filter clips before opening a video",
+    "pass": true
+  },
+  {
+    "check": "320px dark short header pull returns cleanly without closing",
+    "pass": true
+  },
+  {
+    "check": "320px dark sideways header movement does not dismiss the studio",
+    "pass": true
+  },
+  {
+    "check": "320px dark header swipe dismisses and releases playback",
+    "pass": true
+  },
+  {
+    "check": "320px dark reopening after a pull restores a clean studio",
+    "pass": true
+  },
+  {
+    "check": "320px dark opens the complete newest-first reel",
+    "pass": true
+  },
+  {
+    "check": "320px dark plays a native inline video with controls and a safe publisher source",
+    "pass": true
+  },
+  {
+    "check": "320px dark retains a safe explicit publisher fallback",
+    "pass": true
+  },
+  {
+    "check": "320px dark player sheet stays inside mobile edges",
+    "pass": true
+  },
+  {
+    "check": "320px dark Watch uses a natural video frame without tall empty letterboxing",
+    "pass": true
+  },
+  {
+    "check": "320px dark clip navigation sits outside the footage",
+    "pass": true
+  },
+  {
+    "check": "320px dark Browse reveals filters without replacing video",
+    "pass": true
+  },
+  {
+    "check": "320px dark clip picker uses a compact two-column grid",
+    "pass": true
+  },
+  {
+    "check": "320px dark Watch restores the larger video frame",
+    "pass": true
+  },
+  {
+    "check": "320px dark Watch keeps a usable clip list below the controls",
+    "pass": true
+  },
+  {
+    "check": "320px dark splitter supports keyboard resizing",
+    "pass": true
+  },
+  {
+    "check": "320px dark dragging continuously resizes the panes without recreating playback",
+    "pass": true
+  },
+  {
+    "check": "320px dark next/back move one clip with a selected clip list item",
+    "pass": true
+  },
+  {
+    "check": "320px dark new highlights preserve the open clip instead of interrupting it",
+    "pass": true
+  },
+  {
+    "check": "320px dark readable clip rows include the headline and game",
+    "pass": true
+  },
+  {
+    "check": "320px dark player gallery uses larger portraits and accessible targets",
+    "pass": true
+  },
+  {
+    "check": "320px dark returning to Watch closes the gallery and restores the list",
+    "pass": true
+  },
+  {
+    "check": "320px dark player chips show available clip counts",
+    "pass": true
+  },
+  {
+    "check": "320px dark search finds that player without replacing the video",
+    "pass": true
+  },
+  {
+    "check": "320px dark empty search offers a clear recovery",
+    "pass": true
+  },
+  {
+    "check": "320px dark clearing search restores the queue without restarting the clip",
+    "pass": true
+  },
+  {
+    "check": "320px dark a player filter starts their first clip in order",
+    "pass": true
+  },
+  {
+    "check": "320px dark clip names, counts and search placeholders meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "320px dark grid has room for several complete previews",
+    "pass": true
+  },
+  {
+    "check": "320px dark at least four clip images are visible together",
+    "pass": true
+  },
+  {
+    "check": "320px dark selected clip has one visible Playing badge",
+    "pass": true
+  },
+  {
+    "check": "320px dark first preview image is fully visible in the lower list",
+    "pass": true
+  },
+  {
+    "check": "320px dark browser actions have 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "320px dark closing stops playback and releases the source",
+    "pass": true
+  },
+  {
+    "check": "320px dark close restores the originating Home control",
+    "pass": true
+  },
+  {
+    "check": "320px dark a card opens that specific clip",
+    "pass": true
+  },
+  {
+    "check": "320px dark first Home card starts at clip one with Previous disabled",
+    "pass": true
+  },
+  {
+    "check": "320px dark changing player then closing restores a visible Home control",
+    "pass": true
+  },
+  {
+    "check": "320px dark playback advances to the next clip on ended",
+    "pass": true
+  },
+  {
+    "check": "320px dark reopening the reel resets playback and the clip list to the start",
+    "pass": true
+  },
+  {
+    "check": "320px dark a failed refresh retains current unexpired clips",
+    "pass": true
+  },
+  {
+    "check": "320px dark playback errors show the source fallback without breaking the reel",
+    "pass": true
+  },
+  {
+    "check": "320px dark missing video metadata still opens the exact source clip",
+    "pass": true
+  },
+  {
+    "check": "320px dark reduced motion opens directly without running entrance effects",
+    "pass": true
+  },
+  {
+    "check": "320px dark retains the open reel and playback source at 2026-10-27T11:00:00Z",
+    "pass": true
+  },
+  {
+    "check": "320px dark retains the open reel and playback source at 2026-10-28T22:00:00Z",
+    "pass": true
+  },
+  {
+    "check": "320px dark retains the open reel and playback source at 2026-10-29T10:59:00Z",
+    "pass": true
+  },
+  {
+    "check": "320px dark Thursday morning expiry removes the Home reel and closes an open clip",
+    "pass": true
+  },
+  {
+    "check": "320px dark expired cached clips cannot reappear after refresh",
+    "pass": true
+  },
+  {
+    "check": "320px dark late responses do not revive a stopped Home reel",
+    "pass": true
+  },
+  {
+    "check": "320px dark feature skeleton can start its visibility-gated loader",
+    "pass": true
+  },
+  {
+    "check": "320px dark feature shows only three newest real previews",
+    "pass": true
+  },
+  {
+    "check": "320px dark feature uses an asymmetric grid inside the phone",
+    "pass": true
+  },
+  {
+    "check": "320px dark filtering remains in the complete browser",
+    "pass": true
+  },
+  {
+    "check": "320px dark each feature tile opens its actual clip",
+    "pass": true
+  },
+  {
+    "check": "320px dark Browse opens all clips at the latest with filters intact",
+    "pass": true
+  },
+  {
+    "check": "320px dark feature headline and controls reflow at enlarged text",
+    "pass": true
+  },
+  {
+    "check": "320px dark no page errors or unauthorized writes",
+    "pass": true
+  },
+  {
+    "check": "390px light shows the first eight clips and the complete ten-clip reel",
+    "pass": true
+  },
+  {
+    "check": "390px light Home previews start with the newest published clip",
+    "pass": true
+  },
+  {
+    "check": "390px light keeps the first Home load free of embedded players",
+    "pass": true
+  },
+  {
+    "check": "390px light cards fit the phone with a clear next-card peek",
+    "pass": true
+  },
+  {
+    "check": "390px light poster service failures fall back to the validated publisher image",
+    "pass": true
+  },
+  {
+    "check": "390px light primary actions retain 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "390px light secondary labels and duration meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "390px light weekend heading is visible",
+    "pass": true
+  },
+  {
+    "check": "390px light Home player chips filter clips before opening a video",
+    "pass": true
+  },
+  {
+    "check": "390px light short header pull returns cleanly without closing",
+    "pass": true
+  },
+  {
+    "check": "390px light sideways header movement does not dismiss the studio",
+    "pass": true
+  },
+  {
+    "check": "390px light header swipe dismisses and releases playback",
+    "pass": true
+  },
+  {
+    "check": "390px light reopening after a pull restores a clean studio",
+    "pass": true
+  },
+  {
+    "check": "390px light opens the complete newest-first reel",
+    "pass": true
+  },
+  {
+    "check": "390px light plays a native inline video with controls and a safe publisher source",
+    "pass": true
+  },
+  {
+    "check": "390px light retains a safe explicit publisher fallback",
+    "pass": true
+  },
+  {
+    "check": "390px light player sheet stays inside mobile edges",
+    "pass": true
+  },
+  {
+    "check": "390px light Watch uses a natural video frame without tall empty letterboxing",
+    "pass": true
+  },
+  {
+    "check": "390px light clip navigation sits outside the footage",
+    "pass": true
+  },
+  {
+    "check": "390px light Browse reveals filters without replacing video",
+    "pass": true
+  },
+  {
+    "check": "390px light clip picker uses a compact two-column grid",
+    "pass": true
+  },
+  {
+    "check": "390px light Watch restores the larger video frame",
+    "pass": true
+  },
+  {
+    "check": "390px light Watch keeps a usable clip list below the controls",
+    "pass": true
+  },
+  {
+    "check": "390px light splitter supports keyboard resizing",
+    "pass": true
+  },
+  {
+    "check": "390px light dragging continuously resizes the panes without recreating playback",
+    "pass": true
+  },
+  {
+    "check": "390px light next/back move one clip with a selected clip list item",
+    "pass": true
+  },
+  {
+    "check": "390px light new highlights preserve the open clip instead of interrupting it",
+    "pass": true
+  },
+  {
+    "check": "390px light readable clip rows include the headline and game",
+    "pass": true
+  },
+  {
+    "check": "390px light player gallery uses larger portraits and accessible targets",
+    "pass": true
+  },
+  {
+    "check": "390px light returning to Watch closes the gallery and restores the list",
+    "pass": true
+  },
+  {
+    "check": "390px light player chips show available clip counts",
+    "pass": true
+  },
+  {
+    "check": "390px light search finds that player without replacing the video",
+    "pass": true
+  },
+  {
+    "check": "390px light empty search offers a clear recovery",
+    "pass": true
+  },
+  {
+    "check": "390px light clearing search restores the queue without restarting the clip",
+    "pass": true
+  },
+  {
+    "check": "390px light a player filter starts their first clip in order",
+    "pass": true
+  },
+  {
+    "check": "390px light clip names, counts and search placeholders meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "390px light grid has room for several complete previews",
+    "pass": true
+  },
+  {
+    "check": "390px light at least four clip images are visible together",
+    "pass": true
+  },
+  {
+    "check": "390px light selected clip has one visible Playing badge",
+    "pass": true
+  },
+  {
+    "check": "390px light first preview image is fully visible in the lower list",
+    "pass": true
+  },
+  {
+    "check": "390px light browser actions have 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "390px light closing stops playback and releases the source",
+    "pass": true
+  },
+  {
+    "check": "390px light close restores the originating Home control",
+    "pass": true
+  },
+  {
+    "check": "390px light a card opens that specific clip",
+    "pass": true
+  },
+  {
+    "check": "390px light first Home card starts at clip one with Previous disabled",
+    "pass": true
+  },
+  {
+    "check": "390px light changing player then closing restores a visible Home control",
+    "pass": true
+  },
+  {
+    "check": "390px light playback advances to the next clip on ended",
+    "pass": true
+  },
+  {
+    "check": "390px light reopening the reel resets playback and the clip list to the start",
+    "pass": true
+  },
+  {
+    "check": "390px light a failed refresh retains current unexpired clips",
+    "pass": true
+  },
+  {
+    "check": "390px light playback errors show the source fallback without breaking the reel",
+    "pass": true
+  },
+  {
+    "check": "390px light missing video metadata still opens the exact source clip",
+    "pass": true
+  },
+  {
+    "check": "390px light reduced motion opens directly without running entrance effects",
+    "pass": true
+  },
+  {
+    "check": "390px light retains the open reel and playback source at 2026-10-27T11:00:00Z",
+    "pass": true
+  },
+  {
+    "check": "390px light retains the open reel and playback source at 2026-10-28T22:00:00Z",
+    "pass": true
+  },
+  {
+    "check": "390px light retains the open reel and playback source at 2026-10-29T10:59:00Z",
+    "pass": true
+  },
+  {
+    "check": "390px light Thursday morning expiry removes the Home reel and closes an open clip",
+    "pass": true
+  },
+  {
+    "check": "390px light expired cached clips cannot reappear after refresh",
+    "pass": true
+  },
+  {
+    "check": "390px light late responses do not revive a stopped Home reel",
+    "pass": true
+  },
+  {
+    "check": "390px light feature skeleton can start its visibility-gated loader",
+    "pass": true
+  },
+  {
+    "check": "390px light feature shows only three newest real previews",
+    "pass": true
+  },
+  {
+    "check": "390px light feature uses an asymmetric grid inside the phone",
+    "pass": true
+  },
+  {
+    "check": "390px light filtering remains in the complete browser",
+    "pass": true
+  },
+  {
+    "check": "390px light each feature tile opens its actual clip",
+    "pass": true
+  },
+  {
+    "check": "390px light Browse opens all clips at the latest with filters intact",
+    "pass": true
+  },
+  {
+    "check": "390px light feature headline and controls reflow at enlarged text",
+    "pass": true
+  },
+  {
+    "check": "390px light no page errors or unauthorized writes",
+    "pass": true
+  },
+  {
+    "check": "390px dark shows the first eight clips and the complete ten-clip reel",
+    "pass": true
+  },
+  {
+    "check": "390px dark Home previews start with the newest published clip",
+    "pass": true
+  },
+  {
+    "check": "390px dark keeps the first Home load free of embedded players",
+    "pass": true
+  },
+  {
+    "check": "390px dark cards fit the phone with a clear next-card peek",
+    "pass": true
+  },
+  {
+    "check": "390px dark poster service failures fall back to the validated publisher image",
+    "pass": true
+  },
+  {
+    "check": "390px dark primary actions retain 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "390px dark secondary labels and duration meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "390px dark weekend heading is visible",
+    "pass": true
+  },
+  {
+    "check": "390px dark Home player chips filter clips before opening a video",
+    "pass": true
+  },
+  {
+    "check": "390px dark short header pull returns cleanly without closing",
+    "pass": true
+  },
+  {
+    "check": "390px dark sideways header movement does not dismiss the studio",
+    "pass": true
+  },
+  {
+    "check": "390px dark header swipe dismisses and releases playback",
+    "pass": true
+  },
+  {
+    "check": "390px dark reopening after a pull restores a clean studio",
+    "pass": true
+  },
+  {
+    "check": "390px dark opens the complete newest-first reel",
+    "pass": true
+  },
+  {
+    "check": "390px dark plays a native inline video with controls and a safe publisher source",
+    "pass": true
+  },
+  {
+    "check": "a pending clip keeps its poster over the player until a frame is ready",
+    "pass": true
+  },
+  {
+    "check": "a stale media completion cannot replace the newly selected clip",
+    "pass": true
+  },
+  {
+    "check": "390px dark retains a safe explicit publisher fallback",
+    "pass": true
+  },
+  {
+    "check": "390px dark player sheet stays inside mobile edges",
+    "pass": true
+  },
+  {
+    "check": "390px dark Watch uses a natural video frame without tall empty letterboxing",
+    "pass": true
+  },
+  {
+    "check": "390px dark clip navigation sits outside the footage",
+    "pass": true
+  },
+  {
+    "check": "390px dark Browse reveals filters without replacing video",
+    "pass": true
+  },
+  {
+    "check": "390px dark clip picker uses a compact two-column grid",
+    "pass": true
+  },
+  {
+    "check": "390px dark Watch restores the larger video frame",
+    "pass": true
+  },
+  {
+    "check": "390px dark Watch keeps a usable clip list below the controls",
+    "pass": true
+  },
+  {
+    "check": "390px dark splitter supports keyboard resizing",
+    "pass": true
+  },
+  {
+    "check": "390px dark dragging continuously resizes the panes without recreating playback",
+    "pass": true
+  },
+  {
+    "check": "390px dark next/back move one clip with a selected clip list item",
+    "pass": true
+  },
+  {
+    "check": "390px dark new highlights preserve the open clip instead of interrupting it",
+    "pass": true
+  },
+  {
+    "check": "390px dark readable clip rows include the headline and game",
+    "pass": true
+  },
+  {
+    "check": "390px dark player gallery uses larger portraits and accessible targets",
+    "pass": true
+  },
+  {
+    "check": "390px dark returning to Watch closes the gallery and restores the list",
+    "pass": true
+  },
+  {
+    "check": "390px dark player chips show available clip counts",
+    "pass": true
+  },
+  {
+    "check": "390px dark search finds that player without replacing the video",
+    "pass": true
+  },
+  {
+    "check": "390px dark empty search offers a clear recovery",
+    "pass": true
+  },
+  {
+    "check": "390px dark clearing search restores the queue without restarting the clip",
+    "pass": true
+  },
+  {
+    "check": "390px dark a player filter starts their first clip in order",
+    "pass": true
+  },
+  {
+    "check": "390px dark clip names, counts and search placeholders meet 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "390px dark grid has room for several complete previews",
+    "pass": true
+  },
+  {
+    "check": "390px dark at least four clip images are visible together",
+    "pass": true
+  },
+  {
+    "check": "390px dark selected clip has one visible Playing badge",
+    "pass": true
+  },
+  {
+    "check": "390px dark first preview image is fully visible in the lower list",
+    "pass": true
+  },
+  {
+    "check": "390px dark browser actions have 44px touch targets",
+    "pass": true
+  },
+  {
+    "check": "320x568 keeps a full preview image visible",
+    "pass": true
+  },
+  {
+    "check": "short portrait Watch keeps the video at its natural proportions",
+    "pass": true
+  },
+  {
+    "check": "320x568 clip browser stays usable",
+    "pass": true
+  },
+  {
+    "check": "844x390 keeps a full preview image visible",
+    "pass": true
+  },
+  {
+    "check": "844x390 clip browser stays usable",
+    "pass": true
+  },
+  {
+    "check": "1280x800 keeps a full preview image visible",
+    "pass": true
+  },
+  {
+    "check": "1280x800 clip browser stays usable",
+    "pass": true
+  },
+  {
+    "check": "small visible viewport prioritizes search and readable results",
+    "pass": true
+  },
+  {
+    "check": "390px dark closing stops playback and releases the source",
+    "pass": true
+  },
+  {
+    "check": "390px dark close restores the originating Home control",
+    "pass": true
+  },
+  {
+    "check": "390px dark a card opens that specific clip",
+    "pass": true
+  },
+  {
+    "check": "390px dark first Home card starts at clip one with Previous disabled",
+    "pass": true
+  },
+  {
+    "check": "390px dark changing player then closing restores a visible Home control",
+    "pass": true
+  },
+  {
+    "check": "390px dark playback advances to the next clip on ended",
+    "pass": true
+  },
+  {
+    "check": "390px dark reopening the reel resets playback and the clip list to the start",
+    "pass": true
+  },
+  {
+    "check": "dismissal pauses immediately and preserves the video frame until the exit completes",
+    "pass": true
+  },
+  {
+    "check": "reopening during dismissal cancels the old exit without stopping the new clip",
+    "pass": true
+  },
+  {
+    "check": "a queued native close event cannot stop a freshly reopened clip",
+    "pass": true
+  },
+  {
+    "check": "390px dark a failed refresh retains current unexpired clips",
+    "pass": true
+  },
+  {
+    "check": "390px dark playback errors show the source fallback without breaking the reel",
+    "pass": true
+  },
+  {
+    "check": "390px dark missing video metadata still opens the exact source clip",
+    "pass": true
+  },
+  {
+    "check": "390px dark reduced motion opens directly without running entrance effects",
+    "pass": true
+  },
+  {
+    "check": "390px dark retains the open reel and playback source at 2026-10-27T11:00:00Z",
+    "pass": true
+  },
+  {
+    "check": "390px dark retains the open reel and playback source at 2026-10-28T22:00:00Z",
+    "pass": true
+  },
+  {
+    "check": "390px dark retains the open reel and playback source at 2026-10-29T10:59:00Z",
+    "pass": true
+  },
+  {
+    "check": "390px dark Thursday morning expiry removes the Home reel and closes an open clip",
+    "pass": true
+  },
+  {
+    "check": "390px dark expired cached clips cannot reappear after refresh",
+    "pass": true
+  },
+  {
+    "check": "390px dark late responses do not revive a stopped Home reel",
+    "pass": true
+  },
+  {
+    "check": "390px dark feature skeleton can start its visibility-gated loader",
+    "pass": true
+  },
+  {
+    "check": "390px dark feature shows only three newest real previews",
+    "pass": true
+  },
+  {
+    "check": "390px dark feature uses an asymmetric grid inside the phone",
+    "pass": true
+  },
+  {
+    "check": "390px dark filtering remains in the complete browser",
+    "pass": true
+  },
+  {
+    "check": "390px dark each feature tile opens its actual clip",
+    "pass": true
+  },
+  {
+    "check": "390px dark Browse opens all clips at the latest with filters intact",
+    "pass": true
+  },
+  {
+    "check": "390px dark feature headline and controls reflow at enlarged text",
+    "pass": true
+  },
+  {
+    "check": "390px dark no page errors or unauthorized writes",
+    "pass": true
+  }
+]
