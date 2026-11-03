@@ -5,8 +5,8 @@ export function mountClubhousePolish(root,{getMotion=()=>true,active=()=>root.is
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let stopped=false,frame=null,waiting=null,waitTimer=null,selection=null;
  const current=()=>!stopped&&root.isConnected&&active();
- const disclosures=mountDisclosureMotion(root,{selector:'.matchup-timeline,.banter-memory,.clubhouse-position-stats,.gd-compare-bench,.clubhouse-profile-awards,.weekly-roast-receipts details,.clubhouse-all-scores',getMotion,active:current});
- const canPlay=()=>current()&&getMotion()&&!reduced.matches&&document.visibilityState==='visible';
+ const disclosures=mountDisclosureMotion(root,{selector:'.matchup-timeline,.banter-memory,.clubhouse-position-stats,.gd-compare-bench,.clubhouse-profile-awards,.weekly-roast-receipts details',getMotion,active:current});
+ const canPlay=()=>current()&&getMotion()&&!reduced.matches&&document.documentElement.dataset.uiMotion!=='off'&&document.visibilityState==='visible';
  const visible=node=>{
   if(!node||node.closest('[hidden]')||!node.getClientRects().length)return false;
   const box=node.getBoundingClientRect();
@@ -69,11 +69,20 @@ export function mountClubhousePolish(root,{getMotion=()=>true,active=()=>root.is
   }
  };
  const motionChanged=()=>{disclosures.motionChanged();if(!canPlay())stopTransient();syncTabs(false)};
+ const land=(card,{direction=1}={})=>{
+  if(!canPlay()||card?.closest('[hidden]'))return;
+  const tile=root.querySelector('.clubhouse-matchup-strip [aria-pressed="true"]');
+  const marks=[...(card?.querySelectorAll('.clubhouse-game-teams .clubhouse-team-mark')||[]),...(tile?.querySelectorAll('.dfl-team-mark')||[])];
+  marks.filter(visible).forEach((mark,index)=>{
+   const sign=(direction||1)*(index%2?-1:1);
+   play(mark,[{transform:'translateX(0) rotate(0deg)'},{transform:`translateX(${sign*1.5}px) rotate(${sign*3.5}deg)`,offset:.24},{transform:`translateX(${-sign}px) rotate(${-sign*2.5}deg)`,offset:.52},{transform:`rotate(${sign}deg)`,offset:.76},{transform:'translateX(0) rotate(0deg)'}],{duration:280,delay:index%2*25,easing:'ease-out'});
+  });
+ };
  const onVisibility=()=>{if(document.visibilityState!=='visible')stopTransient()};
  reduced.addEventListener('change',motionChanged);document.addEventListener('visibilitychange',onVisibility);
  syncTabs(false);scheduleTabs();
  return {
-  enter,stopTransient,motionChanged,
+  enter,land,stopTransient,motionChanged,
   stop(){if(stopped)return;stopped=true;disclosures.stop();stopTransient();cancelAnimationFrame(frame);tabObserver.disconnect();resize.disconnect();reduced.removeEventListener('change',motionChanged);document.removeEventListener('visibilitychange',onVisibility);indicator?.remove();if(tabs)delete tabs.dataset.clubhousePolished},
  };
 }

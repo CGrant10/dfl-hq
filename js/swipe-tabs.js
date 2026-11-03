@@ -25,7 +25,7 @@ function previewOf(node, scene) {
   scene.parent.append(copy);return copy;
 }
 
-export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.querySelectorAll('[role="tab"]')], getPanel = null, getPanelForButton = null, accepts = (_target) => true, exclude = 'a,button,input,select,textarea,summary,[contenteditable]', selected = button => button.getAttribute('aria-selected') === 'true', activate = button => button.click() } = {}) {
+export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.querySelectorAll('[role="tab"]')], getPanel = null, getPanelForButton = null, accepts = (_target) => true, exclude = 'a,button,input,select,textarea,summary,[contenteditable]', selected = button => button.getAttribute('aria-selected') === 'true', activate = button => button.click(), onSettled=(_button)=>{} } = {}) {
   if (!surface) return () => {};
   const paneFor=getPanelForButton||((button)=>{
     const id=button?.getAttribute('aria-controls');
@@ -83,7 +83,7 @@ export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.quer
     const current=scene,from=current.painted,node=current.node,list=getButtons(),index=list.findIndex(selected),button=list[index+step];
     if(step&&button){
       const incoming=paneFor(button);
-      if(!incoming||incoming===node){clean();activate(button);return;}
+      if(!incoming||incoming===node){clean();activate(button);onSettled(button);return;}
       const outgoing=previewOf(node,current);current.copies.set(node,outgoing);
       outgoing.style.transform=translate(from);
       for(const [source,copy] of current.copies)if(source!==node){copy.remove();current.copies.delete(source);}
@@ -100,7 +100,7 @@ export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.quer
       animateUi(outgoing,[{transform:translate(from)},{transform:translate(end)}],{duration:280,fill:'both'});
       if(current.gap){current.gap.style.transform=translate(end);animateUi(current.gap,[{transform:translate(from)},{transform:translate(end)}],{duration:280,fill:'both'});}
       const animation=animateUi(incoming,[{transform:translate(start),height:`${current.height}px`},{transform:current.styles.get(incoming).find(([key])=>key==='transform')[1]||'none',height:`${naturalHeight}px`}],{duration:280,fill:'both'});
-      const finish=()=>{if(scene===current)clean();};
+      const finish=()=>{if(scene===current){clean();onSettled(button)}};
       if(animation)animation.finished.then(finish,finish);else finish();
     }else{
       current.phase='return';
@@ -153,7 +153,7 @@ export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.quer
         if(!scene.node.isConnected||panel()!==scene.node){clean();return;}
         if(frame){cancelAnimationFrame(frame);frame=0;} // settle from the last painted frame
         settle(valid?tabGlideStep(scene.painted,dx,origin):0);
-      }else if(valid){const list=getButtons(),index=list.findIndex(selected),button=list[index+(dx<0?1:-1)];if(button)activate(button);}
+      }else if(valid){const list=getButtons(),index=list.findIndex(selected),button=list[index+(dx<0?1:-1)];if(button){activate(button);onSettled(button)}}
     },
   });
   const interrupt=()=>{interrupted=true;swipe.cancel();clean();interrupted=false;};

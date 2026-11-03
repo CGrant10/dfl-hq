@@ -1,3 +1,17 @@
+## 1.534.0 — visible matchup strip and logo landing motion
+
+Reviewed the new Clubhouse matchup strip and main matchup in Light/Dark at
+320/390px, including actual compiled league data. Active surfaces, accent
+underlines, focus and scores use existing theme tokens. Existing member photo
+preferences and team identity colors are retained. No palette literals or theme
+options were added. Logo motion honors Reduced Motion and motion-off.
+
+`pnpm check` passes, including themes and 2,424 tests. All 124 dedicated gesture
+checks, 297 Clubhouse checks, 320 layout checks and four compiled-app
+theme/width cases pass without page errors.
+Evidence and physical-device limits:
+[clubhouse-matchup-strip-1534.md](docs/clubhouse-matchup-strip-1534.md).
+
 ## 1.533.0 — matchup paging and stable image presentation
 
 Reviewed Clubhouse's resting and finger-drag states at 320/390px in Light and

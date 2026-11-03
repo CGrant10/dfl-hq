@@ -1,0 +1,498 @@
+[
+  {
+    "check": "320px light populated matchup history cannot widen its outer grid",
+    "pass": true
+  },
+  {
+    "check": "320px light opens on competition with week tools folded",
+    "pass": true
+  },
+  {
+    "check": "320px light starting players are visible on the first phone screen",
+    "pass": true
+  },
+  {
+    "check": "320px light all six fantasy matchups are available",
+    "pass": true
+  },
+  {
+    "check": "320px light the matchup strip replaces the dropdown and duplicate score drawer",
+    "pass": true
+  },
+  {
+    "check": "320px light matchup follows the finger",
+    "pass": true
+  },
+  {
+    "check": "320px light adjacent matchup preview is inert and contains its lineup",
+    "pass": true
+  },
+  {
+    "check": "320px light swiping changes matchup without changing the Clubhouse tab",
+    "pass": true
+  },
+  {
+    "check": "320px light swipe updates the exact matchup route",
+    "pass": true
+  },
+  {
+    "check": "320px light paging removes its temporary layers",
+    "pass": true
+  },
+  {
+    "check": "320px light swiping a player row does not open its player card",
+    "pass": true
+  },
+  {
+    "check": "320px light arriving logos have a short transform-only shake",
+    "pass": true
+  },
+  {
+    "check": "320px light reverse swipe returns to the first matchup",
+    "pass": true
+  },
+  {
+    "check": "320px light the first edge settles without wrapping",
+    "pass": true
+  },
+  {
+    "check": "320px light cancelled touches keep the selected matchup",
+    "pass": true
+  },
+  {
+    "check": "320px light swipe reaches matchup 2",
+    "pass": true
+  },
+  {
+    "check": "320px light swipe reaches matchup 3",
+    "pass": true
+  },
+  {
+    "check": "320px light swipe reaches matchup 4",
+    "pass": true
+  },
+  {
+    "check": "320px light swipe reaches matchup 5",
+    "pass": true
+  },
+  {
+    "check": "320px light swipe reaches matchup 6",
+    "pass": true
+  },
+  {
+    "check": "320px light the last edge settles without wrapping",
+    "pass": true
+  },
+  {
+    "check": "320px light the active matchup is revealed in the strip",
+    "pass": true
+  },
+  {
+    "check": "320px light Home selects the first tile without changing tabs",
+    "pass": true
+  },
+  {
+    "check": "320px light arrow keys browse the visible matchup strip",
+    "pass": true
+  },
+  {
+    "check": "320px light interrupting an arrival with a reverse swipe stays smooth",
+    "pass": true
+  },
+  {
+    "check": "320px light tile selection interrupts a moving matchup cleanly",
+    "pass": true
+  },
+  {
+    "check": "320px light vertical scrolling remains native",
+    "pass": true
+  },
+  {
+    "check": "320px light Reduced Motion retains swipe navigation without transition layers",
+    "pass": true
+  },
+  {
+    "check": "320px light Reduced Motion disables the logo shake",
+    "pass": true
+  },
+  {
+    "check": "320px light swiping never creates horizontal page overflow",
+    "pass": true
+  },
+  {
+    "check": "320px light matchup paging has no browser errors or league writes",
+    "pass": true
+  },
+  {
+    "check": "320px dark populated matchup history cannot widen its outer grid",
+    "pass": true
+  },
+  {
+    "check": "320px dark opens on competition with week tools folded",
+    "pass": true
+  },
+  {
+    "check": "320px dark starting players are visible on the first phone screen",
+    "pass": true
+  },
+  {
+    "check": "320px dark all six fantasy matchups are available",
+    "pass": true
+  },
+  {
+    "check": "320px dark the matchup strip replaces the dropdown and duplicate score drawer",
+    "pass": true
+  },
+  {
+    "check": "320px dark matchup follows the finger",
+    "pass": true
+  },
+  {
+    "check": "320px dark adjacent matchup preview is inert and contains its lineup",
+    "pass": true
+  },
+  {
+    "check": "320px dark swiping changes matchup without changing the Clubhouse tab",
+    "pass": true
+  },
+  {
+    "check": "320px dark swipe updates the exact matchup route",
+    "pass": true
+  },
+  {
+    "check": "320px dark paging removes its temporary layers",
+    "pass": true
+  },
+  {
+    "check": "320px dark swiping a player row does not open its player card",
+    "pass": true
+  },
+  {
+    "check": "320px dark arriving logos have a short transform-only shake",
+    "pass": true
+  },
+  {
+    "check": "320px dark reverse swipe returns to the first matchup",
+    "pass": true
+  },
+  {
+    "check": "320px dark the first edge settles without wrapping",
+    "pass": true
+  },
+  {
+    "check": "320px dark cancelled touches keep the selected matchup",
+    "pass": true
+  },
+  {
+    "check": "320px dark swipe reaches matchup 2",
+    "pass": true
+  },
+  {
+    "check": "320px dark swipe reaches matchup 3",
+    "pass": true
+  },
+  {
+    "check": "320px dark swipe reaches matchup 4",
+    "pass": true
+  },
+  {
+    "check": "320px dark swipe reaches matchup 5",
+    "pass": true
+  },
+  {
+    "check": "320px dark swipe reaches matchup 6",
+    "pass": true
+  },
+  {
+    "check": "320px dark the last edge settles without wrapping",
+    "pass": true
+  },
+  {
+    "check": "320px dark the active matchup is revealed in the strip",
+    "pass": true
+  },
+  {
+    "check": "320px dark Home selects the first tile without changing tabs",
+    "pass": true
+  },
+  {
+    "check": "320px dark arrow keys browse the visible matchup strip",
+    "pass": true
+  },
+  {
+    "check": "320px dark interrupting an arrival with a reverse swipe stays smooth",
+    "pass": true
+  },
+  {
+    "check": "320px dark tile selection interrupts a moving matchup cleanly",
+    "pass": true
+  },
+  {
+    "check": "320px dark vertical scrolling remains native",
+    "pass": true
+  },
+  {
+    "check": "320px dark Reduced Motion retains swipe navigation without transition layers",
+    "pass": true
+  },
+  {
+    "check": "320px dark Reduced Motion disables the logo shake",
+    "pass": true
+  },
+  {
+    "check": "320px dark swiping never creates horizontal page overflow",
+    "pass": true
+  },
+  {
+    "check": "320px dark matchup paging has no browser errors or league writes",
+    "pass": true
+  },
+  {
+    "check": "390px light populated matchup history cannot widen its outer grid",
+    "pass": true
+  },
+  {
+    "check": "390px light opens on competition with week tools folded",
+    "pass": true
+  },
+  {
+    "check": "390px light starting players are visible on the first phone screen",
+    "pass": true
+  },
+  {
+    "check": "390px light all six fantasy matchups are available",
+    "pass": true
+  },
+  {
+    "check": "390px light the matchup strip replaces the dropdown and duplicate score drawer",
+    "pass": true
+  },
+  {
+    "check": "390px light matchup follows the finger",
+    "pass": true
+  },
+  {
+    "check": "390px light adjacent matchup preview is inert and contains its lineup",
+    "pass": true
+  },
+  {
+    "check": "390px light swiping changes matchup without changing the Clubhouse tab",
+    "pass": true
+  },
+  {
+    "check": "390px light swipe updates the exact matchup route",
+    "pass": true
+  },
+  {
+    "check": "390px light paging removes its temporary layers",
+    "pass": true
+  },
+  {
+    "check": "390px light swiping a player row does not open its player card",
+    "pass": true
+  },
+  {
+    "check": "390px light arriving logos have a short transform-only shake",
+    "pass": true
+  },
+  {
+    "check": "390px light reverse swipe returns to the first matchup",
+    "pass": true
+  },
+  {
+    "check": "390px light the first edge settles without wrapping",
+    "pass": true
+  },
+  {
+    "check": "390px light cancelled touches keep the selected matchup",
+    "pass": true
+  },
+  {
+    "check": "390px light swipe reaches matchup 2",
+    "pass": true
+  },
+  {
+    "check": "390px light swipe reaches matchup 3",
+    "pass": true
+  },
+  {
+    "check": "390px light swipe reaches matchup 4",
+    "pass": true
+  },
+  {
+    "check": "390px light swipe reaches matchup 5",
+    "pass": true
+  },
+  {
+    "check": "390px light swipe reaches matchup 6",
+    "pass": true
+  },
+  {
+    "check": "390px light the last edge settles without wrapping",
+    "pass": true
+  },
+  {
+    "check": "390px light the active matchup is revealed in the strip",
+    "pass": true
+  },
+  {
+    "check": "390px light Home selects the first tile without changing tabs",
+    "pass": true
+  },
+  {
+    "check": "390px light arrow keys browse the visible matchup strip",
+    "pass": true
+  },
+  {
+    "check": "390px light interrupting an arrival with a reverse swipe stays smooth",
+    "pass": true
+  },
+  {
+    "check": "390px light tile selection interrupts a moving matchup cleanly",
+    "pass": true
+  },
+  {
+    "check": "390px light vertical scrolling remains native",
+    "pass": true
+  },
+  {
+    "check": "390px light Reduced Motion retains swipe navigation without transition layers",
+    "pass": true
+  },
+  {
+    "check": "390px light Reduced Motion disables the logo shake",
+    "pass": true
+  },
+  {
+    "check": "390px light swiping never creates horizontal page overflow",
+    "pass": true
+  },
+  {
+    "check": "390px light matchup paging has no browser errors or league writes",
+    "pass": true
+  },
+  {
+    "check": "390px dark populated matchup history cannot widen its outer grid",
+    "pass": true
+  },
+  {
+    "check": "390px dark opens on competition with week tools folded",
+    "pass": true
+  },
+  {
+    "check": "390px dark starting players are visible on the first phone screen",
+    "pass": true
+  },
+  {
+    "check": "390px dark all six fantasy matchups are available",
+    "pass": true
+  },
+  {
+    "check": "390px dark the matchup strip replaces the dropdown and duplicate score drawer",
+    "pass": true
+  },
+  {
+    "check": "390px dark matchup follows the finger",
+    "pass": true
+  },
+  {
+    "check": "390px dark adjacent matchup preview is inert and contains its lineup",
+    "pass": true
+  },
+  {
+    "check": "390px dark swiping changes matchup without changing the Clubhouse tab",
+    "pass": true
+  },
+  {
+    "check": "390px dark swipe updates the exact matchup route",
+    "pass": true
+  },
+  {
+    "check": "390px dark paging removes its temporary layers",
+    "pass": true
+  },
+  {
+    "check": "390px dark swiping a player row does not open its player card",
+    "pass": true
+  },
+  {
+    "check": "390px dark arriving logos have a short transform-only shake",
+    "pass": true
+  },
+  {
+    "check": "390px dark reverse swipe returns to the first matchup",
+    "pass": true
+  },
+  {
+    "check": "390px dark the first edge settles without wrapping",
+    "pass": true
+  },
+  {
+    "check": "390px dark cancelled touches keep the selected matchup",
+    "pass": true
+  },
+  {
+    "check": "390px dark swipe reaches matchup 2",
+    "pass": true
+  },
+  {
+    "check": "390px dark swipe reaches matchup 3",
+    "pass": true
+  },
+  {
+    "check": "390px dark swipe reaches matchup 4",
+    "pass": true
+  },
+  {
+    "check": "390px dark swipe reaches matchup 5",
+    "pass": true
+  },
+  {
+    "check": "390px dark swipe reaches matchup 6",
+    "pass": true
+  },
+  {
+    "check": "390px dark the last edge settles without wrapping",
+    "pass": true
+  },
+  {
+    "check": "390px dark the active matchup is revealed in the strip",
+    "pass": true
+  },
+  {
+    "check": "390px dark Home selects the first tile without changing tabs",
+    "pass": true
+  },
+  {
+    "check": "390px dark arrow keys browse the visible matchup strip",
+    "pass": true
+  },
+  {
+    "check": "390px dark interrupting an arrival with a reverse swipe stays smooth",
+    "pass": true
+  },
+  {
+    "check": "390px dark tile selection interrupts a moving matchup cleanly",
+    "pass": true
+  },
+  {
+    "check": "390px dark vertical scrolling remains native",
+    "pass": true
+  },
+  {
+    "check": "390px dark Reduced Motion retains swipe navigation without transition layers",
+    "pass": true
+  },
+  {
+    "check": "390px dark Reduced Motion disables the logo shake",
+    "pass": true
+  },
+  {
+    "check": "390px dark swiping never creates horizontal page overflow",
+    "pass": true
+  },
+  {
+    "check": "390px dark matchup paging has no browser errors or league writes",
+    "pass": true
+  }
+]

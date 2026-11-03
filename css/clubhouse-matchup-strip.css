@@ -1,0 +1,32 @@
+/* A visible, touch-scrollable matchup strip shares the main pager's selection. */
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-strip {
+ display:grid; grid-auto-flow:column; grid-auto-columns:min(85vw,10rem); grid-template-columns:none;
+ gap:8px; width:100%; min-width:0; margin:0 0 12px; padding:3px 0 5px;
+ overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity;
+ scrollbar-width:none; touch-action:pan-x pan-y pinch-zoom;
+}
+#view .clubhouse-matchup-strip::-webkit-scrollbar { display:none; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-strip .clubhouse-scoreboard-game {
+ display:grid; grid-template-columns:minmax(0,1fr); align-content:start; gap:6px;
+ min-width:0; min-height:76px; height:100%; padding:8px; border:0; border-radius:4px;
+ border-bottom:2px solid transparent; background:transparent; box-shadow:none; scroll-snap-align:center;
+}
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-strip .clubhouse-scoreboard-game[aria-pressed="true"] {
+ border-bottom-color:var(--accent); background:var(--bg-2); box-shadow:none;
+}
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-strip .clubhouse-mini-team {
+ display:grid; grid-template-columns:1.25rem minmax(0,1fr) auto; align-items:center;
+ gap:5px; min-width:0; min-height:25px;
+}
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-strip .dfl-team-mark {
+ width:1.25rem; height:1.25rem; min-width:1.25rem; border:0; border-radius:4px;
+}
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-strip .clubhouse-mini-team>span:not(.dfl-team-mark) {
+ min-width:0; margin:0; font:550 .6875rem/1.2 var(--font-ui); white-space:normal;
+ display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+ overflow:hidden; overflow-wrap:break-word;
+}
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-strip .clubhouse-mini-team>b {
+ color:var(--text); font:700 .875rem/1.2 var(--font-ui); font-variant-numeric:tabular-nums;
+}
+#view .clubhouse-matchup-strip button:focus-visible { outline:2px solid var(--accent); outline-offset:-3px; }
