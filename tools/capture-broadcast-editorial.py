@@ -65,13 +65,17 @@ with sync_playwright() as p:
   page.locator('[data-bx-stage]').screenshot(path=str(OUT/f'editorial-picker-{mode}.png'))
   page.locator('[data-bx-go="9"]').click();page.wait_for_timeout(350)
   assert page.locator('.bx-page-count').inner_text()=='10 / 10'
- # Opening the picker pauses its clock. Refreshing it must release that pause.
+ # Refresh waits for an open picker. Closing it applies the deck and releases its clock.
  page.evaluate('''async()=>{editorialStage.stop();const {renderStage,startStage}=await import('./js/broadcast-stage.js');const deck=[{id:'clock-a',kind:'news',headline:'First',dwell:300},{id:'clock-b',kind:'news',headline:'Second',dwell:300}];document.querySelector('.home-broadcast').innerHTML=renderStage(deck,{editorial:true,wide:true});window.clockStage=startStage(document.querySelector('[data-bx-stage]'),deck);window.clockDeck=deck}''')
  page.locator('.bx-story-picker>summary').click();page.mouse.move(380,800);page.wait_for_timeout(450)
  assert page.locator('.bx-page-count').inner_text()=='1 / 2','Open story picker did not pause autoplay'
  page.evaluate("clockStage.update(clockDeck.map(s=>({...s,headline:s.headline+' updated'})))")
+ page.wait_for_timeout(450)
+ assert page.locator('.bx-story-picker').evaluate('e=>e.open'),'Refresh closed the story chooser'
+ assert page.locator('.bx-page-count').inner_text()=='1 / 2','Refresh advanced while choosing a story'
+ page.locator('.bx-story-picker>summary').click();page.mouse.move(380,800)
  page.wait_for_timeout(800)
- assert page.locator('.bx-page-count').inner_text()=='2 / 2','Refreshed picker left autoplay paused'
+ assert page.locator('.bx-page-count').inner_text()=='2 / 2','Closing the refreshed picker left autoplay paused'
  page.evaluate('clockStage.stop()')
  (OUT/'editorial-checks.json').write_text(json.dumps({'layouts':checks,'picker':True,'keyboardEscape':True,'previousNext':True,'routedReceipt':True,'pickerClock':True,'refreshResume':True,'errors':errors},indent=2))
  assert not errors,errors

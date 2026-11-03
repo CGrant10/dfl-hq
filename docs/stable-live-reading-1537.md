@@ -24,7 +24,8 @@ Short pulls spring back, sideways drags cancel and a deliberate downward pull
 slides the studio out. Video/list controls retain native gestures. A small
 theme-token grip indicates the header gesture. A completed dismissal pauses
 and releases playback, restores focus, and resets drag state before reopening.
-Normal clip-to-preview close animation remains. Reduced Motion, motion-off,
+Normal clip-to-preview close animation remains; the shared backdrop fade now
+finishes with dismissal and closing controls cannot receive pointer taps. Reduced Motion, motion-off,
 viewport interruptions and route cleanup use the existing shared behavior.
 
 ## Validation
@@ -38,6 +39,8 @@ viewport interruptions and route cleanup use the existing shared behavior.
 - [277 replay checks](stable-live-reading-1537/highlight-checks.json): header
   gestures, focus/playback cleanup, reopening, native media, filtering, layout,
   resized viewports, enlarged text, Reduced Motion and expiry.
+- The editorial chooser/clock regression verifies a refresh keeps the chooser
+  open and closing it resumes autoplay.
 - Broadcast: [90 normal](stable-live-reading-1537/broadcast-checks.json) and
   [56 enlarged](stable-live-reading-1537/broadcast-enlarged-checks.json) layouts.
 - Shared interface: 24 layouts and six enlarged layouts. Trade reading: 112

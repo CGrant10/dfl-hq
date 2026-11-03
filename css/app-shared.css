@@ -7095,6 +7095,8 @@ html[data-ui-motion="off"] .home-reel-screen[data-reel-loading]::after { animati
 /* The studio shares the player-card header drag; video and lists stay native. */
 .home-reel-player[data-sheet-ready]::backdrop { opacity:var(--sheet-dim,1); }
 .home-reel-player[data-sheet-moving] { transition:none!important; will-change:transform; }
+.home-reel-player[data-ui-closing] { pointer-events:none; }
+.home-reel-player[data-ui-closing]::backdrop { animation:ui-backdrop-out 220ms ease forwards; }
 @media(max-width:600px) {
  .home-reel-player>header[data-sheet-handle] { position:relative; padding-top:6px; min-height:52px; touch-action:none; user-select:none; }
  .home-reel-player>header[data-sheet-handle]::before { content:""; position:absolute; top:3px; left:calc(50% - 14px); width:28px; height:3px; border-radius:3px; background:var(--muted); opacity:.65; pointer-events:none; }
