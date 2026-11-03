@@ -54,6 +54,12 @@ with sync_playwright() as p:
    page.evaluate('patchImages()');page.wait_for_timeout(30)
    assert page.locator('#photos .has-photo').count()==3 and not pending,'Live patch retried a failed image primary or hid its successful fallback'
    assert page.locator('.home-reel-poster').evaluate('e=>e.classList.contains("has-poster")&&getComputedStyle(e.querySelector("img")).opacity==="1"'),'Live patch hid an already loaded poster'
+   page.locator('.home-reel-poster img').evaluate('e=>e.dispatchEvent(new Event("error"))');page.wait_for_timeout(80)
+   assert len(pending)==1 and pending[0].request.url=='https://a.espncdn.com/photo/fixture.jpg','Poster optimizer did not fall back to the validated publisher'
+   assert page.locator('.home-reel-poster img').evaluate('e=>e.dataset.posterFallback==="1"&&!e.hasAttribute("srcset")')
+   pending.pop().fulfill(content_type='image/png',body=(ROOT/'tools/fixtures/player-portrait.png').read_bytes());page.wait_for_timeout(200)
+   page.evaluate('patchImages()');page.wait_for_timeout(30)
+   assert not pending and page.locator('.home-reel-poster.has-poster img').get_attribute('src')=='https://a.espncdn.com/photo/fixture.jpg','Refresh retried the failed poster optimizer'
    page.evaluate('changeSavedPhoto("https://image.fixture/new.jpg")');page.wait_for_timeout(30)
    assert len(pending)==1 and pending[0].request.url=='https://image.fixture/new.jpg','A changed saved photo did not invalidate its old fallback'
    pending.pop().fulfill(content_type='image/png',body=(ROOT/'tools/fixtures/player-portrait.png').read_bytes());page.wait_for_timeout(200)

@@ -16,8 +16,12 @@ function update(node,fresh){
    for(const name of ['data-photo-fallbacks','data-portrait-fallback'])oldImage.hasAttribute(name)?newImage.setAttribute(name,oldImage.getAttribute(name)):newImage.removeAttribute(name);
   }
  }
- const poster=node.matches('.home-reel-poster.has-poster,.reel-list-poster.has-poster')&&node.querySelector('img')?.getAttribute('src')===fresh.querySelector('img')?.getAttribute('src');
- if(poster)fresh.classList.add('has-poster');
+ const oldPoster=node.matches('.home-reel-poster.has-poster,.reel-list-poster.has-poster')?node.querySelector('img'):null,newPoster=oldPoster&&fresh.querySelector('img');
+ const samePoster=oldPoster?.dataset.posterSource&&oldPoster.dataset.posterSource===newPoster?.dataset.posterSource;
+ if(oldPoster&&newPoster&&(samePoster||oldPoster.getAttribute('src')===newPoster.getAttribute('src'))){
+  fresh.classList.add('has-poster');
+  if(samePoster&&oldPoster.dataset.posterFallback){newPoster.setAttribute('src',oldPoster.getAttribute('src'));newPoster.removeAttribute('srcset');newPoster.removeAttribute('sizes');newPoster.dataset.posterFallback='1'}
+ }
  for(const attr of [...node.attributes])if(!fresh.hasAttribute(attr.name)&&!(disclosure&&attr.name==='open')&&attr.name!=='data-page-detail-wired')node.removeAttribute(attr.name);
  for(const attr of fresh.attributes)if(!(disclosure&&attr.name==='open')&&node.getAttribute(attr.name)!==attr.value)node.setAttribute(attr.name,attr.value);
  reconcile(node,fresh);

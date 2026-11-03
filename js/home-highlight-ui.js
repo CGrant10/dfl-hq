@@ -8,7 +8,7 @@ export function highlightPosterUrl(value,width=640){
 export function highlightPosterImage(value,{width=640,sizes='auto, (max-width:600px) 66vw,480px'}={}){
  const src=highlightPosterUrl(value,width);if(!src)return '';
  const set=[240,480,960].map(size=>`${highlightPosterUrl(value,size)} ${size}w`).join(', ');
- return `<img src="${esc(src)}" srcset="${esc(set)}" sizes="${esc(sizes)}" data-image-reveal width="960" height="540" alt="" loading="lazy" decoding="async" onload="this.parentElement.classList.add('has-poster')" onerror="this.parentElement.classList.remove('has-poster');this.remove()">`;
+ return `<img src="${esc(src)}" srcset="${esc(set)}" sizes="${esc(sizes)}" data-poster-source="${esc(highlightThumbnail(value))}" data-image-reveal width="960" height="540" alt="" loading="lazy" decoding="async" onload="this.parentElement.classList.add('has-poster')" onerror="this.parentElement.classList.remove('has-poster');if(!this.dataset.posterFallback){this.dataset.posterFallback='1';this.removeAttribute('srcset');this.removeAttribute('sizes');this.src=this.dataset.posterSource}else{this.remove()}">`;
 }
 const duration=n=>`${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`;
 export function reelPlayersMarkup(players=[],selected='',total=0,prefix='home'){

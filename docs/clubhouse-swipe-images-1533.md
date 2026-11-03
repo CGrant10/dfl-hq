@@ -23,7 +23,9 @@ Shared portrait and poster loading also receives a focused cleanup:
 - Fixed image dimensions, face-aligned framing and short opacity reveals preserve
   text placement. Reduced Motion, global motion-off and local motion-off suppress
   those transitions. Existing illustration and logo framing remains deliberate.
-- Home/reel posters offer 240/480/960px variants and let native lazy-image sizing
+- Home/reel posters retain their validated original publisher fallback when the
+  optimization service fails, including across live updates. They offer
+  240/480/960px variants and let native lazy-image sizing
   choose the display-appropriate file. Tests observe one poster request, 480px at
   1x and 960px at 3x for the tested phone surface.
 - Live DOM reconciliation retains a loaded image, including a successful fallback,
@@ -54,6 +56,7 @@ Shared portrait and poster loading also receives a focused cleanup:
 
 [Swipe checks](clubhouse-swipe-images-1533/swipe-checks.json) ·
 [Image checks](clubhouse-swipe-images-1533/image-checks.json) ·
+[Weekend reel checks](clubhouse-swipe-images-1533/clip-checks.json) ·
 [Clubhouse checks](clubhouse-swipe-images-1533/clubhouse-checks.json) ·
 [Player motion](clubhouse-swipe-images-1533/player-motion-checks.json)
 

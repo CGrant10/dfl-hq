@@ -26,7 +26,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
  let returnPoint=null;
  let game='',pageSearch='',gameCenter=null,browserMode='clips',layout=null,media=null,modeRequest=0,replayContext=null,centerGame='',browseScroll=0;
  const posterError=event=>{
-  const image=event.target;if(image.tagName!=='IMG'||image.dataset.posterFallback)return;
+  const image=event.target;if(image.tagName!=='IMG'||image.hasAttribute('data-poster-source')||image.dataset.posterFallback)return;
   try{const url=new URL(image.src),source=url.hostname==='a.espncdn.com'&&url.pathname==='/combiner/i'?highlightThumbnail(url.searchParams.get('img')):null;
    if(source){image.dataset.posterFallback='1';image.src=source}
   }catch{/* Keep the fixed poster frame if a publisher image is unavailable. */}
