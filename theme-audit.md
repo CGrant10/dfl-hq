@@ -5,7 +5,7 @@ slides in Medicine Wheel Light/Dark at phone widths. Existing surface, text,
 accent and divider tokens are reused; NFL and status colors keep their roles.
 No palette or theme choice was added. Full broadcast copy and responsive rows
 remain contained through enlarged text checks. Existing motion preferences and
-44px primary actions remain; dense inline player controls retain a 32px height.
+44px primary actions and player controls remain.
 
 `pnpm check` passes including themes and 2,435 tests. Browser evidence covers
 90 normal/56 enlarged broadcast layouts, 112 trade checks, both compiled Home

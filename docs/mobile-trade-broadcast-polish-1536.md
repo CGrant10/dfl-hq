@@ -37,6 +37,8 @@ another daily story allowance; this does not guarantee the last active slide.
 - Broadcast: 90 normal layouts and 56 enlarged layouts, both themes, at
   320/390/768px; swipe/replay, Reduced Motion and full text containment pass.
 - Trade: 112 reading, compactness, lineup, multi-team, Back and motion checks.
+  Player buttons retain 44px tap areas. Existing matchup finish and record-art
+  regression checks also pass with the destination helpers loaded.
 - Shared interface: 24 layouts plus six enlarged layouts.
 - Compiled real-league Home: ten slides in each theme, no overflow or page errors.
   Each of its nine linked cards opens the matching destination and returns to
