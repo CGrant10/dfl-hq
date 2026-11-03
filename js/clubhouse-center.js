@@ -24,11 +24,12 @@ import {readPageChoice,savePageChoice} from './page-disclosure.js';
 import {accentOf} from './identity-rules.js';
 import {mountClubhousePolish} from './clubhouse-polish.js';
 import {animateUi} from './ui-motion.js';
+import {mountSwipeTabs} from './swipe-tabs.js';
 
 let stopCurrent=null;
 export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,loadStats=loadWeeklyStats,loadLeague=id=>sleeper.league(id),autoFinish=true,onClip=null}={}) {
  stopCurrent?.();
- let stopped=false,last=null,model=null,slots=null,vfx=null,leaderVfx=null,fxCard=null,stopScores=()=>{},leaderFilter='all',includeBench=false;
+ let stopped=false,last=null,model=null,slots=null,vfx=null,leaderVfx=null,fxCard=null,stopScores=()=>{},stopMatchupSwipe=null,leaderFilter='all',includeBench=false;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)'),current=()=>!stopped&&root.isConnected&&active();
  let motion=readPageChoice('gameday-motion',['on','off'],'on')==='on';
  const scope=`clubhouse-matchup-${week.season}-${week.week}`;
@@ -115,27 +116,56 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   for(const pulse of root.querySelectorAll('[data-clubhouse-pulse]'))patchGameDay(pulse,clubhousePulseHtml(model));
   for(const section of root.querySelectorAll('[data-clubhouse-matchup]'))section.hidden=section.dataset.clubhouseMatchup!==selected;
  };
- const choose=(id,{scroll=true}={})=>{
+ const choose=(id,{scroll=true,entrance=true,fromSwipe=false}={})=>{
   if(!model.games.some(g=>g.id===id)||id===selected)return;
+  if(!fromSwipe)stopMatchupSwipe?.cancel();
   const direction=Math.sign(model.games.findIndex(g=>g.id===id)-model.games.findIndex(g=>g.id===selected));
   stopAnimations();selected=id;savePageChoice(scope,id);
   const params=new URLSearchParams(location.hash.split('?')[1]||'');params.set('matchup',id);params.delete('moment');try{history.replaceState(history.state,'',location.hash.split('?')[0]+'?'+params)}catch{/* Matchup browsing also works in previews that restrict history. */}
-  paintBoard();paintActive();const card=cardOf(id);if(!model.completed)enter(card,{direction});
+  paintBoard();paintActive();const card=cardOf(id);if(entrance&&!model.completed)enter(card,{direction});
   const heading=card?.querySelector('header');if(heading&&scroll){heading.tabIndex=-1;heading.focus({preventScroll:true});if(scroll)heading.scrollIntoView({behavior:motion&&!reduced.matches?'smooth':'instant',block:'start'})}
  };
+ const swipeSurface=root.querySelector('.clubhouse-matchup-list');
+ if(swipeSurface){
+  // This area pages through matchups; the outer Clubhouse tabs keep their own
+  // gesture elsewhere. Nested clips, charts and controls retain native input.
+  swipeSurface.dataset.noSwipe='';
+  const prepared=new Set();let previewModel=null;
+  const sectionFor=id=>root.querySelector(`[data-clubhouse-matchup="${CSS.escape(id)}"]`);
+  stopMatchupSwipe=mountSwipeTabs(swipeSurface,null,{
+   getButtons:()=>[...root.querySelectorAll('[data-clubhouse-scoreboard] [data-clubhouse-game]')],
+   selected:button=>button.dataset.clubhouseGame===selected,
+   getPanel:()=>sectionFor(selected),
+   getPanelForButton:button=>{
+    const id=button?.dataset.clubhouseGame,game=model.games.find(game=>game.id===id),card=game&&cardOf(id);
+    if(previewModel!==model){prepared.clear();previewModel=model}
+    // Prepare the neighbor from the already loaded model, without fetching a
+    // second matchup or mounting its effects while it is only a swipe preview.
+    if(card&&id!==selected&&!prepared.has(id)){
+     const lineup=card.querySelector('[data-clubhouse-lineup]');if(lineup&&last)patchGameDay(lineup,matchupLineupHtml(game,{completed:model.completed,targetsAfter:true})+'<div data-football-panel></div>');
+     const stats=card.querySelector('[data-clubhouse-team-stats]');if(stats&&last)patchGameDay(stats,clubhouseTeamStatsHtml(game,model.completed));
+     prepared.add(id);
+    }
+    return id?sectionFor(id):null;
+   },
+   activate:button=>choose(button.dataset.clubhouseGame,{scroll:false,entrance:false,fromSwipe:true}),
+   accepts:()=>current()&&model.games.length>1&&!root.querySelector('#clubhouse-panel-matchups')?.hidden&&!document.querySelector('dialog[open]'),
+   exclude:'button:not(.player-card-trigger):not(.gameday-player-tap),input,select,textarea,summary,form,[contenteditable],canvas,video,[data-home-highlights-slot],[data-nfl-game-center],.table-scroll,.table-wrap,.tabscroll,.gd-watch-reel,.momentum-plot,.momentum-events',
+  });
+ }
  const click=event=>{
   const step=event.target.closest('[data-matchup-step]');if(step){const index=model.games.findIndex(game=>game.id===selected);const target=model.games[index+Number(step.dataset.matchupStep)];if(target){choose(target.id,{scroll:false});if(step.disabled)root.querySelector('[data-matchup-select]')?.focus({preventScroll:true})}return}
   const game=event.target.closest('[data-clubhouse-game]');if(game){choose(game.dataset.clubhouseGame);return}
   const filter=event.target.closest('[data-league-filter]');if(filter){leaderFilter=filter.dataset.leagueFilter;paintLeaders();return}
-  if(event.target.closest('[data-clubhouse-motion]')){motion=!motion;savePageChoice('gameday-motion',motion?'on':'off');setMotion();return}
+  if(event.target.closest('[data-clubhouse-motion]')){stopMatchupSwipe?.cancel();motion=!motion;savePageChoice('gameday-motion',motion?'on':'off');setMotion();return}
  };
  const change=event=>{if(event.target.matches('[data-matchup-select]')){choose(event.target.value,{scroll:false});return}if(event.target.matches('[data-league-bench]')){includeBench=event.target.checked;paintLeaders()}};
  const onFold=event=>{if(event.target.matches('.clubhouse-all-scores')&&event.target.open){revealedSelection=null;scheduleReveal()}};
- const onTab=event=>{if(event.detail?.tab==='leaders')paintLeaders();else if(event.detail?.tab==='matchups'){scheduleReveal();void football.update();void highlights.update()}};
+ const onTab=event=>{if(event.detail?.tab!=='matchups')stopMatchupSwipe?.cancel();if(event.detail?.tab==='leaders')paintLeaders();else if(event.detail?.tab==='matchups'){scheduleReveal();void football.update();void highlights.update()}};
  const onRoute=()=>{if(!active())stop()};
  const onReduce=()=>{if(reduced.matches)stopAnimations()};
  const onVisibility=()=>{if(document.visibilityState!=='visible')stopAnimations()};
- const stop=()=>{if(stopped)return;stopped=true;cancelAnimationFrame(revealFrame);root.removeEventListener('dfl:record-archive-ready',archiveReady);recordWatch.stop();football.stop();highlights.stop();details.stop();stopAnimations();finish.stop();polish.stop();vfx?.stop();leaderVfx?.stop();spotlight.stop();root.removeEventListener('toggle',onFold,true);root.removeEventListener('change',change);root.removeEventListener('dfl:clubhouse-tab',onTab);root.removeEventListener('click',click);window.removeEventListener('hashchange',onRoute);reduced.removeEventListener('change',onReduce);document.removeEventListener('visibilitychange',onVisibility)};
+ const stop=()=>{if(stopped)return;stopped=true;stopMatchupSwipe?.();cancelAnimationFrame(revealFrame);root.removeEventListener('dfl:record-archive-ready',archiveReady);recordWatch.stop();football.stop();highlights.stop();details.stop();stopAnimations();finish.stop();polish.stop();vfx?.stop();leaderVfx?.stop();spotlight.stop();root.removeEventListener('toggle',onFold,true);root.removeEventListener('change',change);root.removeEventListener('dfl:clubhouse-tab',onTab);root.removeEventListener('click',click);window.removeEventListener('hashchange',onRoute);reduced.removeEventListener('change',onReduce);document.removeEventListener('visibilitychange',onVisibility)};
  root.addEventListener('toggle',onFold,true);root.addEventListener('change',change);root.addEventListener('dfl:clubhouse-tab',onTab);root.addEventListener('click',click);window.addEventListener('hashchange',onRoute);reduced.addEventListener('change',onReduce);document.addEventListener('visibilitychange',onVisibility);
  paintBoard();paintActive();paintLeaders();stopCurrent=stop;
  // Box scores and league slot metadata load independently of the score feed.

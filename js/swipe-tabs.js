@@ -165,9 +165,11 @@ export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.quer
     window.addEventListener('dfl:ui-motion-change',interrupt);window.addEventListener('resize',interrupt);
   }
   if(typeof document!=='undefined')document.addEventListener('visibilitychange',interrupt);
-  return()=>{
+  const dispose=()=>{
     stopped=true;swipe.stop();clean();surface.removeEventListener('click',tabClick,true);surface.removeEventListener('keydown',tabKey,true);reduced?.removeEventListener('change',interrupt);
     if(typeof window!=='undefined'){window.removeEventListener('dfl:ui-motion-change',interrupt);window.removeEventListener('resize',interrupt);}
     if(typeof document!=='undefined')document.removeEventListener('visibilitychange',interrupt);
   };
+  dispose.cancel=interrupt;
+  return dispose;
 }

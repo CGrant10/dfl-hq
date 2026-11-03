@@ -1,11 +1,18 @@
 import {describe,it,expect} from 'vitest';
-import {memberPhotoCandidates,memberPhoto,sleeperAvatarUrl} from './member-photo.js';
+import {memberPhotoCandidates,memberPhoto,sleeperAvatarUrl,photoSourceKey} from './member-photo.js';
 import {currentTeamMembers,currentTradeNames} from './current-team-names.js';
 import {currentAnalyzerRoster} from './analyzer-league-context.js';
 import {teamPortrait} from './team-presentation.js';
 const m={id:1,sleeper_user_id:'owner',team_name:'Current Team',profile_image:'https://example.com/dfl.jpg'};
 const user={user_id:'owner',avatar:'profile-hash',metadata:{team_name:'Live team',avatar:'https://sleepercdn.com/uploads/team.jpg'}};
 describe('member portrait preference',()=>{
+ it('tracks changed ordered sources without duplicating an uploaded image in each presentation key',()=>{
+  const photo='data:image/jpeg;base64,'+'A'.repeat(100000),other=photo.slice(0,-1)+'B';
+  expect(photoSourceKey([photo,user.avatar])).toBe(photoSourceKey([photo,user.avatar]));
+  expect(photoSourceKey([photo,user.avatar])).not.toBe(photoSourceKey([user.avatar,photo]));
+  expect(photoSourceKey([photo])).not.toBe(photoSourceKey([other]));
+  expect(photoSourceKey([photo,user.avatar]).length).toBeLessThan(100);
+ });
  it('hydrates current Sleeper pictures throughout the shared directory without overwriting the upload',()=>{
   const [member]=currentTeamMembers([m],[user]);
   expect(member).toMatchObject({profile_image:m.profile_image,sleeper_team_image:user.metadata.avatar,sleeper_profile_image:'https://sleepercdn.com/avatars/thumbs/profile-hash'});

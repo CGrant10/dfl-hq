@@ -4,8 +4,20 @@ const compatible=(a,b)=>a?.nodeType===b.nodeType&&(a.nodeType!==1||a.tagName===b
 function update(node,fresh){
  if(node.nodeType===1&&node.hasAttribute('data-football-panel')&&fresh.hasAttribute('data-football-panel'))return;
  if(node.nodeType!==1){if(node.nodeValue!==fresh.nodeValue)node.nodeValue=fresh.nodeValue;return}
- const disclosure=node.tagName==='DETAILS',opened=node.open,photo=node.matches('.dfl-player-portrait.has-photo,.dfl-team-mark.has-photo')&&node.querySelector('img')?.getAttribute('src')===fresh.querySelector('img')?.getAttribute('src');
- if(photo)fresh.classList.add('has-photo');
+ const disclosure=node.tagName==='DETAILS',opened=node.open;
+ const oldImage=node.matches('.dfl-player-portrait.has-photo,.dfl-team-mark.has-photo')?node.querySelector('img'):null,newImage=oldImage&&fresh.querySelector('img');
+ const sameSources=oldImage?.getAttribute('data-photo-key')&&oldImage.getAttribute('data-photo-key')===newImage?.getAttribute('data-photo-key');
+ if(oldImage&&newImage&&(sameSources||oldImage.getAttribute('src')===newImage.getAttribute('src'))){
+  fresh.classList.add('has-photo');
+  // Keep a successful fallback until the actual source/preference list changes.
+  // Otherwise each score refresh retries the broken primary and flashes again.
+  if(sameSources){
+   newImage.setAttribute('src',oldImage.getAttribute('src'));
+   for(const name of ['data-photo-fallbacks','data-portrait-fallback'])oldImage.hasAttribute(name)?newImage.setAttribute(name,oldImage.getAttribute(name)):newImage.removeAttribute(name);
+  }
+ }
+ const poster=node.matches('.home-reel-poster.has-poster,.reel-list-poster.has-poster')&&node.querySelector('img')?.getAttribute('src')===fresh.querySelector('img')?.getAttribute('src');
+ if(poster)fresh.classList.add('has-poster');
  for(const attr of [...node.attributes])if(!fresh.hasAttribute(attr.name)&&!(disclosure&&attr.name==='open')&&attr.name!=='data-page-detail-wired')node.removeAttribute(attr.name);
  for(const attr of fresh.attributes)if(!(disclosure&&attr.name==='open')&&node.getAttribute(attr.name)!==attr.value)node.setAttribute(attr.name,attr.value);
  reconcile(node,fresh);

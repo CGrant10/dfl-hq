@@ -1,4 +1,4 @@
-import {highlightPosterUrl} from './home-highlight-ui.js';
+import {highlightPosterUrl,highlightPosterImage} from './home-highlight-ui.js';
 import {describe,it,expect} from 'vitest';
 import {highlightSession,gameHighlightClips,activeHighlightClips,highlightVideoUrl} from './home-highlight-model.js';
 const now=Date.parse('2026-10-25T22:00:00Z'),event={id:'401',date:'2026-10-25T17:00:00Z',competitions:[{competitors:[{team:{abbreviation:'KC'}},{team:{abbreviation:'BUF'}}]}]};
@@ -50,6 +50,10 @@ describe('verified publisher clip metadata',()=>{
   expect(new URL(highlightPosterUrl(video().thumbnail,320)).searchParams.has('h')).toBe(false);
   expect(new URL(highlightPosterUrl(video().thumbnail)).searchParams.has('scale')).toBe(false);
   expect(highlightPosterUrl('https://evil.test/track.jpg')).toBeNull();
+  const image=highlightPosterImage(video().thumbnail);
+  expect(image).toContain('240w');expect(image).toContain('480w');expect(image).toContain('960w');
+  expect(image).toContain('sizes="auto,');expect(image).toContain('width="960" height="540"');
+  expect(highlightPosterImage('https://evil.test/track.jpg')).toBe('');
  });
  it('uses real one-play metadata, canonical source links and the morning deadline',()=>{
   expect(parse()[0]).toMatchObject({id:'123',game_id:'401',session_date:'2026-10-25',kind:'touchdown',expires_at:'2026-10-29T11:00:00.000Z',video_url:'https://espnmedia-cdn.akamaized.net/espn/media/16x9/clip.mp4',source_url:'https://www.espn.com/video/clip/_/id/123'});

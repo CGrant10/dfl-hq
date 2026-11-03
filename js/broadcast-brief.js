@@ -55,7 +55,7 @@ export function renderBroadcastBrief(item){
   const displayFigure=typeof item.figure==='number'&&!Number.isInteger(item.figure)?item.figure.toFixed(2):String(item.figure);
   kind='metric';media=`<div class="bx-brief-value" style="--bx-digits:${displayFigure.length}"><strong>${esc(displayFigure)}</strong>${item.figureLabel?`<small>${esc(item.figureLabel)}</small>`:''}</div>`;body=item.subtitle?`<p>${esc(short(item.subtitle))}</p>`:'';
  }else if(item.generator==='nextMove'&&item.scoutPlayer){
-  kind='scout';media=`<span class="bx-brief-art">${playerPortrait(item.scoutPlayer)}</span>`;heading=item.scoutPlayer.name;body=`<p>${esc(short(item.subtitle||item.headline))}</p>`;action='Open Auto Scout';
+  kind='scout';media=`<span class="bx-brief-art">${playerPortrait(item.scoutPlayer,{size:128})}</span>`;heading=item.scoutPlayer.name;body=`<p>${esc(short(item.subtitle||item.headline))}</p>`;action='Open Auto Scout';
  }else{
   if(item.image)media=art(item.image);
   body=item.body||item.subtitle?`<p>${esc(short(item.body||item.subtitle))}</p>`:'';

@@ -20,7 +20,7 @@ function headers(){
   const slot=host.querySelector(`[data-compare-side="${side}"]`),p=data?.players.get(id);
   const stamp=JSON.stringify([id,p?.name,p?.position,p?.nflTeam,p?.injuryStatus,p?.isOut,data?.owners.get(id)]);
   if(slot.dataset.player===stamp&&slot.childElementCount)continue;slot.dataset.player=stamp;
-  slot.innerHTML=p?`${playerPortrait(p)}<strong>${esc(p.name)}</strong><small>${esc([p.position,p.nflTeam].filter(Boolean).join(' · '))}${p.injuryStatus||p.isOut?`<em class="pc-compare-availability" data-out="${!!p.isOut||/\b(IR|OUT|PUP|DOUBTFUL)\b/i.test(p.injuryStatus||'')}" aria-label="Current injury tag">${esc(p.injuryStatus||'Out')}</em>`:''}</small><span>${esc(data.owners.get(id)||'Free agent')}</span><button type="button" class="linkbtn" data-compare-change="${side}">Change<span class="sr-only"> ${esc(p.name)}</span></button>`:`<button type="button" class="pc-compare-add" data-compare-change="${side}"><b aria-hidden="true">+</b>Choose player</button>`;
+  slot.innerHTML=p?`${playerPortrait(p,{size:84})}<strong>${esc(p.name)}</strong><small>${esc([p.position,p.nflTeam].filter(Boolean).join(' · '))}${p.injuryStatus||p.isOut?`<em class="pc-compare-availability" data-out="${!!p.isOut||/\b(IR|OUT|PUP|DOUBTFUL)\b/i.test(p.injuryStatus||'')}" aria-label="Current injury tag">${esc(p.injuryStatus||'Out')}</em>`:''}</small><span>${esc(data.owners.get(id)||'Free agent')}</span><button type="button" class="linkbtn" data-compare-change="${side}">Change<span class="sr-only"> ${esc(p.name)}</span></button>`:`<button type="button" class="pc-compare-add" data-compare-change="${side}"><b aria-hidden="true">+</b>Choose player</button>`;
  }
 }
 function metrics(){

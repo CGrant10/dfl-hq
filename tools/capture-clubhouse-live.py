@@ -31,6 +31,11 @@ const builder=(data,name)=>{const q={then:async(a,b)=>{if(name==='nfl_highlight_
 window.fixtureDb={from:name=>builder(table(name),name),rpc:name=>builder(rpc(name),name),functions:{invoke:async()=>({data:null,error:null})},channel:()=>{const c={on:()=>c,subscribe:()=>c};return c},removeChannel:async()=>{}};
 '''
 checks=[]
+if os.environ.get('DFL_CLUBHOUSE_SWIPE_ONLY'):
+ fixture+='''
+ f.members.push(...Array.from({length:8},(_,i)=>({id:i+5,active:true,display_name:'Owner '+(i+5),team_name:'Fixture Team '+(i+5),sleeper_user_id:String(i+5)})));
+ f.week.games=Array.from({length:6},(_,i)=>({matchup_id:i+1,user1:String(i*2+1),user2:String(i*2+2),roster1:i*2+1,roster2:i*2+2,score1:101+i*2,score2:102+i*2}));
+ '''
 def check(name,ok):
  checks.append({'check':name,'pass':bool(ok)});(OUT/'checks.json').write_text(json.dumps(checks,indent=2));assert ok,name;print('PASS '+name,flush=True)
 with sync_playwright() as p:
@@ -62,6 +67,8 @@ with sync_playwright() as p:
     if data is not None:return r.fulfill(content_type='application/json',body=json.dumps(data),headers={'Access-Control-Allow-Origin':'*'})
     return r.abort()
    f_rows=[{'roster_id':i,'matchup_id':(i+1)//2,'starters':['1'] if i==1 else ['4','3'] if i==2 else ['5'] if i==3 else ['0','0','6'],'players':['1','2'] if i==1 else ['3','4'] if i==2 else [str(i+2)],'points':100+i,'players_points':{'1':22,'2':7,'3':30,'4':12,'5':24,'6':3}} for i in range(1,5)]
+   if os.environ.get('DFL_CLUBHOUSE_SWIPE_ONLY'):
+    f_rows += [{'roster_id':i,'matchup_id':(i+1)//2,'starters':[str(i)],'players':[str(i)],'points':100+i,'players_points':{str(i):12}} for i in range(5,13)]
    f_board={'season':{'year':2026,'type':2},'week':{'number':7},'events':[{'id':id,'date':'2026-10-25T17:00:00Z','status':{'period':3,'type':{'state':'in','description':'Live','shortDetail':'Q3 8:20'}},'competitions':[{'competitors':[{'team':{'abbreviation':t},'score':'14','homeAway':'home' if i==0 else 'away'} for i,t in enumerate(teams)]}]} for id,teams in [('401873011',['NO','PIT']),('401900001',['WAS','NYG'])]]}
    c.route('**/*',route);page=c.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.clock.install(time=datetime(2026,10,26,20,tzinfo=timezone.utc));page.goto(base+'/clubhouse-review.html#/clubhouse?tab=matchups',wait_until='domcontentloaded')
    page.evaluate('''async mode=>{
@@ -87,6 +94,11 @@ with sync_playwright() as p:
    check(tag+' opens on competition with week tools folded',not page.locator('.clubhouse-context').evaluate('e=>e.open') and page.locator('[href="#/analyzer"]').count()>0)
    page.evaluate('scrollTo(0,0)');page.wait_for_timeout(700);page.screenshot(path=str(OUT/f'{width}-{mode}-clubhouse-default.png'))
    check(tag+' starting players are visible on the first phone screen',page.locator('[data-clubhouse-matchup="1"] .gd-lineup-pairs .gd-compare-row').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-70'))
+   if os.environ.get('DFL_CLUBHOUSE_SWIPE_ONLY'):
+    from clubhouse_swipe_review import review_matchup_swipes
+    review_matchup_swipes(page,c,check,OUT,tag,width,mode)
+    check(tag+' matchup paging has no browser errors or league writes',not errors and page.evaluate('f.writes.every(name=>name.startsWith("app_client_issues:"))'))
+    page.evaluate('f.page.leave()');c.close();continue
    if os.environ.get('DFL_CLUBHOUSE_ENTRY_ONLY'):
     check(tag+' entry has no overflow, browser errors or writes',page.evaluate('document.documentElement.scrollWidth<=innerWidth') and not errors and not page.evaluate('f.writes'))
     page.evaluate('f.page.leave()');c.close();continue
