@@ -92,8 +92,9 @@ with sync_playwright() as p:
    page.locator('[data-layout-probe]').screenshot(path=str(OUT/f'{width}-{mode}-populated-history.png'))
    page.locator('[data-layout-probe]').evaluate('e=>e.remove()')
    check(tag+' opens on competition with week tools folded',not page.locator('.clubhouse-context').evaluate('e=>e.open') and page.locator('[href="#/analyzer"]').count()>0)
-   page.evaluate('scrollTo(0,0)');page.wait_for_timeout(700);page.screenshot(path=str(OUT/f'{width}-{mode}-clubhouse-default.png'))
+   page.evaluate('scrollTo(0,0)');page.wait_for_timeout(700);page.screenshot(path=str(OUT/f'{width}-{mode}-clubhouse-default.png'));page.locator('.clubhouse-matchup-desk').screenshot(path=str(OUT/f'{width}-{mode}-matchup-content.png'))
    check(tag+' starting players are visible on the first phone screen',page.locator('[data-clubhouse-matchup="1"] .gd-lineup-pairs .gd-compare-row').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-70'))
+   check(tag+' matchup uses compact chips and a compact first player pair',page.locator('.clubhouse-matchup-strip').evaluate('e=>e.clientHeight<=56') and page.locator('[data-clubhouse-matchup="1"] .gd-compare-row').first.evaluate('e=>e.clientHeight<=100'))
    if os.environ.get('DFL_CLUBHOUSE_SWIPE_ONLY'):
     from clubhouse_swipe_review import review_matchup_swipes
     review_matchup_swipes(page,c,check,OUT,tag,width,mode)
@@ -113,14 +114,16 @@ with sync_playwright() as p:
        const r=e.getBoundingClientRect(),buttons=[...e.querySelectorAll('button')],selected=e.querySelector('[aria-selected="true"]'),b=selected.getBoundingClientRect(),marker=e.querySelector('.clubhouse-tab-indicator');
        return {width:e.clientWidth,scroll:e.scrollWidth,height:e.clientHeight,allFit:buttons.every(n=>{const a=n.getBoundingClientRect();return a.left>=r.left-1&&a.right<=r.right+1&&a.top>=r.top-1&&a.bottom<=r.bottom+1&&n.scrollWidth<=n.clientWidth+1}),targets:buttons.every(n=>n.getBoundingClientRect().height>=43.5&&n.getBoundingClientRect().width>=43.5),marker:Math.abs(parseFloat(marker.style.top)-(b.bottom-r.top-2))<1&&Math.abs(parseFloat(marker.style.left)-(b.left-r.left))<1};
       }''')
-      bounds=page.locator('.clubhouse-command-center').evaluate('''e=>{const nodes=[e,...e.querySelectorAll('[role="tabpanel"],.clubhouse-section,.clubhouse-matchup-list,[data-clubhouse-matchup],.clubhouse-matchup-card,.gd-compare-head,.gd-compare-row,.clubhouse-score-strip,.nfl-center-fantasy')].filter(n=>n.getClientRects().length);return nodes.every(n=>{const r=n.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1&&n.clientWidth<=innerWidth})}''')
+      bounds=page.locator('.clubhouse-command-center').evaluate('''e=>{const nodes=[e,...e.querySelectorAll('[role="tabpanel"],.clubhouse-section,.clubhouse-matchup-list,[data-clubhouse-matchup],.clubhouse-matchup-card,.clubhouse-game-teams,.clubhouse-game-side,.gd-compare-head,.gd-compare-row,.clubhouse-score-strip,.nfl-center-fantasy')].filter(n=>n.getClientRects().length);return nodes.every(n=>{const r=n.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1&&n.clientWidth<=innerWidth})}''')
       rows=page.locator('.clubhouse-command-center').evaluate('''e=>{
        const separate=(a,b)=>a.right<=b.left+1||a.left>=b.right-1||a.bottom<=b.top+1||a.top>=b.bottom-1;
+       const teams=[...e.querySelectorAll('.clubhouse-game-side')].filter(n=>n.getClientRects().length);
        const strips=[...e.querySelectorAll('.clubhouse-strip-team')].filter(n=>n.getClientRects().length);
        const players=[...e.querySelectorAll('[data-ui-player-row]')].filter(n=>n.getClientRects().length);
        const canvas=document.createElement('canvas').getContext('2d');
        const pickers=[...e.querySelectorAll('.clubhouse-week-picker select')];
-       return strips.every(n=>{const name=n.querySelector('strong'),score=n.querySelector('b');return name.scrollWidth<=name.clientWidth+1&&separate(name.getBoundingClientRect(),score.getBoundingClientRect())})
+       return teams.every(n=>{const score=n.querySelector('[data-matchup-score-value]')?.parentElement,logo=n.querySelector('.clubhouse-team-mark'),name=n.querySelector('.clubhouse-matchup-name');return (!score||score.scrollWidth<=score.clientWidth+1)&&(!name||name.scrollWidth<=name.clientWidth+1)&&(!score||!logo||separate(score.getBoundingClientRect(),logo.getBoundingClientRect()))})
+        &&strips.every(n=>{const name=n.querySelector('strong'),score=n.querySelector('b');return name.scrollWidth<=name.clientWidth+1&&separate(name.getBoundingClientRect(),score.getBoundingClientRect())})
         &&players.every(n=>{const tap=n.querySelector('.gameday-player-tap'),score=n.querySelector('[data-ui-player-score]'),name=n.querySelector('.dfl-player-copy');return (!name||name.scrollWidth<=name.clientWidth+1)&&(!tap||!score||separate(tap.getBoundingClientRect(),score.getBoundingClientRect()))})
         &&pickers.every(n=>{const s=getComputedStyle(n);canvas.font=s.font;return canvas.measureText(n.selectedOptions[0].text).width<=n.clientWidth-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight)+1});
       }''')

@@ -1,97 +1,75 @@
-# Editorial broadcast visual QA — 1.532.0
+# Clubhouse matchup layout QA — 1.535.0
 
-Selected visual truth: the **second displayed image from the latest ideation set**,
-`/workspace/generated_images/exec-e61286db-85c0-4e77-ba81-cf2528665d1d.png`.
-Preserved source: [source](docs/broadcast-editorial-1532/source.png).
-This is the selected light editorial direction, not the earlier gold-framed set.
+final result: passed
 
-The source is a 1024 × 1536 storyboard of three carousel states. Comparison uses
-individual component crops (award, trade, bench), normalized proportionally to
-356 CSS pixels wide; the full storyboard is never stretched to a phone viewport.
-Implementation captures use a **390 × 844 CSS-pixel phone, deviceScaleFactor 1**.
-Its component captures are 356 × 205 pixels. Each comparison matches the source's
-story, names, date, value, Light theme and closed-control state. Real pagination
-reflects the active item and fixture deck length rather than copying the mock's
-illustrative `1 / 10` onto every state.
+## Source and comparison state
 
-Full comparison: [selected versus rendered](docs/broadcast-editorial-1532/comparison-light.png).
-Focused comparison: [trade typography, portraits and routing](docs/broadcast-editorial-1532/comparison-trade.png).
-Both combined inputs were opened after the final render. Dark award, bench,
-Chip Eater and the ten-story picker were also visually inspected.
+Source visual truth: [ESPN's published App Store matchup screen](docs/clubhouse-matchup-layout-1535/espn-matchup.webp),
+downloaded from its current official App Store listing on November 3, 2026.
+Source image is 600×1300px with marketing/device chrome. The app content crop
+(70,295)–(531,1048), 461×753px, is normalized to 390×637px. No device chrome is
+recreated. The published example is live hockey; DFL is a live football fixture.
+Team identities, sport-specific stats and theme are intentionally different.
+This is a structural adaptation within the production app, not a pixel clone
+or an audit of ESPN's signed-in app.
 
-## Findings and comparison history
+Implementation: [390px Dark](docs/clubhouse-matchup-layout-1535/390-dark-clubhouse-default.png),
+390×844 CSS px, deviceScaleFactor 1. The matchup desk's content-only screenshot
+is cropped to the same 390×637px comparison region. The app's existing shared
+navigation remains outside the content comparison.
 
-- **P1, corrected:** inherited `with-art` margins pushed the bench headline into
-  its score. Evidence: initial-metric.png. Metric copy now has its own left column,
-  a full-width category and a separate figure. Post-fix: editorial-light-2.png and
-  the final combined comparison show clear separation.
-- **P2, corrected:** initial team labels/portraits were too small and the frame
-  was unnecessarily tall. Evidence: iteration1-comparison-light.png and
-  iteration1-comparison-trade.png. Two-team receipts now use explicit receiving
-  columns, 13px team/player text and 38 × 42px portraits; a 196px minimum grows
-  only when the edition's content requires it. Post-fix: final comparison files.
-- **P2, corrected:** enlarged three-team receipts inherited a narrow fixed track,
-  causing vertical word wrapping and excessive reserved height. Explicit large-
-  text tracks and stacked injury rows now pass all 56 enlarged-text layouts.
-- **P2, corrected:** a trial enlarged award crop cut the helmet. It was rejected.
-  The final implementation contains the complete original illustration, including
-  arm and helmet; no member avatar or generated substitute is used.
-- No actionable P0/P1/P2 findings remain in the final comparison.
+[Full comparison](docs/clubhouse-matchup-layout-1535/comparison-full.png) and
+[focused header/first-row comparison](docs/clubhouse-matchup-layout-1535/comparison-focus.png)
+were opened together and inspected. Browser rendering uses existing local
+Chromium/Playwright review tools; Cloud Browser is not exposed in this session.
+
+## Comparison history
+
+1. P2: The main header inherited a five-row subgrid, leaving unused space below
+   the remaining-starter line. Reset parent rows and each side's row placement.
+   Final captures show content-driven header height with no reserved empty rows.
+2. P2: An earlier [combined comparison](docs/clubhouse-matchup-layout-1535/comparison-before-row-fix.png)
+   exposed lingering position-specific minimum stat-line heights. Override those
+   within Clubhouse. Final captures show the stat line and PPR average together
+   beneath the relevant player, without the old blank gap.
+3. Post-fix full and focused comparisons show no remaining actionable P0/P1/P2
+   issue within the requested ESPN-inspired DFL adaptation.
 
 ## Required fidelity surfaces
 
-- **Typography:** locally hosted Inter matches the reference's clean UI voice.
-  Award titles use 22px/1.15; ordinary headlines 20px/1.15; player/team rows 13px.
-  Longer award names use 18px and system text scales rather than being clipped.
-  Numbers remain distinct from headings; no forced single-line name shrinking.
-- **Spacing/layout:** left artwork window, light receiving-row separators,
-  compact balance/action line and quiet progress/transport follow the selection.
-  One stable height per edition deliberately replaces the storyboard's varying
-  card heights, preventing Home from moving during rotation. At 320px, `gets`
-  moves beneath its team label; at enlarged text, images and scores reflow.
-- **Colors/tokens:** Light uses the existing bone/white/deep-red tokens. Dark uses
-  its Medicine Wheel counterparts. No fixed light surface, blue/red legacy
-  palette, gold frame, new theme choice, texture or decorative glow was added.
-- **Images/icons:** original champion and Chip Eater WebP illustrations are reused
-  with contained proportions. Existing Sleeper portraits and their real fallback
-  initials remain. Controls reuse the app's icon sprites. No CSS artwork or new
-  hand-drawn SVG replaces a source asset. Original asset aspect ratio takes
-  precedence over reproducing the mock's tighter generated illustration crop.
-- **Copy/content:** source fixtures retain the exact names, historical dates and
-  63% balance for comparison. Production still reads its real current teams and
-  receipts; no example trade or quote was hardcoded into the production deck.
-  Awards have one identity and action, with repeated filler removed.
+- Typography: Inter provides clean UI/player labels and heavy score totals.
+  Existing DFL score effects retain their sport typography. ESPN's proprietary
+  brand font is not copied. Full current team names wrap; chip accessibility
+  labels retain names and exact totals even when only logos are shown visually.
+- Layout: slim outlined chips, outside logos / inside score totals, team context
+  below, opposing player rows and a narrow center position column follow the
+  source structure. Repeated headings and persistent utility controls are removed
+  from the default matchup stack. Existing DFL touch targets, player portraits,
+  PPR averages and supporting matchup sections require more height than ESPN's
+  hockey sample; that is intentional. Adaptive cell stacking preserves large text.
+- Color: DFL Light/Dark Medicine Wheel tokens intentionally replace ESPN's palette.
+  Existing semantic live/final/lead colors and hot/cold effects remain. Both themes
+  were visually inspected; automated interface checks cover contrast and focus.
+- Image quality: existing shared team/member photo sources and preference ordering
+  are unchanged. Images have explicit sizes and retain established fallback.
+  No generated substitutes, ESPN team art or new image downloads are introduced.
+- Copy/content: actual DFL names, two-decimal points, week, player state, stat lines
+  and PPR averages are retained. No invented win probability, record or live
+  projection is added. Refresh/motion controls remain inside Week & tools.
 
-## Interaction and accessibility checks
+## Interaction and implementation checklist
 
-Browser-rendered verification used local Chromium against the production
-renderers and compiled app. The chat's cloud browser tools were unavailable;
-this existing-app workflow used its established local browser capture tooling.
+- Tap and swipe across all six games; reverse, edge, interrupted and cancelled
+  gestures; native vertical scrolling; keyboard navigation; exact route identity.
+- Existing finite logo shake and Reduced Motion; no permanent transition layers.
+- Full selected names/totals in the compact scrolling reference; player-card entry.
+- Light/Dark, 320/390px compiled captures; five-width enlarged-text containment.
+- Console/page errors checked: none in fixture and compiled app captures.
+- Build, theme scan and 2,425 tests pass. Detailed evidence is in
+  [the release note](docs/clubhouse-matchup-layout-1535.md).
 
-- All 90 normal and 56 enlarged-text layouts pass containment, artwork/copy
-  separation, text contrast and stable-height checks in both themes.
-- Real touch swipes forward/backward, no accidental story-link activation,
-  visibility-aware dwell, one-pass autoplay, replay and Reduced Motion pass.
-- Previous/Next/Pause and the story chooser retain at least 44px targets.
-- The ten-story chooser fits inside the frame; selecting a story closes it,
-  returns focus and preserves the exact routed receipt link. Escape closes it.
-- Opening the chooser pauses autoplay; replacing an open chooser during live
-  enrichment releases that pause. No new timers, network reads or polling added.
-- No browser page errors in the component captures or compiled Home checks.
+## Follow-up limits
 
-## Remaining P3 notes / limits
-
-- The mock's diagonal action arrow uses the app's existing right-arrow sprite for
-  consistency with other pages. This does not change the action or hierarchy.
-- Full title names, original artwork proportions and 44px controls can require
-  more height than the shortest mock state. Height remains stable during browsing.
-- Physical Safari and VoiceOver are unmeasured; no device-level claim is made.
-
-## Implementation checklist
-
-- [x] Exact selected reference resolved and source assets preserved.
-- [x] Initial visual findings fixed and final combined comparisons opened.
-- [x] Light/Dark, narrow phones, larger text, transport and swipe paths checked.
-- [x] Existing slide curation and production data routes preserved.
-
-final result: passed
+Physical Safari and VoiceOver remain unmeasured. ESPN's native logo animation and
+signed-in interactions cannot be validated here. No further visual exploration or
+new product features are needed for this scoped layout change.

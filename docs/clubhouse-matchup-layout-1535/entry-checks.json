@@ -1,0 +1,82 @@
+[
+  {
+    "check": "320px light populated matchup history cannot widen its outer grid",
+    "pass": true
+  },
+  {
+    "check": "320px light opens on competition with week tools folded",
+    "pass": true
+  },
+  {
+    "check": "320px light starting players are visible on the first phone screen",
+    "pass": true
+  },
+  {
+    "check": "320px light matchup uses compact chips and a compact first player pair",
+    "pass": true
+  },
+  {
+    "check": "320px light entry has no overflow, browser errors or writes",
+    "pass": true
+  },
+  {
+    "check": "320px dark populated matchup history cannot widen its outer grid",
+    "pass": true
+  },
+  {
+    "check": "320px dark opens on competition with week tools folded",
+    "pass": true
+  },
+  {
+    "check": "320px dark starting players are visible on the first phone screen",
+    "pass": true
+  },
+  {
+    "check": "320px dark matchup uses compact chips and a compact first player pair",
+    "pass": true
+  },
+  {
+    "check": "320px dark entry has no overflow, browser errors or writes",
+    "pass": true
+  },
+  {
+    "check": "390px light populated matchup history cannot widen its outer grid",
+    "pass": true
+  },
+  {
+    "check": "390px light opens on competition with week tools folded",
+    "pass": true
+  },
+  {
+    "check": "390px light starting players are visible on the first phone screen",
+    "pass": true
+  },
+  {
+    "check": "390px light matchup uses compact chips and a compact first player pair",
+    "pass": true
+  },
+  {
+    "check": "390px light entry has no overflow, browser errors or writes",
+    "pass": true
+  },
+  {
+    "check": "390px dark populated matchup history cannot widen its outer grid",
+    "pass": true
+  },
+  {
+    "check": "390px dark opens on competition with week tools folded",
+    "pass": true
+  },
+  {
+    "check": "390px dark starting players are visible on the first phone screen",
+    "pass": true
+  },
+  {
+    "check": "390px dark matchup uses compact chips and a compact first player pair",
+    "pass": true
+  },
+  {
+    "check": "390px dark entry has no overflow, browser errors or writes",
+    "pass": true
+  }
+]
