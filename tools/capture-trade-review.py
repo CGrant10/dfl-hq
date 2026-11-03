@@ -299,7 +299,7 @@ with sync_playwright() as p:
         click('[data-tb-intent="fair"]')
         page.locator('[data-tb-tier="fair"] .tb-offer').first.wait_for()
         assert page.locator('[data-tb-tier="fair"] .tb-offer').count()>0
-        assert page.locator('[data-tb-tier="fair"] .tb-offer > header > b').evaluate_all("es=>es.every(e=>e.textContent.includes('BALANCED'))")
+        assert page.locator('[data-tb-tier="fair"] .tb-offer > header > b').evaluate_all("es=>es.every(e=>e.textContent.trim()==='ESTIMATED BALANCE')")
         assert page.locator('[data-tb-tier="fair"] .tb-offer .tb-offer-risk').evaluate_all("es=>es.every(e=>e.textContent.includes('Rank disagreement'))")
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
         page.locator('[data-tb-tier="fair"]').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")

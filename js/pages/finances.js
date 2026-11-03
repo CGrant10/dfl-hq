@@ -57,7 +57,8 @@ export async function render(view) {
     return;
   }
 
-  season=Number(readPageChoice('finance-season',years.map(String),String(season||'')))||season;
+  const storySeason=Number(new URLSearchParams(location.hash.split('?')[1]||'').get('season'));
+  season=years.includes(storySeason)?storySeason:Number(readPageChoice('finance-season',years.map(String),String(season||'')))||season;
   if (!years.includes(season)) season = years[0];
 
   view.innerHTML = `

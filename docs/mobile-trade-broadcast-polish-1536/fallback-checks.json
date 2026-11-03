@@ -1,0 +1,29 @@
+{
+  "checks": [
+    {
+      "route": "#/facts",
+      "unavailableState": true
+    },
+    {
+      "route": "#/history",
+      "unavailableState": true
+    },
+    {
+      "route": "#/home",
+      "unavailableState": true
+    },
+    {
+      "route": "#/polls",
+      "unavailableState": true
+    },
+    {
+      "route": "#/calendar",
+      "unavailableState": true
+    },
+    {
+      "route": "#/calendar",
+      "exactResource": true
+    }
+  ],
+  "pageErrors": []
+}

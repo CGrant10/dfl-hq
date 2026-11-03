@@ -22,7 +22,7 @@ describe('supporting Home league stories',()=>{
   const story=homeLeagueStory(report,{...options,history:[receipt(3),receipt(4)]});
   expect(story).toMatchObject({storySignal:'losing-run',figure:'3',figureLabel:'Straight losses'});
   expect(story.sides.find(side=>side.subject)).toMatchObject({name:'Current b',score:'90.00'});
-  expect(story.href).toBe('#/clubhouse?season=2026&week=5&tab=matchups');
+  expect(story.href).toBe('#/clubhouse?season=2026&week=5&tab=matchups&owner=a');
   const html=renderItem(story,{editorial:true});expect(html).toContain('data-story-subject');expect(html).toContain('THE LOSING STREAK');
  });
  it('requires consecutive weeks and breaks a streak on ties, missing weeks or ambiguous games',()=>{
@@ -79,4 +79,17 @@ describe('supporting Home league stories',()=>{
   const deck=homeBroadcastDeck([story],{now:new Date('2026-10-22T12:00:00')});
   expect(deck).toHaveLength(2);expect(deck[0].homeFeature).toBe(true);expect(deck[0].href).toBeNull();expect(deck[1]).toBe(story);
  });
+});
+
+it('keeps each rotating league story linked to its own matchup owner',()=>{
+ const games=['a','b','c'].map((id,i)=>({winner:{uid:id,name:'Winner '+id,value:130+i},loser:{uid:id+'-rival',name:'Loser '+id,value:120}}));
+ const report={final:true,season:2026,week:8,games};
+ const seen=new Set();
+ for(let day=1;day<=9;day++){
+  const story=homeLeagueStory(report,{season:2026,week:9,editionDate:`2026-11-${String(day).padStart(2,'0')}`});
+  const winner=games.find(g=>g.winner.name===story.sides[0].name).winner;
+  expect(new URLSearchParams(story.href.split('?')[1]).get('owner')).toBe(winner.uid);
+  seen.add(winner.uid);
+ }
+ expect(seen.size).toBeGreaterThan(1);
 });

@@ -9,7 +9,7 @@ describe("editorial Home broadcast", () => {
     expect(html).toContain('LEAGUE SPOTLIGHT');expect(html).toContain('bx-league-result');
     expect(html).toContain('<strong>Bayou &amp; Co</strong><b>131.22</b>');
     expect(html).toContain('<strong>Monday Night Mayhem</strong><b>120.00</b>');
-    expect(html).toContain('href="#/clubhouse?season=2026&amp;week=5&amp;tab=matchups"');
+    expect(html).toContain('href="#/clubhouse?season=2026&amp;week=5&amp;tab=matchups&amp;owner=a"');
     expect(html).not.toContain('class="bx-body"');
   });
   it('keeps the daily opener independent and gives odds and anniversary cards their own composition',()=>{

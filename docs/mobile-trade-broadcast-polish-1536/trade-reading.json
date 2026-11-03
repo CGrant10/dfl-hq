@@ -1,0 +1,450 @@
+[
+  {
+    "name": "320px light compact balance stays visible and deeper metrics start folded",
+    "pass": true
+  },
+  {
+    "name": "320px light starter previews are lazy",
+    "pass": true
+  },
+  {
+    "name": "320px light collapsed offer remains compact 229.6875",
+    "pass": true
+  },
+  {
+    "name": "320px light real disclosure motion starts",
+    "pass": true
+  },
+  {
+    "name": "320px light opening calculates real starters",
+    "pass": true
+  },
+  {
+    "name": "320px light reversal starts at the painted height",
+    "pass": true
+  },
+  {
+    "name": "320px light reverse closes naturally",
+    "pass": true
+  },
+  {
+    "name": "320px light keyboard expansion preserves native details",
+    "pass": true
+  },
+  {
+    "name": "320px light names and action targets fit",
+    "pass": true
+  },
+  {
+    "name": "320px light more offers preserve setup and expanded comparisons",
+    "pass": true
+  },
+  {
+    "name": "320px light retained offers and portraits are reused without a list fade",
+    "pass": true
+  },
+  {
+    "name": "320px light back restores the exact offer position and expansion",
+    "pass": true
+  },
+  {
+    "name": "320px light motion off expands immediately",
+    "pass": true
+  },
+  {
+    "name": "320px light reduced motion expands immediately",
+    "pass": true
+  },
+  {
+    "name": "320px light larger text stays inside the screen",
+    "pass": true
+  },
+  {
+    "name": "320px light keep-player controls remain in the card",
+    "pass": true
+  },
+  {
+    "name": "320px light no horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "320px light no browser errors",
+    "pass": true
+  },
+  {
+    "name": "320px dark compact balance stays visible and deeper metrics start folded",
+    "pass": true
+  },
+  {
+    "name": "320px dark starter previews are lazy",
+    "pass": true
+  },
+  {
+    "name": "320px dark collapsed offer remains compact 229.6875",
+    "pass": true
+  },
+  {
+    "name": "320px dark real disclosure motion starts",
+    "pass": true
+  },
+  {
+    "name": "320px dark opening calculates real starters",
+    "pass": true
+  },
+  {
+    "name": "320px dark reversal starts at the painted height",
+    "pass": true
+  },
+  {
+    "name": "320px dark reverse closes naturally",
+    "pass": true
+  },
+  {
+    "name": "320px dark keyboard expansion preserves native details",
+    "pass": true
+  },
+  {
+    "name": "320px dark names and action targets fit",
+    "pass": true
+  },
+  {
+    "name": "320px dark more offers preserve setup and expanded comparisons",
+    "pass": true
+  },
+  {
+    "name": "320px dark retained offers and portraits are reused without a list fade",
+    "pass": true
+  },
+  {
+    "name": "320px dark back restores the exact offer position and expansion",
+    "pass": true
+  },
+  {
+    "name": "320px dark motion off expands immediately",
+    "pass": true
+  },
+  {
+    "name": "320px dark reduced motion expands immediately",
+    "pass": true
+  },
+  {
+    "name": "320px dark larger text stays inside the screen",
+    "pass": true
+  },
+  {
+    "name": "320px dark keep-player controls remain in the card",
+    "pass": true
+  },
+  {
+    "name": "320px dark no horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "320px dark no browser errors",
+    "pass": true
+  },
+  {
+    "name": "390px light compact balance stays visible and deeper metrics start folded",
+    "pass": true
+  },
+  {
+    "name": "390px light starter previews are lazy",
+    "pass": true
+  },
+  {
+    "name": "390px light collapsed offer remains compact 229.6875",
+    "pass": true
+  },
+  {
+    "name": "390px light real disclosure motion starts",
+    "pass": true
+  },
+  {
+    "name": "390px light opening calculates real starters",
+    "pass": true
+  },
+  {
+    "name": "390px light reversal starts at the painted height",
+    "pass": true
+  },
+  {
+    "name": "390px light reverse closes naturally",
+    "pass": true
+  },
+  {
+    "name": "390px light keyboard expansion preserves native details",
+    "pass": true
+  },
+  {
+    "name": "390px light names and action targets fit",
+    "pass": true
+  },
+  {
+    "name": "390px light more offers preserve setup and expanded comparisons",
+    "pass": true
+  },
+  {
+    "name": "390px light retained offers and portraits are reused without a list fade",
+    "pass": true
+  },
+  {
+    "name": "390px light back restores the exact offer position and expansion",
+    "pass": true
+  },
+  {
+    "name": "390px light motion off expands immediately",
+    "pass": true
+  },
+  {
+    "name": "390px light reduced motion expands immediately",
+    "pass": true
+  },
+  {
+    "name": "390px light starter-upgrade offers expose actual changed slots",
+    "pass": true
+  },
+  {
+    "name": "390px light larger text stays inside the screen",
+    "pass": true
+  },
+  {
+    "name": "390px light keep-player controls remain in the card",
+    "pass": true
+  },
+  {
+    "name": "390px light all three teams retain explicit destinations",
+    "pass": true
+  },
+  {
+    "name": "390px light no horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "390px light no browser errors",
+    "pass": true
+  },
+  {
+    "name": "390px dark compact balance stays visible and deeper metrics start folded",
+    "pass": true
+  },
+  {
+    "name": "390px dark starter previews are lazy",
+    "pass": true
+  },
+  {
+    "name": "390px dark collapsed offer remains compact 229.6875",
+    "pass": true
+  },
+  {
+    "name": "390px dark real disclosure motion starts",
+    "pass": true
+  },
+  {
+    "name": "390px dark opening calculates real starters",
+    "pass": true
+  },
+  {
+    "name": "390px dark reversal starts at the painted height",
+    "pass": true
+  },
+  {
+    "name": "390px dark reverse closes naturally",
+    "pass": true
+  },
+  {
+    "name": "390px dark keyboard expansion preserves native details",
+    "pass": true
+  },
+  {
+    "name": "390px dark names and action targets fit",
+    "pass": true
+  },
+  {
+    "name": "390px dark more offers preserve setup and expanded comparisons",
+    "pass": true
+  },
+  {
+    "name": "390px dark retained offers and portraits are reused without a list fade",
+    "pass": true
+  },
+  {
+    "name": "390px dark back restores the exact offer position and expansion",
+    "pass": true
+  },
+  {
+    "name": "390px dark motion off expands immediately",
+    "pass": true
+  },
+  {
+    "name": "390px dark reduced motion expands immediately",
+    "pass": true
+  },
+  {
+    "name": "390px dark starter-upgrade offers expose actual changed slots",
+    "pass": true
+  },
+  {
+    "name": "390px dark larger text stays inside the screen",
+    "pass": true
+  },
+  {
+    "name": "390px dark keep-player controls remain in the card",
+    "pass": true
+  },
+  {
+    "name": "390px dark all three teams retain explicit destinations",
+    "pass": true
+  },
+  {
+    "name": "390px dark no horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "390px dark no browser errors",
+    "pass": true
+  },
+  {
+    "name": "768px light compact balance stays visible and deeper metrics start folded",
+    "pass": true
+  },
+  {
+    "name": "768px light starter previews are lazy",
+    "pass": true
+  },
+  {
+    "name": "768px light collapsed offer remains compact 229.6875",
+    "pass": true
+  },
+  {
+    "name": "768px light real disclosure motion starts",
+    "pass": true
+  },
+  {
+    "name": "768px light opening calculates real starters",
+    "pass": true
+  },
+  {
+    "name": "768px light reversal starts at the painted height",
+    "pass": true
+  },
+  {
+    "name": "768px light reverse closes naturally",
+    "pass": true
+  },
+  {
+    "name": "768px light keyboard expansion preserves native details",
+    "pass": true
+  },
+  {
+    "name": "768px light names and action targets fit",
+    "pass": true
+  },
+  {
+    "name": "768px light more offers preserve setup and expanded comparisons",
+    "pass": true
+  },
+  {
+    "name": "768px light retained offers and portraits are reused without a list fade",
+    "pass": true
+  },
+  {
+    "name": "768px light back restores the exact offer position and expansion",
+    "pass": true
+  },
+  {
+    "name": "768px light motion off expands immediately",
+    "pass": true
+  },
+  {
+    "name": "768px light reduced motion expands immediately",
+    "pass": true
+  },
+  {
+    "name": "768px light larger text stays inside the screen",
+    "pass": true
+  },
+  {
+    "name": "768px light keep-player controls remain in the card",
+    "pass": true
+  },
+  {
+    "name": "768px light no horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "768px light no browser errors",
+    "pass": true
+  },
+  {
+    "name": "768px dark compact balance stays visible and deeper metrics start folded",
+    "pass": true
+  },
+  {
+    "name": "768px dark starter previews are lazy",
+    "pass": true
+  },
+  {
+    "name": "768px dark collapsed offer remains compact 229.6875",
+    "pass": true
+  },
+  {
+    "name": "768px dark real disclosure motion starts",
+    "pass": true
+  },
+  {
+    "name": "768px dark opening calculates real starters",
+    "pass": true
+  },
+  {
+    "name": "768px dark reversal starts at the painted height",
+    "pass": true
+  },
+  {
+    "name": "768px dark reverse closes naturally",
+    "pass": true
+  },
+  {
+    "name": "768px dark keyboard expansion preserves native details",
+    "pass": true
+  },
+  {
+    "name": "768px dark names and action targets fit",
+    "pass": true
+  },
+  {
+    "name": "768px dark more offers preserve setup and expanded comparisons",
+    "pass": true
+  },
+  {
+    "name": "768px dark retained offers and portraits are reused without a list fade",
+    "pass": true
+  },
+  {
+    "name": "768px dark back restores the exact offer position and expansion",
+    "pass": true
+  },
+  {
+    "name": "768px dark motion off expands immediately",
+    "pass": true
+  },
+  {
+    "name": "768px dark reduced motion expands immediately",
+    "pass": true
+  },
+  {
+    "name": "768px dark larger text stays inside the screen",
+    "pass": true
+  },
+  {
+    "name": "768px dark keep-player controls remain in the card",
+    "pass": true
+  },
+  {
+    "name": "768px dark no horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "768px dark no browser errors",
+    "pass": true
+  }
+]

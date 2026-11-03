@@ -40,6 +40,7 @@ export async function render(view) {
   const all = funFacts(lore);
   const factId = new URLSearchParams(location.hash.split('?')[1] || '').get('fact');
   const selected = all.find(fact => fact.id === factId);
+  if(factId&&!selected){view.innerHTML='<header class="page-head"><h1>The archive</h1></header><section class="state" role="status">This archive story is no longer available. <a class="linkbtn" href="#/facts">Open DFL Lore →</a></section>';return;}
   const today = selected || factOfTheDay(lore);
   const params = new URLSearchParams(location.hash.split('?')[1] || '');
   const requestedWeek = Number(params.get('week')), currentWeek = Number(leagueState?.currentWeek) || 1;
@@ -57,7 +58,7 @@ export async function render(view) {
     <header class="page-head"><div><h1>${selected?"The archive":"DFL Lore"}</h1>${selected?"":"<p>Know the records. Remember the rivalries. Test your league knowledge.</p>"}</div></header>
     <details class="card trivia-hub"><summary>DFL trivia · Week ${leagueState?.currentWeek || 1} <span>Take the five-question challenge</span></summary><div data-trivia-host role="region" aria-label="Weekly DFL trivia"><p role="status">Open the challenge to load this week’s quiz.</p></div></details>
 
-    <section class="factcard${selected?' has-archive-art':' dfl-mark'}" data-fact>${selected?`<img class="fact-archive-art" data-archive-key="${esc(selected.id)}" src="assets/dfl-daily-${selected.kind==='title'?'champion':selected.kind==='low'?'chip-eater':['streak','nailbiter'].includes(selected.kind)?'rivalry':'archive'}.webp" alt="">`:''}
+    <section ${selected?'data-route-focus tabindex="-1"':''} class="factcard${selected?' has-archive-art':' dfl-mark'}" data-fact>${selected?`<img class="fact-archive-art" data-archive-key="${esc(selected.id)}" src="assets/dfl-daily-${selected.kind==='title'?'champion':selected.kind==='low'?'chip-eater':['streak','nailbiter'].includes(selected.kind)?'rivalry':'archive'}.webp" alt="">`:''}
       <span class="fact-kicker">
         <svg class="ico-sm" aria-hidden="true"><use href="#${esc(ICON[today.kind] || "i-record")}"></use></svg>
         DFL Lore

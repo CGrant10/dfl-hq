@@ -12,6 +12,7 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 let tab = "events";
 
 export async function render(view) {
+  if(new URLSearchParams(location.hash.split('?')[1]||'').has('event'))tab='events';
   view.innerHTML = `
     <header class="utility-head"><small>LEAGUE SCHEDULE</small><h1>Calendar</h1></header>
     <div class="tabs" id="cal-tabs">
@@ -36,7 +37,7 @@ export async function render(view) {
     paint(body, view);
   });
 
-  paint(body, view);
+  await paint(body, view);
 }
 
 async function paint(body, view) {
@@ -62,6 +63,8 @@ async function paintEvents(body) {
 
   const today    = new Date().toISOString().slice(0, 10);
   const shown    = visible("events", data);
+  const requestedEvent=new URLSearchParams(location.hash.split('?')[1]||'').get('event');
+  if(requestedEvent&&!shown.some(e=>String(e.id)===requestedEvent)){body.innerHTML='<section class="state" role="status">This event is no longer available. <a class="linkbtn" href="#/calendar">All events →</a></section>';return;}
   const upcoming = shown.filter((e) => e.event_date >= today);
   const past     = shown.filter((e) => e.event_date < today).reverse();
 
@@ -104,7 +107,7 @@ function eventRow(e, upcoming, isNext = false) {
   const day   = isNaN(d) ? "?" : d.getDate();
 
   return `
-    <div class="evrow ${isNext ? "next" : ""} ${hiddenClass("events", e)}">
+    <div data-story-event="${esc(e.id)}" ${new URLSearchParams(location.hash.split('?')[1]||'').get('event')===String(e.id)?'data-route-focus tabindex="-1"':''} class="evrow ${isNext ? "next" : ""} ${hiddenClass("events", e)}">
       <div class="evdate" aria-hidden="true">
         <span class="evmon">${esc(month)}</span>
         <span class="evday">${esc(day)}</span>

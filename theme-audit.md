@@ -1,3 +1,18 @@
+## 1.536.0 — mobile advice, offers and broadcast destinations
+
+Reviewed compact trade offers, Home team names, Analyzer start/sit and broadcast
+slides in Medicine Wheel Light/Dark at phone widths. Existing surface, text,
+accent and divider tokens are reused; NFL and status colors keep their roles.
+No palette or theme choice was added. Full broadcast copy and responsive rows
+remain contained through enlarged text checks. Existing motion preferences and
+44px primary actions and player controls remain.
+
+`pnpm check` passes including themes and 2,435 tests. Browser evidence covers
+90 normal/56 enlarged broadcast layouts, 112 trade checks, both compiled Home
+themes, exact story links and eight advice/contrast cases. Physical Safari,
+VoiceOver and device frame pacing are unmeasured. Evidence:
+[mobile-trade-broadcast-polish-1536.md](docs/mobile-trade-broadcast-polish-1536.md).
+
 ## 1.535.0 — ESPN-inspired Clubhouse matchup structure
 
 Reviewed compact matchup chips, score-first team header and paired player rows

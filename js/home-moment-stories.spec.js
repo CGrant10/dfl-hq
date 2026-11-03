@@ -34,7 +34,7 @@ describe('league moments carry receipts',()=>{
  it('keeps a previous completed report explicitly dated and never invents an exact matchup ID',()=>{
   const report={final:true,season:2026,week:7,games:[{winner:{uid:'a',name:'Winner',value:100},loser:{uid:'b',name:'Loser',value:99.4}}]};
   const rows=homeMomentStories({edition:edition([],{completed:false}),report,now});
-  expect(rows[0].kicker).toContain('WEEK 7');expect(rows[0].href).toBe('#/clubhouse?season=2026&week=7&tab=matchups');
+  expect(rows[0].kicker).toContain('WEEK 7');expect(rows[0].href).toBe('#/clubhouse?season=2026&week=7&tab=matchups&owner=a');
  });
 });
 describe('restrained banter rotation',()=>{
@@ -62,4 +62,12 @@ describe('restrained banter rotation',()=>{
   expect(()=>selectHomeMoment(stories(),{now,storage:{getItem(){throw Error('blocked')},setItem(){throw Error('blocked')}}})).not.toThrow();
   const storage=memory();selectHomeMoment(stories(),{now,storage,scope:'one'});expect(selectHomeMoment(stories(),{now,storage,scope:'two'}).id).toBe(stories()[0].id);
  });
+});
+
+it('restores the same featured story on Back without spending another daily slot',()=>{
+ const storage=memory(),context={edition:edition([game('back',140,100),game('other-back',130,129)])};
+ const first=createHomeMomentEdition({scope:'back-test',visitKey:'original',storage,now:()=>now}).update(context);
+ const before=storage.getItem('dfl.homeMoments.v1.back-test');
+ const returned=createHomeMomentEdition({scope:'back-test',visitKey:'original',storage,now:()=>now}).update(context);
+ expect(returned.id).toBe(first.id);expect(storage.getItem('dfl.homeMoments.v1.back-test')).toBe(before);
 });

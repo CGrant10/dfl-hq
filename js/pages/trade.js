@@ -92,14 +92,15 @@ function offerControls(offer,pool){
  return `<div class="tb-card-actions"><button type="button" data-tb-pass>Pass</button><button type="button" data-tb-save>Save</button>${pins}</div>`;
 }
 function offerBalance(offer){
- const p=tradePerspective(offer),a=tradeAssessment(p),window=offer.windowWeeks?.length?`Weeks ${offer.windowWeeks[0]}–${offer.windowWeeks.at(-1)}`:'Rest of season';
- return `<div class="tb-offer-balance"><span>Value balance <b>${Math.round(a.fairness)}%</b></span><span class="tb-offer-horizon">${esc(window)}</span>${a.flags.length||p.requiredDropsA?.length?`<span class="tb-offer-caution">${p.requiredDropsA?.length?'Drop needed':'Check risk'}</span>`:''}</div>`;
+ const p=tradePerspective(offer),a=tradeAssessment(p),drops=offer.parties?(offer.requiredDrops||[]).map(ids=>ids.length):[p.requiredDropsA?.length||0,p.requiredDropsB?.length||0],window=offer.windowWeeks?.length?`Weeks ${offer.windowWeeks[0]}–${offer.windowWeeks.at(-1)}`:'Rest of season';
+ return `<div class="tb-offer-balance"><span>Value balance <b>${Math.round(a.fairness)}%</b></span><span class="tb-offer-horizon">${esc(window)}</span>${a.flags.length||drops.some(Boolean)?`<span class="tb-offer-caution">${drops.some(Boolean)?offer.parties?`Roster drops: ${drops.join(' / ')}`:`Drops: you ${drops[0]} · them ${drops[1]}`:'Estimate · check risk'}</span>`:''}</div>`;
 }
 const offerPreview=(offer,pool)=>`<details class="tb-offer-preview"><summary><span>Lineup & risk<small>${esc(tradeLineupFitLabel(offer.windowDeltas||offer.weeklyDeltas||[offer.weeklyDeltaA,offer.weeklyDeltaB]))}</small></span><i aria-hidden="true"></i></summary>${offerSummary(offer,pool)}<div data-offer-lineup></div></details>`;
 
 function offerMarkup(offer, pool) {
   if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerBalance(offer)}${offerPreview(offer,pool)}<footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze trade <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer></article>`;
-  const call = tradeAssessment(offer).price.headline.toUpperCase();
+  const assessment=tradeAssessment(offer);
+  const call = (assessment.needsReview&&assessment.price.headline==='Balanced'?'Estimated balance':assessment.price.headline).toUpperCase();
   return `<article class="tb-offer" data-offer-key="${esc(offerKey(offer))}">
     <header><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<strong>${esc(teamName(offer.other))}</strong></small><b>${call}</b></header>
     <div class="tb-offer-flow">${offerPackage(offer.sendA,pool,'YOU SEND')}${offerPackage(offer.sendB,pool,'YOU GET')}</div>

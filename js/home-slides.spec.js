@@ -10,7 +10,7 @@ describe('a dated weekly league headline',()=>{
     expect(slide.kicker).toContain('CLOSEST WIN');expect(slide.figure).toBe('0.60');expect(slide.figureLabel).toBe('Winning margin');
     expect(slide.subtitle).toBe('Team a 120.60 · Rival a 120.00');
     expect(slide.sides.map(s=>s.score)).toEqual(['120.60','120.00']);
-    expect(slide.href).toBe('#/clubhouse?season=2026&week=5&tab=matchups');expect(slide.temporal).toBe('final');
+    expect(slide.href).toBe('#/clubhouse?season=2026&week=5&tab=matchups&owner=a');expect(slide.temporal).toBe('final');
   });
   it('avoids repeating the personal matchup and never mislabels the next closest game',()=>{
     const slide=weeklyHeadlineSlide(report,{...options,meSleeperId:'a'});
