@@ -72,6 +72,9 @@ on:
       - 'tools/*tab-review*'
       - 'tools/capture-motion-quality.py'
       - 'js/sheet-drag*'
+      - 'js/stable-content.js'
+      - 'js/game-day-dom.js'
+      - 'tools/capture-reading-stability.py'
       - 'js/pages/sportsbook.js'
       - 'tools/*sheet-review*'
       - 'tools/build-shared-css.mjs'
@@ -737,6 +740,12 @@ jobs:
         run: |
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           python tools/capture-interface-system.py
+      - name: Check delayed content and live broadcast reading stability
+        env:
+          DFL_READING_REVIEW_DIR: interface-review-output/reading
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          python tools/capture-reading-stability.py
       - name: Check Clubhouse controls, player rows, clips and live-game views
         env:
           DFL_INTERFACE_AUDIT: '1'

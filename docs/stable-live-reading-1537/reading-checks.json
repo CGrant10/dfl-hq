@@ -1,0 +1,210 @@
+[
+  {
+    "check": "320px light late growth keeps reading position with anchoring auto",
+    "pass": true
+  },
+  {
+    "check": "320px light late shrink keeps reading position with anchoring auto",
+    "pass": true
+  },
+  {
+    "check": "320px light late growth keeps reading position with anchoring none",
+    "pass": true
+  },
+  {
+    "check": "320px light late shrink keeps reading position with anchoring none",
+    "pass": true
+  },
+  {
+    "check": "320px light collapsed child margins keep the same reading position",
+    "pass": true
+  },
+  {
+    "check": "320px light content still in view does not cause a manual scroll",
+    "pass": true
+  },
+  {
+    "check": "320px light live DOM patches preserve offscreen reading",
+    "pass": true
+  },
+  {
+    "check": "320px light live correction retains card headline and focused control",
+    "pass": true
+  },
+  {
+    "check": "320px light correction does not replay the entrance or keep a stale destination",
+    "pass": true
+  },
+  {
+    "check": "320px light story chooser stays open while refresh waits",
+    "pass": true
+  },
+  {
+    "check": "320px light closing chooser applies the latest deck without replacing the active card",
+    "pass": true
+  },
+  {
+    "check": "320px light no overflow or page errors",
+    "pass": true
+  },
+  {
+    "check": "320px light expanded offscreen broadcast does not move the reader",
+    "pass": true
+  },
+  {
+    "check": "320px dark late growth keeps reading position with anchoring auto",
+    "pass": true
+  },
+  {
+    "check": "320px dark late shrink keeps reading position with anchoring auto",
+    "pass": true
+  },
+  {
+    "check": "320px dark late growth keeps reading position with anchoring none",
+    "pass": true
+  },
+  {
+    "check": "320px dark late shrink keeps reading position with anchoring none",
+    "pass": true
+  },
+  {
+    "check": "320px dark collapsed child margins keep the same reading position",
+    "pass": true
+  },
+  {
+    "check": "320px dark content still in view does not cause a manual scroll",
+    "pass": true
+  },
+  {
+    "check": "320px dark live DOM patches preserve offscreen reading",
+    "pass": true
+  },
+  {
+    "check": "320px dark live correction retains card headline and focused control",
+    "pass": true
+  },
+  {
+    "check": "320px dark correction does not replay the entrance or keep a stale destination",
+    "pass": true
+  },
+  {
+    "check": "320px dark story chooser stays open while refresh waits",
+    "pass": true
+  },
+  {
+    "check": "320px dark closing chooser applies the latest deck without replacing the active card",
+    "pass": true
+  },
+  {
+    "check": "320px dark no overflow or page errors",
+    "pass": true
+  },
+  {
+    "check": "320px dark expanded offscreen broadcast does not move the reader",
+    "pass": true
+  },
+  {
+    "check": "390px light late growth keeps reading position with anchoring auto",
+    "pass": true
+  },
+  {
+    "check": "390px light late shrink keeps reading position with anchoring auto",
+    "pass": true
+  },
+  {
+    "check": "390px light late growth keeps reading position with anchoring none",
+    "pass": true
+  },
+  {
+    "check": "390px light late shrink keeps reading position with anchoring none",
+    "pass": true
+  },
+  {
+    "check": "390px light collapsed child margins keep the same reading position",
+    "pass": true
+  },
+  {
+    "check": "390px light content still in view does not cause a manual scroll",
+    "pass": true
+  },
+  {
+    "check": "390px light live DOM patches preserve offscreen reading",
+    "pass": true
+  },
+  {
+    "check": "390px light live correction retains card headline and focused control",
+    "pass": true
+  },
+  {
+    "check": "390px light correction does not replay the entrance or keep a stale destination",
+    "pass": true
+  },
+  {
+    "check": "390px light story chooser stays open while refresh waits",
+    "pass": true
+  },
+  {
+    "check": "390px light closing chooser applies the latest deck without replacing the active card",
+    "pass": true
+  },
+  {
+    "check": "390px light no overflow or page errors",
+    "pass": true
+  },
+  {
+    "check": "390px light expanded offscreen broadcast does not move the reader",
+    "pass": true
+  },
+  {
+    "check": "390px dark late growth keeps reading position with anchoring auto",
+    "pass": true
+  },
+  {
+    "check": "390px dark late shrink keeps reading position with anchoring auto",
+    "pass": true
+  },
+  {
+    "check": "390px dark late growth keeps reading position with anchoring none",
+    "pass": true
+  },
+  {
+    "check": "390px dark late shrink keeps reading position with anchoring none",
+    "pass": true
+  },
+  {
+    "check": "390px dark collapsed child margins keep the same reading position",
+    "pass": true
+  },
+  {
+    "check": "390px dark content still in view does not cause a manual scroll",
+    "pass": true
+  },
+  {
+    "check": "390px dark live DOM patches preserve offscreen reading",
+    "pass": true
+  },
+  {
+    "check": "390px dark live correction retains card headline and focused control",
+    "pass": true
+  },
+  {
+    "check": "390px dark correction does not replay the entrance or keep a stale destination",
+    "pass": true
+  },
+  {
+    "check": "390px dark story chooser stays open while refresh waits",
+    "pass": true
+  },
+  {
+    "check": "390px dark closing chooser applies the latest deck without replacing the active card",
+    "pass": true
+  },
+  {
+    "check": "390px dark no overflow or page errors",
+    "pass": true
+  },
+  {
+    "check": "390px dark expanded offscreen broadcast does not move the reader",
+    "pass": true
+  }
+]

@@ -1,3 +1,4 @@
+import {updateStableContent} from './stable-content.js';
 // Keep live rows, focused controls and open disclosures in place while text changes.
 const key=node=>!node||node.nodeType!==1?null:node.id?`id:${node.id}`:node.matches('[data-football-panel]')?'football-panel':node.matches('[data-nfl-game]')?`nfl:${node.dataset.nflGame}`:node.matches('[data-injury-id]')?`injury:${node.dataset.injuryId}`:node.matches('.gameday-player')?node.dataset.gamedayRow?`player:${node.dataset.gamedayRow}`:`player:${node.querySelector('[data-player-roster]')?.dataset.playerRoster}:${node.querySelector('[data-gameday-player]')?.dataset.gamedayPlayer||node.querySelector('.gameday-slot')?.textContent}`:node.matches('[data-moment-key]')?`moment:${node.dataset.momentKey}`:null;
 const compatible=(a,b)=>a?.nodeType===b.nodeType&&(a.nodeType!==1||a.tagName===b.tagName);
@@ -38,4 +39,4 @@ function reconcile(root,fresh){
  }
  while(cursor){const next=cursor.nextSibling;cursor.remove();cursor=next}
 }
-export function patchGameDay(root,html){const template=document.createElement('template');template.innerHTML=html;reconcile(root,template.content)}
+export function patchGameDay(root,html){const template=document.createElement('template');template.innerHTML=html;updateStableContent(root,()=>reconcile(root,template.content))}

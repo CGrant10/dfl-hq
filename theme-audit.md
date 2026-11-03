@@ -1,3 +1,18 @@
+## 1.537.0 — stable reading and shared replay gestures
+
+Reviewed replay studio headers, drag grip, clip grids and in-place broadcast
+updates in Medicine Wheel Light/Dark at 320/390px. The new grip reuses muted
+text color; backdrops use the existing sheet dim variable and theme surface.
+Existing NFL/status identity remains. No palette or theme choice was added.
+Normal/enlarged broadcast layouts, contrast, 44px controls and reduced motion
+remain covered. Both theme screenshots were inspected before merging.
+
+`pnpm check` passes including theme scan and 2,436 tests. Browser coverage:
+52 reading stability checks, 277 replay checks, 90 normal/56 enlarged broadcast
+layouts, 30 shared-interface layouts and 112 trade-reading checks. Physical
+Safari, VoiceOver, frame pacing and battery use are unmeasured. Evidence:
+[stable-live-reading-1537.md](docs/stable-live-reading-1537.md).
+
 ## 1.536.0 — mobile advice, offers and broadcast destinations
 
 Reviewed compact trade offers, Home team names, Analyzer start/sit and broadcast

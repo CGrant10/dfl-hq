@@ -240,3 +240,13 @@ html[data-ui-motion="off"] .home-reel-screen[data-reel-loading]::after { animati
 .nfl-center-fantasy .nfl-fantasy-player[data-nfl-your-player] { border-left:0; border-top:2px solid var(--accent); padding-inline:6px; background:color-mix(in srgb,var(--accent) 5%,transparent); }
 .nfl-fantasy-side .nfl-center-empty { padding:12px 6px; }
 @media(max-width:360px) { .nfl-center-fantasy { gap:8px; } .nfl-fantasy-team { padding-inline:4px; gap:4px; } .nfl-fantasy-team>img { width:22px; height:22px; } .nfl-fantasy-team>b { font-size:21px; } }
+
+/* The studio shares the player-card header drag; video and lists stay native. */
+.home-reel-player[data-sheet-ready]::backdrop { opacity:var(--sheet-dim,1); }
+.home-reel-player[data-sheet-moving] { transition:none!important; will-change:transform; }
+.home-reel-player[data-ui-closing] { pointer-events:none; }
+.home-reel-player[data-ui-closing]::backdrop { animation:ui-backdrop-out 220ms ease forwards; }
+@media(max-width:600px) {
+ .home-reel-player>header[data-sheet-handle] { position:relative; padding-top:6px; min-height:52px; touch-action:none; user-select:none; }
+ .home-reel-player>header[data-sheet-handle]::before { content:""; position:absolute; top:3px; left:calc(50% - 14px); width:28px; height:3px; border-radius:3px; background:var(--muted); opacity:.65; pointer-events:none; }
+}

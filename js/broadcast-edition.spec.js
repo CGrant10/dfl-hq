@@ -47,13 +47,17 @@ describe('full Home broadcast editions',()=>{
   expect(broadcastEdition([{...old,source:'manual'}],date)).toHaveLength(1);
   expect(broadcastEdition([{...old,kind:'news'}],date)).toEqual([]);
  });
- it('uses the latest confirmed news or trade in its existing ranked slot',()=>{
+ it('uses the latest confirmed news or trade ahead of routine undated activity',()=>{
   for(const kind of ['trade','news']){
    const old={id:'old',kind,occurredAt:'2026-10-26T10:00:00Z'},fresh={id:'fresh',kind,occurredAt:'2026-10-27T10:00:00Z'};
    const before={id:'before',kind:'golf'},after={id:'after',kind:'event'};
-   expect(broadcastEdition([before,old,after,fresh],date)).toEqual([before,fresh,after]);
+   expect(broadcastEdition([before,old,after,fresh],date)).toEqual([fresh,before,after]);
    expect(broadcastEdition([fresh,old],date)).toEqual([fresh]);
   }
+ });
+ it('keeps explicit pins first, then live play, fresh receipts and routine content',()=>{
+  const pin={id:'pin',kind:'news',source:'manual',pinned:true},live={id:'live',kind:'fantasy',temporal:'live'},receipt={id:'receipt',kind:'trade',occurredAt:'2026-10-27T10:00:00Z'},routine={id:'routine',kind:'event'};
+  expect(broadcastEdition([routine,receipt,pin,live],date)).toEqual([pin,live,receipt,routine]);
  });
  it('keeps undated stories and preserves event ranking instead of guessing freshness',()=>{
   const unknown={id:'unknown',kind:'trade',source:'auto',pinned:true};
