@@ -1,0 +1,38 @@
+{
+  "version": "1.534.0",
+  "checks": [
+    {
+      "mode": "light",
+      "width": 390,
+      "sixMatchups": true,
+      "forwardBack": true,
+      "noOverflow": true,
+      "temporaryLayersCleaned": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "sixMatchups": true,
+      "forwardBack": true,
+      "noOverflow": true,
+      "temporaryLayersCleaned": true
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "sixMatchups": true,
+      "forwardBack": true,
+      "noOverflow": true,
+      "temporaryLayersCleaned": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "sixMatchups": true,
+      "forwardBack": true,
+      "noOverflow": true,
+      "temporaryLayersCleaned": true
+    }
+  ],
+  "pageErrors": []
+}
