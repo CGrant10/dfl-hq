@@ -704,6 +704,7 @@ jobs:
         run: |
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           python tools/capture-broadcast-wide.py
+          python tools/capture-broadcast-editorial.py
       - name: Check first-read visibility and motion preferences
         env:
           DFL_REVIEW_DIR: broadcast-finish-output
