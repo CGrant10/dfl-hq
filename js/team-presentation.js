@@ -1,7 +1,7 @@
 import { esc } from "./ui.js";
 import { accentOf } from "./identity-rules.js";
 import { teamInitials } from "./league-trajectory.js";
-import {memberPhotoCandidates} from './member-photo.js';
+import {memberPhotoCandidates,photoSourceKey} from './member-photo.js';
 
 export function teamLabel(team) {
   return team?.team_name || team?.identity?.team_name || team?.ownerName
@@ -19,7 +19,7 @@ export function teamPortrait(team, { className = "" } = {}) {
   const photo=photos.shift();
   return `<span class="dfl-team-mark ${esc(className)}" style="--team-accent:${esc(accentOf(identity))}" aria-hidden="true">
     <i>${esc(teamInitials(name || "?"))}</i>
-    ${photo ? `<img src="${esc(photo)}" data-photo-fallbacks="${esc(JSON.stringify(photos))}" alt="" loading="lazy" decoding="async" onload="this.parentElement.classList.add('has-photo')" onerror="const next=JSON.parse(this.dataset.photoFallbacks||'[]'),src=next.shift();this.dataset.photoFallbacks=JSON.stringify(next);if(src){this.src=src}else{this.parentElement.classList.remove('has-photo');this.remove()}">` : ""}
+    ${photo ? `<img src="${esc(photo)}" data-photo-fallbacks="${esc(JSON.stringify(photos))}" data-photo-key="${esc(photoSourceKey([photo,...photos]))}" data-image-reveal width="36" height="36" alt="" loading="lazy" decoding="async" onload="this.parentElement.classList.add('has-photo')" onerror="this.parentElement.classList.remove('has-photo');const next=JSON.parse(this.dataset.photoFallbacks||'[]'),src=next.shift();this.dataset.photoFallbacks=JSON.stringify(next);if(src){this.src=src}else{this.remove()}">` : ""}
   </span>`;
 }
 

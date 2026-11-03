@@ -1,0 +1,46 @@
+[
+  {
+    "mode": "light",
+    "dpr": 1,
+    "posterWidth": 480,
+    "stableLayout": true,
+    "portraitFallback": true,
+    "photoPreferenceFallback": true,
+    "posterSurvivesRefresh": true,
+    "reducedMotion": true,
+    "pageErrors": []
+  },
+  {
+    "mode": "dark",
+    "dpr": 1,
+    "posterWidth": 480,
+    "stableLayout": true,
+    "portraitFallback": true,
+    "photoPreferenceFallback": true,
+    "posterSurvivesRefresh": true,
+    "reducedMotion": true,
+    "pageErrors": []
+  },
+  {
+    "mode": "light",
+    "dpr": 3,
+    "posterWidth": 960,
+    "stableLayout": true,
+    "portraitFallback": true,
+    "photoPreferenceFallback": true,
+    "posterSurvivesRefresh": true,
+    "reducedMotion": true,
+    "pageErrors": []
+  },
+  {
+    "mode": "dark",
+    "dpr": 3,
+    "posterWidth": 960,
+    "stableLayout": true,
+    "portraitFallback": true,
+    "photoPreferenceFallback": true,
+    "posterSurvivesRefresh": true,
+    "reducedMotion": true,
+    "pageErrors": []
+  }
+]

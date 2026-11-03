@@ -751,6 +751,11 @@ jobs:
         run: |
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           python tools/capture-clubhouse-live.py
+      - name: Check direct matchup swipes and resilient image loading
+        run: |
+          export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
+          DFL_CLUBHOUSE_SWIPE_ONLY=1 DFL_CLUBHOUSE_LIVE_REVIEW_DIR=interface-review-output/matchup-swipes python tools/capture-clubhouse-live.py
+          DFL_IMAGE_REVIEW_DIR=interface-review-output/images python tools/capture-image-quality.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

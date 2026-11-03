@@ -5,6 +5,11 @@ export function highlightPosterUrl(value,width=640){
  const source=highlightThumbnail(value);if(!source)return null;
  const url=new URL('https://a.espncdn.com/combiner/i');url.searchParams.set('img',source);url.searchParams.set('w',String(width));return url.href;
 }
+export function highlightPosterImage(value,{width=640,sizes='auto, (max-width:600px) 66vw,480px'}={}){
+ const src=highlightPosterUrl(value,width);if(!src)return '';
+ const set=[240,480,960].map(size=>`${highlightPosterUrl(value,size)} ${size}w`).join(', ');
+ return `<img src="${esc(src)}" srcset="${esc(set)}" sizes="${esc(sizes)}" data-poster-source="${esc(highlightThumbnail(value))}" data-image-reveal width="960" height="540" alt="" loading="lazy" decoding="async" onload="this.parentElement.classList.add('has-poster')" onerror="this.parentElement.classList.remove('has-poster');if(!this.dataset.posterFallback){this.dataset.posterFallback='1';this.removeAttribute('srcset');this.removeAttribute('sizes');this.src=this.dataset.posterSource}else{this.remove()}">`;
+}
 const duration=n=>`${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`;
 export function reelPlayersMarkup(players=[],selected='',total=0,prefix='home'){
  if(!players.length)return '';
@@ -14,7 +19,7 @@ export function reelGameOptions(clips,selected=''){
  const games=[...new Map(clips.map(clip=>[clip.game_id,clip.game_label])).entries()];
  return `<option value="">All games · ${clips.length}</option>${games.map(([id,label])=>`<option value="${id}" ${selected===id?'selected':''}>${esc(label)} · ${clips.filter(c=>c.game_id===id).length}</option>`).join('')}`;
 }
-function clipCard(clip){return `<li id="home-highlight-${clip.id}"><button type="button" data-home-reel-clip="${clip.id}" aria-label="Watch ${esc(clip.headline)}"><span class="home-reel-poster"><img src="${esc(highlightPosterUrl(clip.thumbnail_url))}" alt="" loading="lazy" decoding="async"><span class="home-reel-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></svg></span><span class="home-reel-duration">${duration(clip.duration)}</span></span><span class="home-reel-kind">${clip.kind==='touchdown'?'TOUCHDOWN':'BIG PLAY'} · ESPN</span><strong>${esc(clip.headline)}</strong><span class="home-reel-matchup">${esc(clip.game_label)}</span></button></li>`}
+function clipCard(clip){return `<li id="home-highlight-${clip.id}"><button type="button" data-home-reel-clip="${clip.id}" aria-label="Watch ${esc(clip.headline)}"><span class="home-reel-poster">${highlightPosterImage(clip.thumbnail_url)}<span class="home-reel-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></svg></span><span class="home-reel-duration">${duration(clip.duration)}</span></span><span class="home-reel-kind">${clip.kind==='touchdown'?'TOUCHDOWN':'BIG PLAY'} · ESPN</span><strong>${esc(clip.headline)}</strong><span class="home-reel-matchup">${esc(clip.game_label)}</span></button></li>`}
 export function homeHighlightMarkup(clips,now=Date.now(),{title='Weekend highlights.',eyebrow='WEEKEND REEL',emptyText='',players=[],player='',total=clips.length,layout='rail',game='',games=clips,query=''}={}){
  if(layout==='feature'){
   if(!clips.length)return '';
@@ -27,5 +32,5 @@ export function homeHighlightMarkup(clips,now=Date.now(),{title='Weekend highlig
 }
 export function reelQueueMarkup(clips,selected){
  if(!clips.length)return '<li class="reel-search-empty"><strong>No matching clips</strong><button type="button" class="linkbtn" data-reel-clear>Clear filters</button></li>';
- return clips.map((clip,index)=>`<li id="reel-queue-${clip.id}"><button type="button" data-reel-choose="${clip.id}" aria-pressed="${clip.id===selected}" aria-label="Clip ${index+1}: ${esc(clip.headline)}" title="${esc(clip.headline)}"><span class="reel-list-poster"><img src="${esc(highlightPosterUrl(clip.thumbnail_url,320))}" alt="" loading="lazy" decoding="async"><span>${duration(clip.duration)}</span>${clip.id===selected?'<span class="reel-playing" aria-hidden="true">Playing</span>':''}</span><span class="reel-list-copy"><strong>${esc(clip.headline)}</strong><small>${esc(clip.game_label)} · ${clip.kind==='touchdown'?'TD':'Big play'}</small></span><span class="reel-list-number" aria-hidden="true">${index+1}</span></button></li>`).join('');
+ return clips.map((clip,index)=>`<li id="reel-queue-${clip.id}"><button type="button" data-reel-choose="${clip.id}" aria-pressed="${clip.id===selected}" aria-label="Clip ${index+1}: ${esc(clip.headline)}" title="${esc(clip.headline)}"><span class="reel-list-poster">${highlightPosterImage(clip.thumbnail_url,{width:320,sizes:"auto,160px"})}<span>${duration(clip.duration)}</span>${clip.id===selected?'<span class="reel-playing" aria-hidden="true">Playing</span>':''}</span><span class="reel-list-copy"><strong>${esc(clip.headline)}</strong><small>${esc(clip.game_label)} · ${clip.kind==='touchdown'?'TD':'Big play'}</small></span><span class="reel-list-number" aria-hidden="true">${index+1}</span></button></li>`).join('');
 }

@@ -1,3 +1,17 @@
+## 1.533.0 — matchup paging and stable image presentation
+
+Reviewed Clubhouse's resting and finger-drag states at 320/390px in Light and
+Dark, plus delayed/failed image states at 1x/3x density. Actual compiled Home
+and Clubhouse captures also cover both themes. Source preferences, avatar/team
+colors, contained defense logos and original award art are retained. No new
+palette literal, surface box or theme choice was added.
+
+100 matchup swipe checks, 297 existing Clubhouse checks, four image-state cases,
+and 37 player-card motion checks pass. Image fades respect Reduced Motion and
+motion-off; swipes keep vertical scrolling and the selected tab. `pnpm check`
+passes, including themes and 2,424 tests. Evidence and physical-device limits:
+[clubhouse-swipe-images-1533.md](docs/clubhouse-swipe-images-1533.md).
+
 ## 1.532.0 — selected editorial broadcast
 
 Reviewed award, trade, bench metric, Chip Eater and ten-story picker in Light

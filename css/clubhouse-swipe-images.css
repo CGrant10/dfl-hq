@@ -1,0 +1,19 @@
+/* Matchup paging uses the existing direct-manipulation tab controller. */
+#view .clubhouse-matchup-list { min-width:0; }
+#view .clubhouse-matchup-list :is(.clubhouse-game-teams,.gd-lineup-pairs) { touch-action:pan-y pinch-zoom; }
+#view .clubhouse-matchup-list [data-ui-swipe-settling] { will-change:transform; }
+#view .clubhouse-matchup-list>[data-ui-swipe-settling],#view .clubhouse-matchup-list>.dfl-tab-preview { overflow:clip; }
+
+/* Fixed portrait/poster boxes retain their original geometry while photos load.
+   Image fades never move text or change the portrait flight's outer surface. */
+.dfl-player-portrait>img[data-image-reveal],.dfl-team-mark>img[data-image-reveal] { opacity:0; transition:opacity 160ms ease-out; }
+.dfl-player-portrait.has-photo>img[data-image-reveal],.dfl-team-mark.has-photo>img[data-image-reveal] { opacity:1; }
+.dfl-player-portrait:not(.is-team)>img[data-image-reveal] { object-position:center top; }
+.dfl-player-portrait.has-photo>i { visibility:hidden; }
+.home-reel-poster>img[data-image-reveal],.reel-list-poster>img[data-image-reveal] { opacity:0; transition:opacity 180ms ease-out; }
+.home-reel-poster.has-poster>img[data-image-reveal],.reel-list-poster.has-poster>img[data-image-reveal] { opacity:1; }
+@media(prefers-reduced-motion:reduce) {
+ .dfl-player-portrait>img[data-image-reveal],.dfl-team-mark>img[data-image-reveal],.home-reel-poster>img[data-image-reveal],.reel-list-poster>img[data-image-reveal] { transition:none!important; }
+}
+html[data-ui-motion="off"] :is(.dfl-player-portrait,.dfl-team-mark,.home-reel-poster,.reel-list-poster)>img[data-image-reveal] { transition:none!important; }
+[data-motion="off"] :is(.dfl-player-portrait,.dfl-team-mark,.home-reel-poster,.reel-list-poster)>img[data-image-reveal] { transition:none!important; }
