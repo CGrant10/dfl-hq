@@ -1,3 +1,18 @@
+## 1.532.0 — selected editorial broadcast
+
+Reviewed award, trade, bench metric, Chip Eater and ten-story picker in Light
+and Dark at 390px; normal containment also covers 320px and 768px. The selected
+light design maps to the existing Medicine Wheel tokens in both modes, including
+progress, selected/hover/focus controls, dividers and image windows. No hardcoded
+blue accent, extra theme, gold border or old palette was introduced. Supplied
+award art keeps its original red/cream/black identity.
+
+`pnpm check` passes, including themes and 2,422 tests. Browser checks pass 90
+normal and 56 enlarged-text layouts, contrast, 44px controls, swipes, one-pass
+replay and Reduced Motion. The story chooser's pause and refresh recovery are
+also checked. Source/rendered comparisons and the accepted responsive differences
+are in [design-qa.md](design-qa.md). Physical Safari/VoiceOver are unmeasured.
+
 # Expanded broadcast edition — 1.531.0
 
 Existing broadcast compositions and tokens are retained. Reviewed the expanded

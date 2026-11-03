@@ -468,9 +468,9 @@ export function renderStage(deck, { editorial = false, wide = false } = {}) {
      thing that makes a broadcast package look cheap. */
   return `
     <section class="bx-stage" data-bx-stage data-bx-count="${items.length}"${editorial ? ' data-presentation="editorial"' : ''}${wide?' data-bx-format="wide"':''}>
-      ${editorial ? '<span class="bx-editorial-label">League broadcast</span><span class="bx-page-count" aria-hidden="true">1 of '+items.length+'</span>' : '<span class="bx-ident" aria-hidden="true">DFL<i>HQ</i></span>'}
+      ${editorial ? '<span class="bx-editorial-label">League broadcast</span>'+(!wide?'<span class="bx-page-count" aria-hidden="true">1 of '+items.length+'</span>':'') : '<span class="bx-ident" aria-hidden="true">DFL<i>HQ</i></span>'}
       <div class="bx-layer" data-bx-layer aria-live="off" aria-atomic="true">${renderItem(first, { editorial,wide })}</div>
-      ${items.length > 1 ? arrows(editorial) + controls(items) : ""}
+      ${items.length > 1 ? (wide?'':arrows(editorial)) + controls(items,0,wide) : ""}
     </section>`;
 }
 
@@ -480,34 +480,36 @@ export function renderStage(deck, { editorial = false, wide = false } = {}) {
   and a keyboard user both need a control they can actually reach. CSS
   fades them up on hover where hover exists; on touch they simply stay.
 */
-function arrows(editorial = false) {
+function arrows(editorial = false, wide = false) {
   return `
     <button type="button" class="bx-arrow bx-prev" data-bx-step="-1" aria-label="Previous slide">
       <svg class="ico-sm" aria-hidden="true"><use href="${editorial ? '#home-ui-chevron-left' : '#i-chev-left'}"></use></svg>
+      ${wide?'<span>Previous</span>':''}
     </button>
     <button type="button" class="bx-arrow bx-next" data-bx-step="1" aria-label="Next slide">
-      <svg class="ico-sm" aria-hidden="true"><use href="${editorial ? '#home-ui-chevron-right' : '#i-chev-right'}"></use></svg>
+      ${wide?'<span>Next</span>':''}<svg class="ico-sm" aria-hidden="true"><use href="${editorial ? '#home-ui-chevron-right' : '#i-chev-right'}"></use></svg>
     </button>`;
 }
 
-function controls(items, current = 0) {
+function controls(items, current = 0, wide = false) {
   /* One pause button and one segment per slide. The segments are real
      buttons, so the whole thing is reachable with a keyboard and needs no
      gestures. */
   const dots = items.map((it, i) => `
     <button type="button" class="bx-dot${i === current ? " on" : ""}" data-bx-go="${i}"
-      aria-label="Show item ${i + 1} of ${items.length}"${i === current ? ' aria-current="true"' : ""}></button>`).join("");
+      aria-label="Show item ${i + 1} of ${items.length}${wide?': '+esc(it.headline||it.kicker||'Story'):''}"${i === current ? ' aria-current="true"' : ""}>${wide?'<span>'+String(i+1)+'</span>':''}</button>`).join("");
   /* The button's accessible name is the ACTION, and there is deliberately no
      aria-pressed. A toggle that changes both its label and its pressed state
      announces itself as "Play, toggle button, pressed", which is a riddle.
      One or the other: this one names what happens if you press it. */
   return `
     <div class="bx-controls" data-bx-controls>
+      ${wide?`<span class="bx-edition-progress" aria-hidden="true" style="--bx-progress:${(current+1)/items.length}"><span></span></span>${arrows(true,true)}<details class="bx-story-picker"><summary aria-label="Choose a broadcast story"><span class="bx-page-count">${current+1} / ${items.length}</span></summary><div class="bx-dots">${dots}</div></details>`:''}
       <button type="button" class="bx-pause" data-bx-pause aria-label="Pause the broadcast">
         <svg class="ico-sm bx-i-pause" aria-hidden="true"><use href="#i-pause"></use></svg>
         <svg class="ico-sm bx-i-play" aria-hidden="true"><use href="#i-play"></use></svg>
       </button>
-      <div class="bx-dots">${dots}</div>
+      ${wide?'':`<div class="bx-dots">${dots}</div>`}
     </div>`;
 }
 
@@ -569,7 +571,7 @@ const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 */
 
 /** Selector for the stage's own controls: arrows, dots, pause. */
-export const STAGE_CONTROL = "[data-bx-step],[data-bx-go],[data-bx-pause]";
+export const STAGE_CONTROL = "[data-bx-step],[data-bx-go],[data-bx-pause],.bx-story-picker>summary";
 
 /**
  * Should focus on this element pause the rotation?
@@ -676,7 +678,7 @@ export function startStage(root, deck, { refresh } = {}) {
     if(wide){
       // Enlarged type reflows into more rows; reserve the same room for every
       // story so long award names never clip or move the surrounding Home.
-      const scale=Math.max(1,parseFloat(getComputedStyle(document.documentElement).fontSize)/16),base=Math.ceil(Math.max(items.length>1?232:200,Math.min(300,root.clientWidth/1.9+(items.length>1?44:8)))*scale+64*(scale-1));
+      const scale=Math.max(1,parseFloat(getComputedStyle(document.documentElement).fontSize)/16),base=Math.ceil(Math.max(items.length>1?196:172,Math.min(260,root.clientWidth/2.5+(items.length>1?44:8)))*scale+64*(scale-1));
       root.toggleAttribute('data-bx-large-text',scale>1.05);
       const key=`wide:${root.clientWidth}:${scale}:${JSON.stringify(items)}`;
       if(key!==layoutKey){
@@ -853,7 +855,8 @@ export function startStage(root, deck, { refresh } = {}) {
        the clock stays here, which is the same split as everywhere else. */
     const ms = items[i]?.dwell || DWELL_FALLBACK;
     const pageCount = root.querySelector('.bx-page-count');
-    if (pageCount) pageCount.textContent = `${i + 1} of ${items.length}`;
+    if (pageCount) pageCount.textContent = `${i + 1}${wide?' / ':' of '}${items.length}`;
+    root.querySelector('.bx-edition-progress')?.style.setProperty('--bx-progress',String((i+1)/items.length));
     root.querySelectorAll("[data-bx-go]").forEach((d) => {
       const on = Number(d.dataset.bxGo) === i;
       d.classList.toggle("on", on);
@@ -937,6 +940,8 @@ export function startStage(root, deck, { refresh } = {}) {
     if (arrow) { step(Number(arrow.dataset.bxStep)); return; }
     const dot = e.target.closest("[data-bx-go]");
     if (!dot) return;
+    const picker=dot.closest('.bx-story-picker');
+    if(picker){picker.open=false;picker.querySelector('summary').focus({preventScroll:true});}
     go(Number(dot.dataset.bxGo));
   };
 
@@ -947,6 +952,9 @@ export function startStage(root, deck, { refresh } = {}) {
   */
   const onKey = (e) => {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const picker=root.querySelector('.bx-story-picker[open]');
+    if(e.key==='Escape'&&picker){e.preventDefault();picker.open=false;picker.querySelector('summary').focus({preventScroll:true});return;}
+    if(picker)return;
     if (e.key === "ArrowLeft")  { e.preventDefault(); step(-1); }
     if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
   };
@@ -1022,8 +1030,12 @@ export function startStage(root, deck, { refresh } = {}) {
     softPause("focus", true);
   };
   const onFocusOut = (e) => {
-    if (!root.contains(e.relatedTarget)) softPause("focus", false);
+    if (!root.contains(e.relatedTarget)) {
+      softPause("focus", false);
+      const picker=root.querySelector('.bx-story-picker[open]');if(picker)picker.open=false;
+    }
   };
+  const onPickerToggle=e=>{if(e.target.matches('.bx-story-picker'))softPause('picker',e.target.open)};
 
   /* =====================================================================
      SWIPE. Pointer events, no library, about thirty lines.
@@ -1159,6 +1171,7 @@ export function startStage(root, deck, { refresh } = {}) {
   root.addEventListener("pointerleave", onLeave);
   root.addEventListener("focusin", onFocusIn);
   root.addEventListener("focusout", onFocusOut);
+  root.addEventListener('toggle',onPickerToggle,true);
   document.addEventListener("visibilitychange", onVis);
 
   // ----------------------------------------------------------- live refresh
@@ -1193,8 +1206,11 @@ export function startStage(root, deck, { refresh } = {}) {
   function rebuildDots() {
     root.dataset.bxCount=String(items.length);
     const pageCount = root.querySelector('.bx-page-count');
-    if (pageCount) pageCount.textContent = `${i + 1} of ${items.length}`;
+    if (pageCount) pageCount.textContent = `${i + 1}${wide?' / ':' of '}${items.length}`;
     const wrap = root.querySelector("[data-bx-controls]");
+    // A refreshed edition replaces the picker. Its old open state must not
+    // leave the new controls permanently paused after live enrichment.
+    soft.delete('picker');
     if (items.length < 2) {
       wrap?.remove();
       root.querySelectorAll("[data-bx-step]").forEach((a) => a.remove());
@@ -1205,8 +1221,8 @@ export function startStage(root, deck, { refresh } = {}) {
        an eight-item one, so this has to be able to create them as well as
        replace them - arrows included, or a deck that grew would rotate with
        no way to step through it. */
-    if (wrap) wrap.outerHTML = controls(items, i);
-    else root.insertAdjacentHTML("beforeend", controls(items, i));
+    if (wrap) wrap.outerHTML = controls(items, i, wide);
+    else root.insertAdjacentHTML("beforeend", controls(items, i, wide));
     if (!root.querySelector("[data-bx-step]")) root.insertAdjacentHTML("beforeend", arrows(editorial));
     paintButton();
   }
@@ -1254,6 +1270,7 @@ export function startStage(root, deck, { refresh } = {}) {
       root.removeEventListener("pointerleave", onLeave);
       root.removeEventListener("focusin", onFocusIn);
       root.removeEventListener("focusout", onFocusOut);
+      root.removeEventListener('toggle',onPickerToggle,true);
       document.removeEventListener("visibilitychange", onVis);
     },
   };

@@ -42,7 +42,7 @@ with sync_playwright() as p:
     slide=page.locator('.bx-layer>.bx-slide:not(.bx-leaving)');stage=page.locator('[data-bx-stage]')
     metrics=slide.evaluate('''e=>{
      const r=e.getBoundingClientRect(),s=e.closest('.bx-stage'),transport=s.querySelector('.bx-controls').getBoundingClientRect(),art=e.querySelector('.bx-brief-art,.bx-brief-number,.bx-brief-value')?.getBoundingClientRect();
-     const children=[...e.children].filter(n=>n.getClientRects().length&&!n.matches('.bx-home-art,.bx-home-shade')),copy=[...e.querySelectorAll(':scope>.bx-kicker,:scope>.bx-head,:scope>.bx-brief-body,:scope>.bx-brief-action')];
+     const children=[...e.children].filter(n=>n.getClientRects().length&&getComputedStyle(n).clipPath!=='inset(50%)'&&!n.matches('.bx-home-art,.bx-home-shade')),copy=[...e.querySelectorAll(':scope>.bx-kicker,:scope>.bx-head,:scope>.bx-brief-body,:scope>.bx-brief-action')];
      return {children:children.map(n=>({class:n.className,rect:n.getBoundingClientRect().toJSON(),scroll:[n.scrollWidth,n.scrollHeight],client:[n.clientWidth,n.clientHeight]})),bounds:r.toJSON(),transport:transport.top,headline:e.querySelector('h2')?.textContent,height:s.clientHeight,cardWidth:r.width,cardHeight:r.height,overflow:document.documentElement.scrollWidth>innerWidth+1,within:children.every(n=>{const b=n.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1&&b.top>=r.top-1&&b.bottom<=Math.min(r.bottom,transport.top)+1&&n.scrollWidth<=n.clientWidth+1}),separated:!art||copy.every(n=>{const b=n.getBoundingClientRect();return b.right<=art.left+1||b.left>=art.right-1||b.bottom<=art.top+1||b.top>=art.bottom-1}),artContained:[...e.querySelectorAll('.bx-brief-art>img')].every(n=>n.complete&&n.naturalWidth>0&&getComputedStyle(n).objectFit==='contain'),headFont:parseFloat(getComputedStyle(e.querySelector('h2')).fontSize)};
     }''')
     page.screenshot(path=str(OUT/f'wide-{mode}-{width}-{i}.png'))
@@ -53,15 +53,15 @@ with sync_playwright() as p:
       const inside=(a,b)=>a.left>=b.left-1&&a.right<=b.right+1&&a.top>=b.top-1&&a.bottom<=b.bottom+1;
       const separate=(a,b)=>a.right<=b.left+1||a.left>=b.right-1||a.bottom<=b.top+1||a.top>=b.bottom-1;
       const rows=[...e.querySelectorAll('.bx-brief-package')],balance=e.querySelector('.bx-brief-trade-balance').getBoundingClientRect();
-      return rows.every(row=>{const r=row.getBoundingClientRect(),items=[...row.children].map(n=>n.getBoundingClientRect());return items.every(b=>inside(b,r))&&items.every((b,j)=>items.slice(j+1).every(c=>separate(b,c)))})
+      return rows.every(row=>{const r=row.getBoundingClientRect(),items=[...row.querySelectorAll(':scope>small,:scope>small>span,:scope>small>em,:scope>.dfl-player-portrait,:scope>strong,:scope>.bx-brief-extra')].filter(n=>n.getClientRects().length&&getComputedStyle(n.parentElement).display==='contents'||n.getClientRects().length&&n.parentElement===row&&getComputedStyle(n).display!=='contents').map(n=>n.getBoundingClientRect());return items.every(b=>inside(b,r))&&items.every((b,j)=>items.slice(j+1).every(c=>separate(b,c)))})
        &&[...e.querySelectorAll(':scope>.bx-kicker,:scope>.bx-head,:scope>.bx-brief-body,:scope>.bx-brief-action')].every(n=>separate(n.getBoundingClientRect(),balance))
        &&rows.every(n=>n.querySelector('small em').textContent==='gets');
      }''')
      assert exchange,(mode,width,i,'exchange overlap or unverified routing')
     assert slide.locator('.bx-brief-art .dfl-player-portrait').evaluate_all('''nodes=>nodes.every(n=>getComputedStyle(n).borderTopWidth==='0px'&&getComputedStyle(n).backgroundImage==='none'&&[...n.querySelectorAll('img')].every(img=>getComputedStyle(img).backgroundImage==='none'))'''),(mode,width,i,'portrait inherited an unrelated plate')
-    targets=stage.locator('[data-bx-step],[data-bx-pause],[data-bx-go]').evaluate_all('nodes=>nodes.every(n=>n.getBoundingClientRect().width>=43.5&&n.getBoundingClientRect().height>=43.5)')
+    targets=stage.locator('[data-bx-step],[data-bx-pause],.bx-story-picker>summary').evaluate_all('nodes=>nodes.every(n=>n.getBoundingClientRect().width>=43.5&&n.getBoundingClientRect().height>=43.5)')
     assert targets,(mode,width,i,'small transport target')
-    assert stage.locator('[aria-current="true"]').evaluate('''n=>{const a=n.getBoundingClientRect(),r=n.parentElement.getBoundingClientRect();return a.left>=r.left-1&&a.right<=r.right+1}'''),(mode,width,i,'active segment hidden in rail')
+    assert stage.locator('.bx-page-count').inner_text()==f'{i+1} / {page.locator("[data-bx-go]").count()}',(mode,width,i,'story counter lost the active slide')
     assert metrics['height']<=(290 if width<700 else 350),(mode,width,i,'too tall',metrics)
     if i:assert metrics['cardWidth']>metrics['cardHeight']*1.3,(mode,width,i,'not wide',metrics)
     if height is None:height=metrics['height']
@@ -99,7 +99,7 @@ with sync_playwright() as p:
     result=page.locator('.bx-layer>.bx-slide:not(.bx-leaving)').evaluate('''e=>{
      const r=e.getBoundingClientRect(),art=e.querySelector('.bx-brief-art,.bx-brief-number,.bx-brief-value')?.getBoundingClientRect();
      const copy=[...e.querySelectorAll(':scope>.bx-kicker,:scope>.bx-head,:scope>.bx-brief-body,:scope>.bx-brief-action')];
-     const within=[...e.children].every(n=>{const b=n.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1&&b.top>=r.top-1&&b.bottom<=r.bottom+1&&n.scrollWidth<=n.clientWidth+1});
+     const within=[...e.children].filter(n=>getComputedStyle(n).clipPath!=='inset(50%)').every(n=>{const b=n.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1&&b.top>=r.top-1&&b.bottom<=r.bottom+1&&n.scrollWidth<=n.clientWidth+1});
      const separate=!art||copy.every(n=>{const b=n.getBoundingClientRect();return b.right<=art.left+1||b.left>=art.right-1||b.bottom<=art.top+1||b.top>=art.bottom-1});
      const series=e.querySelector('.bx-brief-series')?.getBoundingClientRect(),names=[...e.querySelectorAll('.bx-brief-rivals strong')];
      return {children:[...e.children].map(n=>({class:n.className,rect:n.getBoundingClientRect().toJSON(),scroll:[n.scrollWidth,n.scrollHeight],client:[n.clientWidth,n.clientHeight]})),bounds:r.toJSON(),within,separate,seriesSeparate:!series||names.every(n=>n.getBoundingClientRect().bottom<=series.top+1),overflow:document.documentElement.scrollWidth>innerWidth+1};
