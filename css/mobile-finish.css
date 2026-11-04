@@ -31,8 +31,8 @@
 #view.view #home-wrap[data-home-layout="wire"] .home-team-name strong { display:block; white-space:normal; overflow:visible; text-overflow:clip; }
 
 /* Packages remain fully visible; opening a player still uses the shared card. */
-#view.view[data-route="trade"] .tb-offer { margin:0; padding:8px 0; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
-#view.view[data-route="trade"] .tb-offer>header { min-height:28px; padding:0 0 6px; gap:8px; }
+#view.view[data-route="trade"] .tb-offer { margin:0; padding:4px 0; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-route="trade"] .tb-offer>header { min-height:28px; margin:0; padding:0 0 6px; gap:8px; }
 #view.view[data-route="trade"] .tb-offer-owner { min-width:0; gap:6px; }
 #view.view[data-route="trade"] .tb-offer-owner strong { font:600 .75rem/1.3 var(--font-ui); overflow-wrap:break-word; }
 #view.view[data-route="trade"] .tb-offer>header>b { flex:none; font:650 .625rem/1.3 var(--font-ui); }

@@ -239,6 +239,7 @@ function tradeLab(team, teams, pool, shop) {
     ${receivePositionsMarkup(receivePositions)}
       <button type="button" class="btn tb-browse-offers" data-tb-view-offers>View offers <span aria-hidden="true">→</span></button></div>
     </details>
+    <div class="tb-quick-goals" role="group" aria-label="Trade goal">${[['best','Best fit'],['RB','RB help'],['WR','WR help'],['consolidate','Get a stud'],...(['starter','TE','QB'].includes(shop.goal)?[[shop.goal,{starter:'Upgrade a starter',TE:'TE help',QB:'QB help'}[shop.goal]]]:[])].map(([value,label])=>`<button type="button" data-tb-quick-goal="${value}" aria-pressed="${(shop.goal||'best')===value}"${['RB','WR','TE','QB'].includes(value)&&!receivePositions.includes(value)?' disabled':''}>${label}</button>`).join('')}</div>
     <div class="tb-intent" aria-label="Offer type"><span>SHOW ME</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "Fair"], ["aggressive", "Aggressive"], ["steal", "Steal"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" aria-pressed="${intent === value}" aria-label="${esc(intentLabel(value,label))}" class="${intent === value ? "is-active" : ""}"><span>${label}</span><span class="tb-intent-count" data-tb-intent-count>(${intentCount(value)})</span></button>`).join("")}</div></div>
     <section class="tb-layout-section" data-tb-offers tabindex="-1">
       <h2 class="section-title">Generated offers<span class="count">${searching?'Finding offers…':failed?'Try again':closestOffers.length?`${closestOffers.length} alternatives`:`Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}`}</span></h2>
@@ -350,6 +351,12 @@ function page(data, tradeAlerts = []) {
         const focusAction=focusNode?.matches('summary')?'.tb-offer-preview>summary':focusNode?.matches('[data-tb-generate]')?'[data-tb-generate]':focusNode?.matches('[data-tb-show-all]')?'[data-tb-show-all]':null;
         const template=document.createElement('template');
         template.innerHTML=tradeLab(data.teams.find(t=>String(t.id)===String(selectedId))||data.teams[0],data.teams,data.pool,shop);
+        const quickGoals=body.querySelector('.tb-quick-goals'),nextGoals=template.content.querySelector('.tb-quick-goals');
+        if(quickGoals&&nextGoals)for(const button of quickGoals.querySelectorAll('[data-tb-quick-goal]')){
+          const next=nextGoals.querySelector(`[data-tb-quick-goal="${button.dataset.tbQuickGoal}"]`);
+          if(next){button.disabled=next.disabled;button.setAttribute('aria-pressed',next.getAttribute('aria-pressed'));}else button.remove();
+        }
+        if(quickGoals&&nextGoals)for(const next of nextGoals.children)if(!quickGoals.querySelector(`[data-tb-quick-goal="${next.dataset.tbQuickGoal}"]`))quickGoals.append(next.cloneNode(true));
         if(updateControls){
           for(const input of body.querySelectorAll('[data-tb-receive-position]'))input.checked=shop.receivePositions.includes(input.value);
           for(const button of body.querySelectorAll('[data-tb-receive-preset]'))button.setAttribute('aria-pressed',template.content.querySelector(`[data-tb-receive-preset="${button.dataset.tbReceivePreset}"]`).getAttribute('aria-pressed'));
@@ -441,7 +448,7 @@ function page(data, tradeAlerts = []) {
         intentions.mount(body.querySelector('[data-ti-host]'));
         stopPickers=mountTradePlayerPickers(body, data.pool, data.teams);
         stopDesk=mountTradeDesk(body.querySelector("[data-trade-desk]"), {
-          team, teams: data.teams, pool: data.pool, state: trade, lockedIds:[...shop.sendAnchors,...shop.receiveAnchors], onPartnerChange: (focus={}) => {draw();if(focus.memberIndex!=null)body.querySelector(`[data-td-member="${focus.memberIndex}"]`)?.focus();else body.querySelector("[data-td-verdict]")?.scrollIntoView({behavior:"instant",block:"start"});},
+          team, teams: data.teams, pool: data.pool, state: trade, lockedIds:[...shop.sendAnchors,...shop.receiveAnchors], receivePositions:shop.receivePositions, onPartnerChange: (focus={}) => {draw();if(focus.memberIndex!=null)body.querySelector(`[data-td-member="${focus.memberIndex}"]`)?.focus();else body.querySelector("[data-td-verdict]")?.scrollIntoView({behavior:"instant",block:"start"});},
           onDeal: current => {
             deal = current;
             if(activeOfferKey&&current){const header=body.querySelector('[data-td-verdict] .td-ticket-head');if(header&&!header.querySelector('[data-offer-return]'))header.insertAdjacentHTML('afterbegin','<button type="button" class="linkbtn td-offer-return" data-td-mode="offers" data-offer-return>← Back to offers</button>');}
@@ -571,6 +578,8 @@ function page(data, tradeAlerts = []) {
         if (summary) summary.textContent = value;
       });
       body.addEventListener("click", async event => {
+        const quickGoal=event.target.closest('[data-tb-quick-goal]');
+        if(quickGoal){if(!quickGoal.disabled&&shop.goal!==quickGoal.dataset.tbQuickGoal){shop.goal=quickGoal.dataset.tbQuickGoal;refreshOffers();body.querySelector(`[data-tb-quick-goal="${shop.goal}"]`)?.focus({preventScroll:true});}return;}
         // Fill before the outer disclosure controller measures its destination.
         const previewSummary=event.target.closest('.tb-offer-preview>summary');
         if(previewSummary){fillOfferPreview(previewSummary.parentElement,true);return;}

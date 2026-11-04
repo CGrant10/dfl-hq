@@ -1,15 +1,16 @@
 import {automaticTradePlayer} from './player-availability.js';
+import {packageValue} from './trade-player-evidence.js';
 // Shared by manual counteroffers and automatic suggestion balancing. This
 // generates candidates only; the caller must re-evaluate every legal roster.
 export function tradePackageEdits(state,pool,{lockedIds=[],maxPlayers=8}={}){
  const locked=new Set(lockedIds.map(String)),occupied=new Set(state.sends.flat()),rows=[];
  const add=(sends,destinations,change)=>{
   if(sends.flat().length>maxPlayers)return;
-  const totals=state.parties.map(()=>[0,0]);
+  const incoming=state.parties.map(()=>[]);
   state.parties.forEach((team,i)=>sends[i].forEach(id=>{
-   const value=Number(pool.get(id)?.tradeValue)||0;totals[i][0]+=value;
-   const to=state.parties.findIndex(t=>String(t.id)===destinations[id]);if(to>=0)totals[to][1]+=value;
+   const to=state.parties.findIndex(t=>String(t.id)===destinations[id]);if(to>=0)incoming[to].push(id);
   }));
+  const totals=sends.map((ids,i)=>[packageValue(ids,pool),packageValue(incoming[i],pool)]);
   const proximity=Math.min(...totals.map(([out,into])=>Math.min(out,into)/Math.max(out,into,1)));
   rows.push({sends,destinations,changes:[...(state.changes||[]),change],proximity});
  };

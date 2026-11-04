@@ -8,7 +8,7 @@ import {productionProfile, packageEvidence, packageValue, comparableStarPremium}
 import {matchExpertRankings,expertValueIndex} from './expert-rankings-model.js';
 import {tradeAssessment} from './trade-assessment.js';
 import {targetedTradePackages,tradeGoalScore} from './trade-target-search.js';
-import {tradeSuggestionQuality,compareTradeSuggestions,tradePartnerFit,prioritizeTradeSuggestions} from './trade-suggestion-quality.js';
+import {tradeSuggestionQuality,compareTradeSuggestions,tradePartnerFit,prioritizeTradeSuggestions,usefulFairTrade} from './trade-suggestion-quality.js';
 import {refineTradeOffers} from './trade-refine-offers.js';
 import {balanceTradeSuggestions} from './trade-auto-balance.js';
 import {tradeWeekPlayerPool} from './trade-week-forecast.js';
@@ -1039,7 +1039,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     .filter((result, index, all) => index === all.findIndex(other => String(other.other.id) === String(result.other.id)
       && other.sendA.join(",") === result.sendA.join(",") && other.sendB.join(",") === result.sendB.join(",")));
   const ranked=withTradeWindow(usable,pool,{horizon,weekSchedules,limit,intent,goal},row=>[mine,row.other],row=>[row.sendA,row.sendB])
-    .filter(row=>!['starter','consolidate'].includes(goal)||(row.windowDeltas?.[0]??row.weeklyDeltaA)>.1).sort(compareTradeSuggestions);
+    .filter(row=>(row.tier!=='fair'||goal!=='best'||partnerId||sendRequired.length||receiveRequired.length||usefulFairTrade(row))&&(!['starter','consolidate'].includes(goal)||(row.windowDeltas?.[0]??row.weeklyDeltaA)>.1)).sort(compareTradeSuggestions);
   const chooseDiverse = partnerId ? diverseOffers : diverseOffersAcrossPartners;
   // The page displays only the selected intent. Spend its full result budget
   // on that tier before filling any remaining space with other categories.

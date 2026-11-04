@@ -1,3 +1,23 @@
+## 1.539.0 — visible trade goals and fair-repair controls
+
+Reviewed the production Trade page on 320px and 390px phones in Medicine Wheel
+Light/Dark, including normal/enlarged text, selected and disabled goals,
+keyboard focus, rapid goal changes and reduced motion. Goal controls reuse
+background/text/line/accent tokens, wrap at enlarged text and retain 44px
+touch targets. Common goals are visible above offer tiers; advanced filters
+remain folded. Repair previews, application and Undo retain the same ticket
+palette and update in place. Compact offer outer padding is reduced without
+shrinking player, disclosure or action targets. No new palette, theme option,
+font asset, image request or looping animation was added.
+
+`pnpm check` passes with 2,445 tests. Captured 128 goal/repair checks, 88 position
+checks, 84 editing checks, 112 offer-reading/motion checks and complete trade
+workflows at 320/390/768px. Four compiled live-league phone/theme cases for
+Trade and Analyzer also pass without overflow or page errors; writes were
+blocked and private captures remain local. Fixture evidence and boundaries:
+[trade-fair-search-1539.md](docs/trade-fair-search-1539.md). Physical Safari,
+VoiceOver and phone battery measurements remain unverified.
+
 ## 1.538.0 — coordinated secondary-page interface polish
 
 Reviewed receipts, trade analysis, Sportsbook options, profile identity/career,

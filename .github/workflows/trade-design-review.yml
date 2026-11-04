@@ -6,6 +6,7 @@ on:
       - 'js/connected-artwork.js'
       - 'tools/fixtures/dfl-trade-benchmark.json'
       - 'tools/capture-trade-receive-controls.py'
+      - 'tools/capture-trade-fair-search.py'
       - 'css/decision-polish.css'
       - 'tools/capture-trade-motion.py'
       - 'tools/capture-trade-offer-reading.py'
@@ -77,6 +78,8 @@ jobs:
       - name: Check receive-position controls and mobile themes
         run: python tools/capture-trade-receive-controls.py
       - run: python tools/capture-trade-review.py
+      - name: Check visible goals, fair repairs and Undo in both mobile themes
+        run: python tools/capture-trade-fair-search.py
       - name: Check compact editing, replacement, Undo and readable trade names
         run: python tools/capture-trade-editing-review.py
       - name: Check lazy lineup previews, reading position and motion

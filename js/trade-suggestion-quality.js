@@ -1,6 +1,16 @@
 const n=value=>Number.isFinite(Number(value))?Number(value):0;
 const cap=value=>Math.max(-5,Math.min(8,n(value)));
 
+// Price balance remains a separate grade. Default league-wide Fair
+// recommendations need a useful change without material participant harm.
+// Explicit player/team goals keep their wider, honestly graded search space.
+export function usefulFairTrade(result){
+ const gains=(result.windowDeltas||result.weeklyDeltas||[result.weeklyDeltaA,result.weeklyDeltaB]).map(n);
+ const impacts=(result.windowDeltas||result.rosterImpacts||[result.rosterImpactA??result.weeklyDeltaA,result.rosterImpactB??result.weeklyDeltaB]).map(n);
+ return Math.min(...gains)>=-.75&&Math.min(...impacts)>=-.75
+  &&(gains.some(v=>v>.2)||impacts.some(v=>v>.3));
+}
+
 export function tradeLineupFitLabel(deltas){
  const gains=deltas.map(n),many=gains.length>2;
  if(gains.every(v=>v>.1))return many?'Helps every lineup':'Helps both lineups';

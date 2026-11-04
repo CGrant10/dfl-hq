@@ -1,0 +1,514 @@
+[
+  {
+    "name": "320/light/16/no-preference goals are visible with setup collapsed and All teams selected",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference goal touch targets and text fit",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference RB keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference WR keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference consolidate keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference best keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference rapid goal changes retain only the final selection",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference goal text contrast",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference exclusions disable the goal and reset both goal controls",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference unfair deal has Make this fair",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference adjustments preview without changing the original package",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference applied repair regrades Fair and retains both core players",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference applying a repair focuses Undo",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference Undo restores the exact original package",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference unavailable small repair is honest and leaves the package intact",
+    "pass": true
+  },
+  {
+    "name": "320/light/16/no-preference no page errors or horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce goals are visible with setup collapsed and All teams selected",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce goal touch targets and text fit",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce RB keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce WR keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce consolidate keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce best keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce rapid goal changes retain only the final selection",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce goal text contrast",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce exclusions disable the goal and reset both goal controls",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce unfair deal has Make this fair",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce adjustments preview without changing the original package",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce applied repair regrades Fair and retains both core players",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce applying a repair focuses Undo",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce Undo restores the exact original package",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce unavailable small repair is honest and leaves the package intact",
+    "pass": true
+  },
+  {
+    "name": "320/light/32/reduce no page errors or horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference goals are visible with setup collapsed and All teams selected",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference goal touch targets and text fit",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference RB keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference WR keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference consolidate keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference best keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference rapid goal changes retain only the final selection",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference goal text contrast",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference exclusions disable the goal and reset both goal controls",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference unfair deal has Make this fair",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference adjustments preview without changing the original package",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference applied repair regrades Fair and retains both core players",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference applying a repair focuses Undo",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference Undo restores the exact original package",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference unavailable small repair is honest and leaves the package intact",
+    "pass": true
+  },
+  {
+    "name": "320/dark/16/no-preference no page errors or horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce goals are visible with setup collapsed and All teams selected",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce goal touch targets and text fit",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce RB keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce WR keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce consolidate keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce best keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce rapid goal changes retain only the final selection",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce goal text contrast",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce exclusions disable the goal and reset both goal controls",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce unfair deal has Make this fair",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce adjustments preview without changing the original package",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce applied repair regrades Fair and retains both core players",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce applying a repair focuses Undo",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce Undo restores the exact original package",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce unavailable small repair is honest and leaves the package intact",
+    "pass": true
+  },
+  {
+    "name": "320/dark/32/reduce no page errors or horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference goals are visible with setup collapsed and All teams selected",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference goal touch targets and text fit",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference RB keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference WR keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference consolidate keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference best keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference rapid goal changes retain only the final selection",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference goal text contrast",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference exclusions disable the goal and reset both goal controls",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference unfair deal has Make this fair",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference adjustments preview without changing the original package",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference applied repair regrades Fair and retains both core players",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference applying a repair focuses Undo",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference Undo restores the exact original package",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference unavailable small repair is honest and leaves the package intact",
+    "pass": true
+  },
+  {
+    "name": "390/light/16/no-preference no page errors or horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce goals are visible with setup collapsed and All teams selected",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce goal touch targets and text fit",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce RB keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce WR keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce consolidate keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce best keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce rapid goal changes retain only the final selection",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce goal text contrast",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce exclusions disable the goal and reset both goal controls",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce unfair deal has Make this fair",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce adjustments preview without changing the original package",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce applied repair regrades Fair and retains both core players",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce applying a repair focuses Undo",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce Undo restores the exact original package",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce unavailable small repair is honest and leaves the package intact",
+    "pass": true
+  },
+  {
+    "name": "390/light/32/reduce no page errors or horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference goals are visible with setup collapsed and All teams selected",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference goal touch targets and text fit",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference RB keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference WR keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference consolidate keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference best keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference rapid goal changes retain only the final selection",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference goal text contrast",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference exclusions disable the goal and reset both goal controls",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference unfair deal has Make this fair",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference adjustments preview without changing the original package",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference applied repair regrades Fair and retains both core players",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference applying a repair focuses Undo",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference Undo restores the exact original package",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference unavailable small repair is honest and leaves the package intact",
+    "pass": true
+  },
+  {
+    "name": "390/dark/16/no-preference no page errors or horizontal overflow",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce goals are visible with setup collapsed and All teams selected",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce goal touch targets and text fit",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce RB keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce WR keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce consolidate keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce best keeps goal, focus and team search synchronized",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce rapid goal changes retain only the final selection",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce goal text contrast",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce exclusions disable the goal and reset both goal controls",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce unfair deal has Make this fair",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce adjustments preview without changing the original package",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce applied repair regrades Fair and retains both core players",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce applying a repair focuses Undo",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce Undo restores the exact original package",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce unavailable small repair is honest and leaves the package intact",
+    "pass": true
+  },
+  {
+    "name": "390/dark/32/reduce no page errors or horizontal overflow",
+    "pass": true
+  }
+]

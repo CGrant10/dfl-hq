@@ -14,14 +14,15 @@ const score=result=>{
  return Number(result.fairness)*.65+Math.min(0,...impacts)*12+impacts.reduce((sum,v)=>sum+Math.max(-2,Math.min(2,v)),0)*5+(Number(p.rosterImpactA)||0)*4-(Number(p.rosterCostA)||0)*.3;
 };
 // Two-edit beam, including lower-value depth. Ownership, routes and locks survive.
-export function findTradeCounteroffers(deal,pool,{limit=3,lockedIds=[]}={}){
+export function findTradeCounteroffers(deal,pool,{limit=3,lockedIds=[],intent='improve',receivePositions}={}){
  if(!deal||limit<=0)return [];
  const locked=new Set(lockedIds.map(String));
  deal.sends.forEach(ids=>{const main=[...ids].sort((a,b)=>(Number(pool.get(b)?.tradeValue)||0)-(Number(pool.get(a)?.tradeValue)||0))[0];if(main)locked.add(main)});
  const baseline=score(deal.result),current=tradePerspective(deal.result),candidates=[],seen=new Set();
  const key=c=>JSON.stringify([c.sends.map(ids=>[...ids].sort()),c.sends.flat().sort().map(id=>[id,c.destinations[id]])]);
  seen.add(key(deal));
- const edits=state=>tradePackageEdits(state,pool,{lockedIds:[...locked]});
+ const original=new Set(deal.sends.flat()),allowed=receivePositions?new Set(receivePositions):null;
+ const edits=state=>tradePackageEdits(state,pool,{lockedIds:[...locked]}).filter(edit=>!allowed||edit.sends.flat().every(id=>original.has(id)||allowed.has(pool.get(id)?.position)));
  let beam=[deal];
  for(let depth=0;depth<2;depth++){
   const next=[],budget=depth===0?80:160;
@@ -34,10 +35,20 @@ export function findTradeCounteroffers(deal,pool,{limit=3,lockedIds=[]}={}){
    const row={...candidate,changes:edit.changes,change:edit.changes[0],score:score(candidate.result)};
    const p=tradePerspective(row.result),impacts=row.result.rosterImpacts||[p.rosterImpactA??p.weeklyDeltaA,p.rosterImpactB??p.weeklyDeltaB];
    next.push(row);
-   if(row.result.fairness<55||row.result.projectionEvidence?.missing?.length||impacts.some(v=>Number(v)<-1)||row.score<=baseline+.5)continue;
-   if(Number(p.rosterImpactA??p.weeklyDeltaA)<Number(current.rosterImpactA??current.weeklyDeltaA)-.3)continue;
+   if(row.result.projectionEvidence?.missing?.length)continue;
+   if(intent==='fair'){
+    const weekly=row.result.weeklyDeltas||[p.weeklyDeltaA,p.weeklyDeltaB];
+    if(row.result.fairness<90||impacts.some(v=>Number(v)<-.75)||weekly.some(v=>Number(v)<-1)
+     ||row.result.cutIncomingA?.length||row.result.cutIncomingB?.length||row.result.cutIncoming?.some(ids=>ids.length))continue;
+   }else{
+    if(row.result.fairness<55||impacts.some(v=>Number(v)<-1)||row.score<=baseline+.5)continue;
+    if(Number(p.rosterImpactA??p.weeklyDeltaA)<Number(current.rosterImpactA??current.weeklyDeltaA)-.3)continue;
+   }
    candidates.push(row);
   }
+  // A usable one-edit repair beats a busier two-edit package. Still inspect
+  // every budgeted first edit before choosing among equally small changes.
+  if(intent==='fair'&&candidates.length)break;
   beam=next.sort((a,b)=>b.score-a.score).slice(0,8);
  }
  return candidates.sort((a,b)=>b.score-a.score||a.changes.length-b.changes.length||a.sends.flat().length-b.sends.flat().length).slice(0,limit);

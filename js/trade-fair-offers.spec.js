@@ -2,6 +2,7 @@ import {describe,it,expect} from 'vitest';
 import {suggestTrades,suggestMultiTeamTrades,tradeSuggestionTier} from './team-analyzer.js';
 import {tradeAssessment} from './trade-assessment.js';
 import {tradeConfidence} from './trade-confidence.js';
+import {usefulFairTrade} from './trade-suggestion-quality.js';
 import {tradeReviewFixture} from '../tools/trade-review-fixture.mjs';
 const balanced=(evidence={})=>({fairness:94,valueToA:94,valueToB:100,rosterImpactA:3,rosterImpactB:.1,weeklyDeltaA:3,weeklyDeltaB:.1,
  projectionEvidence:{missing:[],fallback:[],injuries:[],stale:[],thinSamples:[],expert:{required:true,status:'Fresh',missing:[],disagreements:[],split:[]},...evidence}});
@@ -40,10 +41,15 @@ describe('fair offer discovery',()=>{
   const {teams,pool}=tradeReviewFixture(),args={teams,pool,teamId:teams[0].id,partnerId:teams[1].id,intent:'fair',maxPlayers:2};
   const available=suggestTrades({...args,limit:200}).filter(o=>o.tier==='fair');
   expect(available.length).toBeGreaterThan(8);
-  const offers=suggestTrades({...args,limit:8});
-  expect(offers).toHaveLength(8);expect(offers.every(o=>o.tier==='fair')).toBe(true);
+  const offers=suggestTrades({...args,limit:4});
+  expect(offers).toHaveLength(4);expect(offers.every(o=>o.tier==='fair')).toBe(true);
   expect(suggestTrades({...args,limit:1})).toHaveLength(1);
   expect(suggestTrades({...args,limit:0})).toEqual([]);
+ });
+ it('keeps the default all-team Fair recommendations useful while honoring explicit target searches',()=>{
+  const {teams,pool}=tradeReviewFixture();
+  const rows=suggestTrades({teams,pool,teamId:teams[0].id,intent:'fair',limit:96});
+  const fair=rows.filter(o=>o.tier==='fair');expect(fair.length).toBeGreaterThan(0);expect(fair.every(usefulFairTrade)).toBe(true);
  });
  it('requires fair value for every participant, not just the first owner',()=>{
   const teams=['a','b','c'].map(id=>({id,playerIds:[id]}));

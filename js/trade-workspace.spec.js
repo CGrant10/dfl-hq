@@ -53,6 +53,36 @@ describe('roster consequences and counteroffers',()=>{
  it('finds real, regraded improvements without dropping main pieces or sending any offer',()=>{const deal=evaluateTradeDeal(teams.slice(0,2),[['1-4'],['2-6']],pool),counters=findTradeCounteroffers(deal,pool);expect(counters.length).toBeGreaterThan(0);expect(counters.length).toBeLessThanOrEqual(3);for(const c of counters){expect(c.sends[0]).toContain('1-4');expect(c.sends[1]).toContain('2-6');expect(c.sends.flat().length).toBeLessThanOrEqual(8);expect(c.result).toEqual(evaluateTradeDeal(c.parties,c.sends,pool,c.destinations).result);expect(c.result.fairness).toBeGreaterThan(deal.result.fairness);expect(Math.min(c.result.rosterImpactA,c.result.rosterImpactB)).toBeGreaterThanOrEqual(-1);}});
  it('returns no invented suggestion when no unused piece is available',()=>{const parties=teams.slice(0,2).map((t,i)=>({...t,playerIds:[`${i+1}-1`]})),deal=evaluateTradeDeal(parties,[['1-1'],['2-1']],pool);expect(findTradeCounteroffers(deal,pool)).toEqual([]);});
  it('keeps explicitly locked extras in each counteroffer',()=>{const deal=evaluateTradeDeal(teams.slice(0,2),[['1-4','1-10'],['2-6']],pool);findTradeCounteroffers(deal,pool,{lockedIds:['1-10']}).forEach(c=>expect(c.sends[0]).toContain('1-10'));});
+ it('only offers genuinely fair repairs, regraded with core players and legal rosters intact',()=>{
+  const deal=evaluateTradeDeal(teams.slice(0,2),[['1-0'],['2-8']],pool),rows=findTradeCounteroffers(deal,pool,{intent:'fair'});
+  expect(deal.result.fairness).toBeLessThan(90);expect(rows.length).toBeGreaterThan(0);
+  for(const row of rows){
+   expect(row.sends[0]).toContain('1-0');expect(row.sends[1]).toContain('2-8');
+   expect(row.result.fairness).toBeGreaterThanOrEqual(90);expect(row.sends.flat().length).toBeLessThanOrEqual(8);
+   expect(Math.min(row.result.rosterImpactA,row.result.rosterImpactB)).toBeGreaterThanOrEqual(-.75);
+   expect(row.result.cutIncomingA).toEqual([]);expect(row.result.cutIncomingB).toEqual([]);
+   expect(row.result).toEqual(evaluateTradeDeal(row.parties,row.sends,pool,row.destinations).result);
+  }
+ });
+ it('does not present a merely improved but still unfair counter as a fair repair',()=>{
+  const deal=evaluateTradeDeal(teams.slice(0,2),[['1-4'],['2-6']],pool);
+  expect(findTradeCounteroffers(deal,pool).length).toBeGreaterThan(0);
+  expect(findTradeCounteroffers(deal,pool,{intent:'fair'})).toEqual([]);
+ });
+ it('prefers a usable one-player adjustment before considering two-edit repairs',()=>{
+  const pool=new Map(),base=[['qb','QB',18,10],['rb1','RB',10,20],['rb2','RB',8,15],['wr2','WR',19,70],['flex','WR',18,65]];
+  const team=(id,rows)=>({id,playerIds:rows.map(([role,position,pace,tradeValue])=>{
+   const pid=id+role;pool.set(pid,{id:pid,name:pid,position,tradeValue,expectedPoints:pace*17,tradePerGame:pace,modelSource:'projection'});return pid;
+  })});
+  const a=team('a',[...base,['core','WR',16,80],['te','TE',8,15],['bench','WR',2,1]]);
+  const b=team('b',[...base,['core','WR',15,60],['te','TE',14,50],['extra','TE',11,20],...Array.from({length:5},(_,i)=>[`depth${i}`,'WR',14-i*.25,25])]);
+  const rows=findTradeCounteroffers(evaluateTradeDeal([a,b],[['acore'],['bcore']],pool),pool,{intent:'fair'});
+  expect(rows.length).toBeGreaterThan(0);expect(rows.every(row=>row.changes.length===1)).toBe(true);
+  expect(rows.some(row=>row.sends[1].includes('bextra'))).toBe(true);
+  const receivers=findTradeCounteroffers(evaluateTradeDeal([a,b],[['acore'],['bcore']],pool),pool,{intent:'fair',receivePositions:['WR']});
+  expect(receivers.length).toBeGreaterThan(0);expect(receivers.every(row=>row.sends.flat().every(id=>pool.get(id).position==='WR'))).toBe(true);
+  expect(findTradeCounteroffers(evaluateTradeDeal([a,b],[['acore'],['bcore']],pool),pool,{intent:'fair',receivePositions:[]})).toEqual([]);
+ });
 });
 describe('saved comparisons and drafts',()=>{
  it('round-trips recipients and isolates profiles and seasons, keeping at most three comparisons',()=>{const st=storage(),row=savedTradeProposal(split(),{id:'one',at:1});expect(writeTradeProposals('me',2026,[row,row,row,row],st)).toBe(true);expect(readTradeProposals('me',2026,st)).toHaveLength(3);expect(readTradeProposals('them',2026,st)).toEqual([]);expect(readTradeProposals('me',2025,st)).toEqual([]);expect(restoreTradeProposal(row,teams,pool).destinations).toEqual(routes);});
