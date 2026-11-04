@@ -1,0 +1,35 @@
+[
+  {
+    "width": 320,
+    "themes": 4,
+    "textScales": 2,
+    "titleRecords": 3,
+    "allMenuRoutes": 16,
+    "brokenPhotoFallback": true,
+    "profileCancel": true,
+    "analyzerGradeMatch": true,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "themes": 4,
+    "textScales": 2,
+    "titleRecords": 3,
+    "allMenuRoutes": 16,
+    "brokenPhotoFallback": true,
+    "profileCancel": true,
+    "analyzerGradeMatch": true,
+    "errors": []
+  },
+  {
+    "width": 768,
+    "themes": 4,
+    "textScales": 2,
+    "titleRecords": 3,
+    "allMenuRoutes": 16,
+    "brokenPhotoFallback": true,
+    "profileCancel": true,
+    "analyzerGradeMatch": true,
+    "errors": []
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "route": "plain",
+    "cpuSlowdown": 4,
+    "latencyMs": 150,
+    "downloadBytesPerSecond": 187500,
+    "wallReadyMs": 16518,
+    "appReadyMs": 15352.399999999441,
+    "longTasks": [
+      172,
+      89,
+      794,
+      232,
+      130,
+      100,
+      111
+    ],
+    "overflow": false,
+    "pageErrors": []
+  },
+  {
+    "route": "#/home",
+    "cpuSlowdown": 4,
+    "latencyMs": 150,
+    "downloadBytesPerSecond": 187500,
+    "wallReadyMs": 15712,
+    "appReadyMs": 14920.900000000373,
+    "longTasks": [
+      179,
+      586,
+      166,
+      90,
+      67
+    ],
+    "overflow": false,
+    "pageErrors": []
+  }
+]

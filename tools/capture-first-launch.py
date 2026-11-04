@@ -1,9 +1,10 @@
 """Real app/worker first-launch checks; isolated providers and no league writes."""
-import json,os,threading
+import json,os,threading,time
 from pathlib import Path
 from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
 from playwright.sync_api import sync_playwright
-ROOT=Path(__file__).resolve().parents[1];OUT=Path(os.environ.get('DFL_STARTUP_REVIEW_DIR',ROOT.parent/'dfl-startup-review'));OUT.mkdir(parents=True,exist_ok=True)
+ROOT=Path(os.environ.get('DFL_CODE_ROOT',Path(__file__).resolve().parents[1]));OUT=Path(os.environ.get('DFL_STARTUP_REVIEW_DIR',ROOT.parent/'dfl-startup-review'));OUT.mkdir(parents=True,exist_ok=True)
+metrics=[];profile=bool(os.environ.get('DFL_STARTUP_METRICS_ONLY'))
 class Handler(SimpleHTTPRequestHandler):
  def __init__(self,*a,**kw):super().__init__(*a,directory=str(ROOT),**kw)
  def log_message(self,*a):pass
@@ -42,11 +43,18 @@ with sync_playwright() as p:
    else:data=[]
    r.fulfill(content_type='application/json',headers={'Access-Control-Allow-Origin':'*'},body=json.dumps(data))
   c.route('https://api.sleeper.app/**',provider);c.route('https://site.api.espn.com/**',provider);c.route('https://site.web.api.espn.com/**',provider);c.route('https://sleepercdn.com/**',lambda r:r.abort())
-  page=c.new_page();page.on('pageerror',lambda e:(errors.append(str(e)),print('BROWSER ERROR: '+str(e),flush=True)));page.goto(base+route,wait_until='domcontentloaded');page.wait_for_function('bootEvents.some(e=>e.event==="dfl:app-ready")',timeout=20000)
+  page=c.new_page();page.on('pageerror',lambda e:(errors.append(str(e)),print('BROWSER ERROR: '+str(e),flush=True)))
+  if profile:
+   client=c.new_cdp_session(page);client.send('Emulation.setCPUThrottlingRate',{'rate':4});client.send('Network.enable');client.send('Network.emulateNetworkConditions',{'offline':False,'latency':150,'downloadThroughput':187500,'uploadThroughput':93750})
+   page.add_init_script('window.launchLongTasks=[];new PerformanceObserver(list=>launchLongTasks.push(...list.getEntries().map(e=>e.duration))).observe({type:"longtask",buffered:true})')
+  started=time.perf_counter();page.goto(base+route,wait_until='domcontentloaded');page.wait_for_function('bootEvents.some(e=>e.event==="dfl:app-ready")',timeout=60000 if profile else 20000)
   tag='plain launch' if not route else 'Home route'
   page.wait_for_selector('[data-gameday-freshness][data-score-freshness="ready"]',state='attached',timeout=20000)
   check(tag+' renders Home and completes the real matchup loader',page.locator('#view').get_attribute('data-route')=='home' and page.locator('[data-gameday-freshness]').get_attribute('data-score-freshness')=='ready')
   check(tag+' uses the compact catalog without a full provider download',page.evaluate('catalogReads>=1&&rawReads===0'))
+  if profile:
+   metrics.append({'route':route or 'plain','cpuSlowdown':4,'latencyMs':150,'downloadBytesPerSecond':187500,'wallReadyMs':round((time.perf_counter()-started)*1000),'appReadyMs':page.evaluate('bootEvents.find(e=>e.event==="dfl:app-ready").at'),'longTasks':page.evaluate('launchLongTasks'),'overflow':page.evaluate('document.documentElement.scrollWidth>innerWidth'),'pageErrors':errors.copy()})
+   (OUT/'performance.json').write_text(json.dumps(metrics,indent=2));check(tag+' throttled launch has no page errors or overflow',not errors and not metrics[-1]['overflow']);c.close();continue
   check(tag+' remains within the phone width',page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
   before=page.evaluate('scoreReads');page.evaluate('dispatchEvent(new Event("focus"))')
   page.wait_for_function('(before)=>scoreReads>before',arg=before,timeout=10000)

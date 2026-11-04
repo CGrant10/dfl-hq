@@ -1,0 +1,86 @@
+{
+  "layouts": [
+    {
+      "mode": "light",
+      "index": 0,
+      "width": 354,
+      "height": 150,
+      "artContained": true,
+      "separate": true,
+      "headerAligned": true
+    },
+    {
+      "mode": "light",
+      "index": 1,
+      "width": 354,
+      "height": 150,
+      "artContained": true,
+      "separate": true,
+      "headerAligned": true
+    },
+    {
+      "mode": "light",
+      "index": 2,
+      "width": 354,
+      "height": 150,
+      "artContained": true,
+      "separate": true,
+      "headerAligned": true
+    },
+    {
+      "mode": "light",
+      "index": 3,
+      "width": 354,
+      "height": 150,
+      "artContained": true,
+      "separate": true,
+      "headerAligned": true
+    },
+    {
+      "mode": "dark",
+      "index": 0,
+      "width": 354,
+      "height": 150,
+      "artContained": true,
+      "separate": true,
+      "headerAligned": true
+    },
+    {
+      "mode": "dark",
+      "index": 1,
+      "width": 354,
+      "height": 150,
+      "artContained": true,
+      "separate": true,
+      "headerAligned": true
+    },
+    {
+      "mode": "dark",
+      "index": 2,
+      "width": 354,
+      "height": 150,
+      "artContained": true,
+      "separate": true,
+      "headerAligned": true
+    },
+    {
+      "mode": "dark",
+      "index": 3,
+      "width": 354,
+      "height": 150,
+      "artContained": true,
+      "separate": true,
+      "headerAligned": true
+    }
+  ],
+  "picker": true,
+  "keyboardEscape": true,
+  "previousNext": true,
+  "routedReceipt": true,
+  "pickerClock": true,
+  "refreshResume": true,
+  "offscreenLayoutReads": 0,
+  "offscreenScrollEvents": 500,
+  "visibilityResumed": true,
+  "errors": []
+}

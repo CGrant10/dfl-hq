@@ -630,6 +630,7 @@ export function startStage(root, deck, { refresh } = {}) {
   let dead = false;
   let inViewport = false;
   let visuallyVisible = false;
+  let nearViewport = true;
   let visibilityFrame = 0;
   let readingStarted = false;
   let refreshing = false;
@@ -703,6 +704,8 @@ export function startStage(root, deck, { refresh } = {}) {
       }
       const height=Math.ceil(deckHeight);
       if(root.style.height!==`${height}px`)root.style.height=`${height}px`;
+      const pickerHeight=`${Math.max(44,height-50)}px`;
+      if(root.style.getPropertyValue('--bx-picker-height')!==pickerHeight)root.style.setProperty('--bx-picker-height',pickerHeight);
       const dot=root.querySelector('[aria-current="true"]'),dots=dot?.parentElement;
       // Keep the active segment visible when a large edition needs a rail.
       // Only the rail moves; scrollIntoView would also move the Home page.
@@ -961,7 +964,7 @@ export function startStage(root, deck, { refresh } = {}) {
     if (e.key === "ArrowLeft")  { e.preventDefault(); step(-1); }
     if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
   };
-  const onVis = () => { softPause("hidden", document.hidden); armPoll(); };
+  const onVis = () => { softPause("hidden", document.hidden); requestVisibility(); armPoll(); };
   // A sliver below the fold is not a read. Start a full dwell only once
   // most of the card (or the usable viewport on short screens) is visible.
   // Fixed navigation and the collapsed score strip do not count as space.
@@ -989,11 +992,12 @@ export function startStage(root, deck, { refresh } = {}) {
     softPause('offscreen', !inViewport);
     armPoll();
   }
-  const scheduleVisibility = () => {
+  const requestVisibility = () => {
     if (!dead && !visibilityFrame) visibilityFrame = requestAnimationFrame(checkVisibility);
   };
+  const scheduleVisibility = () => { if(nearViewport&&!document.hidden)requestVisibility(); };
   const intersection = typeof IntersectionObserver === 'function'
-    ? new IntersectionObserver(scheduleVisibility, { threshold: [0, .25, .5, .75, 1] }) : null;
+    ? new IntersectionObserver(entries=>{nearViewport=entries.some(entry=>entry.isIntersecting);requestVisibility();}, { threshold: [0, .25, .5, .75, 1] }) : null;
   intersection?.observe(root);
   window.addEventListener('scroll', scheduleVisibility, { passive: true });
   window.addEventListener('resize', scheduleVisibility);

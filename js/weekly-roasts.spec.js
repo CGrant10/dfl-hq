@@ -6,6 +6,12 @@ players.bench={n:'Benched Ace',p:'WR'};
 const row={roster_id:1,starters:DFL_SLOTS.map((_,i)=>String(i)),players_points:Object.fromEntries(DFL_SLOTS.map((_,i)=>[String(i),8]))};row.players_points.bench=27;
 const input={season:2026,now:Date.parse('2026-10-11T16:00:00Z'),completed:true,games:[{matchup_id:1,left:{roster:1,name:'Current name',score:100},right:{roster:2,name:'Winner',score:104}}],raw:[row],players};
 describe('fact-based weekly receipts',()=>{
+ it('varies across weekly matchups while preserving facts and staying stable on refresh',()=>{
+  const texts=Array.from({length:18},(_,i)=>weeklyRoasts({...input,week:i+1})[0].text);
+  expect(new Set(texts).size).toBe(3);
+  for(const text of texts){expect(text).toContain('27.00');expect(text).toContain('4.00');expect(text).toContain('Current name');}
+  expect(weeklyRoasts({...input,week:8,now:input.now+3600000})[0].text).toBe(weeklyRoasts({...input,week:8})[0].text);
+ });
  it('proves a slot-eligible single bench swap would change the final result in hindsight',()=>{
   const result=weeklyRoasts(input)[0];expect(result.kind).toBe('Bench disaster');expect(result.text).toContain('27.00');expect(result.text).toContain('4.00');expect(result.text).toContain('fucking');expect(result.detail).toContain('adds 19.00');expect(result.detail).toContain('kickoff availability was not recorded');
  });
