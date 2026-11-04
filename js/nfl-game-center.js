@@ -24,8 +24,8 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
  const memoryKey=embedded?'nfl-replay':'nfl-center',saved=readJourneyChoice(root,memoryKey);
  if(saved){initialGame=nflGameId(saved.game)?saved.game:initialGame;initialMode=['plays','fantasy'].includes(saved.mode)?saved.mode:initialMode}
  const uid=`nfl-center-${++serial}`;root.dataset.nflGameCenter='';root.dataset.noSwipe='';
- let stopped=false,games=[],gameId=initialGame,mode=initialMode,filter=['all','scoring','big'].includes(saved?.filter)?saved.filter:'all',summary=null,weekly=[],checked=0,error=false,loading=false,token=0,timer=null,scope='',focusPlay=initialPlay,fieldPlay='',fieldKey='',rendered='',showRefresh=false,readingFrame=0,statsPending=null,statsScope='';
- const blockedByModal=()=>[...document.querySelectorAll('dialog[open]')].some(dialog=>!dialog.contains(root));
+ let stopped=false,games=[],gameId=initialGame,mode=initialMode,filter=['all','scoring','big'].includes(saved?.filter)?saved.filter:'all',summary=null,weekly=[],checked=0,error=false,loading=false,token=0,timer=null,scope='',focusPlay=initialPlay,fieldPlay='',fieldKey='',rendered='',showRefresh=false,readingFrame=0,statsPending=null,statsScope='',wakeFrame=0;
+ const blockedByModal=()=>{const dialogs=[...document.querySelectorAll('dialog[open]')];const front=document.activeElement?.closest('dialog[open]')||dialogs.at(-1);return !!front&&!front.contains(root)};
  const current=()=>!stopped&&root.isConnected&&active()&&!document.hidden&&!blockedByModal();
  const online=()=>navigator.onLine!==false;
  const final=()=>game()?.state==='post'&&summary?.header?.competitions?.[0]?.status?.type?.state==='post';
@@ -131,8 +131,11 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
   }
   pendingReading=true;remember();void refresh({reset:true,force:true});
  }
- const suspend=()=>{token++;clearTimeout(timer);cancelAnimationFrame(readingFrame);readingFrame=0;loading=false;cancelUiMotion(root.querySelector('[data-nfl-field]')||root)};
- const wake=()=>{if(current()){suspend();void refresh({force:true})}};
+ const suspend=()=>{token++;clearTimeout(timer);cancelAnimationFrame(readingFrame);readingFrame=0;cancelAnimationFrame(wakeFrame);wakeFrame=0;loading=false;cancelUiMotion(root.querySelector('[data-nfl-field]')||root)};
+ // A phone return can emit visibility, pageshow and focus together. Preserve
+ // an active refresh and coalesce that burst into one foreground request.
+ const wake=()=>{if(!current()||loading||wakeFrame)return;wakeFrame=requestAnimationFrame(()=>{wakeFrame=0;if(current()&&!loading)void refresh({force:true})})};
+ const resume=()=>{if(!current())return;pendingReading=true;paint();const context=getContext();if(!summary||`${context?.season}:${context?.week}`!==scope||Date.now()-checked>(game()?.state==='in'?5000:30000))void refresh();else schedule()};
  const visibility=()=>{if(document.hidden)suspend();else wake()};
  const offline=()=>{suspend();if(current())paint()};
  // Dialogs can be removed before their queued close event fires. Observe only
@@ -147,5 +150,5 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
  modalObserver.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open']});
  const events=[['visibilitychange',visibility,document],['online',wake,window],['offline',offline,window],['focus',wake,window],['pageshow',wake,window],['pagehide',suspend,window]];
  scrollTarget.addEventListener('scroll',queueReading,{passive:true});root.addEventListener('change',change);root.addEventListener('click',click);for(const [event,handler,target] of events)target.addEventListener(event,handler);paint();const ready=refresh();
- return {ready,setMode:changeMode,refresh:()=>refresh({force:true}),selectGame,pause:suspend,stop(){stopped=true;suspend();cancelUiMotion(root);snapshots.clear();readings.clear();modalObserver.disconnect();scrollTarget.removeEventListener('scroll',queueReading);root.removeEventListener('change',change);root.removeEventListener('click',click);for(const [event,handler,target] of events)target.removeEventListener(event,handler)}};
+ return {ready,setMode:changeMode,refresh:()=>refresh({force:true}),selectGame,pause:suspend,resume,stop(){stopped=true;suspend();cancelUiMotion(root);snapshots.clear();readings.clear();modalObserver.disconnect();scrollTarget.removeEventListener('scroll',queueReading);root.removeEventListener('change',change);root.removeEventListener('click',click);for(const [event,handler,target] of events)target.removeEventListener(event,handler)}};
 }

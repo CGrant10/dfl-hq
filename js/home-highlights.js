@@ -24,7 +24,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
   root.innerHTML='<section class="home-highlight-reel home-reel-feature"><header><h2>Weekend reel</h2></header><div class="home-reel-feature-skeleton" aria-hidden="true"><span></span><span></span><span></span></div></section>';
  }
  let stopped=false,nearby=typeof IntersectionObserver==='undefined',clips=[],selected='',dialog=null,opener=null,expiryTimer=null,stopViewport=()=>{},request=0,player='',search='',playerCache={key:'',options:[]};
- let returnPoint=null,sheetDrag=null;
+ let returnPoint=null,sheetDrag=null,clipReturn=null;
  let game='',pageSearch='',gameCenter=null,browserMode='clips',layout=null,media=null,modeRequest=0,replayContext=null,centerGame='',browseScroll=0;
  const posterError=event=>{
   const image=event.target;if(image.tagName!=='IMG'||image.hasAttribute('data-poster-source')||image.dataset.posterFallback)return;
@@ -61,6 +61,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
   dialog.querySelector('[data-reel-game-state]').textContent=nflGame?`WEEK ${context.week}`:replayContext&&centerGame===clip.game_id?`WEEK ${replayContext.week}`:'NFL';
   dialog.querySelector('[data-reel-source]').href=clip.source_url;
   dialog.querySelector('[data-reel-count]').textContent=index>=0?`${index+1} / ${valid.length}`:`${valid.length} found`;
+  for(const button of dialog.querySelectorAll('[data-reel-mode]')){const mode=button.dataset.reelMode;button.textContent=clipReturn&&browserMode==='clips'&&clipReturn.mode===mode?(mode==='plays'?'Back to play':'Back to stats'):{clips:'Clips',plays:'Plays',stats:'Fantasy'}[mode];}
   dialog.querySelector('[data-reel-previous]').disabled=index<=0;dialog.querySelector('[data-reel-next]').disabled=!valid.length||index===valid.length-1;
   const next=valid[index+1],upNext=dialog.querySelector('[data-reel-up-next]');upNext.disabled=!next;
   upNext.innerHTML=next?`<img src="${esc(highlightPosterUrl(next.thumbnail_url,320))}" alt=""><span><small>Up next · ${esc(next.game_label)}</small><strong>${esc(next.headline)}</strong></span><b aria-hidden="true">→</b>`:'<span><small>Reel complete</small><strong>Browse more highlights</strong></span>';
@@ -90,6 +91,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
  };
  const choose=(id,{align=true}={})=>{
   if(!browseRows().some(clip=>clip.id===id))return;
+  if(clipReturn&&clipReturn.id!==id)clipReturn=null;
   selected=id;drawPlayer(true);if(align)scrollQueue();
  };
  const setBrowserMode=async mode=>{
@@ -106,8 +108,9 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
     replayContext=edition;gameCenter?.stop();gameCenter=null;centerGame=target;
    }
    if(!gameCenter){
-    host.replaceChildren();gameCenter=mountNflGameCenter(host,{embedded:true,initialMode:mode==='stats'?'fantasy':'plays',getContext:()=>({...replayContext,players:getPlayers().map(p=>Number(replayContext.week)===Number(getContext()?.week)?p:{...p,points:null,owner:'',isMine:false})}),active:()=>current()&&dialog.open&&browserMode!=='clips',getClips:visibleClips,initialGame:centerGame,onGameChange:id=>{centerGame=id;game=id;drawPlayer()},onClip:id=>{player='';search='';dialog.querySelector('[data-reel-search]').value='';choose(id);layout?.watch();void setBrowserMode('clips')}});
-   }else{gameCenter.setMode(mode==='stats'?'fantasy':'plays');void gameCenter.refresh()}
+    host.replaceChildren();gameCenter=mountNflGameCenter(host,{embedded:true,initialMode:mode==='stats'?'fantasy':'plays',getContext:()=>({...replayContext,players:getPlayers().map(p=>Number(replayContext.week)===Number(getContext()?.week)?p:{...p,points:null,owner:'',isMine:false})}),active:()=>current()&&dialog.open&&browserMode!=='clips',getClips:visibleClips,initialGame:centerGame,onGameChange:id=>{centerGame=id;game=id;drawPlayer()},onClip:id=>{clipReturn={id,mode:browserMode};player='';search='';dialog.querySelector('[data-reel-search]').value='';choose(id);layout?.watch();void setBrowserMode('clips')}});
+   }else{gameCenter.setMode(mode==='stats'?'fantasy':'plays');gameCenter.resume()}
+   if(clipReturn?.mode===mode){const clip=clipReturn.id;clipReturn=null;drawPlayer();requestAnimationFrame(()=>{if(current()&&dialog.open&&browserMode===mode)dialog.querySelector(`[data-nfl-center-clip="${CSS.escape(clip)}"]`)?.focus({preventScroll:true})});}
   }catch{if(ticket===modeRequest&&current()){host.innerHTML='<p class="nfl-center-empty">Game unavailable. <button type="button" class="linkbtn" data-reel-game-retry>Try again</button></p>'}}
  };
  const setup=()=>{
@@ -151,7 +154,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
  };
  const open=(id,source,{returnToGame=false}={})=>{
   clips=visibleClips();search='';const rows=browseRows();if(!rows.length){paint();return}
-  opener=source;returnPoint=returnToGame&&source?.isConnected?{top:source.getBoundingClientRect().top}:null;setup();applyViewingMatchup(dialog,returnToGame?source:null);
+  opener=source;clipReturn=null;returnPoint=source?.isConnected?{top:source.getBoundingClientRect().top}:null;setup();applyViewingMatchup(dialog,returnToGame?source:null);
   const closeButton=dialog.querySelector('[data-reel-close]');closeButton.textContent=returnToGame?'Back':'×';closeButton.setAttribute('aria-label',returnToGame?'Back to game':'Close highlights');if(isReplayDocked(media))restoreReplayDock(media);else closeReplayDock();browseScroll=0;dialog.querySelector('h2').textContent=returnToGame?'NFL replay':typeof title==='function'?title():title;cancelUiExit(dialog);selected=id||rows[0].id;dialog.querySelector('[data-reel-search]').value='';
   dialog.showModal();stopViewport();stopViewport=fitDialogToViewport(dialog)||(()=>{});layout.reset();drawPlayer(true);scrollQueue(true);const people=dialog.querySelector('[data-reel-players]'),person=people.querySelector('[aria-pressed="true"]');people.scrollLeft=player&&person?Math.max(0,person.offsetLeft-people.offsetLeft-people.clientWidth/2+person.clientWidth/2):0;dialog.querySelector('h2').focus({preventScroll:true});
   setBrowserMode('clips');

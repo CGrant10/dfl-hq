@@ -1,3 +1,25 @@
+## 1.540.0 — broadcast graphics and connected mobile viewing
+
+Reviewed the current broadcast on narrow phones in Medicine Wheel Light/Dark:
+award illustrations, soft transparent glows, routed trades, stat figures,
+side-by-side results, long names, 200% text and story-picker bounds. Enlarged
+results stack to retain complete names/scores. Category marks are decorative;
+shared text, backgrounds, outlines and selected states use existing tokens.
+Book price typography/board rules and History year/ledger rules add page identity
+without new colors or controls. Existing art and first-slide identity remain.
+
+`pnpm check` passes with 2,446 tests. Browser review covers 146 normal/enlarged
+broadcast layouts, 129 NFL viewer checks, 309 Clubhouse checks, 277 highlights
+checks, secondary screens at three widths/four theme preferences/two text sizes,
+and six compiled real-league Home/Clubhouse/History phone/theme screens without
+page errors or horizontal overflow. Book account initialization was blocked by
+the read-only guard; its populated board is checked with isolated fixtures.
+Provider writes were blocked and private images remain local.
+Cold launches were measured with 4× CPU and a constrained synthetic connection;
+no physical-device battery or load-time claim is made. Physical Safari and
+VoiceOver remain unverified. Evidence and boundaries:
+[league-experience-1540.md](docs/league-experience-1540.md).
+
 ## 1.539.0 — visible trade goals and fair-repair controls
 
 Reviewed the production Trade page on 320px and 390px phones in Medicine Wheel

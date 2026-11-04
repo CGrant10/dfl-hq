@@ -1,0 +1,46 @@
+/* Broadcast graphics use the app palette and one shared text-safe area. */
+#home-wrap[data-home-layout="wire"] .bx-stage[data-bx-format="wide"] { border:1px solid var(--line-soft); border-radius:8px; box-shadow:none; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief { background:var(--bg-2); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief>.bx-kicker { display:flex; align-items:center; justify-content:flex-start; gap:6px; color:var(--body-text); font-size:.6875rem; letter-spacing:.035em; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-mark { position:static; inset:auto; display:block; flex:none; width:13px; height:13px; opacity:1; transform:none; color:var(--accent); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief>.bx-head { font-weight:750; line-height:1.16; letter-spacing:-.025em; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-art { background:radial-gradient(ellipse at 48% 60%,color-mix(in srgb,var(--accent-fill) 14%,transparent),transparent 72%); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award { --bx-award-light:var(--milestone); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award>.bx-brief-art { background:radial-gradient(ellipse at 48% 62%,color-mix(in srgb,var(--bx-award-light) 22%,transparent),transparent 72%); padding:10px 2px 0; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-chip { --bx-award-light:var(--accent-fill); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-chip>.bx-brief-art { padding:12px 4px; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award>.bx-head { font-size:1.5rem; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award-long>.bx-head { font-size:1.125rem; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award .bx-brief-mark { color:var(--milestone-ink,var(--accent)); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-chip .bx-brief-mark { color:var(--accent); }
+#home-wrap .bx-stage[data-bx-format="wide"] :is(.bx-brief-metric,.bx-brief-season)>:is(.bx-head,.bx-brief-body) { border:0; padding-left:0; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-value { padding:8px 0 12px; top:36px; background:radial-gradient(ellipse,color-mix(in srgb,var(--accent-fill) 8%,transparent),transparent 72%); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-value strong { font-family:var(--font-sport); font-size:clamp(1.25rem,calc(12rem / var(--bx-digits,4)),2.75rem); font-weight:700; line-height:1; letter-spacing:-.025em; font-variant-numeric:tabular-nums; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-value small { display:block; margin-top:4px; font-size:.6875rem; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-number { font-family:var(--font-sport); font-size:3rem; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-result .bx-brief-scores { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-result .bx-brief-scores>div { display:flex; flex-direction:column; align-items:flex-start; gap:3px; min-width:0; padding:0; border:0; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-result .bx-brief-scores>div+div { padding-left:12px; border-left:1px solid var(--line-soft); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-result .bx-brief-scores strong { width:100%; min-height:2.6em; font:600 .75rem/1.3 var(--font-ui); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-result .bx-brief-scores b { font:700 1.875rem/1 var(--font-sport); font-variant-numeric:tabular-nums; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-trade>.bx-kicker { color:var(--accent); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-exchange .bx-brief-package>small em { color:var(--body-text); letter-spacing:.04em; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-exchange .bx-brief-package>.dfl-player-portrait { height:40px; align-self:center; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-trade-balance>b { font-family:var(--font-sport); font-size:1.125rem; line-height:1; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-action { font-weight:650; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-controls { background:var(--bg-2); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-edition-progress { height:1px; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-page-count { font-variant-numeric:tabular-nums; letter-spacing:.06em; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-dots { max-height:min(180px,var(--bx-picker-height,146px)); }
+#home-wrap .bx-stage[data-bx-format="wide"][data-bx-large-text] .bx-brief-award>.bx-head { font-size:1.25rem; }
+#home-wrap .bx-stage[data-bx-format="wide"][data-bx-large-text] .bx-brief-value { padding:0; background:none; }
+#home-wrap .bx-stage[data-bx-format="wide"][data-bx-large-text] .bx-brief-result .bx-brief-scores { grid-template-columns:minmax(0,1fr); }
+#home-wrap .bx-stage[data-bx-format="wide"][data-bx-large-text] .bx-brief-result .bx-brief-scores>div+div { padding:0; border:0; }
+
+/* Shared controls stay familiar; the page's principal figures set its voice. */
+#view.view[data-route="sportsbook"] #sportsbook-wrap .sb-board-head { padding-block:10px; border-bottom:2px solid var(--text); }
+#view.view[data-route="sportsbook"] #sportsbook-wrap :is(.sb-line-price,.sb-price,.sb-odds) { font-family:var(--font-sport); font-variant-numeric:tabular-nums; }
+#view.view[data-route="history"] .archive-cabinet-head { align-items:baseline; padding-bottom:12px; border-bottom:2px solid var(--text); }
+#view.view[data-route="history"] .archive-season-head strong { font-family:var(--font-sport); font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+#view.view[data-route="history"] .archive-season:not(.is-featured) .archive-season-head { border-left:2px solid var(--line); padding-left:10px; }
+#view.view[data-route="stakes"] .stakes-seed strong { font-family:var(--font-sport); font-variant-numeric:tabular-nums; }

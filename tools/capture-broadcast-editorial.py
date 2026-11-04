@@ -61,7 +61,7 @@ with sync_playwright() as p:
   page.evaluate("editorialStage.update([...editorialDeck,...Array.from({length:6},(_,i)=>({...editorialDeck[2],id:'fixture-extra-'+i}))])")
   page.locator('.bx-story-picker>summary').click()
   assert page.locator('[data-bx-go]').count()==10
-  assert page.locator('.bx-dots').evaluate('e=>{const b=e.getBoundingClientRect(),s=e.closest(".bx-stage").getBoundingClientRect();return b.top>=s.top-1&&b.bottom<=s.bottom&&b.height>=132}')
+  assert page.locator('.bx-dots').evaluate('e=>{const b=e.getBoundingClientRect(),s=e.closest(".bx-stage").getBoundingClientRect();return b.top>=s.top-1&&b.bottom<=s.bottom&&b.height>=132}'),page.locator('.bx-dots').evaluate('e=>({menu:e.getBoundingClientRect().toJSON(),stage:e.closest(".bx-stage").getBoundingClientRect().toJSON(),max:getComputedStyle(e).maxHeight,parent:e.offsetParent.className})')
   page.locator('[data-bx-stage]').screenshot(path=str(OUT/f'editorial-picker-{mode}.png'))
   page.locator('[data-bx-go="9"]').click();page.wait_for_timeout(350)
   assert page.locator('.bx-page-count').inner_text()=='10 / 10'
@@ -77,7 +77,15 @@ with sync_playwright() as p:
  page.wait_for_timeout(800)
  assert page.locator('.bx-page-count').inner_text()=='2 / 2','Closing the refreshed picker left autoplay paused'
  page.evaluate('clockStage.stop()')
- (OUT/'editorial-checks.json').write_text(json.dumps({'layouts':checks,'picker':True,'keyboardEscape':True,'previousNext':True,'routedReceipt':True,'pickerClock':True,'refreshResume':True,'errors':errors},indent=2))
+ page.evaluate('''async()=>{const {renderStage,startStage}=await import('./js/broadcast-stage.js');const deck=[{id:'performance',kind:'news',headline:'On the sideline'}];document.querySelector('.home-broadcast').innerHTML=renderStage(deck,{editorial:true,wide:true});const root=document.querySelector('[data-bx-stage]');window.perfStage=startStage(root,deck);const read=root.getBoundingClientRect.bind(root);window.stageReads=0;root.getBoundingClientRect=()=>{stageReads++;return read()};const spacer=document.createElement('div');spacer.style.height='5000px';document.querySelector('#view').append(spacer);scrollTo(0,3000)}''')
+ page.wait_for_timeout(150)
+ page.evaluate('stageReads=0')
+ page.evaluate('''async()=>{for(let frame=0;frame<10;frame++){for(let n=0;n<50;n++)dispatchEvent(new Event('scroll'));await new Promise(requestAnimationFrame)}}''')
+ assert page.evaluate('stageReads===0'),'Offscreen carousel still reads layout while scrolling'
+ page.evaluate('scrollTo(0,0)');page.wait_for_timeout(100)
+ assert page.locator('[data-bx-stage]').evaluate('e=>e.hasAttribute("data-bx-visible")'),'Returning carousel did not resume visibility'
+ page.evaluate('perfStage.stop()')
+ (OUT/'editorial-checks.json').write_text(json.dumps({'layouts':checks,'picker':True,'keyboardEscape':True,'previousNext':True,'routedReceipt':True,'pickerClock':True,'refreshResume':True,'offscreenLayoutReads':0,'offscreenScrollEvents':500,'visibilityResumed':True,'errors':errors},indent=2))
  assert not errors,errors
  print(json.dumps({'errors':errors}));browser.close()
 server.shutdown()
