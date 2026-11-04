@@ -51,9 +51,9 @@ with sync_playwright() as p:
    page.screenshot(path=str(OUT/f'editing-{width}-{theme}.png'))
    side.locator('[data-td-remove-pick][data-player-id="1-3"]').evaluate('e=>e.click()');bar.locator('[data-td-undo]').click()
    check(tag+' Undo restores an accidentally removed player',side.locator('[data-td-remove-pick][data-player-id="1-3"]').count()==1 and box.is_checked())
-   side.locator('[data-td-filter]').fill('Kenneth');page.locator('[data-td-clear]').evaluate('e=>e.click()')
+   side.locator('[data-td-filter]').fill('Kenneth');before_clear=page.locator('[data-td-pick]:checked').evaluate_all('es=>es.map(e=>[e.dataset.tdPick,e.value])');page.locator('[data-td-clear]').evaluate('e=>e.click()')
    check(tag+' clearing the entire trade keeps Undo available',page.locator('[data-td-total-count]').inner_text()=='0' and bar.locator('[data-td-undo]').is_visible())
-   bar.locator('[data-td-undo]').click();check(tag+' Undo after clear preserves package and roster search',page.locator('[data-td-total-count]').inner_text()=='3' and side.locator('[data-td-filter]').input_value()=='Kenneth')
+   bar.locator('[data-td-undo]').click();check(tag+' Undo after clear preserves package and roster search',page.locator('[data-td-pick]:checked').evaluate_all('es=>es.map(e=>[e.dataset.tdPick,e.value])')==before_clear and side.locator('[data-td-filter]').input_value()=='Kenneth')
    page.locator('[data-td-clear]').evaluate('e=>e.click()');page.locator('[data-td-add-member]').evaluate('e=>e.click()')
    for i,pid,to in [(0,'1-3','2'),(1,'2-4','3'),(2,'3-1','1')]:
     lane=page.locator('.td-side').nth(i);lane.locator('[data-td-roster]').evaluate('e=>e.open=true');lane.locator('[data-td-filter]').fill('');lane.locator(f'[data-td-pick][value="{pid}"]').check();lane.locator('[data-td-destination]').select_option(to)

@@ -1,0 +1,104 @@
+[
+  {
+    "width": 320,
+    "actualRouting": {
+      "routes": {
+        "1-4": "2",
+        "1-3": "3",
+        "2-6": "1",
+        "3-3": "1"
+      },
+      "incoming": [
+        [
+          "2-6",
+          "3-3"
+        ],
+        [
+          "1-4"
+        ],
+        [
+          "1-3"
+        ]
+      ]
+    },
+    "savedComparisonLimit": 3,
+    "reloadPreservedRoutes": true,
+    "counterofferApplied": true,
+    "removedRecipientNeedsChoice": true,
+    "staleOwnershipRejected": true,
+    "fiveRequiredPlayersPersist": true,
+    "freshInjuryRequiresReview": true,
+    "shareProviderFailureBlocked": true,
+    "shareOwnershipRechecked": true,
+    "pageErrors": [],
+    "overflow": false
+  },
+  {
+    "width": 390,
+    "actualRouting": {
+      "routes": {
+        "1-4": "2",
+        "1-3": "3",
+        "2-6": "1",
+        "3-3": "1"
+      },
+      "incoming": [
+        [
+          "2-6",
+          "3-3"
+        ],
+        [
+          "1-4"
+        ],
+        [
+          "1-3"
+        ]
+      ]
+    },
+    "savedComparisonLimit": 3,
+    "reloadPreservedRoutes": true,
+    "counterofferApplied": true,
+    "removedRecipientNeedsChoice": true,
+    "staleOwnershipRejected": true,
+    "fiveRequiredPlayersPersist": true,
+    "freshInjuryRequiresReview": true,
+    "shareProviderFailureBlocked": true,
+    "shareOwnershipRechecked": true,
+    "pageErrors": [],
+    "overflow": false
+  },
+  {
+    "width": 768,
+    "actualRouting": {
+      "routes": {
+        "1-4": "2",
+        "1-3": "3",
+        "2-6": "1",
+        "3-3": "1"
+      },
+      "incoming": [
+        [
+          "2-6",
+          "3-3"
+        ],
+        [
+          "1-4"
+        ],
+        [
+          "1-3"
+        ]
+      ]
+    },
+    "savedComparisonLimit": 3,
+    "reloadPreservedRoutes": true,
+    "counterofferApplied": true,
+    "removedRecipientNeedsChoice": true,
+    "staleOwnershipRejected": true,
+    "fiveRequiredPlayersPersist": true,
+    "freshInjuryRequiresReview": true,
+    "shareProviderFailureBlocked": true,
+    "shareOwnershipRechecked": true,
+    "pageErrors": [],
+    "overflow": false
+  }
+]

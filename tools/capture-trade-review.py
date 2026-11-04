@@ -241,8 +241,20 @@ with sync_playwright() as p:
             click('.td-deal-evidence > summary')
             assert 'Expert ranks · FantasyPros · not connected' in page.locator('.td-deal-evidence').inner_text()
             assert not page.evaluate('document.documentElement.scrollWidth>innerWidth'),f'{width}: expanded evidence overflow'
+        # The old generic counter was still unfair. A fair repair must not
+        # relabel that improvement, and must preview before changing players.
+        click('[data-td-find-counter]');page.wait_for_function('document.querySelector("[data-td-counter-results]").textContent.includes("No small fair adjustment")')
+        assert page.locator('[data-td-use-counter]').count()==0
+        def clear_picks():
+            for side in [0,1]:
+                for pid in page.locator(f'[data-td-remove-pick="{side}"]').evaluate_all('es=>es.map(e=>e.dataset.playerId)'):
+                    click(f'[data-td-remove-pick="{side}"][data-player-id="{pid}"]')
+        clear_picks();pick(0,'1-0');pick(1,'2-8')
         click('[data-td-find-counter]');page.locator('[data-td-use-counter]').first.wait_for()
+        assert page.locator('.td-counter-list article p').evaluate_all('es=>es.every(e=>parseFloat(e.textContent)>=90)')
         click('[data-td-use-counter]');assert page.locator('[data-td-remove-pick="1"]').count()>=1
+        click('[data-td-verdict] [data-td-undo]');assert page.locator('[data-td-pick]:checked').count()==2
+        clear_picks();pick(0,'1-4');pick(1,'2-6')
         page.locator('[data-td-verdict]').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")
         assert page.locator('.td-total b').evaluate_all('es=>es.every(e=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects().length===1})'),f'{width}: bilateral value wrapped'
         assert page.locator('.td-cols').evaluate("e=>{const cols=[...e.children],totals=cols.map(n=>n.querySelector('.td-total b').getBoundingClientRect());return totals.length===2&&(innerWidth>600?Math.abs(totals[0].bottom-totals[1].bottom)<1:Math.abs(totals[0].right-totals[1].right)<1&&totals[1].top>totals[0].bottom&&cols.every(n=>n.querySelector('.td-total').getBoundingClientRect().top>=[...n.querySelectorAll('.td-item')].at(-1).getBoundingClientRect().bottom))}"),f'{width}: package totals do not follow their readable rows'

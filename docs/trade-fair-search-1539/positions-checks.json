@@ -1,0 +1,354 @@
+[
+  {
+    "check": "320px light keeps full search editing behind Edit search",
+    "pass": true
+  },
+  {
+    "check": "320px light starts with every trade position enabled",
+    "pass": true
+  },
+  {
+    "check": "320px light uses 44px checkbox labels and preset actions",
+    "pass": true
+  },
+  {
+    "check": "320px light has no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "320px light retains both pickers, native selects and checkbox DOM during filtering",
+    "pass": true
+  },
+  {
+    "check": "320px light removes conflicting targets on both sides and resets the goal",
+    "pass": true
+  },
+  {
+    "check": "320px light keeps the chosen trading partner",
+    "pass": true
+  },
+  {
+    "check": "320px light applies RB + WR with one tap",
+    "pass": true
+  },
+  {
+    "check": "320px light excludes unwanted positions from both sides of fair and closest offers",
+    "pass": true
+  },
+  {
+    "check": "320px light excludes unwanted positions from both sides of aggressive and closest offers",
+    "pass": true
+  },
+  {
+    "check": "320px light excludes unwanted positions from both sides of steal and closest offers",
+    "pass": true
+  },
+  {
+    "check": "320px light tier switching does not dismiss a newly opened picker",
+    "pass": true
+  },
+  {
+    "check": "320px light player picker only contains allowed trade positions",
+    "pass": true
+  },
+  {
+    "check": "320px light outgoing player picker also excludes unchecked positions",
+    "pass": true
+  },
+  {
+    "check": "320px light control text meets 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "320px light keeps the scroll position while filtering",
+    "pass": true
+  },
+  {
+    "check": "320px light preserves keyboard focus while updating offers",
+    "pass": true
+  },
+  {
+    "check": "320px light an empty selection stays empty with a clear recovery",
+    "pass": true
+  },
+  {
+    "check": "320px light rapid toggles keep the latest selection and results",
+    "pass": true
+  },
+  {
+    "check": "320px light restores all positions and cached results",
+    "pass": true
+  },
+  {
+    "check": "320px light respects reduced motion",
+    "pass": true
+  },
+  {
+    "check": "320px light has no uncaught errors",
+    "pass": true
+  },
+  {
+    "check": "320px dark keeps full search editing behind Edit search",
+    "pass": true
+  },
+  {
+    "check": "320px dark starts with every trade position enabled",
+    "pass": true
+  },
+  {
+    "check": "320px dark uses 44px checkbox labels and preset actions",
+    "pass": true
+  },
+  {
+    "check": "320px dark has no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "320px dark retains both pickers, native selects and checkbox DOM during filtering",
+    "pass": true
+  },
+  {
+    "check": "320px dark removes conflicting targets on both sides and resets the goal",
+    "pass": true
+  },
+  {
+    "check": "320px dark keeps the chosen trading partner",
+    "pass": true
+  },
+  {
+    "check": "320px dark applies RB + WR with one tap",
+    "pass": true
+  },
+  {
+    "check": "320px dark excludes unwanted positions from both sides of fair and closest offers",
+    "pass": true
+  },
+  {
+    "check": "320px dark excludes unwanted positions from both sides of aggressive and closest offers",
+    "pass": true
+  },
+  {
+    "check": "320px dark excludes unwanted positions from both sides of steal and closest offers",
+    "pass": true
+  },
+  {
+    "check": "320px dark tier switching does not dismiss a newly opened picker",
+    "pass": true
+  },
+  {
+    "check": "320px dark player picker only contains allowed trade positions",
+    "pass": true
+  },
+  {
+    "check": "320px dark outgoing player picker also excludes unchecked positions",
+    "pass": true
+  },
+  {
+    "check": "320px dark control text meets 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "320px dark keeps the scroll position while filtering",
+    "pass": true
+  },
+  {
+    "check": "320px dark preserves keyboard focus while updating offers",
+    "pass": true
+  },
+  {
+    "check": "320px dark an empty selection stays empty with a clear recovery",
+    "pass": true
+  },
+  {
+    "check": "320px dark rapid toggles keep the latest selection and results",
+    "pass": true
+  },
+  {
+    "check": "320px dark restores all positions and cached results",
+    "pass": true
+  },
+  {
+    "check": "320px dark respects reduced motion",
+    "pass": true
+  },
+  {
+    "check": "320px dark has no uncaught errors",
+    "pass": true
+  },
+  {
+    "check": "390px light keeps full search editing behind Edit search",
+    "pass": true
+  },
+  {
+    "check": "390px light starts with every trade position enabled",
+    "pass": true
+  },
+  {
+    "check": "390px light uses 44px checkbox labels and preset actions",
+    "pass": true
+  },
+  {
+    "check": "390px light has no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "390px light retains both pickers, native selects and checkbox DOM during filtering",
+    "pass": true
+  },
+  {
+    "check": "390px light removes conflicting targets on both sides and resets the goal",
+    "pass": true
+  },
+  {
+    "check": "390px light keeps the chosen trading partner",
+    "pass": true
+  },
+  {
+    "check": "390px light applies RB + WR with one tap",
+    "pass": true
+  },
+  {
+    "check": "390px light excludes unwanted positions from both sides of fair and closest offers",
+    "pass": true
+  },
+  {
+    "check": "390px light excludes unwanted positions from both sides of aggressive and closest offers",
+    "pass": true
+  },
+  {
+    "check": "390px light excludes unwanted positions from both sides of steal and closest offers",
+    "pass": true
+  },
+  {
+    "check": "390px light tier switching does not dismiss a newly opened picker",
+    "pass": true
+  },
+  {
+    "check": "390px light player picker only contains allowed trade positions",
+    "pass": true
+  },
+  {
+    "check": "390px light outgoing player picker also excludes unchecked positions",
+    "pass": true
+  },
+  {
+    "check": "390px light control text meets 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "390px light keeps the scroll position while filtering",
+    "pass": true
+  },
+  {
+    "check": "390px light preserves keyboard focus while updating offers",
+    "pass": true
+  },
+  {
+    "check": "390px light an empty selection stays empty with a clear recovery",
+    "pass": true
+  },
+  {
+    "check": "390px light rapid toggles keep the latest selection and results",
+    "pass": true
+  },
+  {
+    "check": "390px light restores all positions and cached results",
+    "pass": true
+  },
+  {
+    "check": "390px light respects reduced motion",
+    "pass": true
+  },
+  {
+    "check": "390px light has no uncaught errors",
+    "pass": true
+  },
+  {
+    "check": "390px dark keeps full search editing behind Edit search",
+    "pass": true
+  },
+  {
+    "check": "390px dark starts with every trade position enabled",
+    "pass": true
+  },
+  {
+    "check": "390px dark uses 44px checkbox labels and preset actions",
+    "pass": true
+  },
+  {
+    "check": "390px dark has no horizontal overflow",
+    "pass": true
+  },
+  {
+    "check": "390px dark retains both pickers, native selects and checkbox DOM during filtering",
+    "pass": true
+  },
+  {
+    "check": "390px dark removes conflicting targets on both sides and resets the goal",
+    "pass": true
+  },
+  {
+    "check": "390px dark keeps the chosen trading partner",
+    "pass": true
+  },
+  {
+    "check": "390px dark applies RB + WR with one tap",
+    "pass": true
+  },
+  {
+    "check": "390px dark excludes unwanted positions from both sides of fair and closest offers",
+    "pass": true
+  },
+  {
+    "check": "390px dark excludes unwanted positions from both sides of aggressive and closest offers",
+    "pass": true
+  },
+  {
+    "check": "390px dark excludes unwanted positions from both sides of steal and closest offers",
+    "pass": true
+  },
+  {
+    "check": "390px dark tier switching does not dismiss a newly opened picker",
+    "pass": true
+  },
+  {
+    "check": "390px dark player picker only contains allowed trade positions",
+    "pass": true
+  },
+  {
+    "check": "390px dark outgoing player picker also excludes unchecked positions",
+    "pass": true
+  },
+  {
+    "check": "390px dark control text meets 4.5:1 contrast",
+    "pass": true
+  },
+  {
+    "check": "390px dark keeps the scroll position while filtering",
+    "pass": true
+  },
+  {
+    "check": "390px dark preserves keyboard focus while updating offers",
+    "pass": true
+  },
+  {
+    "check": "390px dark an empty selection stays empty with a clear recovery",
+    "pass": true
+  },
+  {
+    "check": "390px dark rapid toggles keep the latest selection and results",
+    "pass": true
+  },
+  {
+    "check": "390px dark restores all positions and cached results",
+    "pass": true
+  },
+  {
+    "check": "390px dark respects reduced motion",
+    "pass": true
+  },
+  {
+    "check": "390px dark has no uncaught errors",
+    "pass": true
+  }
+]

@@ -1,0 +1,338 @@
+[
+  {
+    "name": "320/light readable trade text contrast",
+    "pass": true
+  },
+  {
+    "name": "320/light full player names have real reading space",
+    "pass": true
+  },
+  {
+    "name": "320/light replacement excludes all players already in the deal",
+    "pass": true
+  },
+  {
+    "name": "320/light Cancel keeps the whole offer and restores focus",
+    "pass": true
+  },
+  {
+    "name": "320/light a swap changes only one side and returns focus to the new player",
+    "pass": true
+  },
+  {
+    "name": "320/light value updates preserve open lineup details",
+    "pass": true
+  },
+  {
+    "name": "320/light Undo restores the exact prior package and values",
+    "pass": true
+  },
+  {
+    "name": "320/light editing reveals the compact package reference",
+    "pass": true
+  },
+  {
+    "name": "320/light picking keeps the tapped roster row in place",
+    "pass": true
+  },
+  {
+    "name": "320/light the package stays visible while browsing a roster",
+    "pass": true
+  },
+  {
+    "name": "320/light selected players and checkboxes agree",
+    "pass": true
+  },
+  {
+    "name": "320/light Undo restores an accidentally removed player",
+    "pass": true
+  },
+  {
+    "name": "320/light clearing the entire trade keeps Undo available",
+    "pass": true
+  },
+  {
+    "name": "320/light Undo after clear preserves package and roster search",
+    "pass": true
+  },
+  {
+    "name": "320/light a complete three-way has a real analysis",
+    "pass": true
+  },
+  {
+    "name": "320/light replacing a three-way player keeps its explicit destination",
+    "pass": true
+  },
+  {
+    "name": "320/light three-way Undo restores the original player and destination",
+    "pass": true
+  },
+  {
+    "name": "320/light larger text and all full names fit the screen",
+    "pass": true
+  },
+  {
+    "name": "320/light reduced motion commits swaps without leftover portraits",
+    "pass": true
+  },
+  {
+    "name": "320/light leaving closes an in-progress replacement",
+    "pass": true
+  },
+  {
+    "name": "320/light no browser errors",
+    "pass": true
+  },
+  {
+    "name": "320/dark readable trade text contrast",
+    "pass": true
+  },
+  {
+    "name": "320/dark full player names have real reading space",
+    "pass": true
+  },
+  {
+    "name": "320/dark replacement excludes all players already in the deal",
+    "pass": true
+  },
+  {
+    "name": "320/dark Cancel keeps the whole offer and restores focus",
+    "pass": true
+  },
+  {
+    "name": "320/dark a swap changes only one side and returns focus to the new player",
+    "pass": true
+  },
+  {
+    "name": "320/dark value updates preserve open lineup details",
+    "pass": true
+  },
+  {
+    "name": "320/dark Undo restores the exact prior package and values",
+    "pass": true
+  },
+  {
+    "name": "320/dark editing reveals the compact package reference",
+    "pass": true
+  },
+  {
+    "name": "320/dark picking keeps the tapped roster row in place",
+    "pass": true
+  },
+  {
+    "name": "320/dark the package stays visible while browsing a roster",
+    "pass": true
+  },
+  {
+    "name": "320/dark selected players and checkboxes agree",
+    "pass": true
+  },
+  {
+    "name": "320/dark Undo restores an accidentally removed player",
+    "pass": true
+  },
+  {
+    "name": "320/dark clearing the entire trade keeps Undo available",
+    "pass": true
+  },
+  {
+    "name": "320/dark Undo after clear preserves package and roster search",
+    "pass": true
+  },
+  {
+    "name": "320/dark a complete three-way has a real analysis",
+    "pass": true
+  },
+  {
+    "name": "320/dark replacing a three-way player keeps its explicit destination",
+    "pass": true
+  },
+  {
+    "name": "320/dark three-way Undo restores the original player and destination",
+    "pass": true
+  },
+  {
+    "name": "320/dark larger text and all full names fit the screen",
+    "pass": true
+  },
+  {
+    "name": "320/dark reduced motion commits swaps without leftover portraits",
+    "pass": true
+  },
+  {
+    "name": "320/dark leaving closes an in-progress replacement",
+    "pass": true
+  },
+  {
+    "name": "320/dark no browser errors",
+    "pass": true
+  },
+  {
+    "name": "390/light readable trade text contrast",
+    "pass": true
+  },
+  {
+    "name": "390/light full player names have real reading space",
+    "pass": true
+  },
+  {
+    "name": "390/light replacement excludes all players already in the deal",
+    "pass": true
+  },
+  {
+    "name": "390/light Cancel keeps the whole offer and restores focus",
+    "pass": true
+  },
+  {
+    "name": "390/light a swap changes only one side and returns focus to the new player",
+    "pass": true
+  },
+  {
+    "name": "390/light value updates preserve open lineup details",
+    "pass": true
+  },
+  {
+    "name": "390/light Undo restores the exact prior package and values",
+    "pass": true
+  },
+  {
+    "name": "390/light editing reveals the compact package reference",
+    "pass": true
+  },
+  {
+    "name": "390/light picking keeps the tapped roster row in place",
+    "pass": true
+  },
+  {
+    "name": "390/light the package stays visible while browsing a roster",
+    "pass": true
+  },
+  {
+    "name": "390/light selected players and checkboxes agree",
+    "pass": true
+  },
+  {
+    "name": "390/light Undo restores an accidentally removed player",
+    "pass": true
+  },
+  {
+    "name": "390/light clearing the entire trade keeps Undo available",
+    "pass": true
+  },
+  {
+    "name": "390/light Undo after clear preserves package and roster search",
+    "pass": true
+  },
+  {
+    "name": "390/light a complete three-way has a real analysis",
+    "pass": true
+  },
+  {
+    "name": "390/light replacing a three-way player keeps its explicit destination",
+    "pass": true
+  },
+  {
+    "name": "390/light three-way Undo restores the original player and destination",
+    "pass": true
+  },
+  {
+    "name": "390/light larger text and all full names fit the screen",
+    "pass": true
+  },
+  {
+    "name": "390/light reduced motion commits swaps without leftover portraits",
+    "pass": true
+  },
+  {
+    "name": "390/light leaving closes an in-progress replacement",
+    "pass": true
+  },
+  {
+    "name": "390/light no browser errors",
+    "pass": true
+  },
+  {
+    "name": "390/dark readable trade text contrast",
+    "pass": true
+  },
+  {
+    "name": "390/dark full player names have real reading space",
+    "pass": true
+  },
+  {
+    "name": "390/dark replacement excludes all players already in the deal",
+    "pass": true
+  },
+  {
+    "name": "390/dark Cancel keeps the whole offer and restores focus",
+    "pass": true
+  },
+  {
+    "name": "390/dark a swap changes only one side and returns focus to the new player",
+    "pass": true
+  },
+  {
+    "name": "390/dark value updates preserve open lineup details",
+    "pass": true
+  },
+  {
+    "name": "390/dark Undo restores the exact prior package and values",
+    "pass": true
+  },
+  {
+    "name": "390/dark editing reveals the compact package reference",
+    "pass": true
+  },
+  {
+    "name": "390/dark picking keeps the tapped roster row in place",
+    "pass": true
+  },
+  {
+    "name": "390/dark the package stays visible while browsing a roster",
+    "pass": true
+  },
+  {
+    "name": "390/dark selected players and checkboxes agree",
+    "pass": true
+  },
+  {
+    "name": "390/dark Undo restores an accidentally removed player",
+    "pass": true
+  },
+  {
+    "name": "390/dark clearing the entire trade keeps Undo available",
+    "pass": true
+  },
+  {
+    "name": "390/dark Undo after clear preserves package and roster search",
+    "pass": true
+  },
+  {
+    "name": "390/dark a complete three-way has a real analysis",
+    "pass": true
+  },
+  {
+    "name": "390/dark replacing a three-way player keeps its explicit destination",
+    "pass": true
+  },
+  {
+    "name": "390/dark three-way Undo restores the original player and destination",
+    "pass": true
+  },
+  {
+    "name": "390/dark larger text and all full names fit the screen",
+    "pass": true
+  },
+  {
+    "name": "390/dark reduced motion commits swaps without leftover portraits",
+    "pass": true
+  },
+  {
+    "name": "390/dark leaving closes an in-progress replacement",
+    "pass": true
+  },
+  {
+    "name": "390/dark no browser errors",
+    "pass": true
+  }
+]

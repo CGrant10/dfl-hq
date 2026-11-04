@@ -527,7 +527,7 @@ export function tradeDeskMarkup(team, teams, pool, state) {
  * Wire a rendered trade desk. Repaints only the verdict on each change, so
  * building a deal never redraws the report underneath it.
  */
-export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange, onDeal,lockedIds=[] }) {
+export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange, onDeal,lockedIds=[],receivePositions }) {
   if (!root) return;
   const verdictHost = root.querySelector("[data-td-verdict]"),connection=createTradeConnection();
   let currentDeal=null,counters=[],revision=0,undo=null,stopped=false,stopReplacement=()=>{};
@@ -585,7 +585,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     const routingMessage=issue?.kind==='senders'?`Select players from ${missingNames}.`:issue?.kind==='recipients'?`Choose a recipient for ${issue.playerIds.length} player${issue.playerIds.length===1?'':'s'}.`:issue?.kind==='receivers'?`${missingNames} ${issue.teamIds.length===1?'needs':'need'} a player coming back.`:'Review the selected players and recipients.';
     verdictHost.innerHTML=(parties.length>2?multiTicketMarkup(result,parties,pool,sends):ticketMarkup(result,team,parties[1],pool,...sends))
       +(currentDeal?lineupComparisonMarkup(currentDeal,pool)+`<details class="td-data-context" data-td-weekly><summary>Next four weeks</summary><div data-td-weekly-body></div></details>`:sends.some(ids=>ids.length)?`<p class="td-projection-note" role="status" data-td-routing-status>${esc(routingMessage)}</p>`:'')
-      +`<div class="td-deal-tools"><button type="button" class="btn ghost small" data-td-undo hidden>Undo last change</button><button type="button" class="btn ghost small" data-td-find-counter ${currentDeal?'':'disabled'}>Find a counteroffer</button><button type="button" class="btn ghost small" data-td-save-proposal ${currentDeal?'':'disabled'}>Save for comparison</button></div><div data-td-counter-results role="region" aria-label="Counteroffer suggestions"></div>`;
+      +`<div class="td-deal-tools"><button type="button" class="btn ghost small" data-td-undo hidden>Undo last change</button><button type="button" class="btn ghost small" data-td-find-counter ${currentDeal?'':'disabled'}>${currentDeal?.result.fairness>=90?'Find a counteroffer':'Make this fair'}</button><button type="button" class="btn ghost small" data-td-save-proposal ${currentDeal?'':'disabled'}>Save for comparison</button></div><div data-td-counter-results role="region" aria-label="Counteroffer suggestions" aria-live="polite"></div>`;
     const impact=verdictHost.querySelector("[data-td-lineup-impact]"),decision=verdictHost.querySelector(".td-decision");
     if(impact&&decision)verdictHost.querySelector('.td-ticket').after(impact);
     verdictHost.querySelectorAll('details').forEach((node,i)=>{if(open.has(node.className+'|'+[...verdictHost.querySelectorAll('details')].filter(n=>n.className===node.className).indexOf(node)))node.open=true});
@@ -661,12 +661,12 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
       }});return;
     }
     const counterButton=event.target.closest('[data-td-find-counter]');
-    if(counterButton&&currentDeal){const at=revision,deal=currentDeal;counterButton.disabled=true;counterButton.setAttribute('aria-busy','true');counterButton.textContent='Checking small changes…';await new Promise(resolve=>setTimeout(resolve,0));if(!root.isConnected||at!==revision)return;
-      try{counters=findTradeCounteroffers(deal,pool,{lockedIds});root.querySelector('[data-td-counter-results]').innerHTML=counterofferMarkup(counters,pool,deal.parties);}
+    if(counterButton&&currentDeal){if(counterButton.disabled)return;const at=revision,deal=currentDeal,intent=deal.result.fairness<90?'fair':'improve',label=counterButton.textContent;counterButton.disabled=true;counterButton.setAttribute('aria-busy','true');counterButton.textContent='Checking small changes…';await new Promise(resolve=>setTimeout(resolve,0));if(!root.isConnected||at!==revision)return;
+      try{counters=findTradeCounteroffers(deal,pool,{lockedIds,intent,receivePositions});root.querySelector('[data-td-counter-results]').innerHTML=counterofferMarkup(counters,pool,deal.parties,{intent});}
       catch{root.querySelector('[data-td-counter-results]').innerHTML='<p role="status">Counteroffers could not be checked. Try again.</p>'}
-      finally{if(root.isConnected&&at===revision){counterButton.disabled=false;counterButton.removeAttribute('aria-busy');counterButton.textContent='Find a counteroffer';}}return;}
+      finally{if(root.isConnected&&at===revision){counterButton.disabled=false;counterButton.removeAttribute('aria-busy');counterButton.textContent=label;}}return;}
     const useCounter=event.target.closest('[data-td-use-counter]');
-    if(useCounter){const counter=counters[Number(useCounter.dataset.tdUseCounter)];if(counter){applyTradeDeal(state,counter);onPartnerChange?.();}return;}
+    if(useCounter){const counter=counters[Number(useCounter.dataset.tdUseCounter)];if(counter){connection.cancel();remember();const filters=state.filters;applyTradeDeal(state,counter);state.filters=filters;syncSelectionUi();update();verdictHost.querySelector('[data-td-undo]')?.focus({preventScroll:true});}return;}
     const removePick = event.target.closest("[data-td-remove-pick]");
     if (removePick) {
       const side = Number(removePick.dataset.tdRemovePick), id = String(removePick.dataset.playerId);

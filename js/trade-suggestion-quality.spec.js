@@ -1,6 +1,17 @@
 import {it,expect} from 'vitest';
-import {compareTradeSuggestions,tradeSuggestionQuality,prioritizeTradeSuggestions} from './trade-suggestion-quality.js';
+import {compareTradeSuggestions,tradeSuggestionQuality,prioritizeTradeSuggestions,usefulFairTrade} from './trade-suggestion-quality.js';
+import {tradeAssessment} from './trade-assessment.js';
 const offer=(size,score=100,extra={})=>({sendA:Array.from({length:size-1},(_,i)=>String(i)),sendB:['r'],score,fairness:92,utility:{group:4,score:22},...extra});
+it('keeps price grading separate from recommendation usefulness and partner harm',()=>{
+ const base={fairness:96,valueToA:96,valueToB:100,weeklyDeltaA:0,weeklyDeltaB:0};
+ expect(tradeAssessment(base).tier).toBe('fair');expect(usefulFairTrade(base)).toBe(false);
+ expect(usefulFairTrade({...base,weeklyDeltaA:1,weeklyDeltaB:-2})).toBe(false);
+ expect(tradeAssessment({...base,weeklyDeltaA:1,weeklyDeltaB:-2}).tier).toBe('fair');
+ expect(usefulFairTrade({...base,weeklyDeltaA:1,weeklyDeltaB:-.2})).toBe(true);
+ expect(usefulFairTrade({...base,rosterImpactA:.7,rosterImpactB:.4})).toBe(true); // Useful depth, unchanged starters.
+ expect(usefulFairTrade({...base,weeklyDeltas:[2,1,-2],rosterImpacts:[2,1,-2]})).toBe(false);
+ expect(usefulFairTrade({...base,weeklyDeltaA:2,weeklyDeltaB:1,windowDeltas:[0,0]})).toBe(false);
+});
 it('ranks a simpler comparable deal before a padded package without changing its grade',()=>{
  const small=offer(3),large=offer(8,500),before=structuredClone([small,large]);expect([large,small].sort(compareTradeSuggestions)).toEqual([small,large]);expect([small,large]).toEqual(before);
 });

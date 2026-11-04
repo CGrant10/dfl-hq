@@ -35,6 +35,7 @@ describe('trade desk football benchmarks',()=>{
   const offers=suggestTrades({teams,pool,teamId:a.id,intent:'fair',shapes:['1-1'],limit:96});
   expect(offers[0].other.id).toBe(b.id);
   expect(offers[0].utility.group).toBe(4);
+  expect(offers.some(o=>o.sendA.includes('a-qb')&&o.sendB.includes('b-qb'))).toBe(false);
   const fair=offers.filter(o=>o.tier==='fair');expect(fair.map(o=>o.utility.group)).toEqual(fair.map(o=>o.utility.group).sort((a,b)=>b-a));
  });
  it('reports equal price and a harmful lineup separately instead of changing the price grade',()=>{
