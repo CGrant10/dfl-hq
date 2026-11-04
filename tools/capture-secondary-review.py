@@ -49,6 +49,7 @@ with sync_playwright() as p:
     page.evaluate('window.showProfile()');assert page.locator('.ph-team-mark i').inner_text()=='AV'
     assert page.locator('[data-photo-pick]').evaluate('e=>{const r=e.getBoundingClientRect();return r.width>=44&&r.height>=44}')
     assert page.locator('.profile-name').evaluate('e=>getComputedStyle(e).fontFamily.includes("Inter")')
+    assert page.locator('.ph-avatar').evaluate('e=>{const mark=e.querySelector(".ph-team-mark").getBoundingClientRect(),frame=e.getBoundingClientRect(),name=e.closest(".ph-top").querySelector(".ph-id").getBoundingClientRect();return mark.width<=frame.width+1&&mark.height<=frame.height+1&&mark.right+8<=name.left}'),'Profile portrait overlaps the team identity'
     capture(theme.replace(':','-')+'-'+scale+'-profile')
     page.evaluate('window.showMore()');assert page.locator('#more .quicknav a').count()==16
     assert page.locator('#more .quicknav a').evaluate_all('es=>es.every(e=>e.getBoundingClientRect().height>=44)')

@@ -9066,3 +9066,111 @@ html[data-ui-motion="off"] :is(.dfl-player-portrait,.dfl-team-mark,.home-reel-po
 }
 
 #view.view[data-page-system][data-route][data-route="analyzer"] .ta-page-head h1 { font:700 var(--ui-title)/1.2 var(--font-ui); text-transform:none; letter-spacing:-.025em; }
+
+/* Secondary destinations use the Daily/Clubhouse reading scale. Sports figures
+   keep their own face; team and player identities remain untouched. */
+#view.view[data-page-system][data-route]:is([data-route="trade"],[data-route="sportsbook"],[data-route="profile"],[data-route="history"],[data-route="facts"],[data-route="finances"],[data-route="calendar"],[data-route="polls"],[data-route="proposals"],[data-route="notifications"],[data-route="wall"],[data-route="rules"],[data-route="stakes"]) { --font-body:var(--font-ui); }
+#view.view[data-page-system][data-route] :is(.page-head,.utility-head) { gap:8px 16px; }
+#view.view[data-page-system][data-route] :is(.page-head,.utility-head)>.linkbtn { min-height:44px; font:600 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route] .tabs>button { min-height:44px; font:600 var(--ui-meta)/1.4 var(--font-ui); letter-spacing:0; }
+#view.view[data-page-system][data-route]:is([data-route="history"],[data-route="profile"],[data-route="facts"],[data-route="finances"],[data-route="calendar"],[data-route="polls"],[data-route="proposals"],[data-route="notifications"],[data-route="wall"],[data-route="rules"],[data-route="stakes"]) :is(.card-title,.card-title-row h2,.section-title) { font:700 var(--ui-section)/1.35 var(--font-ui); letter-spacing:-.015em; text-transform:none; }
+#view.view[data-page-system][data-route]:is([data-route="history"],[data-route="profile"],[data-route="facts"],[data-route="finances"],[data-route="calendar"],[data-route="polls"],[data-route="proposals"],[data-route="notifications"],[data-route="wall"],[data-route="rules"],[data-route="stakes"]) :is(.btn,.linkbtn) { min-height:44px; font-family:var(--font-ui); letter-spacing:0; }
+#view.view[data-page-system][data-route] :is(.page-head,.utility-head) small { color:var(--body-text); font:600 var(--ui-label)/1.4 var(--font-ui); letter-spacing:.045em; }
+
+/* An evaluated trade is a report, with the same full-width rows as offers. */
+#view.view[data-route="trade"] .td-ticket { padding:0; border:0; border-top:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-route="trade"] .td-ticket::before { display:none; }
+#view.view[data-route="trade"] .td-ticket-head { padding:12px 0; border-bottom:1px solid var(--line-soft); text-align:left; }
+#view.view[data-route="trade"] .td-ticket-head small { color:var(--body-text); font:600 var(--ui-label)/1.4 var(--font-ui); letter-spacing:.04em; }
+#view.view[data-route="trade"] .td-ticket-head h2 { font:700 var(--ui-section)/1.4 var(--font-ui); letter-spacing:-.015em; overflow-wrap:break-word; }
+#view.view[data-route="trade"] .td-decision dl { gap:10px; padding:12px 0; border-color:var(--line-soft); }
+#view.view[data-route="trade"] .td-decision dl>div { min-width:0; display:grid; grid-template-rows:2.8em auto; align-content:start; font-size:var(--ui-meta); }
+#view.view[data-route="trade"] .td-decision dt { font:500 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-route="trade"] .td-decision dd { margin:4px 0 0; font:700 1.375rem/1.2 var(--font-sport); }
+#view.view[data-route="trade"] .td-decision dd small { font:400 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-route="trade"] .td-fit-call { font:600 var(--ui-row)/1.4 var(--font-ui); }
+#view.view[data-route="trade"] .td-item-copy strong { font-family:var(--font-ui); letter-spacing:0; }
+#view.view[data-route="trade"] .td-item-value { font:600 var(--ui-row)/1.3 var(--font-sport); }
+#view.view[data-route="trade"] .td-total b { font:700 1.25rem/1.2 var(--font-sport); }
+#view.view[data-route="trade"] .td-ticket .td-data-context { border:0; border-top:1px solid var(--line); border-radius:0; padding:0; background:transparent; }
+#view.view[data-route="trade"] .td-ticket .td-data-context>summary { min-height:44px; padding:10px 0; font:600 var(--ui-row)/1.4 var(--font-ui); }
+
+/* Receipts keep team routing and their balance bars, with no enclosing grey box. */
+#view.view[data-route="trade"] .td-completed .td-alert-receipt { border:0; border-block:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-route="trade"] .td-alert-receipt>.td-receipt-summary { padding:12px 0; gap:10px; background:transparent; }
+#view.view[data-route="trade"] .td-receipt-summary h3 { font:650 var(--ui-row)/1.5 var(--font-ui); letter-spacing:0; overflow-wrap:break-word; }
+#view.view[data-route="trade"] .td-receipt-summary small { font-family:var(--font-ui); letter-spacing:.025em; }
+#view.view[data-route="trade"] .td-receipt-summary .td-receipt-score b { font:700 1.5rem/1.1 var(--font-sport); }
+#view.view[data-route="trade"] .td-receipt-call { font:600 var(--ui-meta)/1.5 var(--font-ui); }
+#view.view[data-route="trade"] .td-receipt-comparison { padding-inline:0; background:transparent; }
+#view.view[data-route="trade"] .td-receipt-balance-row>strong { font:600 var(--ui-row)/1.4 var(--font-ui); }
+#view.view[data-route="trade"] .td-receipt-balance-row>b { font-family:var(--font-sport); }
+#view.view[data-route="trade"] .td-receipt-body .td-alert-packages { gap:0 20px; background:transparent; }
+#view.view[data-route="trade"] .td-receipt-body .td-alert-packages>section { padding:12px 0; border-top:1px solid var(--line-soft); }
+#view.view[data-route="trade"] .td-receipt-body .td-alert-packages .dfl-team { border-left:0; padding-left:0; }
+#view.view[data-route="trade"] .td-receipt-body .td-receipt-player { min-height:52px; gap:8px; }
+#view.view[data-route="trade"] .td-completed .td-receipt-body .dfl-player-portrait { width:32px; height:36px; flex-basis:32px; }
+#view.view[data-route="trade"] .td-receipt-body .td-receipt-value b { font-family:var(--font-sport); }
+#view.view[data-route="trade"] .td-receipt-footer { padding:12px 0; }
+
+/* Sportsbook options share a single game surface rather than nested boxes. */
+#view.view[data-route="sportsbook"] #sportsbook-wrap .sb-outcomes { gap:0; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:var(--bg-2); }
+#view.view[data-route="sportsbook"] #sportsbook-wrap .sb-outcome { min-height:60px; gap:10px; padding:8px 12px; border:0; border-bottom:1px solid var(--line-soft); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-route="sportsbook"] #sportsbook-wrap .sb-outcome:last-child { border-bottom:0; }
+#view.view[data-route="sportsbook"] #sportsbook-wrap .sb-outcome.is-picked { background:color-mix(in srgb,var(--accent) 7%,var(--bg-2)); }
+#view.view[data-route="sportsbook"] #sportsbook-wrap .sb-outcome:focus-visible { outline:2px solid var(--accent); outline-offset:-3px; }
+#view.view[data-route="sportsbook"] #sportsbook-wrap .sb-outcome-name { font:650 var(--ui-row)/1.4 var(--font-ui); letter-spacing:0; white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:break-word; }
+#view.view[data-route="sportsbook"] #sportsbook-wrap .sb-outcome-label small { font:400 var(--ui-meta)/1.4 var(--font-ui); letter-spacing:0; }
+#view.view[data-route="sportsbook"] #sportsbook-wrap .sb-price { font:700 1.25rem/1.1 var(--font-sport); letter-spacing:0; }
+
+/* Profile identity and career sections follow the same quiet divider rhythm. */
+#view.view[data-page-system][data-route][data-route="profile"] .profile-head { padding:0 0 16px; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route][data-route="profile"] .ph-top { gap:12px; }
+#view.view[data-page-system][data-route][data-route="profile"] .ph-avatar { width:56px; height:56px; }
+#view.view[data-page-system][data-route][data-route="profile"] .ph-avatar .ph-team-mark { width:56px; height:56px; }
+#view.view[data-page-system][data-route][data-route="profile"] .ph-id .profile-name { font:700 1.125rem/1.35 var(--font-ui); letter-spacing:-.015em; word-break:normal; overflow-wrap:break-word; }
+#view.view[data-page-system][data-route][data-route="profile"] .ph-handle { font:400 var(--ui-meta)/1.45 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="profile"] .ph-record { margin-top:14px; padding-top:12px; border-color:var(--line-soft); gap:12px 20px; }
+#view.view[data-page-system][data-route][data-route="profile"] .ph-record b { font:700 1.125rem/1.1 var(--font-sport); }
+#view.view[data-page-system][data-route][data-route="profile"] .ph-record small { font:500 var(--ui-label)/1.4 var(--font-ui); letter-spacing:.025em; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-record strong { font:700 2rem/1.15 var(--font-sport); }
+#view.view[data-page-system][data-route][data-route="profile"] .career-outcomes>div { background:transparent; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-outcomes strong { font:700 1.375rem/1.1 var(--font-sport); }
+#view.view[data-page-system][data-route][data-route="profile"] .career-outcomes span { font:500 var(--ui-label)/1.35 var(--font-ui); letter-spacing:0; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-highlights { border:0; border-block:1px solid var(--line-soft); border-radius:0; background:transparent; }
+#view.view[data-page-system][data-route][data-route="profile"] :is(.dfl-fold-title,.career-badges strong) { font-family:var(--font-ui); letter-spacing:0; }
+
+/* Keep the reigning champion distinct; earlier years read as an archive list. */
+#view.view[data-page-system][data-route][data-route="history"] .archive-seasons { gap:0; }
+#view.view[data-page-system][data-route][data-route="history"] .archive-season { padding:14px 0; border:0; border-bottom:1px solid var(--line-soft); border-radius:0; background:transparent; }
+#view.view[data-page-system][data-route][data-route="history"] .archive-season.is-featured { margin-bottom:8px; padding:14px; border:1px solid var(--line-soft); border-top:2px solid var(--milestone); border-radius:6px; background:var(--bg-2); }
+#view.view[data-page-system][data-route][data-route="history"] .archive-season-head { margin-bottom:12px; }
+#view.view[data-page-system][data-route][data-route="history"] .archive-season:not(.is-featured) .archive-season-head strong { font-size:1.375rem; }
+#view.view[data-page-system][data-route][data-route="history"] .archive-runner { margin-top:12px; padding-top:10px; border-color:var(--line-soft); }
+#view.view[data-page-system][data-route][data-route="history"] .archive-season:not(.is-featured) .archive-winner>.dfl-team-mark { width:40px; height:40px; }
+#view.view[data-page-system][data-route][data-route="history"] .dfl-hall-head { flex-wrap:wrap; }
+#view.view[data-page-system][data-route][data-route="history"] .dfl-hall-head h2 { font:700 var(--ui-section)/1.35 var(--font-ui); text-transform:none; letter-spacing:-.015em; }
+
+/* Rankings retain their intrinsic expansion, with aligned report typography. */
+#view #home-wrap .power-preview-banter { font:650 var(--ui-row)/1.45 var(--font-ui); }
+#view #home-wrap .power-preview-facts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+#view #home-wrap :is(.power-preview-facts dt,.power-preview-form span) { font:500 var(--ui-meta)/1.4 var(--font-ui); }
+#view #home-wrap :is(.power-preview-facts dd,.power-preview-form strong) { font:700 1.125rem/1.25 var(--font-sport); }
+.power-detail { font-family:var(--font-ui); }
+.power-detail h2 { font:700 1.125rem/1.35 var(--font-ui); text-transform:none; letter-spacing:-.015em; overflow-wrap:break-word; }
+.power-detail-score { margin:14px 0; }
+.power-detail-score strong { font:700 2rem/1.1 var(--font-sport); }
+.power-detail-score small { font:500 var(--ui-meta)/1.4 var(--font-ui); letter-spacing:.025em; }
+.power-roast { font:650 var(--ui-section)/1.45 var(--font-ui); padding:12px 0; }
+.power-facts { gap:12px; margin:14px 0; }
+.power-facts dd { font:700 1.25rem/1.2 var(--font-sport); }
+.power-facts dt,.power-movement-reason { font:400 var(--ui-meta)/1.5 var(--font-ui); }
+
+#view.view[data-page-system][data-route] :is(.page-head,.utility-head,.notification-head) h1,
+#view.view[data-page-system][data-route]>.dfl-page-title { font:700 var(--ui-title)/1.2 var(--font-ui); letter-spacing:-.025em; text-transform:none; }
+#view.view[data-page-system][data-route][data-route="calendar"] .evtitle { font:650 var(--ui-row)/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="calendar"] .evmeta { font:400 var(--ui-meta)/1.45 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="finances"] .card:has(>.statgrid) { padding:12px 0; border:0; border-block:1px solid var(--line-soft); border-radius:0; background:transparent; }
+#view.view[data-page-system][data-route][data-route="finances"] .statgrid .stat { padding:10px 6px; border:0; background:transparent; }
+#view.view[data-page-system][data-route][data-route="finances"] .stat-v { font:700 1.375rem/1.2 var(--font-sport); }
+#view.view[data-page-system][data-route][data-route="finances"] .stat-k { font:500 var(--ui-label)/1.4 var(--font-ui); letter-spacing:.035em; }

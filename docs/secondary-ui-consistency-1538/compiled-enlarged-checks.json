@@ -1,0 +1,117 @@
+{
+  "checks": [
+    {
+      "route": "stakes",
+      "theme": "light",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "finances",
+      "theme": "light",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "calendar",
+      "theme": "light",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "polls",
+      "theme": "light",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "notifications",
+      "theme": "light",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "wall",
+      "theme": "light",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "rules",
+      "theme": "light",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "facts",
+      "theme": "light",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "stakes",
+      "theme": "dark",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "finances",
+      "theme": "dark",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "calendar",
+      "theme": "dark",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "polls",
+      "theme": "dark",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "notifications",
+      "theme": "dark",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "wall",
+      "theme": "dark",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "rules",
+      "theme": "dark",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "facts",
+      "theme": "dark",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    }
+  ],
+  "pageErrors": []
+}
