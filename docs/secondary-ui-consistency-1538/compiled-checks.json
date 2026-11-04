@@ -1,0 +1,201 @@
+{
+  "checks": [
+    {
+      "route": "home",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "clubhouse",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "trade",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "analyzer",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "profile",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "history",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "stakes",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "finances",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "calendar",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "polls",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "notifications",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "wall",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "rules",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "facts",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "home",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "clubhouse",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "trade",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "analyzer",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "profile",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "history",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "stakes",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "finances",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "calendar",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "polls",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "notifications",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "wall",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "rules",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "facts",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    }
+  ],
+  "pageErrors": []
+}

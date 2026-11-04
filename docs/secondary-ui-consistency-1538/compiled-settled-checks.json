@@ -1,0 +1,33 @@
+{
+  "checks": [
+    {
+      "route": "trade",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "analyzer",
+      "theme": "light",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "trade",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    },
+    {
+      "route": "analyzer",
+      "theme": "dark",
+      "width": 390,
+      "fontSize": 16,
+      "overflow": false
+    }
+  ],
+  "pageErrors": []
+}

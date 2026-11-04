@@ -1,0 +1,33 @@
+{
+  "checks": [
+    {
+      "route": "profile",
+      "theme": "light",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "history",
+      "theme": "light",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "profile",
+      "theme": "dark",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    },
+    {
+      "route": "history",
+      "theme": "dark",
+      "width": 320,
+      "fontSize": 32,
+      "overflow": false
+    }
+  ],
+  "pageErrors": []
+}

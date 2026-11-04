@@ -1,3 +1,22 @@
+## 1.538.0 — coordinated secondary-page interface polish
+
+Reviewed receipts, trade analysis, Sportsbook options, profile identity/career,
+rankings and History against Home/Clubhouse in both Medicine Wheel themes.
+The shared reading scale reaches Fees, Calendar, polls, notifications, Wall,
+rules, lore and playoff pages. Surfaces/dividers/text use existing tokens;
+semantic bet/trade states and member/NFL identity remain. No new palette,
+font asset or theme choice was added. Source photo preferences are unchanged.
+
+`pnpm check` passes including themes and 2,436 tests. Browser coverage includes
+84 trade editing checks, 37 receipt/motion checks, six book phone/theme cases,
+rankings, shared-interface layouts, three secondary widths and 100/200% text.
+28 normal compiled cases, 16 enlarged secondary cases and four enlarged
+profile/History cases pass without errors
+or document overflow. Portrait containment is asserted geometrically. Both
+fixture theme screenshots were inspected. Physical Safari/VoiceOver and
+on-device timing are unmeasured. Findings and accepted screenshots:
+[secondary-ui-consistency-1538.md](docs/secondary-ui-consistency-1538.md).
+
 ## 1.537.0 — stable reading and shared replay gestures
 
 Reviewed replay studio headers, drag grip, clip grids and in-place broadcast
