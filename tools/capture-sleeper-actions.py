@@ -8,7 +8,7 @@ index=(ROOT/'index.html').read_text();head=index.split('<head>')[1].split('</hea
 head+='<link rel="stylesheet" href="/css/team-analyzer.css"><link rel="stylesheet" href="/css/weekly-outlook.css">'
 html='<!doctype html><html lang="en"><head><base href="/">'+head+'</head><body><div class="app"><header class="topbar" style="height:44px">DFL HQ</header><main id="view" class="view" data-page-system data-pulse-system="1"></main></div></body></html>'
 trade=(ROOT/'js/pages/trade.js').read_text();header=trade[trade.index('function tradeBoardHeader'):trade.index('function tradeLab')]
-club=(ROOT/'js/pages/clubhouse.js').read_text();context=club[club.index('<section class="card clubhouse-context"'):];context=context[:context.index('</section>')+len('</section>')]
+club=(ROOT/'js/pages/clubhouse.js').read_text();context=club[club.index('<details class="clubhouse-context"'):];context=context[:context.index('</details>')+len('</details>')]
 class Handler(SimpleHTTPRequestHandler):
  def do_GET(self):
   name=self.path.split('?')[0]

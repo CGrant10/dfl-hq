@@ -93,6 +93,15 @@ horizontal document overflow. Their member/account screenshots are kept in
 `/workspace/dfl-review-1538/compiled` and `compiled-edge`; the private full
 walkthrough is `/workspace/dfl-review-1538/audit.md`.
 
+## Follow-up verification fixture repair
+
+The broad browser sweep reached an obsolete Clubhouse extraction marker in
+`capture-sleeper-actions.py`: it expected the former section rather than the
+current Week & tools disclosure. The fixture now extracts the actual details
+markup. All 24 contextual Sleeper cases pass across 320/390/768px and both
+themes, checking the official app launcher, popup, 44px target, edge padding,
+no overflow and preservation of the DFL view. This changes verification only.
+
 ## Validation and limits
 
 `pnpm check` passes all 2,436 tests across 295 files, release versions, themes,

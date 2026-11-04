@@ -1,0 +1,29 @@
+{
+  "checks": [
+    "320-light-lineup: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "320-light-warning: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "320-light-clubhouse: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "320-light-trade: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "320-dark-lineup: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "320-dark-warning: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "320-dark-clubhouse: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "320-dark-trade: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "390-light-lineup: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "390-light-warning: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "390-light-clubhouse: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "390-light-trade: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "390-dark-lineup: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "390-dark-warning: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "390-dark-clubhouse: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "390-dark-trade: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "768-light-lineup: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "768-light-warning: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "768-light-clubhouse: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "768-light-trade: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "768-dark-lineup: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "768-dark-warning: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "768-dark-clubhouse: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved",
+    "768-dark-trade: official app launcher, popup, 44px target, padding, no overflow, DFL view preserved"
+  ],
+  "errors": []
+}
