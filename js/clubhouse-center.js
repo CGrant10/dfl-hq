@@ -112,11 +112,21 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   // the rail in the next frame, not in the preceding Home page's geometry.
   revealFrame=requestAnimationFrame(()=>{revealFrame=0;if(current())revealSelection()});
  };
- let railWidth=0;
+ let railWidth=0,railBrowsing=false,observedChip=null,chipWidth=0;
+ const railHost=root.querySelector('[data-clubhouse-scoreboard]'),browseRail=()=>{railBrowsing=true};
+ railHost?.addEventListener('pointerdown',browseRail);railHost?.addEventListener('wheel',browseRail,{passive:true});
+ // Scores and web fonts can settle after the rail's first measurement. Watch
+ // the selected chip too, without pulling a manually browsed rail back home.
+ const chipResize=new ResizeObserver(entries=>{
+  const width=entries[0]?.contentRect.width||0;
+  if(Math.abs(width-chipWidth)>1){chipWidth=width;if(!railBrowsing){revealedSelection=null;scheduleReveal()}}
+ });
  const railResize=new ResizeObserver(entries=>{const width=entries[0]?.contentRect.width||0;if(Math.abs(width-railWidth)>1){railWidth=width;revealedSelection=null;scheduleReveal()}});
- const railHost=root.querySelector('[data-clubhouse-scoreboard]');if(railHost)railResize.observe(railHost);
+ if(railHost)railResize.observe(railHost);
  const paintBoard=()=>{
   const board=root.querySelector('[data-clubhouse-scoreboard]');if(board)patchGameDay(board,clubhouseScoreboardHtml(model,selected,{strip:true}));
+  const chip=board?.querySelector('[aria-pressed="true"]');
+  if(chip!==observedChip){chipResize.disconnect();observedChip=chip;chipWidth=0;if(chip)chipResize.observe(chip)}
   scheduleReveal();
   for(const pulse of root.querySelectorAll('[data-clubhouse-pulse]'))patchGameDay(pulse,clubhousePulseHtml(model));
   for(const section of root.querySelectorAll('[data-clubhouse-matchup]'))section.hidden=section.dataset.clubhouseMatchup!==selected;
@@ -125,7 +135,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   if(!model.games.some(g=>g.id===id)||id===selected)return;
   if(!fromSwipe)stopMatchupSwipe?.cancel();
   const direction=Math.sign(model.games.findIndex(g=>g.id===id)-model.games.findIndex(g=>g.id===selected));
-  stopAnimations();selected=id;savePageChoice(scope,id);
+  stopAnimations();selected=id;railBrowsing=false;savePageChoice(scope,id);
   const params=new URLSearchParams(location.hash.split('?')[1]||'');params.set('matchup',id);params.delete('moment');try{history.replaceState(history.state,'',location.hash.split('?')[0]+'?'+params)}catch{/* Matchup browsing also works in previews that restrict history. */}
   paintBoard();paintActive();const card=cardOf(id);if(entrance&&!model.completed)enter(card,{direction});if(!fromSwipe&&!entrance)polish.land(card,{direction});
   const heading=card?.querySelector('header');if(heading&&scroll){heading.tabIndex=-1;heading.focus({preventScroll:true});if(scroll)heading.scrollIntoView({behavior:motion&&!reduced.matches?'smooth':'instant',block:'start'})}
@@ -177,7 +187,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  const onRoute=()=>{if(!active())stop()};
  const onReduce=()=>{if(reduced.matches)stopAnimations()};
  const onVisibility=()=>{if(document.visibilityState!=='visible')stopAnimations()};
- const stop=()=>{if(stopped)return;stopped=true;root.removeEventListener('pointerdown',interruptLinkedFocus);root.removeEventListener('keydown',interruptLinkedFocus);window.removeEventListener('wheel',interruptLinkedFocus);railResize.disconnect();stopMatchupSwipe?.();cancelAnimationFrame(revealFrame);root.removeEventListener('dfl:record-archive-ready',archiveReady);recordWatch.stop();football.stop();highlights.stop();details.stop();stopAnimations();finish.stop();polish.stop();vfx?.stop();leaderVfx?.stop();spotlight.stop();root.removeEventListener('keydown',stripKey);root.removeEventListener('change',change);root.removeEventListener('dfl:clubhouse-tab',onTab);root.removeEventListener('click',click);window.removeEventListener('hashchange',onRoute);reduced.removeEventListener('change',onReduce);document.removeEventListener('visibilitychange',onVisibility)};
+ const stop=()=>{if(stopped)return;stopped=true;root.removeEventListener('pointerdown',interruptLinkedFocus);root.removeEventListener('keydown',interruptLinkedFocus);window.removeEventListener('wheel',interruptLinkedFocus);railResize.disconnect();chipResize.disconnect();railHost?.removeEventListener('pointerdown',browseRail);railHost?.removeEventListener('wheel',browseRail);stopMatchupSwipe?.();cancelAnimationFrame(revealFrame);root.removeEventListener('dfl:record-archive-ready',archiveReady);recordWatch.stop();football.stop();highlights.stop();details.stop();stopAnimations();finish.stop();polish.stop();vfx?.stop();leaderVfx?.stop();spotlight.stop();root.removeEventListener('keydown',stripKey);root.removeEventListener('change',change);root.removeEventListener('dfl:clubhouse-tab',onTab);root.removeEventListener('click',click);window.removeEventListener('hashchange',onRoute);reduced.removeEventListener('change',onReduce);document.removeEventListener('visibilitychange',onVisibility)};
  root.addEventListener('keydown',stripKey);root.addEventListener('change',change);root.addEventListener('dfl:clubhouse-tab',onTab);root.addEventListener('click',click);window.addEventListener('hashchange',onRoute);reduced.addEventListener('change',onReduce);document.addEventListener('visibilitychange',onVisibility);
  if(routeParams.has('player')){root.addEventListener('pointerdown',interruptLinkedFocus,{once:true});root.addEventListener('keydown',interruptLinkedFocus,{once:true});window.addEventListener('wheel',interruptLinkedFocus,{passive:true,once:true})}
  paintBoard();paintActive();paintLeaders();stopCurrent=stop;
