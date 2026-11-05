@@ -51,7 +51,7 @@ with sync_playwright() as p:
      return {header:header.getBoundingClientRect().height,nav:bar.getBoundingClientRect().height,headerControls:[...header.querySelectorAll('.topbar-actions>button')].map(e=>{const b=e.getBoundingClientRect();return {left:b.left,right:b.right,height:b.height}}),labelsFit:[...bar.querySelectorAll('a>span,.tabmore>span')].every(e=>{const a=e.parentElement.getBoundingClientRect(),b=e.getBoundingClientRect();return b.left>=a.left-.5&&b.right<=a.right+.5}),targets:[...bar.querySelectorAll('a,.tabmore')].every(e=>e.getBoundingClientRect().height>=44),markerVisible:marker.display==='block'&&Number(marker.opacity)>0,markerMatches:marker.backgroundColor===ink,markerHeight:parseFloat(marker.height),markerWidth:parseFloat(marker.width),targetWidth:active.offsetWidth,overflow:document.documentElement.scrollWidth>innerWidth+1};
     }''')
     assert result['header']==(56 if width<=360 else 64),(mode,width,route,result)
-    assert 44<=result['nav']<=(50 if width>=900 else 76),(mode,width,route,result)
+    assert 44<=result['nav']<=(50 if width>=900 else 60),(mode,width,route,result)
     assert result['labelsFit'] and result['targets'] and not result['overflow'],(mode,width,route,result)
     assert all(c['height']>=44 and c['left']>=0 and c['right']<=width for c in result['headerControls']),result
     assert result['markerVisible'] and result['markerMatches'] and result['markerHeight']==3 and abs(result['markerWidth']-result['targetWidth'])<1,result
