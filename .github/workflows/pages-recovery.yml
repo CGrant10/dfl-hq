@@ -1,0 +1,30 @@
+name: Recover stalled Pages deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_id:
+        description: SHA of the stalled Pages deployment to cancel
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+
+jobs:
+  cancel-stalled-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel the specified Pages deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DFL_DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$DFL_DEPLOYMENT_ID" =~ ^[a-f0-9]{40}$ ]]
+          DFL_PAGES_PATH="repos/$GITHUB_REPOSITORY/pages/deployments/$DFL_DEPLOYMENT_ID"
+          gh api "$DFL_PAGES_PATH" --jq '{status,error}'
+          gh api --method POST "$DFL_PAGES_PATH/cancel"
+          gh api "$DFL_PAGES_PATH" --jq '{status,error}'
