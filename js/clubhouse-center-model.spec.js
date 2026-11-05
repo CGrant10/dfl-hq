@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {clubhouseGameMetrics,clubhouseLeaguePulse,clubhousePlayerStatLine} from './clubhouse-center-model.js';
+import {clubhouseGameMetrics,clubhouseLeaguePulse,clubhousePlayerStatLine,clubhouseMatchupOrder,initialClubhouseMatchup} from './clubhouse-center-model.js';
 import {clubhouseScoreboardHtml,clubhouseTeamStatsHtml,clubhousePositionStatsHtml} from './clubhouse-center-ui.js';
 const player=(id,slot,points,state='live')=>({id,roster:'1',slot,slotType:slot,position:slot,name:id,points,state});
 const team=(roster,score,lineup)=>({roster,name:`Team ${roster}`,score,lineup,starters:lineup,known:lineup.every(p=>p.state!=='unknown'),live:lineup.filter(p=>p.state==='live').length});
@@ -84,5 +84,37 @@ describe('Clubhouse player box scores',()=>{
  it('does not lose RB receiving touchdowns behind less important zero fields',()=>{
   const line=clubhousePlayerStatLine({...p,position:'RB'},{data:[row({rush_yd:63,rush_td:0,rec:4,rec_yd:30,rec_td:1})]},scope);
   expect(line).toContain('1 rec TD');expect(line).not.toContain('0 rush TD');
+ });
+});
+
+
+describe('active profile matchup priority',()=>{
+ const games=[{id:'1',sides:[{memberId:1},{memberId:2}]},{id:'2',sides:[{memberId:3},{memberId:4}]},{id:'3',sides:[{memberId:5},{memberId:6}]}];
+ it('puts either side of the viewing profile first without changing other games or team sides',()=>{
+  for(const member of [3,'4']){
+   const ordered=clubhouseMatchupOrder(games,member);
+   expect(ordered.map(g=>g.id)).toEqual(['2','1','3']);
+   expect(ordered[0]).toBe(games[1]);
+   expect(ordered[0].sides.map(t=>t.memberId)).toEqual([3,4]);
+  }
+  expect(games.map(g=>g.id)).toEqual(['1','2','3']);
+ });
+ it('uses the same priority for the weekly model before live rows arrive',()=>{
+  const weekly=games.map(({id,sides})=>({id,left:sides[0],right:sides[1]}));
+  expect(clubhouseMatchupOrder(weekly,6).map(g=>g.id)).toEqual(['3','1','2']);
+ });
+ it('keeps league order for guests, byes or missing profiles',()=>{
+  for(const profile of [null,99])expect(clubhouseMatchupOrder(games,profile)).toEqual(games);
+  expect(clubhouseMatchupOrder([],1)).toEqual([]);
+  expect(clubhouseMatchupOrder([{id:'bye',left:{memberId:1}}],99)).toHaveLength(1);
+ });
+ it('opens the own matchup ahead of an old stored choice but honors explicit game links',()=>{
+  const viewing=games.map(g=>({...g,isMine:g.id==='2'}));
+  expect(initialClubhouseMatchup(viewing,{remembered:'3'})).toBe('2');
+  expect(initialClubhouseMatchup(viewing,{requested:'1',remembered:'3'})).toBe('1');
+  expect(initialClubhouseMatchup(viewing,{requested:'missing',remembered:'3'})).toBe('2');
+  expect(initialClubhouseMatchup(games,{remembered:'3'})).toBe('3');
+  expect(initialClubhouseMatchup(games,{remembered:'missing'})).toBe('1');
+  expect(initialClubhouseMatchup([])).toBeUndefined();
  });
 });

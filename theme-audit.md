@@ -1,3 +1,32 @@
+## 1.545.0 — Clubhouse Stadium Duel
+
+Implemented the user's selected second Clubhouse direction in the existing app.
+The active profile's matchup leads the rail and is the normal default, ahead of
+stored choices; explicit matchup/roster links retain their intended destination.
+Game IDs, scores, team sides and other games' relative order are preserved.
+
+The selected game's portrait/score stage now sits above the six section tabs.
+Player comparison rows remain mirrored, with full names, exact points, weekly
+stats and PPR averages. Lineup flags expand in normal flow. The header, round DFL
+brand and compact bottom navigation retain the shared Sports Desk standard.
+
+Light and Dark use their existing Medicine Wheel tokens for text, borders,
+selected/pressed states and controls. The decorative stadium wash is one 60KB
+transparent WebP (yellow left/red right), softer in Light; no new picker themes
+or retired crest accents were introduced. Live/final states remain data driven.
+A narrow/enlarged score layout separates portraits from totals. Position labels
+have a shared track, and injury badges can use their complete identity width.
+
+Verification: pnpm check passes (2,450 tests, typecheck, names, theme/release and
+production bundle checks). Workspace Chromium fixture coverage includes both
+modes, 320/375/390/430/768px, Compact/Comfortable and 100/125/200% text; actual
+compiled read-only Week 9 league screenshots are in
+/workspace/dfl-clubhouse-1545/final/. Gesture coverage checks scoreboard and
+lineup swipes, reversal/cancel/interrupt, native vertical scrolling, exact routes,
+44px controls, keyboard and Reduced Motion. New JS/CSS/art is available offline.
+See design-qa.md for normalized source comparisons and detailed evidence.
+Physical iOS Safari/VoiceOver and device FPS/battery measurements were not run.
+
 ## 1.544.0 — complete the Sports Desk page adoption
 
 Trades keeps its current goal/search summary and offer-type counts visible;

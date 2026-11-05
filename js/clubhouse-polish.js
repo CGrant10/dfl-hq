@@ -1,6 +1,6 @@
 import {mountDisclosureMotion} from './disclosure-motion.js';
 // Finite presentation effects; never animate score geometry or delay selection.
-export function mountClubhousePolish(root,{getMotion=()=>true,active=()=>root.isConnected}={}) {
+export function mountClubhousePolish(root,{getHero=card=>card?.querySelector('.clubhouse-game-teams'),getMotion=()=>true,active=()=>root.isConnected}={}) {
  const tabs=root.querySelector('.clubhouse-tabs'),animations=new Set();
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let stopped=false,frame=null,waiting=null,waitTimer=null,selection=null;
@@ -48,7 +48,7 @@ export function mountClubhousePolish(root,{getMotion=()=>true,active=()=>root.is
  const resize=new ResizeObserver(scheduleTabs);if(tabs)resize.observe(tabs);
  const enter=(card,{direction=0}={})=>{
   stopTransient();if(!canPlay()||document.documentElement.dataset.matchupTransition)return;
-  const faceoff=card?.querySelector('.clubhouse-game-teams');if(!faceoff)return;
+  const faceoff=getHero(card);if(!faceoff)return;
   const reveal=()=>{
    stopWaiting();if(!canPlay()||card.closest('[hidden]')||!visible(faceoff))return;
    if(direction)play(faceoff,[{opacity:.65,transform:`translateX(${direction*18}px)`},{opacity:1,transform:'translateX(0)'}],{duration:280});
@@ -72,7 +72,7 @@ export function mountClubhousePolish(root,{getMotion=()=>true,active=()=>root.is
  const land=(card,{direction=1}={})=>{
   if(!canPlay()||card?.closest('[hidden]'))return;
   const tile=root.querySelector('.clubhouse-matchup-strip [aria-pressed="true"]');
-  const marks=[...(card?.querySelectorAll('.clubhouse-game-teams .clubhouse-team-mark')||[]),...(tile?.querySelectorAll('.dfl-team-mark')||[])];
+  const marks=[...(getHero(card)?.querySelectorAll('.clubhouse-team-mark')||[]),...(tile?.querySelectorAll('.dfl-team-mark')||[])];
   marks.filter(visible).forEach((mark,index)=>{
    const sign=(direction||1)*(index%2?-1:1);
    play(mark,[{transform:'translateX(0) rotate(0deg)'},{transform:`translateX(${sign*1.5}px) rotate(${sign*3.5}deg)`,offset:.24},{transform:`translateX(${-sign}px) rotate(${-sign*2.5}deg)`,offset:.52},{transform:`rotate(${sign}deg)`,offset:.76},{transform:'translateX(0) rotate(0deg)'}],{duration:280,delay:index%2*25,easing:'ease-out'});

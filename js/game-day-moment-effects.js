@@ -39,7 +39,7 @@ function visible(element, root) {
 }
 
 // Short broadcast stings live inside existing rows; recorded numbers never move.
-export function animateGameDayMoments(root, { previous, model, gameId = null }) {
+export function animateGameDayMoments(root, { previous, model, gameId = null, teamRoot = root }) {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const modal = [...document.querySelectorAll('dialog[open]')].at(-1);
   if (!previous || model.completed || claimedModels.has(model) || reduced.matches || document.visibilityState !== 'visible'
@@ -109,12 +109,12 @@ export function animateGameDayMoments(root, { previous, model, gameId = null }) 
   if (game?.leader && Object.hasOwn(previous.leaders || {}, game.id)
     && previous.leaders[game.id] != null && previous.leaders[game.id] !== game.leader && game.sides.some(team => team.live > 0)
     && leaderNow!==null&&leaderBefore!==null&&leaderNow>leaderBefore) {
-    const surface = root.querySelector(`[data-gameday-team="${CSS.escape(game.leader)}"]`);
-    if (visible(surface, root)) {
+    const surface = teamRoot.querySelector(`[data-gameday-team="${CSS.escape(game.leader)}"]`);
+    if (visible(surface, teamRoot)) {
       claimedModels.add(model);
       const marker=surface.querySelector(':scope > .gd-advantage-marker');
-      const old=root.querySelector(`[data-gameday-team="${CSS.escape(String(previous.leaders[game.id]))}"]`);
-      if(marker&&visible(old,root)){
+      const old=teamRoot.querySelector(`[data-gameday-team="${CSS.escape(String(previous.leaders[game.id]))}"]`);
+      if(marker&&visible(old,teamRoot)){
         const from=old.getBoundingClientRect(),to=surface.getBoundingClientRect();
         play(marker,[
           {transform:`translate(${from.left+from.width/2-to.left-to.width/2}px,${from.bottom-to.bottom}px)`,backgroundColor:getComputedStyle(old.querySelector('.gd-advantage-marker')||old).backgroundColor},

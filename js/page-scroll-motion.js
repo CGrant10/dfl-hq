@@ -154,7 +154,7 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
     activeSection=visibleHeadings[index]||null;
     const label=labels.get(activeSection)||'';
     const matchup=root.dataset.route==='clubhouse'?root.querySelector('[data-clubhouse-matchup]:not([hidden]) .clubhouse-matchup-card'):null;
-    const header=matchup?.querySelector('header'),anchor=matchup?.querySelector('.clubhouse-game-teams')||header,strip=matchup?.querySelector('.clubhouse-score-strip');
+    const header=matchup?.querySelector('header'),anchor=root.querySelector('[data-clubhouse-duel-game]:not([hidden]) .clubhouse-game-teams')||matchup?.querySelector('.clubhouse-game-teams')||header,strip=matchup?.querySelector('.clubhouse-score-strip');
     const useScore=displayed(anchor)&&anchor.getBoundingClientRect().bottom<top-10;
     const scoreData=useScore&&strip?[...strip.querySelectorAll('.clubhouse-strip-team')].map(team=>({name:text(team.querySelector('strong')),points:text(team.querySelector('b'))})):[];
     const phase=scoreData.length===2?text(strip.querySelector('.clubhouse-strip-phase')):'';

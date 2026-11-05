@@ -153,3 +153,28 @@ coverage and limits.
 
 See the [1.528 review](league-interface-1528.md) for the league-page and broadcast
 adoption, viewport checks and current browser limits.
+
+
+### Clubhouse Stadium Duel — 1.545.0
+
+Clubhouse follows the selected Stadium Duel reference: title/week/date, native
+matchup rail, selected-game identity and exact totals, section tabs, then mirrored
+starting lineups. Keep the active profile's game first without renumbering games,
+flipping team sides or changing other games' relative order. Normal visits choose
+that game ahead of a saved selection. Explicit matchup/roster links remain exact;
+guests and profiles without a matchup keep the league order.
+
+The score stage is shared across the Clubhouse sections. Its connected DOM is
+also the swipe destination and Home transition target; do not duplicate visible
+heroes in each panel. Preserve per-game live score/status bindings, current
+photos, profile links, final receipts, scrolling score context and thermal effects.
+Horizontal gestures move the selected stage or lineups; vertical movement stays
+native, and swiping a profile link must not trigger navigation. Tab indicators
+and finite team-logo arrivals honor both app motion and Reduced Motion.
+
+Use the transparent stadium-light WebP for soft yellow/red artwork, with a lower
+opacity in Light. Other colors come from shared tokens. Allow narrow/enlarged
+layouts to place totals below portraits, wrap complete team/player names, and
+expand flags in document flow. Keep position tracks and score columns aligned;
+status/kickoff text must not steal the player-name column. No new mascot or
+shield artwork belongs in this composition.

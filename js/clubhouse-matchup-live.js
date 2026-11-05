@@ -41,7 +41,7 @@ export function mountMatchupLive(root,model,threads,active,{onUpdate=(_data)=>{}
      const team=sides[i],score=root.querySelector(`[data-score-${side}="${game.matchup_id}"]`);
      if(team.score!==null){score.querySelector('[data-matchup-score-value]').textContent=team.score.toFixed(2);totals[`${game.matchup_id}:${side}`]=team.score;}
      root.querySelector(`[data-remaining-${side}="${game.matchup_id}"]`).textContent=model.completed?'Final score':team.remaining===null?'Player status unavailable':`${team.remaining} remaining${team.live?` · ${team.live} live`:''}`;
-     root.querySelector(`[data-players-${side}="${game.matchup_id}"]`).innerHTML=keyPlayersHtml(team);
+     const featured=root.querySelector(`[data-players-${side}="${game.matchup_id}"]`);if(featured&&!featured.hidden)featured.innerHTML=keyPlayersHtml(team);
     }
     model.chirpScores ||= new Map();
     model.chirpScores.set(String(game.matchup_id),[{...game.left,...sides[0]},{...game.right,...sides[1]}]);

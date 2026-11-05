@@ -102,6 +102,14 @@ with sync_playwright() as p:
     check(tag+' matchup paging has no browser errors or league writes',not errors and page.evaluate('f.writes.every(name=>name.startsWith("app_client_issues:"))'))
     page.evaluate('f.page.leave()');c.close();continue
    if os.environ.get('DFL_CLUBHOUSE_ENTRY_ONLY'):
+    for member,own in [(3,'2'),(2,'1')]:
+     page.evaluate('''async member=>{f.page.leave();history.replaceState(null,'','#/clubhouse?tab=matchups');const m=await import('/js/members.js');m.selectMember(f.members.find(m=>m.id===member));(await import('/js/page-disclosure.js')).savePageChoice('clubhouse-matchup-2026-7',member===3?'1':'2');await f.page.render(document.getElementById('view'))}''',member)
+     page.wait_for_selector('.gd-lineup-comparison')
+     check(tag+f' profile {member} opens its own game {own} before any remembered game',page.locator('.clubhouse-matchup-strip [data-clubhouse-game]').first.get_attribute('data-clubhouse-game')==own and page.locator('.clubhouse-matchup-strip [aria-pressed="true"]').get_attribute('data-clubhouse-game')==own and page.locator('[data-clubhouse-duel-game]:not([hidden])').get_attribute('data-clubhouse-duel-game')==own)
+     check(tag+f' profile {member} starts the rail at the first matchup',page.locator('.clubhouse-matchup-strip').evaluate('e=>e.scrollLeft<2'))
+    page.evaluate('''async()=>{f.page.leave();history.replaceState(null,'','#/clubhouse?tab=matchups&matchup=2');await f.page.render(document.getElementById('view'))}''')
+    page.wait_for_selector('.gd-lineup-comparison')
+    check(tag+' explicit matchup link opens its target while own matchup stays first',page.locator('.clubhouse-matchup-strip [data-clubhouse-game]').first.get_attribute('data-clubhouse-game')=='1' and page.locator('.clubhouse-matchup-strip [aria-pressed="true"]').get_attribute('data-clubhouse-game')=='2')
     check(tag+' entry has no overflow, browser errors or writes',page.evaluate('document.documentElement.scrollWidth<=innerWidth') and not errors and not page.evaluate('f.writes'))
     page.evaluate('f.page.leave()');c.close();continue
    page.locator('.clubhouse-context>summary').click()
@@ -140,7 +148,8 @@ with sync_playwright() as p:
    check(tag+' player rows lead the live scoring targets',page.locator('[data-clubhouse-matchup="1"] .gd-lineup-comparison').evaluate('e=>{const players=e.querySelector(".gd-lineup-pairs"),targets=e.querySelector(".matchup-targets");return !!players&&(!targets||!!(players.compareDocumentPosition(targets)&Node.DOCUMENT_POSITION_FOLLOWING))}'))
    check(tag+' live matchup keeps both starting lineups side by side',page.locator('[data-clubhouse-matchup="1"] [data-gameday-player]').count()>=3)
    page.wait_for_function('document.querySelector("[data-clubhouse-matchup=\\"1\\"] .clubhouse-matchup-card")?.dataset.matchupState==="live"')
-   check(tag+' live styling follows the actual NFL phase',page.locator('[data-clubhouse-matchup="1"] .clubhouse-matchup-state').inner_text()=='Live')
+   page.wait_for_function("""document.querySelector('[data-clubhouse-duel-game="1"] .clubhouse-matchup-state')?.dataset.state==='live'""")
+   check(tag+' live styling follows the actual NFL phase',page.locator('[data-clubhouse-duel-game="1"] .clubhouse-matchup-state').text_content().strip()=='Live')
    check(tag+' hides highlight loading until its tab is opened',page.evaluate('f.clipReads===0'))
    check(tag+' week tools retain both NFL viewing shortcuts with full touch targets',page.locator('.clubhouse-context [data-clubhouse-nfl-open]').count()==2 and page.locator('[data-clubhouse-nfl-open]').evaluate_all('es=>es.every(e=>e.clientHeight>=44)'))
    check(tag+' matchups are visible as logo-and-score tiles without a dropdown',page.locator('.clubhouse-matchup-strip [data-clubhouse-game]').count()==2 and page.locator('[data-matchup-select]').count()==0 and page.locator('.clubhouse-matchup-strip').is_visible())
@@ -171,7 +180,7 @@ with sync_playwright() as p:
      overflow:document.documentElement.scrollWidth>innerWidth+1
     })''')
     check(tag+' shared interface family, fitting names and touch controls '+json.dumps(interface),all('Inter' in interface[k] for k in ['title','tab','picker']) and interface['names'] and interface['targets'] and not interface['overflow'])
-    page.locator('[data-clubhouse-matchup="1"] .clubhouse-game-teams').screenshot(path=str(OUT/f'{width}-{mode}-identity.png'))
+    page.locator('[data-clubhouse-duel-game="1"] .clubhouse-game-teams').screenshot(path=str(OUT/f'{width}-{mode}-identity.png'))
     page.locator('[data-clubhouse-matchup="1"] .gd-lineup-comparison').screenshot(path=str(OUT/f'{width}-{mode}-lineup.png'))
     check(tag+' a duplicate sticky score strip does not compete with the header',not page.locator('[data-clubhouse-matchup="1"] .clubhouse-score-strip').is_visible())
     page.evaluate('''async()=>{const {mountPageScrollMotion}=await import('/js/page-scroll-motion.js'),{animateUi,cancelUiMotion}=await import('/js/ui-motion.js');f.stopScroll=mountPageScrollMotion(document.querySelector('#view'),{animate:animateUi,cancel:cancelUiMotion});document.querySelector('[data-clubhouse-matchup="1"] .gd-lineup-comparison').scrollIntoView({block:'start',behavior:'instant'})}''')

@@ -21,6 +21,21 @@ def review_matchup_swipes(page,context,check,out,tag,width,mode):
   if delay>=350:page.wait_for_function('!document.querySelector(".dfl-tab-preview,.dfl-tab-grab,[data-ui-swipe-settling]")',timeout=3000)
  check(tag+' all six fantasy matchups are available',page.locator('.clubhouse-matchup-strip [data-clubhouse-game]').count()==6)
  check(tag+' the matchup strip replaces the dropdown and duplicate score drawer',page.locator('[data-matchup-select],.clubhouse-all-scores').count()==0 and page.locator('.clubhouse-matchup-strip').is_visible())
+ # The shared scoreboard is a connected swipe surface above the section tabs.
+ def drag_hero(direction,partial=False):
+  pane=page.locator('[data-clubhouse-duel-game]:not([hidden])');pane.scroll_into_view_if_needed();b=pane.bounding_box()
+  x=b['x']+b['width']*(.78 if direction==1 else .22);end=b['x']+b['width']*(.22 if direction==1 else .78);y=b['y']+b['height']*.6
+  cdp.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
+  for step in range(1,9):
+   cdp.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x+(end-x)*step/8,'y':y}]});page.wait_for_timeout(18)
+   if partial and step==5:
+    check(tag+' scoreboard follows the finger',pane.evaluate('e=>Math.abs(new DOMMatrixReadOnly(getComputedStyle(e).transform).m41)>20'))
+    check(tag+' scoreboard previews the adjacent team identities',page.locator('.dfl-tab-preview').evaluate('e=>e.inert&&!!e.querySelector(".clubhouse-duel")&&e.querySelectorAll(".clubhouse-game-side").length===2'))
+  cdp.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});page.wait_for_function('!document.querySelector(".dfl-tab-preview,.dfl-tab-grab,[data-ui-swipe-settling]")',timeout=3000)
+ drag_hero(1,partial=True)
+ check(tag+' scoreboard swipe keeps the lineup and selector on the same game',selected()=='2' and page.locator('[data-clubhouse-matchup]:not([hidden])').get_attribute('data-clubhouse-matchup')=='2' and page.locator('[data-clubhouse-duel-game]:not([hidden])').get_attribute('data-clubhouse-duel-game')=='2')
+ drag_hero(-1)
+ check(tag+' scoreboard can swipe back to the first game',selected()=='1')
  drag(1,partial=True)
  check(tag+' swiping changes matchup without changing the Clubhouse tab',selected()=='2' and page.locator('#clubhouse-tab-matchups').get_attribute('aria-selected')=='true')
  check(tag+' swipe updates the exact matchup route',page.evaluate('new URLSearchParams(location.hash.split("?")[1]).get("matchup")==="2"'))

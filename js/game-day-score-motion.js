@@ -13,14 +13,14 @@ export function recentScoreRefresh(previous,next,maxAgeMs=120000){
  return before==null||after==null||after>=before&&after-before<=maxAgeMs;
 }
 // Animate only successful refreshes, never initial loads or tab changes.
-export function animateScoreChanges(root,{previous,model,motion,gameId=null,feedback=false}){
- syncLeadMarkers(root,model,gameId);
+export function animateScoreChanges(root,{previous,model,motion,gameId=null,feedback=false,extraRoots=[]}){
+ const surfaces=[root,...extraRoots];for(const surface of surfaces)syncLeadMarkers(surface,model,gameId);
  if(!recentScoreRefresh(previous,model.snapshot))return()=>{};
  const animations=[],badges=[],hosts=[],timers=[];
  const animated=motion&&!root.closest('[data-motion="off"]')&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
  if(!animated&&!feedback)return()=>{};
- const stopMoments=animated?animateGameDayMoments(root,{previous,model,gameId}):()=>{};
- for(const host of root.querySelectorAll('[data-gameday-score-key],[data-gameday-total-key]')){
+ const stopMoments=animated?animateGameDayMoments(root,{previous,model,gameId,teamRoot:extraRoots[0]||root}):()=>{};
+ for(const host of surfaces.flatMap(surface=>[...surface.querySelectorAll('[data-gameday-score-key],[data-gameday-total-key]')])){
   const total=host.dataset.gamedayTotalKey,key=total??host.dataset.gamedayScoreKey,change=scoreChange(total!=null?previous?.totals?.[key]:previous?.points?.[key],total!=null?model.snapshot.totals?.[key]:model.snapshot.points[key]);
   if(!change)continue;
   const badge=document.createElement('span');badge.className=`gd-score-delta${change.delta<0?' is-negative':''}`;badge.textContent=change.label;badge.setAttribute('aria-hidden','true');host.append(badge);host.classList.add('gd-score-updated');badges.push(badge);hosts.push(host);
