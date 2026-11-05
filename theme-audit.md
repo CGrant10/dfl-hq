@@ -22,7 +22,9 @@ visual comparisons, fix history, accepted differences and verification limits.
 `pnpm themes`, the 2,446-test suite, typecheck, name/release checks and production
 build pass. Broadcast fixtures cover 90 normal and 56 enlarged layouts, with the
 enlarged set rerun after the accessibility changes. No physical-device battery,
-frame-rate, VoiceOver or Safari claim is made. Actual league screenshots stay local.
+frame-rate, VoiceOver or Safari claim is made. Actual league screenshots stay local. The rankings controller review also covers
+the new week-picker flow, enlarged header/rating reflow, full reports and image
+fallbacks; long opposing names retain aligned matchup totals.
 
 ## 1.540.0 — broadcast graphics and connected mobile viewing
 

@@ -51,6 +51,15 @@ being committed as new public screenshot assets.
   and ranking-week selection in a compact disclosure. The final normal phone frame
   shows both leading teams above navigation. See the combined rankings comparison.
 
+- **Resolved P2: extreme ranking names and enlarged controls.** Long opposing team
+  names now reserve a common name track so the matchup totals remain aligned.
+  Enlarged ranking rows reflow names and ratings onto separate rows; their header
+  also reflows, and rating buttons reserve room for the rotated chevron. The
+  production rankings controller passes the updated week-picker, expansion,
+  full-report, image fallback and reduced-motion checks, including 200% at 320px.
+  Evidence: `/workspace/dfl-sports-desk-1541/power/power-review.json` and its
+  `power-large-text-dark-320.png` / Light counterpart.
+
 ## Required fidelity surfaces
 
 - **Fonts/typography:** existing local Inter for UI and Rajdhani 700 for display and
@@ -86,8 +95,9 @@ forward/backward swipes per theme. Clubhouse and History were captured to check
 shared chrome and route overflow. No page errors or horizontal document overflow.
 All provider mutations were blocked by the review harness.
 
-The final layout-only rerun after aligning enlarged scores and tightening rankings
-records 26 passing cases in `release-layout/checks.json`.
+The final layout-only rerun after the long-name/rank-layout fixes records 26 passing
+cases in `shipped-layout/checks.json`. The rankings controller review additionally
+checks very long names, current images and enlarged headers/ratings.
 Production-renderer broadcast fixtures cover 90 normal layouts and 56 enlarged
 layouts, unchanged frame height across stories, complete routed packages, long
 names, image/text zones, pause/picker targets, reduced motion and replay. Enlarged

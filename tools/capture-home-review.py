@@ -547,16 +547,18 @@ def check_clubhouse_center(page):
           for(const name of ['recap','overview','matchups'])tabs.querySelector('[data-clubhouse-tab="'+name+'"]').click();await frame();
           check(tabs.querySelectorAll('[aria-selected="true"]').length===1&&root.querySelector('#demo-clubhouse-overview').hidden&&root.querySelector('#demo-clubhouse-recap').hidden&&!root.querySelector('#demo-clubhouse-matchups').hidden,'Rapid tabs left multiple panels');
           await new Promise(r=>setTimeout(r,340));check(Math.abs(marker.getBoundingClientRect().left-matchups.getBoundingClientRect().left)<1&&Math.abs(marker.getBoundingClientRect().width-matchups.getBoundingClientRect().width)<1,'Tab marker failed to settle');
+          root.querySelector('[data-clubhouse-matchup]:not([hidden]) .clubhouse-game-teams').scrollIntoView({behavior:'instant',block:'center'});await frame();await frame();
           root.querySelector('[data-clubhouse-game="2"]').click();const card=root.querySelector('[data-clubhouse-matchup="2"]'),hero=card.querySelector('.clubhouse-game-teams');hero.scrollIntoView({behavior:'instant',block:'center'});await frame();await frame();
-          const light=hero.querySelector('.clubhouse-stage-light');for(let n=0;n<40&&!light.getAnimations().some(a=>a.playState==='running');n++)await new Promise(r=>setTimeout(r,10));check(light.getAnimations().some(a=>a.playState==='running'),'Matchup entrance has no finite light sweep: '+JSON.stringify({rect:hero.getBoundingClientRect().toJSON(),motion:root.querySelector('.clubhouse-page').dataset.motion,hidden:!!card.closest('[hidden]')}));
-          for(const [index,side] of [...hero.querySelectorAll('.clubhouse-game-side')].entries())for(const identity of side.querySelectorAll(':scope > .clubhouse-team-mark,:scope > .clubhouse-matchup-name')){
-            const entrance=identity.getAnimations().find(a=>a.playState==='running');check(entrance,'Both team crests and names must enter together');const frames=entrance.effect.getKeyframes();const first=new DOMMatrix(frames[0].transform),last=new DOMMatrix(frames.at(-1).transform);check((index?first.m41>0:first.m41<0)&&first.a>=.95&&first.a<=1&&last.m41===0&&last.a===1,'Teams must slide in from opposite sides');check(entrance.effect.getTiming().duration<=400,'Switching matchups should use a short entrance');
-          }
-          const values=[...card.querySelectorAll('[data-matchup-score-value],.gd-thermal-value')],sizes=()=>values.map(e=>{const b=e.getBoundingClientRect();return [b.width,b.height,getComputedStyle(e).transform]});const before=sizes();await frame();const after=sizes();check(before.every((b,i)=>Math.abs(b[0]-after[i][0])<.01&&Math.abs(b[1]-after[i][1])<.01&&b[2]===after[i][2]),'Matchup motion resized individual score surfaces');const slide=hero.getAnimations().find(a=>a.effect.getKeyframes().some(f=>f.transform));check(slide&&slide.effect.getTiming().duration<=300,'Matchup switch needs a short directional faceoff');for(let n=0;n<100&&hero.getAnimations().some(a=>a.playState==='running');n++)await new Promise(r=>setTimeout(r,10));const settled=getComputedStyle(hero).transform;check(settled==='none'||new DOMMatrix(settled).isIdentity,'Matchup faceoff did not settle');
+          // Current matchup paging lands the logos; it deliberately keeps the
+          // names/scores still instead of replaying the initial full entrance.
+          const marks=[...hero.querySelectorAll('.clubhouse-team-mark')];check(marks.length===2,'Matchup landing lost a team logo');
+          for(const mark of marks){const landing=mark.getAnimations().find(a=>a.playState==='running');check(landing,'Both visible team logos need a landing');check(landing.effect.getTiming().duration<=300,'Matchup logo landing is too long');const frames=landing.effect.getKeyframes(),last=new DOMMatrix(frames.at(-1).transform);check(last.isIdentity,'Matchup logo landing does not return to rest');}
+          check([...hero.querySelectorAll('.clubhouse-matchup-name')].every(e=>!e.getAnimations().length),'Matchup paging should keep team names still');
+          const values=[...card.querySelectorAll('[data-matchup-score-value],.gd-thermal-value')],sizes=()=>values.map(e=>{const b=e.getBoundingClientRect();return [b.width,b.height,getComputedStyle(e).transform]});const before=sizes();await frame();const after=sizes();check(before.every((b,i)=>Math.abs(b[0]-after[i][0])<.01&&Math.abs(b[1]-after[i][1])<.01&&b[2]===after[i][2]),'Matchup motion resized individual score surfaces');check(!hero.getAnimations().length,'Matchup paging should keep its score surface still');
           root.querySelector('[data-clubhouse-game="1"]').click();check([...root.getAnimations({subtree:true})].filter(a=>a.constructor===Animation&&a.playState==='running').every(a=>!a.effect.target.closest('[hidden]')),'Rapid matchups animate a hidden game');
           root.querySelector('[data-clubhouse-motion]').click();overview.click();await frame();check(marker.getAnimations().length===0&&[...root.getAnimations({subtree:true})].filter(a=>a.constructor===Animation&&a.playState==='running').length===0,'Motion off leaves UI effects running');
           check(getComputedStyle(tabs.querySelector('button')).transitionDuration==='0s','Motion off leaves CSS transitions running');matchups.click();root.querySelector('[data-clubhouse-motion]').click();await frame();
-          return {slidingTabMarker:true,keyboardTabs:true,rapidSelection:true,finiteMatchupLight:true,scoreGeometryStable:true,motionOff:true};
+          return {slidingTabMarker:true,keyboardTabs:true,rapidSelection:true,subtleMatchupLanding:true,scoreGeometryStable:true,motionOff:true};
         }""")
         result['updates']=page.evaluate("""async()=>{
           const f=window.clubhouseFixture,root=f.region,check=(v,m)=>{if(!v)throw Error(m)},settle=()=>new Promise(r=>setTimeout(r,30));const intent=new URLSearchParams(location.hash.split('?')[1]||'');intent.set('moment','nfl:999:123:1');history.replaceState(history.state,'',location.hash.split('?')[0]+'?'+intent);
@@ -896,6 +898,7 @@ with sync_playwright() as p:
     page.goto(url, wait_until='domcontentloaded')
     page.wait_for_function('!!window.reviewVfx', timeout=15000)
     page.locator('.bx-pause').click()
+    page.locator('.bx-story-picker>summary').click()
     page.locator('[data-bx-go="0"]').click()
     page.evaluate('document.fonts.ready')
     page.wait_for_timeout(1600)
@@ -988,7 +991,7 @@ with sync_playwright() as p:
         metrics['unevenTeamNames'].append({'width':width,'rows':names})
     page.set_viewport_size({'width':390,'height':844})
     metrics['readingOrder'] = page.evaluate("""() => {
-      const selectors=['.home-frontpage','[data-home-highlights-slot]','.home-broadcast','[data-home-rankings-slot]','.home-week-desk','.home-league-desk','.home-injury-panel','[data-home-lore-slot]','.home-banter'];
+      const selectors=['.home-frontpage','.home-broadcast','[data-home-alert-slot]','[data-home-rankings-slot]','[data-home-highlights-slot]','.home-week-desk','.home-league-desk','.home-injury-panel','[data-home-lore-slot]','.home-banter'];
       const root=document.querySelector('#home-wrap'),children=[...root.querySelectorAll('*')];
       return selectors.map(selector=>({selector,index:children.indexOf(root.querySelector(selector))}));
     }""")
@@ -1071,6 +1074,17 @@ with sync_playwright() as p:
     page.locator('#tabbar').evaluate("e=>e.style.removeProperty('padding-bottom')")
     page.wait_for_timeout(300)
     page.evaluate("document.querySelector('#view').dataset.route='home'")
+    # The active wide Sports Desk was exercised above with the Home controls.
+    # Keep the classic renderer's separate gallery/gesture contracts below;
+    # capture-broadcast-wide.py owns the current wide slide geometry and text.
+    page.evaluate('''async()=>{
+      window.reviewStage.stop();
+      document.querySelector('#home-wrap').removeAttribute('data-home-edition');
+      const {renderStage,startStage}=await import('./js/broadcast-stage.js');
+      const host=document.querySelector('.home-broadcast');host.innerHTML=renderStage(window.reviewDeck,{editorial:true});
+      window.reviewStage=startStage(host.querySelector('[data-bx-stage]'),window.reviewDeck);
+      host.querySelector('[data-bx-pause]').click();
+    }''')
     metrics['slides'] = []
     count = page.evaluate('window.reviewDeck.length')
     for width in [320, 390, 768, 1000, 1280]:
