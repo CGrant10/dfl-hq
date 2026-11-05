@@ -1,3 +1,19 @@
+## 1.542.0 — compact shared navigation
+
+Reduced regular-season navigation buttons from 72px to 56px, icons from 24px to
+22px and labels from 12px to 11px at default text size. The visible phone bar is
+57px including its divider, saving 16px across routes. Existing Medicine Wheel
+Light/Dark colors, focus states and the moving active marker are preserved.
+Desktop keeps its 48px buttons; native safe-area space is retained separately.
+
+Inspected mobile Home screenshots in both themes. Shared shell checks cover
+eight routes at 320/390/1280px in both themes, marker alignment and selected color,
+44px targets, label containment, safe-area measurement and Home jumps (60 checks).
+An additional 18 layouts cover 320/390/430px at 100/125/200% text in both themes;
+labels remain contained and the bar can wrap at enlarged text. No new UI color,
+font, timer or motion was added. Physical Safari and assistive-technology speech
+were not tested. Broader page recommendations are review findings only.
+
 ## 1.541.0 — selected Home Sports Desk design
 
 Implemented the user's first displayed Home design in Medicine Wheel Light/Dark.
