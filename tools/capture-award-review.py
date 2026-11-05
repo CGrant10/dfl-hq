@@ -1,4 +1,4 @@
-"""Review production award compositions at phone widths without live league data."""
+"""Review classic award compositions; current wide awards use capture-broadcast-wide.py."""
 import json,os,threading
 from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
@@ -20,6 +20,12 @@ with sync_playwright() as p:
  c.add_init_script('window.reviewHoldInitialStage=true')
  page=c.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  page.goto(f'http://127.0.0.1:{server.server_port}/');page.wait_for_function('!!window.reviewStage');page.evaluate('document.fonts.ready')
+ page.evaluate('''async()=>{
+  reviewStage.stop();document.querySelector('#home-wrap').removeAttribute('data-home-edition');
+  const {renderStage,startStage}=await import('./js/broadcast-stage.js');
+  const host=document.querySelector('.home-broadcast');host.innerHTML=renderStage(reviewDeck,{editorial:true});
+  window.reviewStage=startStage(host.querySelector('[data-bx-stage]'),reviewDeck);reviewStage.suspend('award-review',true);
+ }''')
  for mode in ['light','dark']:
   page.evaluate('mode=>window.reviewSetTheme(mode)',mode)
   for width in [320,390,430,832]:
