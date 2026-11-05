@@ -60,6 +60,12 @@ being committed as new public screenshot assets.
   Evidence: `/workspace/dfl-sports-desk-1541/power/power-review.json` and its
   `power-large-text-dark-320.png` / Light counterpart.
 
+- **Resolved P2: section jumps used the previous header height.** Home section
+  scroll margins now use the shared header and desktop navigation measurements;
+  active trade coverage reserves space too. Existing score-dock margins retain
+  their measured stack. The compact sliding marker and 56/64px header / 72px phone
+  navigation are now explicitly checked by the shared-chrome regression runner.
+
 ## Required fidelity surfaces
 
 - **Fonts/typography:** existing local Inter for UI and Rajdhani 700 for display and

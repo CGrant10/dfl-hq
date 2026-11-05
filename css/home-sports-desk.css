@@ -12,6 +12,12 @@
 #tabbar.is-in-season :is(a,.tabmore) { gap:5px; min-height:72px; font:500 .75rem/1.3 var(--font-ui); }
 #tabbar.is-in-season :is(a,.tabmore) .ico { width:24px; height:24px; flex-basis:24px; }
 #tabbar::before { background:var(--nav-active); height:3px; }
+#home-wrap :is(.home-broadcast,[data-home-gameday-slot],.home-week-desk,.home-league-desk,[data-home-lore-slot]) { scroll-margin-top:calc(var(--topbar-h) + 16px); }
+body:has(.breaking-trade-dock:not([hidden])) #home-wrap :is(.home-broadcast,[data-home-gameday-slot],.home-week-desk,.home-league-desk,[data-home-lore-slot]) { scroll-margin-top:calc(var(--topbar-h) + 60px); }
+@media(min-width:900px) {
+ #home-wrap :is(.home-broadcast,[data-home-gameday-slot],.home-week-desk,.home-league-desk,[data-home-lore-slot]) { scroll-margin-top:calc(var(--topbar-h) + var(--season-nav-height,49px) + 16px); }
+ body:has(.breaking-trade-dock:not([hidden])) #home-wrap :is(.home-broadcast,[data-home-gameday-slot],.home-week-desk,.home-league-desk,[data-home-lore-slot]) { scroll-margin-top:calc(var(--topbar-h) + var(--season-nav-height,49px) + 60px); }
+}
 
 #view.view[data-route="home"] #home-wrap[data-home-edition="sports-desk"] {
  --home-section-gap:24px; --desk-edge:var(--ui-gutter); padding-top:0;

@@ -6,7 +6,8 @@ follow rankings and the Wall remains last. Existing theme tokens own all UI
 surfaces, borders, type, selected/pressed colors and focus rings. Round branding,
 original broadcast art and semantic trade colors remain. The new raster siren
 replaces the old perpetual beacon rings; no animation loop or font was added.
-Shared header/navigation sizing remains consistent across pages.
+Shared header/navigation sizing remains consistent across pages. Section jumps
+reserve the measured header/navigation space and active trade coverage.
 
 Reviewed actual compiled Home at 320/390/430/768px and 100/125/200% text, with a
 separate image row and aligned scores at enlarged sizes. Both normal themes and
