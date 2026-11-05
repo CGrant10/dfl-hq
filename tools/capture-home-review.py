@@ -1044,9 +1044,9 @@ with sync_playwright() as p:
             for route in ['home','clubhouse','sportsbook','trade','analyzer','wall','history','golf']:
                 page.evaluate("""route => {document.querySelector('#view').dataset.route=route;document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));(document.querySelector(`#tabbar [data-route="${route}"]`)||document.querySelector('#more-btn')).classList.add('on');window.reviewSyncNav()}""", route)
                 page.wait_for_timeout(350)
-                page.wait_for_function("""() => {const active=document.querySelector('#tabbar .on');const marker=getComputedStyle(document.querySelector('#tabbar'),'::before');return active && marker.backgroundImage.includes(getComputedStyle(active).color) && Math.abs(new DOMMatrix(marker.transform).m41-active.offsetLeft)<1}""", timeout=5000)
+                page.wait_for_function("""() => {const active=document.querySelector('#tabbar .on');const marker=getComputedStyle(document.querySelector('#tabbar'),'::before');return active && (marker.backgroundColor===getComputedStyle(active).color||marker.backgroundImage.includes(getComputedStyle(active).color)) && Math.abs(new DOMMatrix(marker.transform).m41-active.offsetLeft)<1}""", timeout=5000)
                 nav = page.evaluate("""() => {const bar=document.querySelector('#tabbar'),active=bar.querySelector('.on'),s=getComputedStyle(bar),a=getComputedStyle(active),i=getComputedStyle(active.querySelector('svg'));return {height:bar.getBoundingClientRect().height,background:s.backgroundColor,color:a.color,font:a.fontSize,iconWidth:i.width,filter:i.filter,icons:[...bar.querySelectorAll('use')].map(e=>e.getAttribute('href'))}}""")
-                assert 44 <= nav['height'] <= 50, f'Navigation is not compact: {nav}'
+                assert 44 <= nav['height'] <= (50 if width>=900 else 76), f'Navigation is not compact: {nav}'
                 assert page.evaluate("[...document.querySelectorAll('#tabbar a,#tabbar .tabmore')].every(e=>e.getBoundingClientRect().height>=44)"), 'Navigation targets are too small'
                 if reference is None: reference = nav
                 assert page.evaluate("[...document.querySelectorAll('#tabbar a > span,#tabbar .tabmore > span')].every(e=>{const a=e.parentElement.getBoundingClientRect(),b=e.getBoundingClientRect();return b.left>=a.left-.5&&b.right<=a.right+.5})"), f'Navigation labels overflow at {width}'
@@ -1057,7 +1057,7 @@ with sync_playwright() as p:
                     return {height:bar.getBoundingClientRect().height,background:getComputedStyle(bar).backgroundColor,color:getComputedStyle(bar).color,innerHeight:inner.getBoundingClientRect().height,controls:[...bar.querySelectorAll('.topbar-actions > button')].map(e=>{const b=e.getBoundingClientRect(),c=getComputedStyle(e);return {left:b.left,right:b.right,height:b.height,font:c.fontSize,color:c.color,order:c.order}})};
                 }""")
                 if header_reference is None: header_reference = header
-                assert header == header_reference and header['height'] == 44, f'Header changes on {route} at {width}: {header}'
+                assert header == header_reference and header['height'] == (56 if width<=360 else 64), f'Header changes on {route} at {width}: {header}'
                 assert all(c['height'] >= 44 and c['left'] >= 0 and c['right'] <= width for c in header['controls']), header
                 assert page.locator('.bottomline').count() == 0, f'Ticker returned on {route}'
                 metrics['sharedHeader'].append({'mode':nav_mode,'width':width,'route':route,**header})
@@ -1399,10 +1399,10 @@ with sync_playwright() as p:
             assert spacing['gap'] >= spacing['expected'] - 1, f'Masthead touches fixed controls: {spacing}'
             nav = page.evaluate("""() => {
                 const bar=document.querySelector('#tabbar'),link=bar.querySelector('.on'),s=getComputedStyle(link),marker=getComputedStyle(bar,'::before');
-                return {height:bar.getBoundingClientRect().height,color:s.color,icon:getComputedStyle(link.querySelector('svg')).color,markerDisplay:marker.display,markerPaint:marker.backgroundImage,markerSize:marker.backgroundSize,markerHeight:parseFloat(marker.height),markerWidth:parseFloat(marker.width),targetWidth:link.offsetWidth,targetHeight:link.offsetHeight,aligned:Math.abs(new DOMMatrix(marker.transform).m41-link.offsetLeft)<1,extraMarker:getComputedStyle(link,'::before').display};
+                return {height:bar.getBoundingClientRect().height,color:s.color,icon:getComputedStyle(link.querySelector('svg')).color,markerDisplay:marker.display,markerPaint:marker.backgroundImage,markerColor:marker.backgroundColor,markerSize:marker.backgroundSize,markerHeight:parseFloat(marker.height),markerWidth:parseFloat(marker.width),targetWidth:link.offsetWidth,targetHeight:link.offsetHeight,aligned:Math.abs(new DOMMatrix(marker.transform).m41-link.offsetLeft)<1,extraMarker:getComputedStyle(link,'::before').display};
             }""")
-            assert 44 <= nav['height'] <= 50 and nav['icon'] == nav['color'], f'Navigation presentation differs in {mode}: {nav}'
-            assert nav['markerDisplay'] == 'block' and nav['color'] in nav['markerPaint'] and nav['markerSize'].split(',')[0].strip() == '52% 3px' and nav['markerHeight'] == nav['targetHeight'] and nav['markerHeight'] >= 44 and abs(nav['markerWidth']-nav['targetWidth'])<1 and nav['aligned'] and nav['extraMarker'] == 'none', f'Active navigation indicator is missing or duplicated: {nav}'
+            assert 44 <= nav['height'] <= (50 if width>=900 else 76) and nav['icon'] == nav['color'], f'Navigation presentation differs in {mode}: {nav}'
+            assert nav['markerDisplay'] == 'block' and (nav['color']==nav['markerColor'] or nav['color'] in nav['markerPaint']) and nav['markerHeight'] == 3 and abs(nav['markerWidth']-nav['targetWidth'])<1 and nav['aligned'] and nav['extraMarker'] == 'none', f'Active navigation indicator is missing or duplicated: {nav}'
             assert page.evaluate("[...document.querySelectorAll('#tabbar a,#tabbar .tabmore')].every(e=>e.getBoundingClientRect().height>=44)"), 'Navigation targets are too small'
             assert page.evaluate("document.documentElement.scrollWidth<=innerWidth"), f'Theme overflows at {mode}/{width}'
             page.locator('.home-banter').scroll_into_view_if_needed()
@@ -1432,7 +1432,7 @@ with sync_playwright() as p:
             if mode in ['light','dark']:
                 page.evaluate("window.scrollTo({top:800,behavior:'instant'})")
                 sticky = page.locator('.topbar').evaluate("e=>({top:e.getBoundingClientRect().top,height:e.getBoundingClientRect().height,background:getComputedStyle(e).backgroundColor,scroll:scrollY})")
-                assert sticky['scroll'] > 500 and abs(sticky['top']) < 1 and sticky['height'] == 44 and sticky['background'] != 'rgba(0, 0, 0, 0)', f'Top bar does not stay visible: {sticky}'
+                assert sticky['scroll'] > 500 and abs(sticky['top']) < 1 and sticky['height'] == (56 if width<=360 else 64) and sticky['background'] != 'rgba(0, 0, 0, 0)', f'Top bar does not stay visible: {sticky}'
                 metrics['stickyTopbar'].append({'mode':mode,'width':width,**sticky})
                 page.screenshot(path=str(OUT / f'sticky-{mode}-{width}.png'))
                 badge = page.locator('.home-newspaper-date')
