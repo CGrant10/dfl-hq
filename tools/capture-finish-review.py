@@ -23,11 +23,13 @@ with sync_playwright() as p:
   const names=['story-destinations','matchup-view-context','banter-memory-ui','player-week-details','player-week-detail-data','live-football','ui','sleeper-links','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-moment-effects','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','clubhouse-matchup-model','watch-score-collapse','moment-recap','record-chases','record-chases-model','matchup-finish','matchup-finish-model','game-day-matchup-share','matchup-story','matchup-highlights','game-day-model','clubhouse-center-model','clubhouse-center-ui','clubhouse-polish','clubhouse-matchup-cards'];
   const helpers=Object.assign({},...await Promise.all(names.map(name=>import('./js/'+name+'.js'))));
  const mountDetails=helpers.mountPlayerWeekDetails;helpers.mountPlayerWeekDetails=(root,options)=>mountDetails(root,{...options,load:async()=>[]});
-  const noop=()=>{},member={id:'finish-reader'},providers={shareMatchupReceipt:data=>{const f=window.finishFixture;f.shared=data;if(f.holdShare)return new Promise((resolve,reject)=>f.rejectShare=reject)},currentMember:()=>member,loadWeeklyStats:async()=>({data:[]}),sleeper:{league:async()=>({roster_positions:['QB']})},mountPlayerSpotlight:()=>({stop:noop,update:noop,setMotion:noop}),mountScoreVfx:()=>({stop:noop,refresh:noop}),loadRivalryCalls:async()=>[],rivalryStoryHtml:()=>'',db:()=>({from:()=>({select:()=>({match:()=>({order:()=>({order:()=>({limit:async()=>({data:[]})})})})})})})};
+  const noop=()=>{},member={id:'finish-reader'},providers={loadGameDayMoments:async()=>({items:[]}),shareMatchupReceipt:data=>{const f=window.finishFixture;f.shared=data;if(f.holdShare)return new Promise((resolve,reject)=>f.rejectShare=reject)},currentMember:()=>member,loadWeeklyStats:async()=>({data:[]}),sleeper:{league:async()=>({roster_positions:['QB']})},mountPlayerSpotlight:()=>({stop:noop,update:noop,setMotion:noop}),mountScoreVfx:()=>({stop:noop,refresh:noop}),loadRivalryCalls:async()=>[],rivalryStoryHtml:()=>'',db:()=>({from:()=>({select:()=>({match:()=>({order:()=>({order:()=>({limit:async()=>({data:[]})})})})})})})};
   const deps={...helpers,...providers};
   const center=Function(...Object.keys(deps),sources.center+';return mountClubhouseCenter')(...Object.values(deps));
   const watch=Function(...Object.keys(deps),'return function mountGameDayWatch'+sources.watch)(...Object.values(deps));
-  window.finishFixture={helpers,center,watch,member,motion:true,stops:[],shareCalls:0};
+  window.finishFixture={helpers,center,watch,member,motion:true,stops:[],shareCalls:0,revealStarts:0};
+  const nativeAnimate=Element.prototype.animate;
+  Element.prototype.animate=function(...args){if(this.closest('[data-finish-playing]'))finishFixture.revealStarts++;return nativeAnimate.apply(this,args)};
   const f=finishFixture;f.members=[{id:member.id,sleeper_user_id:'a',team_name:'The Very Long Championship Bayou Bombers'},{id:'other',sleeper_user_id:'b',team_name:'Klutch Sports Group'}];
   f.week={leagueId:'finish-review',season:2026,week:6,completed:true,members:f.members,games:[{matchup_id:1,user1:'a',roster1:1,user2:'b',roster2:2,left:{roster:1,memberId:member.id,name:f.members[0].team_name,score:110.04},right:{roster:2,memberId:'other',name:f.members[1].team_name,score:110}}]};
   f.rows=[{roster_id:1,points:110.04,starters:['p1'],players:['p1'],players_points:{p1:25}},{roster_id:2,points:110,starters:['p2'],players:['p2'],players_points:{p2:24}}];f.players={p1:{n:'Demo quarterback',p:'QB',t:'KC'},p2:{n:'Demo opponent',p:'QB',t:'NO'}};
@@ -96,9 +98,10 @@ with sync_playwright() as p:
  page.emulate_media(reduced_motion='reduce');page.locator('.clubhouse-matchup-card [data-finish-replay]').click();page.wait_for_timeout(80)
  assert page.locator('[data-finish-playing]').count()==0
  checks.append('reduced motion shows complete static receipt')
- page.emulate_media(reduced_motion='no-preference');page.locator('.clubhouse-matchup-card [data-finish-replay]').click();page.wait_for_function('!!document.querySelector("[data-finish-playing]")')
+ # Observe the finite reveal launch even if a slow runner samples after it ends.
+ page.emulate_media(reduced_motion='no-preference');page.evaluate('finishFixture.revealStarts=0');page.locator('.clubhouse-matchup-card [data-finish-replay]').click();page.wait_for_function('finishFixture.revealStarts>0')
  page.evaluate('finishFixture.holdShare=true')
- page.locator('.clubhouse-matchup-card [data-finish-share]').click();page.wait_for_timeout(50)
+ page.locator('.clubhouse-matchup-card [data-finish-share]').click();page.wait_for_function('typeof finishFixture.rejectShare==="function"')
  before=page.locator('.clubhouse-matchup-card [data-finish-share]').evaluate('e=>e.outerHTML')
  page.evaluate('finishFixture.stops.forEach(stop=>stop());finishFixture.rejectShare(Error("Late native share failure"))');page.wait_for_timeout(50)
  assert page.locator('.clubhouse-matchup-card [data-finish-share]').evaluate('e=>e.outerHTML')==before
