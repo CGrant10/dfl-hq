@@ -191,8 +191,8 @@ function decorateHistory() {
   section.className = "dfl-hall-photos";
   section.dataset.hallPhotoSection = "1";
   section.innerHTML = `<div class="dfl-hall-head"><h2>Hall of Fame Photos</h2><a class="btn ghost small" href="#/history?photo-submit=1">Submit a Photo</a></div><div data-hall-photo-grid><div class="card"><div class="card-body muted">Loading the evidence…</div></div></div>`;
-  const championCard = body.querySelector(".card.accent");
-  if (championCard) championCard.after(section); else body.prepend(section);
+  const championCard = body.querySelector(".archive-cabinet, .card.accent");
+  if (championCard) championCard.after(section); else body.append(section);
   hallGallery(section.querySelector("[data-hall-photo-grid]"));
 }
 

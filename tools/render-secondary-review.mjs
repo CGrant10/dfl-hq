@@ -1,6 +1,7 @@
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 const output=process.env.DFL_SECONDARY_REVIEW_DIR||'/workspace/dfl-secondary-review';mkdirSync(output,{recursive:true});
 const history=readFileSync(new URL('../js/pages/history.js',import.meta.url),'utf8');
+const archiveHeader=history.match(/<header class="utility-head archive-page-head">[\s\S]*?<\/header>/)[0];
 const fame=history.slice(history.indexOf('function nameCell('),history.indexOf('const ORDER ='));
 const icons=history.slice(history.indexOf('const ICON ='),history.indexOf('let tab ='));
 const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
@@ -20,7 +21,7 @@ const namer=()=>uid=>({label:uid==='one'?member.team_name:uid==='two'?'The Other
 ${icons}
 ${fame}
 const view=document.querySelector('#view');
-window.showHistory=(admin=false)=>{window.reviewAdmin=admin;view.dataset.route='history';view.innerHTML='<header class="utility-head"><small>DFL ARCHIVE</small><h1>History</h1></header>'+fameView(data)};
+window.showHistory=(admin=false)=>{window.reviewAdmin=admin;view.dataset.route='history';view.innerHTML=${JSON.stringify(archiveHeader)}+fameView(data)};
 window.showAnalyzer=async()=>{view.dataset.route='analyzer';await renderAnalyzer(view)};
 window.showProfile=(photo=null)=>{view.dataset.route='profile';view.innerHTML='<div data-dfl-host></div>';wireDflPage(view,{...member,profile_image:photo},true,()=>{}, {currentTeam:member.team_name,currentSeason:2026,actions:''})};
 window.showMore=()=>{document.querySelector('#more').classList.remove('hidden');document.querySelector('#more .quicknav').innerHTML=secondarySeasonNavMarkup()};

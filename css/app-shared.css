@@ -9500,3 +9500,60 @@ body:has(.breaking-trade-dock:not([hidden])) #home-wrap :is(.home-broadcast,[dat
  #view.view[data-route="clubhouse"] .clubhouse-matchup-strip .clubhouse-scoreboard-game { transition:none; }
 }
 html[data-ui-motion="off"] #view.view[data-route="clubhouse"] .clubhouse-matchup-strip .clubhouse-scoreboard-game { transition:none; }
+
+
+/* Source: css/sports-desk-pages.css */
+/* Home's compact, purposeful reading order across the roster and archive tools. */
+#view.view[data-route="trade"] .tb-setup-body>.tb-quick-goals { margin:0 0 12px; }
+#view.view[data-route="trade"] .tb-board>.tb-intent { margin-top:8px; }
+
+/* The roster picker introduces the advice without a second padded panel. */
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-toolbar-section {
+ margin:0 0 8px; padding:0; border:0;
+}
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-toolbar-section .ta-toolbar {
+ margin:0; padding:0 0 8px; border:0; border-radius:0; background:transparent; box-shadow:none;
+}
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-toolbar-section .ta-toolbar .ta-team-picker { min-height:56px; padding:0; margin:0; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-page-head h1 { margin:0; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-toolbar-section .ta-team-identity { margin:0; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-startsit { margin-top:0; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ss-move { padding:12px 0; border-color:var(--line-soft); }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ss-move>header strong { color:var(--text); font:650 .875rem/1.35 var(--font-ui); }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ss-pair { gap:4px 12px; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ss-pair .dfl-player {
+ display:grid; grid-template-columns:28px minmax(0,1fr); gap:6px; align-items:center; min-height:48px;
+}
+#view.view[data-page-system][data-route][data-route="analyzer"] .ss-pair .dfl-player-portrait { width:28px; height:32px; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ss-pair .player-card-trigger {
+ min-height:44px; font:600 .8125rem/1.35 var(--font-ui); overflow-wrap:break-word;
+}
+#view.view[data-page-system][data-route][data-route="analyzer"] .ss-pair>section>b { font:700 1.25rem/1.2 var(--font-ui); font-variant-numeric:tabular-nums; }
+#view.view[data-page-system][data-route][data-route="analyzer"] :is(.ss-status,.ss-form,.ss-pair time) { font:400 .6875rem/1.4 var(--font-ui); }
+@supports(grid-template-rows:subgrid) {
+ #view.view[data-page-system][data-route][data-route="analyzer"] .ss-pair>section {
+  display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:subgrid;
+  grid-row:1 / span 6; gap:4px; align-content:start; align-items:start;
+ }
+ #view.view[data-page-system][data-route][data-route="analyzer"] .ss-pair>section>small { grid-row:1; }
+ #view.view[data-page-system][data-route][data-route="analyzer"] .ss-pair>section>.dfl-player { grid-row:2; }
+ #view.view[data-page-system][data-route][data-route="analyzer"] .ss-pair>section>b { grid-row:3; }
+ #view.view[data-page-system][data-route][data-route="analyzer"] .ss-pair>section>.ss-status { grid-row:4; }
+ #view.view[data-page-system][data-route][data-route="analyzer"] .ss-pair>section>.ss-form { grid-row:5; }
+ #view.view[data-page-system][data-route][data-route="analyzer"] .ss-pair>section>time { grid-row:6; }
+}
+
+/* Existing league history leads; photo submission follows the trophy case. */
+#view.view[data-page-system][data-route][data-route="history"] .archive-page-head {
+ display:flex; flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:space-between;
+ gap:8px 12px; margin:0 0 8px; padding:0 0 12px; border:0;
+}
+#view.view[data-route="history"] .archive-page-head h1 { margin:0; }
+#view.view[data-route="history"] .archive-page-head>a { min-height:44px; margin:0; }
+#view.view[data-page-system][data-route][data-route="history"] .archive-cabinet .archive-season.is-featured {
+ padding:14px 0; border:0; border-top:2px solid var(--milestone,var(--accent));
+ border-bottom:1px solid var(--line-soft); border-radius:0; background:transparent; box-shadow:none;
+}
+#view.view[data-page-system][data-route][data-route="history"] .archive-cabinet .archive-season-head strong {
+ font:700 1.75rem/1.1 var(--font-ui); font-variant-numeric:tabular-nums;
+}
