@@ -566,7 +566,9 @@ def check_clubhouse_center(page):
           root.querySelector('[data-clubhouse-game="1"]').click();
           const card=root.querySelector('[data-clubhouse-matchup="1"]'),button=card.querySelector('[data-gameday-player]'),identity=button,bench=card.querySelector('.gd-compare-bench'),positions=card.querySelector('.clubhouse-position-stats');
           check(bench&&positions,'Bench/positional stats missing');bench.open=true;positions.open=true;button.focus();button.scrollIntoView({behavior:'instant',block:'center'});
-          f.rows[0].points=48;f.rows[0].players_points['demo-1-0']=25;f.center.update({rows:f.rows,players:f.players,nfl:f.nfl,force:true});
+          // Isolate the player milestone. A simultaneous lead flip correctly
+          // claims the model's one moment and suppresses a second celebration.
+          f.rows[0].points=44;f.rows[0].players_points['demo-1-0']=25;f.center.update({rows:f.rows,players:f.players,nfl:f.nfl,force:true});
           check(document.activeElement===identity&&identity.isConnected&&bench.open&&positions.open,'Refresh lost focus or expanded stats');
           check(card.querySelector('.gd-moment-caption')&&card.querySelector('.clubhouse-pressure-label'),'Actual live moment/close-game context missing');
           f.pending(f.bundle);await settle();
@@ -971,7 +973,7 @@ with sync_playwright() as p:
     page.wait_for_timeout(300)
     metrics['renderer'] = page.locator('canvas.gd-vfx-canvas').get_attribute('data-renderer')
     assert metrics['renderer'] == 'webgl', 'Animated score renderer did not start'
-    metrics['fonts'] = page.evaluate('({headline:getComputedStyle(document.querySelector(".bx-home-title")).fontFamily,score:getComputedStyle(document.querySelector(".gd-thermal-value")).fontFamily,stroke:getComputedStyle(document.querySelector(".gd-thermal-value")).webkitTextStrokeWidth,loaded:document.fonts.check("30px Anton")})')
+    metrics['fonts'] = page.evaluate('({headline:getComputedStyle(document.querySelector(".bx-home-title")).fontFamily,score:getComputedStyle(document.querySelector(".gd-thermal-value")).fontFamily,stroke:getComputedStyle(document.querySelector(".gd-thermal-value")).webkitTextStrokeWidth,loaded:document.fonts.check("700 30px Rajdhani")})')
     assert metrics['fonts']['loaded'] and 'Rajdhani' in metrics['fonts']['headline'] and 'DFL Broadcast' not in metrics['fonts']['score'], 'Pixel display font is still active'
     assert metrics['fonts']['stroke'] == '0px', 'Synthetic score stroke is still active'
     metrics['refinement'] = page.evaluate("""() => ({playerFont:parseFloat(getComputedStyle(document.querySelector('.home-thermal-leaders .gd-thermal-number')).fontSize),paper:getComputedStyle(document.querySelector('#home-wrap')).getPropertyValue('--bg').trim(),hero:document.querySelector('.bx-home-art').complete,visibleLore:!document.querySelector('[data-home-lore-slot]').closest('details'),visibleWall:!document.querySelector('[data-wall-slot]').closest('details')})""")
