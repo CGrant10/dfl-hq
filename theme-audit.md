@@ -1,3 +1,28 @@
+## 1.548.0 — top-of-Home trade alert and UI consistency review
+
+Moved active trade coverage to the first Home slot, directly under the shared
+header. The notice uses a small theme-colored status cue, full team names and
+one exact receipt link. Removed the duplicate top gutter while active. Its
+compact scrolling copy, dismissal, safe header/nav stacking and commissioner
+controls remain intact; no siren, glow or flashing animation was added.
+
+Both Medicine Wheel modes use the existing text/accent/background/border tokens.
+Verified the compiled Home screenshots, flush header placement, exact receipt
+route, dock appearance after scroll and cleanup when returning to the top.
+The 25-check production alert review also passes narrow/enlarged layouts,
+dismissal, modal/More handling and Reduced Motion. pnpm check passes (2,450 tests,
+theme/release/typecheck/names and production build); the final build passes.
+
+A fresh mobile consistency review covered Home, More, Clubhouse, Trades, Book,
+Team Analyzer, History and Profile in both modes (14 page captures plus More).
+No page errors or horizontal overflow at 390px. Recommendations prioritize Book
+row/card borders, Trade label/action hierarchy and More's condensed type/icon
+family, followed by consistent secondary actions and shared motion/state rules.
+Screenshots and the full numbered review remain local at
+/workspace/dfl-top-alert-1548/mobile-ui-review.md. Sportsbook wallet state was
+simulated and provider writes were blocked. This is not physical device FPS,
+VoiceOver or complete WCAG verification.
+
 ## 1.547.0 — compact trade receipts and reachable SIN claims
 
 Home trade coverage now lists the actual participating team names beside one
