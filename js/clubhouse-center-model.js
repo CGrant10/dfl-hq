@@ -4,6 +4,20 @@ import {matchupPlayerPairs} from './game-day-lineup-comparison.js';
 
 const numeric=v=>v!=null&&v!==''&&Number.isFinite(Number(v))?Number(v):null;
 const rounded=v=>Math.round(v*100)/100;
+// Keep the league's relative order, with the viewing profile's game first.
+// Explicit matchup links still select their target independently of this order.
+export function clubhouseMatchupOrder(games=[],memberId=null) {
+ const index=games.findIndex(game=>memberId!=null
+  ?(game.sides||[game.left,game.right]).some(team=>team?.memberId!=null&&String(team.memberId)===String(memberId))
+  :game.isMine);
+ return index>0?[games[index],...games.slice(0,index),...games.slice(index+1)]:[...games];
+}
+export function initialClubhouseMatchup(games=[],{requested=null,remembered=null}={}) {
+ return games.find(game=>String(game.id)===String(requested))?.id
+  ??games.find(game=>game.isMine)?.id
+  ??games.find(game=>String(game.id)===String(remembered))?.id
+  ??games[0]?.id;
+}
 export function clubhouseGameMetrics(game,completed=false) {
  const [a,b]=game.sides,scores=[numeric(a.score),numeric(b.score)],phase=matchupPhase(a,b,completed);
  const margin=scores.some(v=>v===null)?null:rounded(Math.abs(scores[0]-scores[1]));

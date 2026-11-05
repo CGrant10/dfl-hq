@@ -13,13 +13,13 @@ export function matchupFinishHtml(result){
 
 // A single finite reveal, shared by Watch and Clubhouse. Scores stay truthful
 // throughout: animation reveals the actual digits instead of counting fake ones.
-export function mountMatchupFinish(root,{getModel,getGame,getSurface=()=>root,getMotion=()=>true,getOwner=()=>null,allowAuto=()=>true,onShare=()=>{}}){
+export function mountMatchupFinish(root,{getModel,getGame,getSurface=()=>root,getScoreSurface=null,getMotion=()=>true,getOwner=()=>null,allowAuto=()=>true,onShare=()=>{}}){
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let stopped=false,result=null,surface=null,stamp='',frame=null,transitionTimer=null,animations=[],observer=null,sharing=false,explicitPending=false;
  const cancel=()=>{animations.forEach(animation=>{animation.onfinish=null;animation.cancel()});animations=[];if(surface)delete surface.dataset.finishPlaying};
  const disconnect=()=>{observer?.disconnect();observer=null;cancelAnimationFrame(frame);frame=null;clearTimeout(transitionTimer);transitionTimer=null};
  const canMove=()=>getMotion()&&!reduced.matches&&document.visibilityState==='visible';
- const scoreSurface=()=>surface?.querySelector('.clubhouse-game-teams,.gd-watch-scoreboard');
+ const scoreSurface=()=>getScoreSurface?.()||surface?.querySelector('.clubhouse-game-teams,.gd-watch-scoreboard');
  const visible=()=>{
   const node=scoreSurface();if(stopped||!root.isConnected||!surface?.isConnected||surface.closest('[hidden],[inert]')||surface.closest('dialog:not([open])')||!node?.getClientRects().length||document.visibilityState!=='visible')return false;
   const rect=node.getBoundingClientRect();return rect.bottom>44&&rect.top<innerHeight-48;
@@ -36,7 +36,7 @@ export function mountMatchupFinish(root,{getModel,getGame,getSurface=()=>root,ge
    if(!node?.animate)return;const animation=node.animate(frames,{duration:620,easing:'cubic-bezier(.2,.75,.25,1)',fill:'backwards',...options});
    animations.push(animation);animation.onfinish=()=>{animations=animations.filter(item=>item!==animation);animation.cancel();if(!animations.length&&surface)delete surface.dataset.finishPlaying};
   };
-  const teams=surface.querySelectorAll('.clubhouse-game-side,.gd-watch-score-team');
+  const teams=(scoreSurface()||surface).querySelectorAll('.clubhouse-game-side,.gd-watch-score-team');
   teams.forEach((team,index)=>{
    const identity=team.querySelector('.clubhouse-matchup-name,h3'),portrait=team.querySelector('.dfl-team-mark');
    for(const node of [identity,portrait])animate(node,[{opacity:0,transform:`translateX(${index?20:-20}px)`},{opacity:1,transform:'translateX(0)'}],{delay:index*60});

@@ -20,7 +20,7 @@ export async function renderWithMatchupMotion(render,previous,nextHash){
  const styles=[],mark=(node,name)=>{styles.push([node,node.style.viewTransitionName]);node.style.viewTransitionName=name;};
  origins.forEach((side,i)=>{mark(side.mark,'dfl-matchup-team-'+i);side.connectScore=!intent.projected&&visible(side.score);side.points=side.score?.textContent;if(side.connectScore)mark(side.score,'dfl-matchup-score-'+i)});
  let invoked=false,transition;
- const targetFor=id=>[...document.querySelectorAll(`[data-matchup-roster="${CSS.escape(id)}"]`)].find(node=>visible(node.querySelector('.dfl-team-mark')));
+ const targetFor=id=>[...document.querySelectorAll(`.clubhouse-duel [data-matchup-roster="${CSS.escape(id)}"]`),...document.querySelectorAll(`[data-matchup-roster="${CSS.escape(id)}"]`)].find(node=>visible(node.querySelector('.dfl-team-mark')));
  const update=async()=>{
   invoked=true;if(location.hash!==nextHash)return;await render();if(location.hash!==nextHash)return;
   if(origins.some(side=>!targetFor(side.id))&&!origins.every(side=>document.querySelector(`[data-matchup-roster="${CSS.escape(side.id)}"]`)))await new Promise(resolve=>{let done=false;const finish=()=>{if(done)return;done=true;observer.disconnect();clearTimeout(timer);resolve()},observer=new MutationObserver(()=>{if(location.hash!==nextHash||origins.every(side=>targetFor(side.id)))finish()}),timer=setTimeout(finish,700);observer.observe(document.getElementById('view'),{childList:true,subtree:true})});
