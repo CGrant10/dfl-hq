@@ -1,3 +1,21 @@
+## 1.546.0 — Clubhouse section cleanup
+
+Removed the Bragging Rights / Call your shot block from Matchups and its prediction
+receipts from Recap. Removed Matchup Momentum and its mounted chart/history
+controller, so browsing Clubhouse no longer requests momentum score history or
+prediction lock/standings. No spacer or hidden placeholder replaces either block.
+Existing rivalry history, clips, live scores, player cards, thermal effects and
+matchup swiping remain. Final matchup sharing fetches saved moments only when
+Share final is pressed, preserving the receipt's turning-point data and fallback.
+
+No palette or type changes. Both Medicine Wheel modes retain the approved Stadium
+Duel composition. `pnpm check` passes: 2,450 tests, release/themes/typecheck/names,
+offline coverage and production build. The 329-check Clubhouse browser run passes,
+including completed recap and native clips/player-card flows. Actual compiled
+390px Light/Dark captures and removed-section/background-request assertions are
+recorded in /workspace/dfl-clubhouse-1546/local/. Physical mobile Safari/VoiceOver
+and device performance metrics were not measured.
+
 ## 1.545.0 — Clubhouse Stadium Duel
 
 Implemented the user's selected second Clubhouse direction in the existing app.
