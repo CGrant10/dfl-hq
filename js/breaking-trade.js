@@ -42,7 +42,7 @@ function markup(alert) {
   const custom = alert?.kind === "custom";
   const title=custom?headline(alert):names(alert).join(' ↔ ')||headline(alert);
   return `<a class="breaking-trade-copy" href="${esc(alert.href || "#/trade")}" aria-label="${esc(`${title}. Open ${custom?'alert':'trade receipt'}`)}">
-      <small>${custom ? esc(alert.label || "LEAGUE ALERT") : `TRADE${alert.week ? ` · WEEK ${esc(alert.week)}` : ""}`}</small>
+      <small>${custom ? esc(alert.label || "LEAGUE ALERT") : `TRADE ALERT${alert.week ? ` · WEEK ${esc(alert.week)}` : ""}`}</small>
       <strong>${!custom&&names(alert).length?names(alert).map(name=>`<span>${esc(name)}</span>`).join(''):esc(title)}</strong>
       ${custom?`<em>${esc(verdict(alert))}</em>`:''}
       <span class="breaking-trade-receipt">${custom?'Open':'Receipt'}<svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></span>

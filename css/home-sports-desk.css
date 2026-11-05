@@ -88,10 +88,14 @@ body:has(.breaking-trade-dock:not([hidden])) #home-wrap :is(.home-broadcast,[dat
 #view.view #home-wrap[data-home-edition="sports-desk"] .bx-stage[data-bx-large-text] .bx-home-week { grid-row:1; max-width:100%; }
 #view.view #home-wrap[data-home-edition="sports-desk"] .bx-stage[data-bx-large-text] .bx-home-title { grid-row:2; width:100%; max-width:100%; font-size:1.5rem; line-height:1.08; }
 
-/* One real alert lives below the story; its existing sticky dock still follows. */
+/* The active alert leads Home and keeps its compact scrolling reference. */
+#view.view[data-route="home"]:has(#home-wrap>.home-alert-slot>.breaking-trade:not([hidden])) { padding-top:0; }
 #view.view #home-wrap[data-home-edition="sports-desk"] .home-alert-slot { margin:0; }
 #view.view #home-wrap[data-home-edition="sports-desk"] .home-alert-slot:has(.breaking-trade:not([hidden])) { margin-inline:calc(-1 * var(--desk-edge)); }
-#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade { padding-inline:var(--desk-edge); }
+#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade { padding:6px var(--desk-edge); border-top:0; }
+#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade-copy small { display:flex; flex-wrap:wrap; align-items:center; gap:6px; color:var(--accent); }
+#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade-copy small::before { content:''; width:5px; height:5px; flex:0 0 5px; border-radius:50%; background:currentColor; }
+#view.view #home-wrap[data-home-edition="sports-desk"] .home-alert-slot:has(.breaking-trade:not([hidden])) { margin-bottom:8px; }
 
 /* Rankings read as one aligned list. Week selection remains one tap away. */
 #view.view #home-wrap[data-home-edition="sports-desk"] .power-edition { container:power-ranks / inline-size; border:0; padding:0; margin:0; }

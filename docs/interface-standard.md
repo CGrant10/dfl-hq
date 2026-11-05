@@ -14,17 +14,19 @@ The user-selected Sports Desk composition (Home 1.541.0, Clubhouse 1.543.0, rost
 is owned by `css/home-sports-desk.css` and `css/clubhouse-sports-desk.css` after
 the shared component sheets. Preserve this direction when extending other pages.
 
-Home's fixed reading order is matchup, wide broadcast, active trade coverage,
-rankings, highlights, weekly tools, league/archive content and the Wall last.
+Home's fixed reading order is active trade coverage directly below the shared
+header, date/matchup, wide broadcast, rankings, highlights, weekly tools,
+league/archive content and the Wall last.
 Phase updates must not shuffle that composition. Real clip thumbnails and
 headlines supply the media content; loading reserves geometry and never mounts
 video on first paint. Browse retains the full reel and its filters. Keep real
 long names and current data readable rather than freezing reference copy.
 
 Clubhouse puts the native week/tools control beside its title, expanding into
-normal flow below it. Narrow/enlarged layouts can stack that control. The six
-section tabs lead directly into one matchup rail/scoreboard and opposing player
-rows, followed by supporting panels. Keep names, weekly stat lines, PPR averages,
+normal flow below it. Narrow/enlarged layouts can stack that control. One
+profile-first matchup rail and selected-game scoreboard sit above the six
+section tabs. Matchups then leads with opposing player rows and supporting
+panels. Keep names, weekly stat lines, PPR averages,
 44px targets, semantic phases and hot/cold effects. Late chip-size changes may
 reveal the selected matchup; deliberate rail browsing must retain its position.
 
@@ -39,11 +41,11 @@ The shared phone navigation uses 56px buttons, 22px icons and 11px labels at the
 default text size (1.542.0). Native safe-area space is additional; enlarged text
 can wrap. Desktop keeps 48px buttons. Keep the existing moving active marker.
 
-Occasional controls use a visible native disclosure: Clubhouse Week & tools,
-Trade Edit search and Book bankroll actions. Keep the current search/balance
-visible while closed. Clubhouse and Trade use the shared reversible expansion;
-Book's small menu entrance uses the finite UI animation helper and Escape
-restores summary focus. Preserve 44px targets and motion preferences.
+Occasional controls use a visible native disclosure: Clubhouse Week & tools
+and Trade Edit search. Keep the current search visible while closed and use the
+shared reversible expansion. Book keeps its balance in the masthead and its
+Claim SIN action in normal page flow, clear of the board tabs. Preserve 44px
+targets, pending/retry feedback and motion preferences.
 
 Trade and Sportsbook adopt the row, metadata and numeric roles in 1.527.0.
 Trade offer portraits retain their framing, with 28px width on narrow phones
@@ -178,3 +180,21 @@ layouts to place totals below portraits, wrap complete team/player names, and
 expand flags in document flow. Keep position tracks and score columns aligned;
 status/kickoff text must not steal the player-name column. No new mascot or
 shield artwork belongs in this composition.
+
+
+### Next consistency pass — current-screen review, 1.548.0
+
+The daily-page baseline is Home and Clubhouse. A fresh 390px Light/Dark review
+identified Book's stacked card/price outlines and section rules, Trades' repeated
+accent labels and mixed display headings, and More's condensed type/steel icons
+as the clearest remaining visual differences. Analyzer, History and Profile are
+closer; their secondary buttons and small labels can follow the same component
+adoption. Preserve distinctive editorial art and league banter.
+
+Recommended order: Book rows/cards, Trade offer/receipt rows, More and secondary
+header actions, then shared motion/loading/empty/error states. Reuse shared title,
+section, row, numeric-column, button, tab and sheet roles rather than extending
+page-specific overrides. Keep the approved tab glide, player-card transition and
+reversible disclosures as the motion reference. Validate each adoption on mobile
+in both modes, including larger text, interrupted gestures and keyboard return.
+This is a proposed next pass, not a claim that those migrations are complete.
