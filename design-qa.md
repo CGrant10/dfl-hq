@@ -1,75 +1,114 @@
-# Clubhouse matchup layout QA — 1.535.0
+# Home Sports Desk — 1.541.0
 
 final result: passed
 
-## Source and comparison state
+## Source, viewport and state
 
-Source visual truth: [ESPN's published App Store matchup screen](docs/clubhouse-matchup-layout-1535/espn-matchup.webp),
-downloaded from its current official App Store listing on November 3, 2026.
-Source image is 600×1300px with marketing/device chrome. The app content crop
-(70,295)–(531,1048), 461×753px, is normalized to 390×637px. No device chrome is
-recreated. The published example is live hockey; DFL is a live football fixture.
-Team identities, sport-specific stats and theme are intentionally different.
-This is a structural adaptation within the production app, not a pixel clone
-or an audit of ESPN's signed-in app.
+The visual truth is the **first displayed generated option** selected by the user:
+`/workspace/generated_images/exec-99fd33a2-9172-4542-85a2-ae6c0122ad7c.png`.
+Original dimensions: 852 × 1846. Normalized to 390 × 844 CSS pixels for comparison
+(the generated aspect ratio differs by less than 0.2%). Implementation: 390 × 844,
+deviceScaleFactor 1, production compiled release, Medicine Wheel Dark, Home at the
+first broadcast story, upcoming Week 9, Thursday November 5, 2026, America/Chicago.
+The source's 143.0 projection is a snapshot; the checked live data returns 142.8.
+That data correction is intentional. No scores or standings were fabricated.
 
-Implementation: [390px Dark](docs/clubhouse-matchup-layout-1535/390-dark-clubhouse-default.png),
-390×844 CSS px, deviceScaleFactor 1. The matchup desk's content-only screenshot
-is cropped to the same 390×637px comparison region. The app's existing shared
-navigation remains outside the content comparison.
+Latest rendered evidence is in `/workspace/dfl-sports-desk-1541/release-layout/`.
+Local, git-ignored review copies and combined inputs:
 
-[Full comparison](docs/clubhouse-matchup-layout-1535/comparison-full.png) and
-[focused header/first-row comparison](docs/clubhouse-matchup-layout-1535/comparison-focus.png)
-were opened together and inspected. Browser rendering uses existing local
-Chromium/Playwright review tools; Cloud Browser is not exposed in this session.
+- [Full comparison](design-qa-assets/home-sports-desk-1541/comparison.png)
+- [Header/matchup](design-qa-assets/home-sports-desk-1541/comparison-header.png)
+- [Broadcast](design-qa-assets/home-sports-desk-1541/comparison-broadcast.png)
+- [Rankings](design-qa-assets/home-sports-desk-1541/comparison-rankings.png)
+- [Dark](design-qa-assets/home-sports-desk-1541/home-dark-16.png)
+- [Light](design-qa-assets/home-sports-desk-1541/home-light-16.png)
+- [200% text](design-qa-assets/home-sports-desk-1541/home-dark-32.png)
 
-## Comparison history
+The source and implementation were placed together in each comparison image and
+inspected. Screenshots use workspace Chromium/Playwright, not a cloud-browser
+plugin or a physical phone. Actual league captures remain local rather than
+being committed as new public screenshot assets.
 
-1. P2: The main header inherited a five-row subgrid, leaving unused space below
-   the remaining-starter line. Reset parent rows and each side's row placement.
-   Final captures show content-driven header height with no reserved empty rows.
-2. P2: An earlier [combined comparison](docs/clubhouse-matchup-layout-1535/comparison-before-row-fix.png)
-   exposed lingering position-specific minimum stat-line heights. Override those
-   within Clubhouse. Final captures show the stat line and PPR average together
-   beneath the relevant player, without the old blank gap.
-3. Post-fix full and focused comparisons show no remaining actionable P0/P1/P2
-   issue within the requested ESPN-inspired DFL adaptation.
+## Findings and comparison history
+
+- **Resolved P1: overlapping matchup names and scores.** The first capture showed
+  older, more-specific grid rules placing totals on the name row. Explicit tracks
+  now separate names, portraits and totals on both sides. Actual-data checks verify
+  containment and pairwise separation at 320/390/430/768px and 100/125/200% text.
+  Evidence: `first/home-dark.png` → `third/home-dark.png` → release-layout captures.
+- **Resolved P2: the old carousel frame survived the redesign.** The parent border
+  and a footer pseudo-element retained rounded edges and a detached toolbar.
+  The parent is now borderless; artwork reaches the full frame and controls overlay
+  it. Previous/next, story selection and pause retain keyboard/touch access.
+  Evidence: `comparison-third.png` → latest combined broadcast comparison.
+- **Resolved P1: enlarged text needed a different composition.** Initial 200% text
+  squeezed team names across their columns and put large daily type over the
+  athlete. Container-based score layouts now separate portraits, full names and
+  non-wrapping scores; enlarged daily headlines use a separate image row. Totals
+  align across teams. Evidence: `verified/home-dark-32.png` → release-layout 32px.
+- **Resolved P2: rankings were too loose relative to the target.** Their margin and
+  rows were tightened, faces and team labels made clearer, with one aligned list
+  and ranking-week selection in a compact disclosure. The final normal phone frame
+  shows both leading teams above navigation. See the combined rankings comparison.
 
 ## Required fidelity surfaces
 
-- Typography: Inter provides clean UI/player labels and heavy score totals.
-  Existing DFL score effects retain their sport typography. ESPN's proprietary
-  brand font is not copied. Full current team names wrap; chip accessibility
-  labels retain names and exact totals even when only logos are shown visually.
-- Layout: slim outlined chips, outside logos / inside score totals, team context
-  below, opposing player rows and a narrow center position column follow the
-  source structure. Repeated headings and persistent utility controls are removed
-  from the default matchup stack. Existing DFL touch targets, player portraits,
-  PPR averages and supporting matchup sections require more height than ESPN's
-  hockey sample; that is intentional. Adaptive cell stacking preserves large text.
-- Color: DFL Light/Dark Medicine Wheel tokens intentionally replace ESPN's palette.
-  Existing semantic live/final/lead colors and hot/cold effects remain. Both themes
-  were visually inspected; automated interface checks cover contrast and focus.
-- Image quality: existing shared team/member photo sources and preference ordering
-  are unchanged. Images have explicit sizes and retain established fallback.
-  No generated substitutes, ESPN team art or new image downloads are introduced.
-- Copy/content: actual DFL names, two-decimal points, week, player state, stat lines
-  and PPR averages are retained. No invented win probability, record or live
-  projection is added. Refresh/motion controls remain inside Week & tools.
+- **Fonts/typography:** existing local Inter for UI and Rajdhani 700 for display and
+  scores; no extra font request or synthetic 900-weight display face. Headline
+  weight, wrapping and hierarchy were compared at full view and in the broadcast
+  crop. Full team names remain real text. Exact generated wordmark lettering is
+  replaced by the existing DFL wordmark treatment, intentionally shared app-wide.
+- **Spacing/layout:** the chosen order is matchup, broadcast, trade alert, rankings,
+  highlights, week tools, league/archive, then Wall. The 390px broadcast is about
+  260px tall and full-width. Shared chrome uses consistent sizing across routes.
+  Week selection, expansion and scrolling remain available.
+- **Colors/tokens:** existing Medicine Wheel foundations, accents, semantic text
+  and surface tokens; no new palette or restored legacy blue/red UI colors. Both
+  themes were inspected. Forty-four visible text samples per theme pass the
+  CSS-surface contrast check (minimum 5.64 Light / 9.90 Dark in the sampled state).
+  This is not a complete raster-image contrast or WCAG conformance assessment.
+- **Image quality:** actual existing round DFL mark, member pictures and
+  `dfl-daily-hero.webp` are retained. The shield is not introduced into Home.
+  The alert uses a generated transparent raster siren (128 × 160, about 8KB).
+  Raster edges/crop, portrait containment, and headline/image separation were
+  inspected. No generated full-screen screenshot is used as the actual interface.
+- **Copy/content:** daily wording, current team names, real forecast values, trade
+  verdict and ranking facts come from existing models. No extra explanatory copy
+  was added. The redundant “Tap for the full receipt” suffix was removed.
 
-## Interaction and implementation checklist
+## Interaction and responsive evidence
 
-- Tap and swipe across all six games; reverse, edge, interrupted and cancelled
-  gestures; native vertical scrolling; keyboard navigation; exact route identity.
-- Existing finite logo shake and Reduced Motion; no permanent transition layers.
-- Full selected names/totals in the compact scrolling reference; player-card entry.
-- Light/Dark, 320/390px compiled captures; five-width enlarged-text containment.
-- Console/page errors checked: none in fixture and compiled app captures.
-- Build, theme scan and 2,425 tests pass. Detailed evidence is in
-  [the release note](docs/clubhouse-matchup-layout-1535.md).
+`/workspace/dfl-sports-desk-1541/final/checks.json` records 32 actual-data cases:
+24 viewport/text/theme combinations, CSS-surface contrast in both themes,
+ranking expansion and ranking-week focus, sticky alert behavior, exact receipt
+links, alert re-entry without duplicate hosts, keyboard pause and six native
+forward/backward swipes per theme. Clubhouse and History were captured to check
+shared chrome and route overflow. No page errors or horizontal document overflow.
+All provider mutations were blocked by the review harness.
 
-## Follow-up limits
+The final layout-only rerun after aligning enlarged scores and tightening rankings
+records 26 passing cases in `release-layout/checks.json`.
+Production-renderer broadcast fixtures cover 90 normal layouts and 56 enlarged
+layouts, unchanged frame height across stories, complete routed packages, long
+names, image/text zones, pause/picker targets, reduced motion and replay. Enlarged
+fixtures were rerun after the large-text changes. These are explicitly isolated
+fixtures, not claims about live league scores.
 
-Physical Safari and VoiceOver remain unmeasured. ESPN's native logo animation and
-signed-in interactions cannot be validated here. No further visual exploration or
-new product features are needed for this scoped layout change.
+## Implementation checklist
+
+- [x] Resolve the selected generated image.
+- [x] Implement the Home composition using existing live models and assets.
+- [x] Inspect full and focused combined visual comparisons.
+- [x] Fix actionable P1/P2 differences and recapture.
+- [x] Verify Light/Dark, narrow widths, enlarged text and primary interactions.
+- [x] Run themes, tests, type/name/release checks and production build.
+
+## Follow-up polish and boundaries
+
+P3: the existing round logo and clean wordmark use the app's real assets and fonts;
+rank markers are simple rectangular UI tags instead of the mock's angled graphic.
+The production version keeps unobtrusive previous/next, story count and dismiss
+controls missing from the mock. Ranking week, movement and expansion also remain
+available. These are accepted product constraints rather than incomplete controls.
+Physical Safari/VoiceOver, on-device frame rates and battery impact are unmeasured.
+Trade valuation, Arena and backend behavior are outside this visual change.

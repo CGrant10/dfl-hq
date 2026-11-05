@@ -139,7 +139,7 @@ let html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 html = html.replace(/<div id="splash"[\s\S]*?<\/div><span class="sp-sweep"[^>]*><\/span><\/div>/, '');
 html = html.replace('<html lang="en">', '<html lang="en" data-mode="light">');
-html = html.replace(/<main id="view"[^>]*>[\s\S]*?<\/main>/, `<main id="view" class="view" data-route="home" data-pulse-system="1"><div id="home-wrap" data-home-layout="wire">
+html = html.replace(/<main id="view"[^>]*>[\s\S]*?<\/main>/, `<main id="view" class="view" data-route="home" data-pulse-system="1"><div id="home-wrap" data-home-layout="wire" data-home-edition="sports-desk">
   ${homeNewspaperMasthead({ now: new Date('2026-10-07T12:00:00Z') })}
   <div class="home-frontpage">
   <div class="home-personal-desk">
@@ -147,9 +147,10 @@ html = html.replace(/<main id="view"[^>]*>[\s\S]*?<\/main>/, `<main id="view" cl
   </div>
   </div>
   <div data-home-rhythm-flow>
-  <div data-home-highlights-slot data-home-rhythm-part="highlights">${homeHighlightMarkup(highlightClips,Date.now(),{layout:'feature'})}</div>
-  <section class="home-broadcast">${renderStage(deck, { editorial: true })}</section>
+  <section class="home-broadcast">${renderStage(deck, { editorial: true, wide:true })}</section>
+  <div class="home-alert-slot" data-home-alert-slot></div>
   <div data-home-rankings-slot>${renderHomeReview.homeRankingsCard(rankings)}</div>
+  <div data-home-highlights-slot data-home-rhythm-part="highlights">${homeHighlightMarkup(highlightClips,Date.now(),{layout:'feature'})}</div>
   <section class="home-week-desk" data-home-rhythm-part="week" aria-label="Your week">
     <div data-home-focus-slot>${renderHomeReview.homeWeeklyFocus(outlook,reviewBriefing)}</div>
     <div data-home-week-flow>

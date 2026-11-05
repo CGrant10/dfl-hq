@@ -1,4 +1,5 @@
 import {replaceStableContent,updateStableContent} from '../stable-content.js';
+import {placeBreakingTradeCoverage} from '../breaking-trade.js';
 import {mountHomeRhythm} from '../home-rhythm.js';
 import {createHomeMomentEdition} from '../home-moment-stories.js';
 import {mountHomeHighlights} from '../home-highlights.js';
@@ -442,9 +443,9 @@ export async function render(view) {
   /*
     THE ORDER IS THE EDIT.
 
-    The personal matchup and lineup action lead, then the broadcast.
-    On entry, planning/receipts lead before or after games; highlights lead live.
-    This priority stays fixed for the visit. Standings and league news follow.
+    The selected Sports Desk leads with the personal matchup, then broadcast,
+    active trade coverage and rankings. Highlights and weekly decisions follow.
+    This reading order stays fixed for the visit. League news follows.
     The compact injury preview follows Around the league.
     Archive stories come after current information, then the Wall closes.
     Draft, League Feed and the Wall still load as the reader approaches them.
@@ -458,7 +459,7 @@ export async function render(view) {
     Calendar and Polls each have their own add control, so deleting the
     sections loses nothing and takes the CSS hack with it.
   */
-  view.innerHTML = `<div id="home-wrap" data-home-layout="wire">
+  view.innerHTML = `<div id="home-wrap" data-home-layout="wire" data-home-edition="sports-desk">
     ${homeNewspaperMasthead({ founded: LEAGUE_FOUNDED })}
     <div class="home-frontpage">
     <div class="home-personal-desk">
@@ -466,11 +467,12 @@ export async function render(view) {
     </div>
     </div>
     <div data-home-rhythm-flow>
-    <div data-home-highlights-slot data-home-rhythm-part="highlights"></div>
     <section class="home-broadcast is-loading" data-content-state="loading" aria-busy="true" aria-label="League broadcast">
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
     </section>
+    <div class="home-alert-slot" data-home-alert-slot></div>
     <div data-home-rankings-slot data-content-state="loading" aria-busy="true">${powerRankingsLoading()}</div>
+    <div data-home-highlights-slot data-home-rhythm-part="highlights"></div>
     <section class="home-week-desk" data-home-rhythm-part="week" aria-label="Your week">
     <div data-home-focus-slot data-home-personal-part="decisions">${homeWeeklyFocus(null,null,{loading:true})}</div>
     <div data-home-week-flow>
@@ -497,6 +499,7 @@ export async function render(view) {
     <p class="dfl-alive" data-alive>${presenceHtml(presenceNow())}</p>
     <p class="version-line">DFL HQ v${esc(APP_VERSION)} · <button class="linkbtn" id="check-update">Check for updates</button>${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}</p>
   </div>`;
+  placeBreakingTradeCoverage();
 
   /* Projection data is intentionally second paint. One shared request feeds
      both the cold open and Power Pulse, so making Home livelier does not make

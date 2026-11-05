@@ -681,9 +681,11 @@ export function startStage(root, deck, { refresh } = {}) {
     if(wide){
       // Enlarged type reflows into more rows; reserve the same room for every
       // story so long award names never clip or move the surrounding Home.
-      const scale=Math.max(1,parseFloat(getComputedStyle(document.documentElement).fontSize)/16),base=Math.ceil(Math.max(items.length>1?196:172,Math.min(260,root.clientWidth/2.5+(items.length>1?44:8)))*scale+64*(scale-1));
+      const scale=Math.max(1,parseFloat(getComputedStyle(document.documentElement).fontSize)/16);
+      const preferred=Number(getComputedStyle(root).getPropertyValue('--bx-wide-height'))||Math.min(260,root.clientWidth/2.5+(items.length>1?44:8));
+      const base=Math.ceil(Math.max(items.length>1?196:172,preferred)*scale+64*(scale-1));
       root.toggleAttribute('data-bx-large-text',scale>1.05);
-      const key=`wide:${root.clientWidth}:${scale}:${JSON.stringify(items)}`;
+      const key=`wide:${root.clientWidth}:${scale}:${preferred}:${JSON.stringify(items)}`;
       if(key!==layoutKey){
         // Reserve exceptional wrapping once for the edition. Rotation must
         // never clip a real team name or move the content below the stage.
