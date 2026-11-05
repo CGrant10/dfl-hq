@@ -18,11 +18,11 @@ class Handler(SimpleHTTPRequestHandler):
  def log_message(self,*a):pass
 server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start();base=f'http://127.0.0.1:{server.server_port}'
 fixture='''
-window.bookFixture={writes:[],reads:[]};const f=window.bookFixture;
+window.bookFixture={writes:[],reads:[],wallet:{balance:420,claimable:50,claimable_days:1,next_daily_at:'2026-11-06T09:00:00Z'},claimAttempts:0};const f=window.bookFixture;
 f.members=['Bayou Bombers','Klutch Sports Group','Bastards of the Realm','Monday Night Mayhem'].map((name,i)=>({id:i+1,team_name:name,display_name:'Review '+(i+1),sleeper_user_id:String(i+1),active:true}));f.member=f.members[0];
 f.markets=[1,2].map((id,i)=>({id,category:'Fantasy',status:'open',source:'sleeper',auto_key:'matchup:2026:8:'+id,closes_at:'2099-11-02T23:00:00Z',title:f.members[i*2].team_name+' vs '+f.members[i*2+1].team_name}));
 f.outcomes=f.members.map((m,i)=>({id:i+1,market_id:Math.floor(i/2)+1,label:m.team_name,sleeper_user_id:m.sleeper_user_id,sleeper_roster_id:i+1,odds_american:i%2?120:-110,status:'open'}));
-f.db={from:table=>{let rows=table==='sportsbook_markets'?f.markets:table==='sportsbook_outcomes'?f.outcomes:table==='sleeper_leagues'?[{season:2026,sleeper_league_id:'review'}]:[];const q=new Proxy({}, {get:(_,key)=>{if(key==='then')return resolve=>resolve({data:rows,error:null});if(['insert','upsert','delete','update'].includes(key))return()=>{f.writes.push(key);throw Error('No review writes')};if(key==='eq')return(k,v)=>{rows=rows.filter(r=>r[k]===v);return q};if(key==='in')return(k,vs)=>{rows=rows.filter(r=>vs.includes(r[k]));return q};if(key==='neq')return(k,v)=>{rows=rows.filter(r=>r[k]!==v);return q};if(key==='maybeSingle'||key==='single')return async()=>({data:rows[0]||null,error:null});return()=>q;}});return q},rpc:async name=>{f.reads.push(name);const data=name==='sportsbook_touch_wallet'?[{balance:420,claimable:50,claimable_days:1}]:name==='sportsbook_my_live_account'?{member_id:1,balance:420,bets:[],ledger:[]}:name==='pickem_current_board'?{available:false}:name==='sportsbook_weekly_recap'?null:[];if(!['sportsbook_touch_wallet','sportsbook_my_live_account','pickem_current_board','sportsbook_weekly_recap','sportsbook_leaderboard','sportsbook_trending_picks','sportsbook_prop_index'].includes(name)){f.writes.push(name);throw Error('Unexpected review RPC '+name)}return {data,error:null}}};
+f.db={from:table=>{let rows=table==='sportsbook_markets'?f.markets:table==='sportsbook_outcomes'?f.outcomes:table==='sleeper_leagues'?[{season:2026,sleeper_league_id:'review'}]:[];const q=new Proxy({}, {get:(_,key)=>{if(key==='then')return resolve=>resolve({data:rows,error:null});if(['insert','upsert','delete','update'].includes(key))return()=>{f.writes.push(key);throw Error('No review writes')};if(key==='eq')return(k,v)=>{rows=rows.filter(r=>r[k]===v);return q};if(key==='in')return(k,vs)=>{rows=rows.filter(r=>vs.includes(r[k]));return q};if(key==='neq')return(k,v)=>{rows=rows.filter(r=>r[k]!==v);return q};if(key==='maybeSingle'||key==='single')return async()=>({data:rows[0]||null,error:null});return()=>q;}});return q},rpc:async name=>{f.reads.push(name);if(name==='sportsbook_claim_daily'&&f.allowClaims){f.claimAttempts++;if(f.failClaim)return {data:null,error:{message:'Claim unavailable. Try again.'}};if(f.holdClaim)await new Promise(resolve=>f.releaseClaim=resolve);const credited=f.wallet.claimable;f.wallet={...f.wallet,balance:f.wallet.balance+credited,claimable:0,claimable_days:0};return {data:[{credited}],error:null}}const data=name==='sportsbook_touch_wallet'?[f.wallet]:name==='sportsbook_my_live_account'?{member_id:1,balance:f.wallet.balance,bets:[],ledger:[]}:name==='pickem_current_board'?{available:false}:name==='sportsbook_weekly_recap'?null:[];if(!['sportsbook_touch_wallet','sportsbook_my_live_account','pickem_current_board','sportsbook_weekly_recap','sportsbook_leaderboard','sportsbook_trending_picks','sportsbook_prop_index'].includes(name)){f.writes.push(name);throw Error('Unexpected review RPC '+name)}return {data,error:null}}};
 '''
 checks=[];errors=[]
 with sync_playwright() as p:
@@ -47,6 +47,13 @@ with sync_playwright() as p:
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(mode,width)
    assert page.locator('[data-bet-outcome]').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-100'),(mode,width,'market hidden by setup')
    page.screenshot(path=str(OUT/f'{mode}-{width}-book.png'))
+   for size in [16,32]:
+    page.evaluate('size=>document.documentElement.style.fontSize=size+"px"',size);page.wait_for_timeout(80)
+    claim=page.locator('#sb-claim')
+    metrics=claim.evaluate('''e=>{const r=e.getBoundingClientRect(),tabs=document.querySelector('.sb-tabs').getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return {fits:r.left>=0&&r.right<=innerWidth&&r.height>=44,clear:r.bottom<=tabs.top,tappable:e.contains(hit),overflow:document.documentElement.scrollWidth>innerWidth}}''')
+    assert metrics['fits'] and metrics['clear'] and metrics['tappable'] and not metrics['overflow'],(mode,width,size,metrics)
+    if size==32:page.screenshot(path=str(OUT/f'{mode}-{width}-claim-large.png'))
+   page.evaluate('document.documentElement.style.fontSize=""')
    checks.append({'mode':mode,'width':width,'markets':2,'balance':420,'fit':True,'fiveDestinations':True})
  assert page.locator('#sportsbook-wrap>.sb-tabs [data-sb-view]').count()==3 and page.locator('.sb-product-tabs').count()==0
  page.locator('[data-sb-view="tickets"]').click();assert page.locator('#sb-tickets').is_visible() and not page.locator('#sb-markets').is_visible()
@@ -54,10 +61,23 @@ with sync_playwright() as p:
  page.keyboard.press('Home');assert page.locator('#sb-markets').is_visible() and not page.locator('#sb-pickem-panel').is_visible()
  page.locator('[data-market-activity="props"]').click();assert page.locator('#sb-market-panel-props').is_visible()
  page.locator('[data-market-activity="fantasy"]').click()
- assert not page.locator('#sb-claim').is_visible()
- page.locator('.sb-wallet-options>summary').click();assert page.locator('#sb-claim').is_visible();page.keyboard.press('Escape');assert not page.locator('.sb-wallet-options').evaluate('e=>e.open')
+ assert page.locator('#sb-claim').is_visible() and page.locator('.sb-wallet-options,.sb-wallet-actions').count()==0
  page.locator('[data-bet-outcome]').first.click();page.locator('[data-slip-open]').click();page.wait_for_selector('.sb-slip[open]');assert page.locator('.sb-slip-pick').count()==1
  page.locator('.sb-slip [data-close]').click();page.wait_for_function('!document.querySelector(".sb-slip[open]")')
  page.evaluate("document.documentElement.style.fontSize='32px'");assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');page.evaluate("document.documentElement.style.fontSize=''")
- page.evaluate('bookPage.leave()');assert not page.evaluate('bookFixture.writes'),page.evaluate('bookFixture.writes');assert not errors,errors;b.close()
-server.shutdown();result={'layouts':checks,'slip':True,'enlargedText':True,'errors':errors,'writes':[]};(OUT/'checks.json').write_text(json.dumps(result,indent=2));print(json.dumps(result))
+ assert not page.evaluate('bookFixture.writes'),page.evaluate('bookFixture.writes')
+ page.evaluate('bookFixture.allowClaims=true;bookFixture.failClaim=true');page.locator('#sb-claim').click()
+ page.wait_for_function('document.querySelector("#sb-claim")?.disabled===false')
+ assert page.locator('#sb-claim').inner_text()=='Claim 50 SIN'
+ page.evaluate('bookFixture.failClaim=false;bookFixture.holdClaim=true');page.locator('#sb-claim').click()
+ assert page.locator('#sb-claim').is_disabled() and page.locator('#sb-claim').inner_text()=='Claiming…'
+ page.locator('#sb-claim').dispatch_event('click');assert page.evaluate('bookFixture.claimAttempts')==2
+ page.evaluate('bookFixture.releaseClaim()');page.wait_for_function('document.querySelector("[data-book-balance]")?.textContent==="470"')
+ assert page.locator('#sb-claim').count()==0 and 'Next 50 SIN' in page.locator('.sb-bankroll').inner_text()
+ page.screenshot(path=str(OUT/'dark-claim-complete.png'))
+ page.evaluate('''async()=>{bookFixture.wallet.claimable=50;bookFixture.wallet.claimable_days=1;await bookPage.render(document.getElementById('view'))}''')
+ page.locator('#sb-claim').click();page.wait_for_function('bookFixture.claimAttempts===3')
+ page.evaluate('''()=>{bookPage.leave();document.getElementById('view').innerHTML='<h1>Other page</h1>';bookFixture.releaseClaim()}''');page.wait_for_timeout(200)
+ assert page.locator('#view h1').inner_text()=='Other page','A late claim replaced the next page'
+ assert not errors,errors;b.close()
+server.shutdown();result={'layouts':checks,'slip':True,'enlargedText':True,'errors':errors,'writes':[],'claimTapChecks':12,'mockClaimRetry':True,'mockClaimSingleFlight':True,'mockServerBalance':470,'lateClaimKeepsDestination':True};(OUT/'checks.json').write_text(json.dumps(result,indent=2));print(json.dumps(result))

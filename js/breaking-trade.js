@@ -40,11 +40,12 @@ function verdict(alert) {
 function markup(alert) {
   const commissioner = hasPermission("sleeper");
   const custom = alert?.kind === "custom";
-  return `<div class="breaking-trade-beacon" aria-hidden="true"><img src="assets/trade-alert-siren.webp" width="128" height="160" alt=""></div>
-    <a class="breaking-trade-copy" href="${esc(alert.href || "#/trade")}">
-      <small><b>BREAKING</b><span>${custom ? esc(alert.label || "LEAGUE ALERT") : `TRADE ALERT${alert.week ? ` · WEEK ${esc(alert.week)}` : ""}`}</span></small>
-      <strong>${esc(headline(alert))}</strong>
-      <em>${esc(verdict(alert))}</em>
+  const title=custom?headline(alert):names(alert).join(' ↔ ')||headline(alert);
+  return `<a class="breaking-trade-copy" href="${esc(alert.href || "#/trade")}" aria-label="${esc(`${title}. Open ${custom?'alert':'trade receipt'}`)}">
+      <small>${custom ? esc(alert.label || "LEAGUE ALERT") : `TRADE${alert.week ? ` · WEEK ${esc(alert.week)}` : ""}`}</small>
+      <strong>${!custom&&names(alert).length?names(alert).map(name=>`<span>${esc(name)}</span>`).join(''):esc(title)}</strong>
+      ${custom?`<em>${esc(verdict(alert))}</em>`:''}
+      <span class="breaking-trade-receipt">${custom?'Open':'Receipt'}<svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></span>
     </a>
     <button type="button" class="breaking-trade-dismiss" data-dismiss-alert aria-label="Dismiss this alert">×</button>
     ${commissioner ? `<button type="button" data-end-trade-coverage="${esc(alert.id)}" data-alert-kind="${custom ? "custom" : "trade"}" data-alert-raw-id="${esc(alert.rawId || alert.id)}">End alert</button>` : ""}`;
@@ -64,7 +65,7 @@ export function placeBreakingTradeCoverage() {
 
 function compactMarkup(alert){
  const title=alert.kind==='custom'?headline(alert):names(alert).join(' ↔ ')||headline(alert);
- return `<a class="breaking-trade-dock-copy" href="${esc(alert.href||'#/trade')}" aria-label="${esc(`${title}. ${verdict(alert)}. Open ${alert.kind==='custom'?'alert':'trade receipt'}`)}"><span class="breaking-trade-dock-dot" aria-hidden="true"></span><span><small>${alert.kind==='custom'?'LEAGUE ALERT':'TRADE'}${alert.week?` · WEEK ${esc(alert.week)}`:''}</small><strong>${esc(title)}</strong></span>${alert.kind!=='custom'&&alert.fairness!=null?`<b>${esc(alert.fairness)}%</b>`:''}</a><button type="button" data-dismiss-alert aria-label="Dismiss this alert">×</button>`;
+ return `<a class="breaking-trade-dock-copy" href="${esc(alert.href||'#/trade')}" aria-label="${esc(`${title}. Open ${alert.kind==='custom'?'alert':'trade receipt'}`)}"><span><small>${alert.kind==='custom'?'LEAGUE ALERT':'TRADE'}${alert.week?` · WEEK ${esc(alert.week)}`:''}</small><strong>${esc(title)}</strong></span><b>${alert.kind==='custom'?'Open':'Receipt'}</b></a><button type="button" data-dismiss-alert aria-label="Dismiss this alert">×</button>`;
 }
 
 function hide() {

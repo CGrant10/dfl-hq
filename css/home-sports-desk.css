@@ -91,18 +91,7 @@ body:has(.breaking-trade-dock:not([hidden])) #home-wrap :is(.home-broadcast,[dat
 /* One real alert lives below the story; its existing sticky dock still follows. */
 #view.view #home-wrap[data-home-edition="sports-desk"] .home-alert-slot { margin:0; }
 #view.view #home-wrap[data-home-edition="sports-desk"] .home-alert-slot:has(.breaking-trade:not([hidden])) { margin-inline:calc(-1 * var(--desk-edge)); }
-#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade { position:relative; top:auto; min-height:80px; grid-template-columns:40px minmax(0,1fr) 24px; gap:10px; padding:12px var(--desk-edge); border-block:1px solid var(--line-soft); border-inline:0; background:color-mix(in srgb,var(--danger-ink) 10%,var(--bg)); box-shadow:none; color:var(--text); }
-#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade-copy { gap:5px; }
-#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade-copy small { color:var(--accent); font:650 .5625rem/1.3 var(--font-ui); letter-spacing:.06em; }
-#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade-copy small span { color:inherit; }
-#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade-copy small b { display:none; }
-#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade-copy strong { white-space:normal; overflow:visible; text-overflow:clip; color:var(--text); font:700 1rem/1.12 var(--font-sport); letter-spacing:.005em; }
-#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade-copy em { white-space:normal; overflow:visible; color:var(--body-text); font:400 .625rem/1.4 var(--font-ui); }
-#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade-beacon { width:40px; height:50px; }
-#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade-beacon::before { content:none; }
-.breaking-trade-beacon>img { display:block; width:100%; height:100%; object-fit:contain; }
-#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade>button.breaking-trade-dismiss { display:block; min-width:24px; width:24px; min-height:44px; padding:0; border:0; border-radius:0; background:none; color:var(--body-text); font-size:20px; }
-#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade>[data-end-trade-coverage] { grid-column:2/-1; justify-self:end; min-height:44px; padding:4px 8px; border-color:var(--line); background:none; color:var(--accent); font:600 .625rem/1.3 var(--font-ui); }
+#view.view #home-wrap[data-home-edition="sports-desk"] .breaking-trade { padding-inline:var(--desk-edge); }
 
 /* Rankings read as one aligned list. Week selection remains one tap away. */
 #view.view #home-wrap[data-home-edition="sports-desk"] .power-edition { container:power-ranks / inline-size; border:0; padding:0; margin:0; }
