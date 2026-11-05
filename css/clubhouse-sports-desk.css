@@ -1,0 +1,82 @@
+/* The Home reading rhythm, applied to the live matchup workspace. */
+#view.view[data-route="clubhouse"] .clubhouse-topline {
+ position:relative; display:grid; grid-template-columns:minmax(0,1fr) 5.5rem;
+ align-items:start; gap:0 12px; min-width:0; margin:0 0 8px;
+ container:clubhouse-heading / inline-size;
+}
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-header {
+ grid-column:1; grid-row:1; padding:0; margin:0; min-width:0; gap:8px; border:0; flex-wrap:wrap;
+}
+#view.view[data-route="clubhouse"] .clubhouse-header h1 { margin:0; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-context {
+ grid-column:2; grid-row:1; width:100%; min-width:0; margin:0; padding:0; border:0; container:none;
+}
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-context>summary {
+ justify-content:flex-end; gap:8px; min-height:44px; padding:0 2px;
+ color:var(--text); font:600 .75rem/1.35 var(--font-ui);
+}
+#view.view[data-route="clubhouse"] .clubhouse-context>summary svg { flex:none; width:16px; height:16px; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-context[open] { grid-column:1/-1; grid-row:2; }
+#view.view[data-route="clubhouse"] .clubhouse-context[open]>summary { position:absolute; right:0; top:0; width:5.5rem; }
+#view.view[data-route="clubhouse"] .clubhouse-context-body { container:clubhouse-pickers / inline-size; padding:12px 0; margin-top:8px; border-block:1px solid var(--line-soft); }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-tabs { margin:0 0 8px; }
+
+/* One flat scoreboard surface: browsing rail, selected teams, then players. */
+#view.view[data-route="clubhouse"] .clubhouse-matchup-surface { min-width:0; border-top:1px solid var(--line-soft); }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-strip {
+ gap:4px; margin:0; padding:0 0 4px; border-bottom:1px solid var(--line-soft);
+}
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-strip .clubhouse-scoreboard-game {
+ padding:6px 8px; gap:6px; border:0; border-bottom:2px solid transparent;
+ border-radius:0; background:transparent; box-shadow:none;
+ transition:color 160ms ease,border-color 160ms ease;
+}
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-strip .clubhouse-scoreboard-game[aria-pressed="true"] {
+ border-color:var(--accent); background:transparent; box-shadow:none;
+}
+#view.view[data-route="clubhouse"] .clubhouse-scoreboard-game[aria-pressed="true"] .clubhouse-chip-team>b { display:block; color:var(--text); }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-card { border:0; padding:8px 0 0; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-card>header { padding:0 0 6px; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-game-teams {
+ padding:8px 0 10px; margin:0; border:0; border-bottom:1px solid var(--line-soft);
+ border-radius:0; background:transparent;
+}
+#view.view[data-route="clubhouse"] .clubhouse-page.clubhouse-command-center .clubhouse-matchup-card[data-matchup-state] .clubhouse-game-teams { background:transparent; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-remaining { font-size:.6875rem; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-summary { margin:6px 0 10px; font-size:.6875rem; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .gd-lineup-comparison { margin-block:12px 20px; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .gd-lineup-comparison>h3 { font-size:.75rem; }
+
+/* Aligned opposing rows retain full names, weekly stats and touch targets. */
+#view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player { gap:4px; padding:6px 0 2px; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player .dfl-player-copy strong { font-size:.75rem; line-height:1.3; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player .dfl-player-copy small { font-size:.625rem; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player .gameday-player-score>small { font-size:.625rem; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .gd-player-stat-line { margin:0 0 6px; font-size:.625rem; line-height:1.4; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-slot { color:var(--body-text); font-size:.625rem; }
+
+@container clubhouse-lineups (max-width:20rem) {
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player,
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player:nth-child(3) {
+  grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto; gap:0 4px; padding:2px 0 0;
+ }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player .gameday-player-tap,
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player:nth-child(3) .gameday-player-tap { grid-column:1; grid-row:1; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player .gameday-player-score,
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player:nth-child(3) .gameday-player-score {
+  grid-column:1; grid-row:2; flex-direction:row; justify-content:space-between; align-items:baseline; padding-top:0;
+ }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .gd-compare-player .gameday-player-score>small { max-width:none; }
+}
+
+/* Tools stay in normal document flow, including at enlarged text sizes. */
+@container clubhouse-heading (max-width:15rem) {
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-header { grid-column:1/-1; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-context { grid-column:1/-1; grid-row:2; }
+ #view.view[data-route="clubhouse"] .clubhouse-context>summary,
+ #view.view[data-route="clubhouse"] .clubhouse-context[open]>summary { position:static; width:100%; justify-content:flex-start; }
+}
+@media(prefers-reduced-motion:reduce) {
+ #view.view[data-route="clubhouse"] .clubhouse-matchup-strip .clubhouse-scoreboard-game { transition:none; }
+}
+html[data-ui-motion="off"] #view.view[data-route="clubhouse"] .clubhouse-matchup-strip .clubhouse-scoreboard-game { transition:none; }

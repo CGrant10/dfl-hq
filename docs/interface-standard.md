@@ -10,12 +10,27 @@ Trades, Book and More are the five primary destinations. Team Analyzer belongs
 in Clubhouse's Week & tools and More. The shared header uses the supplied round
 DFL mark; the shield remains reserved for the icon/update screen.
 
-Home's fixed reading order is matchup, three-preview media grid, wide broadcast,
-rankings and weekly tools. Phase updates must not shuffle that composition.
-Wall stays last. Real clip thumbnails and headlines supply the media content;
-loading reserves its geometry and never mounts video on first paint. Browse
-retains the full reel and its filters. Keep real long names and current data
-readable rather than freezing illustrative reference copy into the app.
+The user-selected Sports Desk composition (Home 1.541.0, Clubhouse 1.543.0)
+is owned by `css/home-sports-desk.css` and `css/clubhouse-sports-desk.css` after
+the shared component sheets. Preserve this direction when extending other pages.
+
+Home's fixed reading order is matchup, wide broadcast, active trade coverage,
+rankings, highlights, weekly tools, league/archive content and the Wall last.
+Phase updates must not shuffle that composition. Real clip thumbnails and
+headlines supply the media content; loading reserves geometry and never mounts
+video on first paint. Browse retains the full reel and its filters. Keep real
+long names and current data readable rather than freezing reference copy.
+
+Clubhouse puts the native week/tools control beside its title, expanding into
+normal flow below it. Narrow/enlarged layouts can stack that control. The six
+section tabs lead directly into one matchup rail/scoreboard and opposing player
+rows, followed by supporting panels. Keep names, weekly stat lines, PPR averages,
+44px targets, semantic phases and hot/cold effects. Late chip-size changes may
+reveal the selected matchup; deliberate rail browsing must retain its position.
+
+The shared phone navigation uses 56px buttons, 22px icons and 11px labels at the
+default text size (1.542.0). Native safe-area space is additional; enlarged text
+can wrap. Desktop keeps 48px buttons. Keep the existing moving active marker.
 
 Occasional controls use a visible native disclosure: Clubhouse Week & tools,
 Trade Edit search and Book bankroll actions. Keep the current search/balance

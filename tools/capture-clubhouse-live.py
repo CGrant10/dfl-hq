@@ -92,6 +92,7 @@ with sync_playwright() as p:
    page.locator('[data-layout-probe]').screenshot(path=str(OUT/f'{width}-{mode}-populated-history.png'))
    page.locator('[data-layout-probe]').evaluate('e=>e.remove()')
    check(tag+' opens on competition with week tools folded',not page.locator('.clubhouse-context').evaluate('e=>e.open') and page.locator('[href="#/analyzer"]').count()>0)
+   check(tag+' week control shares the heading without overlap',page.locator('.clubhouse-topline').evaluate('''e=>{const h=e.querySelector('.clubhouse-header').getBoundingClientRect(),s=e.querySelector('summary').getBoundingClientRect();return s.height>=44&&s.left>=h.right-1&&s.top<h.bottom&&s.right<=innerWidth}'''))
    page.evaluate('scrollTo(0,0)');page.wait_for_timeout(700);page.screenshot(path=str(OUT/f'{width}-{mode}-clubhouse-default.png'));page.locator('.clubhouse-matchup-desk').screenshot(path=str(OUT/f'{width}-{mode}-matchup-content.png'))
    check(tag+' starting players are visible on the first phone screen',page.locator('[data-clubhouse-matchup="1"] .gd-lineup-pairs .gd-compare-row').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-70'))
    check(tag+' matchup uses compact chips and a compact first player pair',page.locator('.clubhouse-matchup-strip').evaluate('e=>e.clientHeight<=56') and page.locator('[data-clubhouse-matchup="1"] .gd-compare-row').first.evaluate('e=>e.clientHeight<=100'))
@@ -108,6 +109,7 @@ with sync_playwright() as p:
     page.locator('#view').evaluate("e=>e.style.paddingInline='16px'")
     for size,reader in [(16,'compact'),(16,'comfortable'),(20,'compact'),(32,'compact')]:
      page.evaluate("([size,reader])=>{document.documentElement.style.fontSize=size+'px';document.documentElement.dataset.readability=reader}",[size,reader]);page.evaluate('document.fonts.ready')
+     check(f'{tag}/{size}px/{reader} open week controls fit beside or below the heading',page.locator('.clubhouse-topline').evaluate('''e=>{const h=e.querySelector('.clubhouse-header').getBoundingClientRect(),s=e.querySelector('summary').getBoundingClientRect(),body=e.querySelector('.clubhouse-context-body').getBoundingClientRect();return s.height>=44&&s.left>=0&&s.right<=innerWidth&&(s.left>=h.right-1||s.top>=h.bottom-1)&&body.top>=Math.max(h.bottom,s.bottom)-1&&body.right<=innerWidth+1}'''))
      for tab in ['matchups','highlights','nfl','leaders','overview','recap']:
       page.locator(f'[data-clubhouse-tab="{tab}"]').evaluate('e=>e.click()');page.wait_for_timeout(90)
       metrics=page.locator('.clubhouse-tabs').evaluate('''e=>{

@@ -35,6 +35,16 @@ def review_matchup_swipes(page,context,check,out,tag,width,mode):
  drag(1);check(tag+' the last edge settles without wrapping',selected()=='6')
  page.wait_for_function('''()=>{const rail=document.querySelector('.clubhouse-matchup-strip'),b=rail.querySelector('[aria-pressed="true"]').getBoundingClientRect(),r=rail.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1}''')
  check(tag+' the active matchup is revealed in the strip',True)
+ # Late font/score geometry can widen chips after the first reveal. Keep the
+ # selected game visible until the user deliberately browses the rail away.
+ page.locator('.clubhouse-matchup-strip button').evaluate_all("es=>es.forEach(e=>e.style.paddingInline='18px')")
+ page.wait_for_function('''()=>{const rail=document.querySelector('.clubhouse-matchup-strip'),b=rail.querySelector('[aria-pressed="true"]').getBoundingClientRect(),r=rail.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1}''')
+ check(tag+' late chip resizing preserves the visible selected matchup',True)
+ page.locator('.clubhouse-matchup-strip').evaluate("e=>{e.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));e.scrollLeft=0}")
+ page.locator('.clubhouse-matchup-strip button').evaluate_all("es=>es.forEach(e=>e.style.paddingInline='20px')")
+ page.wait_for_timeout(180)
+ check(tag+' chip resizing preserves deliberate rail browsing',page.locator('.clubhouse-matchup-strip').evaluate('e=>e.scrollLeft<2'))
+ page.locator('.clubhouse-matchup-strip button').evaluate_all("es=>es.forEach(e=>e.style.removeProperty('padding-inline'))")
  tile=page.locator('.clubhouse-matchup-strip [aria-pressed="true"]');tile.focus();page.keyboard.press('Home')
  check(tag+' Home selects the first tile without changing tabs',selected()=='1' and page.locator('#clubhouse-tab-matchups').get_attribute('aria-selected')=='true')
  page.keyboard.press('ArrowRight');check(tag+' arrow keys browse the visible matchup strip',selected()=='2')

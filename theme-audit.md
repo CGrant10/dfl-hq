@@ -1,3 +1,27 @@
+## 1.543.0 — Clubhouse adopts the Home Sports Desk rhythm
+
+The native week/tools disclosure shares the title row and expands in normal
+flow. Season context appears once in the heading; the selected matchup owns its
+live/upcoming/final state. The matchup rail and selected scoreboard form one
+flat section with semantic phase accents and soft dividers. Scores remain
+visible in every chip, avoiding selected/unselected width changes. Opposing
+player rows keep full names, 44px targets, weekly stat lines, PPR averages and
+hot/cold effects. Narrow/enlarged rows put points below the player's identity.
+No new font, media asset, animation loop, explanatory blurb or data write was
+introduced; score refresh, paging and existing portrait motion remain.
+
+Reviewed Light/Dark mobile screens with actual read-only league data at 390px
+and a narrow 320px/200% text case, including native tools open/closed. The chosen
+matchup stays visible while its chip geometry settles; manual rail browsing is
+preserved. Observer/listener cleanup runs on leave. Existing production-controller
+fixtures pass 330 all-tab/width/text layout checks, 136 native swipe checks,
+108 focused heading checks and 313 connected Clubhouse checks. The score-effects
+runner passes 81 checks for scrolling, clipping, mask reuse and cleanup. All
+2,446 unit tests, theme/release/name checks, typecheck and production build pass.
+Physical Safari, measured frame rate and assistive-technology speech were not
+tested. This release updates Clubhouse; the other audited page redesigns remain
+separate work.
+
 ## 1.542.0 — compact shared navigation
 
 Reduced regular-season navigation buttons from 72px to 56px, icons from 24px to
