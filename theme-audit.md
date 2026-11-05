@@ -1,3 +1,35 @@
+## 1.541.0 — selected Home Sports Desk design
+
+Implemented the user's first displayed Home design in Medicine Wheel Light/Dark.
+Matchup, broadcast, trade alert and rankings have a fixed reading order; highlights
+follow rankings and the Wall remains last. Existing theme tokens own all UI
+surfaces, borders, type, selected/pressed colors and focus rings. Round branding,
+original broadcast art and semantic trade colors remain. The new raster siren
+replaces the old perpetual beacon rings; no animation loop or font was added.
+Shared header/navigation sizing remains consistent across pages. Section jumps
+reserve the measured header/navigation space and active trade coverage.
+
+Reviewed actual compiled Home at 320/390/430/768px and 100/125/200% text, with a
+separate image row and aligned scores at enlarged sizes. Both normal themes and
+enlarged screenshots were inspected. Primary controls retain keyboard access;
+carousel arrows, story picker and pause retain 44px targets. CSS-surface text
+samples passed contrast in both themes; raster image contrast was inspected,
+not exhaustively measured. Read-only tests also cover sticky alerts, exact trade
+receipt routing, navigation away/back, ranking-week focus, expansion and native
+swipes. Clubhouse/History shared chrome was checked in both themes. No document
+overflow or browser page errors were found. See [design-qa.md](design-qa.md) for
+visual comparisons, fix history, accepted differences and verification limits.
+
+`pnpm themes`, the 2,446-test suite, typecheck, name/release checks and production
+build pass. Broadcast fixtures cover 90 normal and 56 enlarged layouts, with the
+enlarged set rerun after the accessibility changes. No physical-device battery,
+frame-rate, VoiceOver or Safari claim is made. Actual league screenshots stay local. The rankings controller review also covers
+the new week-picker flow, enlarged header/rating reflow, full reports and image
+fallbacks; long opposing names retain aligned matchup totals. The current Home
+surface runner passes 24 layouts plus six enlarged cases; shared chrome and section
+jumps pass 60 checks. Current dedicated runners replace the historical broad Home
+assertions as the release gate, with the other feature runners retained.
+
 ## 1.540.0 — broadcast graphics and connected mobile viewing
 
 Reviewed the current broadcast on narrow phones in Medicine Wheel Light/Dark:

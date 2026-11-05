@@ -40,14 +40,26 @@ function verdict(alert) {
 function markup(alert) {
   const commissioner = hasPermission("sleeper");
   const custom = alert?.kind === "custom";
-  return `<div class="breaking-trade-beacon" aria-hidden="true"><i></i><i></i></div>
+  return `<div class="breaking-trade-beacon" aria-hidden="true"><img src="assets/trade-alert-siren.webp" width="128" height="160" alt=""></div>
     <a class="breaking-trade-copy" href="${esc(alert.href || "#/trade")}">
       <small><b>BREAKING</b><span>${custom ? esc(alert.label || "LEAGUE ALERT") : `TRADE ALERT${alert.week ? ` · WEEK ${esc(alert.week)}` : ""}`}</span></small>
       <strong>${esc(headline(alert))}</strong>
-      <em>${esc(verdict(alert))}${custom ? "" : " · Tap for the full receipt"}</em>
+      <em>${esc(verdict(alert))}</em>
     </a>
     <button type="button" class="breaking-trade-dismiss" data-dismiss-alert aria-label="Dismiss this alert">×</button>
     ${commissioner ? `<button type="button" data-end-trade-coverage="${esc(alert.id)}" data-alert-kind="${custom ? "custom" : "trade"}" data-alert-raw-id="${esc(alert.rawId || alert.id)}">End alert</button>` : ""}`;
+}
+
+/** Keep the same alert/controller through Home redraws and route changes. */
+export function placeBreakingTradeCoverage() {
+  if (!host) return;
+  const slot = excludedRoute() ? null : document.querySelector('[data-home-alert-slot]');
+  if (slot) {
+    if (host.parentElement !== slot) slot.append(host);
+  } else if (host.parentElement !== document.body) {
+    host.hidden = true;
+    document.querySelector('.topbar')?.insertAdjacentElement('afterend', host);
+  }
 }
 
 function compactMarkup(alert){
@@ -112,6 +124,7 @@ export function mountBreakingTradeCoverage() {
   host.hidden = true;
   const topbar = document.querySelector(".topbar");
   topbar?.insertAdjacentElement("afterend", host);
+  placeBreakingTradeCoverage();
 
   const handleClick = async event => {
     if (event.target.closest("[data-dismiss-alert]")) {
@@ -158,7 +171,8 @@ export function mountBreakingTradeCoverage() {
     if (currentAlert && !host.hidden) host.innerHTML = markup(currentAlert);
     else void refresh({ force: true });
   });
-  listen(window,"hashchange", () => refresh({ force: true }));
+  listen(window,"hashchange", () => { placeBreakingTradeCoverage(); void refresh({ force: true }); });
+  listen(window,"dfl:route-performance", placeBreakingTradeCoverage);
   listen(document,"visibilitychange", () => { if (!document.hidden) void refresh({ force: true }); });
   void refresh({ force: true });
   timer = window.setInterval(() => void refresh(), 60_000);

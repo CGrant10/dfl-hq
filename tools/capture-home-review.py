@@ -1,4 +1,9 @@
-"""Capture the production-component review without changing league data."""
+"""Historical broad Home harness and shared fixture helpers.
+
+Its standalone assertions describe retired layouts. Current release gates use
+capture-interface-system.py, capture-home-shell.py and dedicated feature runners.
+Ranking review still imports the fixture server/helpers above the main block.
+"""
 import json
 import os
 import threading

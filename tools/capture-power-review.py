@@ -29,6 +29,15 @@ with sync_playwright() as p:
     page.evaluate("()=>{window.powerMotionStarts=0;const original=Element.prototype.animate;Element.prototype.animate=function(...args){if(this.closest('.power-edition'))window.powerMotionStarts++;return original.apply(this,args)}}")
     page.evaluate("async()=>{const {buildPowerBoards}=await import('./js/league-power-model.js');const {currentAnalyzerRoster}=await import('./js/analyzer-league-context.js');const {powerRankingsMarkup,mountPowerRankings}=await import('./js/league-power-ui.js');window.powerReviewMount=()=>{window.reviewPowerStop?.();const root=document.querySelector('[data-home-rankings-slot]');root.innerHTML=powerRankingsMarkup(window.reviewPowerRankings);window.reviewPowerStop=mountPowerRankings(root,window.reviewPowerRankings)};const teams=Array.from({length:12},(_,i)=>({id:String(i+1),roster_id:i+1,team_name:i===8?'The Bastards of the Very Long Championship Team Name':i===0?'<script>Team One</script>':'DFL Team '+(i+1),powerForecast:{complete:true,points:120+i}}));teams.forEach((t,i)=>{const owner='review-owner-'+i,custom=i===8||i===11?'https://sleepercdn.com/uploads/broken-team.jpg':i%2?'https://sleepercdn.com/uploads/team-'+i+'.jpg':null;Object.assign(t,currentAnalyzerRoster({...t,sleeper_user_id:owner},i===11?{profile_image:'https://sleepercdn.com/uploads/dfl-profile.jpg'}:null,[{user_id:owner,metadata:{team_name:t.team_name,avatar:custom},avatar:i===10?null:i===11?'broken-owner':'owner-avatar-'+i}]))});const matchups=Array.from({length:4},(_,w)=>Array.from({length:6},(_,i)=>({season:2026,week:w+1,roster1:i+1,roster2:i+7,score1:80+i*8+(w===3?i*12:0),score2:100+i*4-(w===3?i*8:0)}))).flat();window.reviewPowerRankings={focus:{id:'9'},allTeams:teams,powerRankings:buildPowerBoards({teams,matchups,currentWeek:5,season:2026})};powerReviewMount()}")
     page.evaluate("document.addEventListener('click',e=>{(window.powerClicks||=[]).push({target:e.target.outerHTML.slice(0,200),inert:!!e.target.closest('[inert]')})},true)")
+    def choose_week(direction,programmatic=False):
+        picker=page.locator('.power-edition-tools')
+        if not picker.evaluate('e=>e.open'):
+            if programmatic:picker.locator('summary').evaluate('e=>e.click()')
+            else:picker.locator('summary').click()
+        button=page.locator(f'[data-power-week="{direction}"]')
+        if programmatic:button.evaluate('e=>e.click()')
+        else:button.click()
+        assert page.locator('.power-edition-tools>summary').evaluate('e=>e===document.activeElement')
     def open_report(programmatic=False):
         row=page.locator('.power-edition .is-me')
         expand=row.locator('[data-power-expand]')
@@ -161,12 +170,12 @@ with sync_playwright() as p:
     page.locator('[data-home-rank-toggle]').evaluate('e=>e.click()')
     page.wait_for_timeout(50)
     page.set_viewport_size({'width':320,'height':900})
-    page.locator('[data-power-week="-1"]').evaluate('e=>e.click()')
+    choose_week(-1,programmatic=True)
     page.wait_for_timeout(380)
     assert page.locator('[data-home-rank-toggle]').get_attribute('aria-expanded')=='false'
     assert card.locator(':scope>ol').evaluate('e=>!e.style.height')
     assert card.locator('.is-rank-collapsed').evaluate_all('(rows)=>rows.every(r=>r.inert&&r.getBoundingClientRect().height<1)')
-    page.locator('[data-power-week="1"]').click()
+    choose_week(1)
     results.append({'expansion':'intermediate heights in both directions, continuous reversal, resize and week switch','heights':[folded,opening,full,closing]})
     # The ranking details use the existing mobile sheet gesture.
     open_report()
@@ -186,17 +195,17 @@ with sync_playwright() as p:
     page.wait_for_timeout(380)
     assert page.locator('.power-edition>ol>li:visible .power-team-link').count()==12
     assert page.locator('[data-home-rank-toggle]').get_attribute('aria-expanded')=='true'
-    page.locator('[data-power-week="-1"]').click()
+    choose_week(-1)
     assert page.locator('.power-edition>ol>li:visible .power-team-link').count()==12
     assert page.locator('[data-home-rank-toggle]').get_attribute('aria-expanded')=='true'
-    page.locator('[data-power-week="1"]').click()
+    choose_week(1)
     assert page.locator('.power-edition>ol>li:visible .power-team-link').count()==12
     page.locator('[data-home-rank-toggle]').click()
-    for _ in range(4):page.locator('[data-power-week="-1"]').click()
-    assert page.locator('.power-week-nav strong').inner_text()=='Roster model'
+    for _ in range(4):choose_week(-1)
+    assert page.locator('.power-edition-week').inner_text()=='Roster model'
     assert page.locator('[data-power-week="-1"]').is_disabled()
-    for _ in range(4):page.locator('[data-power-week="1"]').click()
-    assert page.locator('.power-week-nav strong').inner_text()=='Week 4'
+    for _ in range(4):choose_week(1)
+    assert page.locator('.power-edition-week').inner_text()=='Week 4'
     assert page.locator('[data-power-week="1"]').is_disabled()
     page.set_viewport_size({'width':320,'height':900})
     for theme in ['light','dark']:
