@@ -5,11 +5,17 @@ from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
 from playwright.sync_api import sync_playwright
 ROOT=Path(__file__).resolve().parents[1]
 OUT=Path(os.environ.get('DFL_ALERT_REVIEW_DIR',ROOT.parent/'dfl-alert-review'));OUT.mkdir(parents=True,exist_ok=True)
-HTML='''<!doctype html><html data-ui-motion="on"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="css/tokens.css"><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/breaking-trade.css"><link rel="stylesheet" href="css/app-shared.css"><style>body{min-height:3000px}.topbar{height:44px}#view{min-height:2800px}.gameday-matchup{height:400px}.gameday-faceoff-team{display:inline-block;width:45%}.gameday-faceoff-mark{display:block;width:30px;height:30px}#more:not(.hidden){position:fixed;inset:0;background:#111;z-index:200}#tabbar{height:49px}</style><header class="topbar">DFL</header><aside class="breaking-trade">Three-team deal · Full receipt</aside><main id="view" class="view" data-route="home"><h1>Home</h1><div data-home-gameday-slot><section class="gameday-matchup"><div class="gameday-faceoff-team"><i class="gameday-faceoff-mark">KS</i><span class="home-team-name"><strong>Klutch Sports</strong></span><b class="home-projected-total">124</b></div><div class="gameday-faceoff-team"><i class="gameday-faceoff-mark">BB</i><span class="home-team-name"><strong>Bayou Bombers</strong></span><b class="home-projected-total">118</b></div></section></div><h2>Week ahead</h2></main><nav id="tabbar" class="tabbar">Navigation</nav><div id="more" class="hidden">More</div><script type="module">import{mountTradeAlertDock}from './js/trade-alert-dock.js';import{mountHomeScoreCollapse}from './js/home-score-collapse.js';import{scrollChromeBottom}from './js/scroll-chrome.js';const host=document.querySelector('.breaking-trade');const dock=mountTradeAlertDock(host,{onClick:e=>{if(e.target.closest('[data-dismiss-alert]')){host.hidden=true;dock.update('')}}});dock.update('<a class="breaking-trade-dock-copy" href="#/trade?tx=three-way"><span class="breaking-trade-dock-dot"></span><span><small>TRADE · WEEK 6</small><strong>Bayou Bombers ↔ Klutch Sports Group ↔ Dream Enders</strong></span><b>78%</b></a><button type="button" data-dismiss-alert aria-label="Dismiss this alert">×</button>');const score=mountHomeScoreCollapse(document.querySelector('#view'));window.chromeBottom=scrollChromeBottom;window.stopReview=()=>{dock.stop();score()};window.reviewReady=true;</script></html>'''
+HTML='''<!doctype html><html data-ui-motion="on"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="css/tokens.css"><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/breaking-trade.css"><link rel="stylesheet" href="css/app-shared.css"><style>body{min-height:3000px}.topbar{height:44px}#view{min-height:2800px}.gameday-matchup{height:400px}.gameday-faceoff-team{display:inline-block;width:45%}.gameday-faceoff-mark{display:block;width:30px;height:30px}#more:not(.hidden){position:fixed;inset:0;background:#111;z-index:200}#tabbar{height:49px}</style><header class="topbar">DFL</header><main id="view" class="view" data-route="home"><div id="home-wrap" data-home-edition="sports-desk"><h1>Home</h1><div data-home-alert-slot></div><div data-home-gameday-slot><section class="gameday-matchup"><div class="gameday-faceoff-team"><i class="gameday-faceoff-mark">KS</i><span class="home-team-name"><strong>Klutch Sports</strong></span><b class="home-projected-total">124</b></div><div class="gameday-faceoff-team"><i class="gameday-faceoff-mark">BB</i><span class="home-team-name"><strong>Bayou Bombers</strong></span><b class="home-projected-total">118</b></div></section></div><h2>Week ahead</h2></div></main><nav id="tabbar" class="tabbar">Navigation</nav><div id="more" class="hidden">More</div><script type="module">
+import{mountBreakingTradeCoverage,stopBreakingTradeCoverage}from './js/breaking-trade.js';import{mountHomeScoreCollapse}from './js/home-score-collapse.js';import{scrollChromeBottom}from './js/scroll-chrome.js';import{pinMode}from './js/theme.js';
+window.alertFixture={id:'three-way',breakingActive:true,breakingStartedAt:new Date().toISOString(),teams:['The Bayou Bombers','Klutch Sports Group','Dream Enders'].map(teamName=>({teamName})),fairness:78,week:6,href:'#/trade?tx=three-way'};window.setReviewTheme=pinMode;mountBreakingTradeCoverage();const score=mountHomeScoreCollapse(document.querySelector('#view'));window.chromeBottom=scrollChromeBottom;window.stopReview=()=>{stopBreakingTradeCoverage();score()};window.reviewReady=true;</script></html>'''
 class Handler(SimpleHTTPRequestHandler):
  def __init__(self,*a,**kw):super().__init__(*a,directory=str(ROOT),**kw)
  def do_GET(self):
-  if self.path.split('?')[0]=='/':
+  path=self.path.split('?')[0]
+  mocks={'/js/supabase.js':"export const ACCESS_EVENT='review-access';export const hasPermission=()=>!!window.reviewCommissioner;export const db=()=>{throw Error('No review database')};",'/js/members.js':"export const currentMember=()=>null;",'/js/trade-alerts.js':"export const loadActiveTradeAlert=async()=>window.alertFixture;export const endBreakingTradeCoverage=async()=>{throw Error('No review writes')};",'/js/custom-alerts.js':"export const loadActiveCustomAlert=async()=>null;export const endCustomBreakingAlert=async()=>{throw Error('No review writes')};"}
+  if path in mocks:
+   self.send_response(200);self.send_header('Content-Type','text/javascript');self.end_headers();self.wfile.write(mocks[path].encode());return
+  if path=='/':
    self.send_response(200);self.send_header('Content-Type','text/html');self.end_headers();self.wfile.write(HTML.encode())
   else:super().do_GET()
  def log_message(self,*args):pass
@@ -17,15 +23,26 @@ server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=serv
 checks=[]
 with sync_playwright() as p:
  b=p.chromium.launch(executable_path=os.environ.get('DFL_REVIEW_CHROMIUM'),headless=True,args=['--no-sandbox','--disable-dev-shm-usage']);c=b.new_context(viewport={'width':390,'height':844},has_touch=True);page=c.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
- page.goto(f'http://127.0.0.1:{server.server_port}/#/home');page.wait_for_function('window.reviewReady');page.wait_for_timeout(200)
+ page.goto(f'http://127.0.0.1:{server.server_port}/#/home');page.wait_for_function('window.reviewReady');page.wait_for_selector('.breaking-trade:not([hidden])');page.wait_for_timeout(200)
  dock=page.locator('.breaking-trade-dock');assert dock.is_hidden();checks.append('Full alert scrolls naturally without a duplicate fixed alert')
+ for mode in ['light','dark']:
+  page.evaluate('mode=>setReviewTheme(mode)',mode)
+  for width in [320,390,430]:
+   for size in [16,32]:
+    page.set_viewport_size({'width':width,'height':844});page.evaluate('size=>{document.documentElement.style.fontSize=size+"px";scrollTo(0,0)}',size);page.wait_for_timeout(120)
+    alert=page.locator('.breaking-trade');link=alert.locator('a');assert link.get_attribute('href')=='#/trade?tx=three-way'
+    assert all(name in link.inner_text() for name in ['The Bayou Bombers','Klutch Sports Group','Dream Enders'])
+    assert alert.locator('img').count()==0 and alert.locator('.breaking-trade-receipt').inner_text()=='Receipt'
+    assert alert.evaluate('''e=>{const r=e.getBoundingClientRect(),link=e.querySelector('a').getBoundingClientRect(),button=e.querySelector('button'),b=button.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&e.scrollWidth<=e.clientWidth+1&&b.width>=44&&b.height>=44&&link.right<=b.left&&button.contains(document.elementFromPoint(b.x+b.width/2,b.y+b.height/2))}'''),(mode,width,size)
+    page.screenshot(path=str(OUT/f'alert-{mode}-{width}-{size}.png'));checks.append(f'{mode} {width}px {size}px text: production alert has full team names, exact receipt link and reachable dismiss')
+ page.evaluate('document.documentElement.style.fontSize=""')
  for width in [320,390,430,900]:
   page.set_viewport_size({'width':width,'height':844});page.evaluate("scrollTo({top:900,behavior:'instant'})");page.wait_for_timeout(250);assert dock.is_visible()
   boxes=page.evaluate('''()=>{const d=document.querySelector('.breaking-trade-dock').getBoundingClientRect(),s=document.querySelector('.home-score-dock').getBoundingClientRect(),h=document.querySelector('.topbar').getBoundingClientRect(),n=document.querySelector('#tabbar').getBoundingClientRect();return {top:d.top,bottom:d.bottom,height:d.height,scoreTop:s.top,header:h.bottom,nav:n.bottom,width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth,chrome:chromeBottom()}}''')
   assert not boxes['overflow'] and boxes['height']==44,boxes
   assert abs(boxes['top']-max(boxes['header'],boxes['nav'] if width>=900 else 0))<=1,boxes
   assert abs(boxes['scoreTop']-boxes['bottom'])<=1 and boxes['chrome']==boxes['bottom'],boxes
-  assert dock.locator('a').get_attribute('href')=='#/trade?tx=three-way'
+  assert dock.locator('a').get_attribute('href')=='#/trade?tx=three-way' and dock.locator('a>b').inner_text()=='Receipt'
   assert dock.locator('button').bounding_box()['width']>=44
   page.screenshot(path=str(OUT/f'sticky-{width}.png'));checks.append(f'{width}px compact alert clears header/navigation, has a 44px dismiss target and stacks above the score dock')
  page.set_viewport_size({'width':390,'height':844});page.evaluate("document.querySelector('.topbar').style.height='64px'");page.wait_for_timeout(200)

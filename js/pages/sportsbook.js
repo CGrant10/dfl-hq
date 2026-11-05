@@ -3,7 +3,7 @@ import {fantasyMarketKey,fantasyOutcomeResult,withFantasyLegResult,bookLegResult
 import {mountSheetDrag,enterSheet,exitSheet} from '../sheet-drag.js';
 import { fitDialogToViewport } from '../dialog-viewport.js';
 import {currentSportsbookNames} from '../current-team-names.js';
-import { animateUi, cancelUiMotion, cancelUiExit, exitUi } from '../ui-motion.js';
+import { cancelUiMotion, cancelUiExit, exitUi } from '../ui-motion.js';
 import {disclosure,wirePageDisclosures,readPageChoice,savePageChoice} from "../page-disclosure.js";
 import { loadNflState } from "../sleeper.js";
 import { sportsbookWeekCaption, fantasyWeekGroups } from "../sportsbook-fantasy-weeks.js";
@@ -95,10 +95,8 @@ export async function render(view){
   if(refreshing)writeBookState(me.id,{scroll:window.scrollY});
   else view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body muted">Opening the book…</div></div>`;
   let wallet,ledger,leaders,markets,outcomes,bets,trends,members,pickem,recap,leagueWeek={},feedStatus={};
-  let autoReady=true;
   try{
     wallet=await loadBookWallet(db());
-    autoReady=true;
     const providerMarketPages=async()=>{const rows=[];for(let from=0;;from+=1000){const{data,error}=await db().from("sportsbook_markets").select("*").in("category",["Team Totals","Game Totals"]).in("status",["open","locked"]).order("provider_updated_at",{ascending:false}).range(from,from+999);if(error)return{data:rows,error};rows.push(...(data||[]));if((data||[]).length<1000)return{data:rows,error:null}}};
     const[account,mr,propMarkets,propIndex,fantasyMarkets]=await Promise.all([
       loadBookAccount(db(),me.id),
@@ -174,7 +172,8 @@ export async function render(view){
   if(slip.length<before)toast(`${before-slip.length} pick${before-slip.length===1?"":"s"} dropped: the line closed`,true);
 
   view.innerHTML=`<div id="sportsbook-wrap"${slip.length?' class="has-slip"':""}>
-    <header class="sb-masthead page-identity"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>${esc(sportsbookWeekCaption(leagueWeek))}</span></div><details class="sb-wallet sb-wallet-options"><summary aria-label="Bankroll actions"><small>BANKROLL</small><strong data-book-balance>${num(wallet?.balance)}</strong><span>SIN</span><svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></summary><div class="sb-wallet-actions">${bankrollCard(me,wallet,open,autoReady)}</div></details></header>
+    <header class="sb-masthead page-identity"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>${esc(sportsbookWeekCaption(leagueWeek))}</span></div><div class="sb-wallet" aria-label="Bankroll"><small>BANKROLL</small><strong data-book-balance>${num(wallet?.balance)}</strong><span>SIN</span></div></header>
+    ${bankrollCard(wallet)}
     <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-view="markets" data-sb-tab="markets" data-sb-product="book">Board</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-view="tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button><button type="button" role="tab" aria-selected="false" aria-controls="sb-pickem-panel" id="sb-tab-pickem" data-sb-view="pickem" data-sb-product="pickem" tabindex="-1">NFL Pick'em</button></div>
     <div id="sb-book-panel">
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
@@ -198,13 +197,10 @@ export async function render(view){
   </div>`;
   /* The share and pull handlers need the rows behind the buttons they drew. */
   view.__bets=bets;
-  const walletOptions=view.querySelector('.sb-wallet-options');
-  walletOptions?.addEventListener('toggle',()=>{const panel=walletOptions.querySelector('.sb-wallet-actions');cancelUiMotion(panel);if(walletOptions.open)animateUi(panel,[{opacity:0,transform:'translateY(-3px)'},{opacity:1,transform:'none'}],{duration:160,motion:readPageChoice('gameday-motion',['on','off'],'on')==='on'});});
-  walletOptions?.addEventListener('keydown',event=>{if(event.key==='Escape'&&walletOptions.open){event.preventDefault();event.stopPropagation();walletOptions.open=false;walletOptions.querySelector('summary').focus({preventScroll:true});}});
   const refreshSlip=wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
   rememberView(view,me.id);
   wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
-  wireMarketActivities(view);wirePageDisclosures(view);wireBookTabs(view,me.id);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me,()=>view._refreshFantasy?.({paint:false}));wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);revealSportsbookTicket(view);
+  wireMarketActivities(view);wirePageDisclosures(view);wireBookTabs(view,me.id);wireClaim(view,active);wireTicketActions(view,marketMap,outcomeMap,me,()=>view._refreshFantasy?.({paint:false}));wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);revealSportsbookTicket(view);
   if(canBook)wireCommissioner(view);
   const noticeSettlements=createSettlementTracker(bets,globalThis.localStorage,me.id),recentSettled=new Set();
   wallet ||= {balance:0};
@@ -362,14 +358,13 @@ function wireRecapShare(view,recap){
   rather than drawn disabled: a dead button invites a tap and then explains
   itself, which is the wrong order.
 */
-function bankrollCard(me,wallet,open,autoReady){
+function bankrollCard(wallet){
   const claimable=Number(wallet?.claimable||0),days=Number(wallet?.claimable_days||0);
   return `<section class="sb-bankroll">
     <div class="sb-claim-row">
       ${claimable>0
-        ? `<button type="button" class="btn sb-claim" id="sb-claim">Claim ${claimable} SIN${days>1?` &middot; ${days} days`:""}</button>`
+        ? `<button type="button" class="btn sb-claim" id="sb-claim">Claim ${num(claimable)} SIN${days>1?` · ${days} days`:""}</button>`
         : `<span class="muted tiny">Next 50 SIN ${esc(fmtTime(wallet?.next_daily_at))}</span>`}
-      ${autoReady?`<span class="pill">${open.length} lines</span>`:""}
     </div>
   </section>`;
 }
@@ -791,19 +786,23 @@ function outcomeInput(n,label,odds){return `<div class="row" style="gap:8px"><in
   this moved out of the automatic path is so the number is a record of somebody
   turning up, and a client-side increment would not be that.
 */
-function wireClaim(view){
+function wireClaim(view,active=()=>view.isConnected){
   const btn=view.querySelector("#sb-claim");
   if(!btn)return;
   btn.addEventListener("click",async()=>{
-    btn.disabled=true;
+    if(btn.disabled||!active())return;
+    const label=btn.textContent;
+    btn.disabled=true;btn.setAttribute('aria-busy','true');btn.textContent='Claiming…';
     try{
       const{data,error}=await db().rpc("sportsbook_claim_daily");
+      if(!active())return;
       if(error)throw error;
       const row=Array.isArray(data)?data[0]:data;
       toast(row?.credited?`+${row.credited} SIN claimed`:"Claimed");
       render(view);
     }catch(err){
-      btn.disabled=false;
+      if(!active())return;
+      btn.disabled=false;btn.removeAttribute('aria-busy');btn.textContent=label;
       /* An un-migrated database has no claim function. Say which file. */
       toast(/claim_daily|schema cache|does not exist/i.test(err.message||"")
         ? "Run sportsbook_claim_schema.sql in Supabase"

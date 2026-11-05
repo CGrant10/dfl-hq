@@ -1,3 +1,33 @@
+## 1.547.0 — compact trade receipts and reachable SIN claims
+
+Home trade coverage now lists the actual participating team names beside one
+Receipt destination. Removed the siren image, generic headline, verdict copy and
+tinted box. The scrolling dock uses the same exact receipt destination and a
+quiet Receipt label. Custom commissioner alerts keep their authored text and
+permission-gated End alert action. Dismiss remains a 44px target at narrow widths.
+All foreground, background, border and focus colors use Medicine Wheel tokens.
+
+Reproduced the Sportsbook claim bug in both themes at 320/390/430px: the claim
+popover was visibly painted behind the main tabs, and elementFromPoint at the
+Claim button hit My bets. The balance now remains in the masthead, with the
+server-backed Claim action in normal document flow below it. Removed the floating
+wallet disclosure and stale positioning rules. Claim has a 44px minimum target,
+wraps at enlarged text, shows Claiming while pending, rejects duplicate clicks
+and restores its label on failure. A late response cannot replace another page
+or a newly selected profile. The existing claim RPC and wallet re-read are
+unchanged; no local optimistic SIN increments or database changes were added.
+
+Verification: pnpm check passes (2,450 tests); focused tests and final build pass.
+Actual controller alert coverage: 25 browser checks, including full names and
+exact links at 320/390/430px, Light/Dark and 100/200% text, sticky stacking,
+dismissal, modal/More safety and Reduced Motion. Actual Sportsbook coverage:
+6 mobile layouts, 12 direct hit/containment checks, tabs/slip plus isolated claim
+failure/retry, duplicate-click and 420-to-470 server-response cases and late-response navigation safety. Mock claims
+never reach a real account. Evidence is in /workspace/dfl-alert-book-1547/.
+Compiled app capture uses live read-only Home data and a simulated Sportsbook
+wallet, with all real provider writes blocked. No physical Safari/VoiceOver or
+device FPS testing was done.
+
 ## 1.546.0 — Clubhouse section cleanup
 
 Removed the Bragging Rights / Call your shot block from Matchups and its prediction
