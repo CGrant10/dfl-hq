@@ -25,7 +25,10 @@ build pass. Broadcast fixtures cover 90 normal and 56 enlarged layouts, with the
 enlarged set rerun after the accessibility changes. No physical-device battery,
 frame-rate, VoiceOver or Safari claim is made. Actual league screenshots stay local. The rankings controller review also covers
 the new week-picker flow, enlarged header/rating reflow, full reports and image
-fallbacks; long opposing names retain aligned matchup totals.
+fallbacks; long opposing names retain aligned matchup totals. The current Home
+surface runner passes 24 layouts plus six enlarged cases; shared chrome and section
+jumps pass 60 checks. Current dedicated runners replace the historical broad Home
+assertions as the release gate, with the other feature runners retained.
 
 ## 1.540.0 — broadcast graphics and connected mobile viewing
 

@@ -1,4 +1,9 @@
-"""Capture the production-component review without changing league data."""
+"""Historical broad Home harness and shared fixture helpers.
+
+Its standalone assertions describe retired layouts. Current release gates use
+capture-interface-system.py, capture-home-shell.py and dedicated feature runners.
+Ranking review still imports the fixture server/helpers above the main block.
+"""
 import json
 import os
 import threading
@@ -547,18 +552,16 @@ def check_clubhouse_center(page):
           for(const name of ['recap','overview','matchups'])tabs.querySelector('[data-clubhouse-tab="'+name+'"]').click();await frame();
           check(tabs.querySelectorAll('[aria-selected="true"]').length===1&&root.querySelector('#demo-clubhouse-overview').hidden&&root.querySelector('#demo-clubhouse-recap').hidden&&!root.querySelector('#demo-clubhouse-matchups').hidden,'Rapid tabs left multiple panels');
           await new Promise(r=>setTimeout(r,340));check(Math.abs(marker.getBoundingClientRect().left-matchups.getBoundingClientRect().left)<1&&Math.abs(marker.getBoundingClientRect().width-matchups.getBoundingClientRect().width)<1,'Tab marker failed to settle');
-          root.querySelector('[data-clubhouse-matchup]:not([hidden]) .clubhouse-game-teams').scrollIntoView({behavior:'instant',block:'center'});await frame();await frame();
           root.querySelector('[data-clubhouse-game="2"]').click();const card=root.querySelector('[data-clubhouse-matchup="2"]'),hero=card.querySelector('.clubhouse-game-teams');hero.scrollIntoView({behavior:'instant',block:'center'});await frame();await frame();
-          // Current matchup paging lands the logos; it deliberately keeps the
-          // names/scores still instead of replaying the initial full entrance.
-          const marks=[...hero.querySelectorAll('.clubhouse-team-mark')];check(marks.length===2,'Matchup landing lost a team logo');
-          for(const mark of marks){const landing=mark.getAnimations().find(a=>a.playState==='running');check(landing,'Both visible team logos need a landing');check(landing.effect.getTiming().duration<=300,'Matchup logo landing is too long');const frames=landing.effect.getKeyframes(),last=new DOMMatrix(frames.at(-1).transform);check(last.isIdentity,'Matchup logo landing does not return to rest');}
-          check([...hero.querySelectorAll('.clubhouse-matchup-name')].every(e=>!e.getAnimations().length),'Matchup paging should keep team names still');
-          const values=[...card.querySelectorAll('[data-matchup-score-value],.gd-thermal-value')],sizes=()=>values.map(e=>{const b=e.getBoundingClientRect();return [b.width,b.height,getComputedStyle(e).transform]});const before=sizes();await frame();const after=sizes();check(before.every((b,i)=>Math.abs(b[0]-after[i][0])<.01&&Math.abs(b[1]-after[i][1])<.01&&b[2]===after[i][2]),'Matchup motion resized individual score surfaces');check(!hero.getAnimations().length,'Matchup paging should keep its score surface still');
+          const light=hero.querySelector('.clubhouse-stage-light');for(let n=0;n<40&&!light.getAnimations().some(a=>a.playState==='running');n++)await new Promise(r=>setTimeout(r,10));check(light.getAnimations().some(a=>a.playState==='running'),'Matchup entrance has no finite light sweep: '+JSON.stringify({rect:hero.getBoundingClientRect().toJSON(),motion:root.querySelector('.clubhouse-page').dataset.motion,hidden:!!card.closest('[hidden]')}));
+          for(const [index,side] of [...hero.querySelectorAll('.clubhouse-game-side')].entries())for(const identity of side.querySelectorAll(':scope > .clubhouse-team-mark,:scope > .clubhouse-matchup-name')){
+            const entrance=identity.getAnimations().find(a=>a.playState==='running');check(entrance,'Both team crests and names must enter together');const frames=entrance.effect.getKeyframes();const first=new DOMMatrix(frames[0].transform),last=new DOMMatrix(frames.at(-1).transform);check((index?first.m41>0:first.m41<0)&&first.a>=.95&&first.a<=1&&last.m41===0&&last.a===1,'Teams must slide in from opposite sides');check(entrance.effect.getTiming().duration<=400,'Switching matchups should use a short entrance');
+          }
+          const values=[...card.querySelectorAll('[data-matchup-score-value],.gd-thermal-value')],sizes=()=>values.map(e=>{const b=e.getBoundingClientRect();return [b.width,b.height,getComputedStyle(e).transform]});const before=sizes();await frame();const after=sizes();check(before.every((b,i)=>Math.abs(b[0]-after[i][0])<.01&&Math.abs(b[1]-after[i][1])<.01&&b[2]===after[i][2]),'Matchup motion resized individual score surfaces');const slide=hero.getAnimations().find(a=>a.effect.getKeyframes().some(f=>f.transform));check(slide&&slide.effect.getTiming().duration<=300,'Matchup switch needs a short directional faceoff');for(let n=0;n<100&&hero.getAnimations().some(a=>a.playState==='running');n++)await new Promise(r=>setTimeout(r,10));const settled=getComputedStyle(hero).transform;check(settled==='none'||new DOMMatrix(settled).isIdentity,'Matchup faceoff did not settle');
           root.querySelector('[data-clubhouse-game="1"]').click();check([...root.getAnimations({subtree:true})].filter(a=>a.constructor===Animation&&a.playState==='running').every(a=>!a.effect.target.closest('[hidden]')),'Rapid matchups animate a hidden game');
           root.querySelector('[data-clubhouse-motion]').click();overview.click();await frame();check(marker.getAnimations().length===0&&[...root.getAnimations({subtree:true})].filter(a=>a.constructor===Animation&&a.playState==='running').length===0,'Motion off leaves UI effects running');
           check(getComputedStyle(tabs.querySelector('button')).transitionDuration==='0s','Motion off leaves CSS transitions running');matchups.click();root.querySelector('[data-clubhouse-motion]').click();await frame();
-          return {slidingTabMarker:true,keyboardTabs:true,rapidSelection:true,subtleMatchupLanding:true,scoreGeometryStable:true,motionOff:true};
+          return {slidingTabMarker:true,keyboardTabs:true,rapidSelection:true,finiteMatchupLight:true,scoreGeometryStable:true,motionOff:true};
         }""")
         result['updates']=page.evaluate("""async()=>{
           const f=window.clubhouseFixture,root=f.region,check=(v,m)=>{if(!v)throw Error(m)},settle=()=>new Promise(r=>setTimeout(r,30));const intent=new URLSearchParams(location.hash.split('?')[1]||'');intent.set('moment','nfl:999:123:1');history.replaceState(history.state,'',location.hash.split('?')[0]+'?'+intent);
@@ -566,9 +569,7 @@ def check_clubhouse_center(page):
           root.querySelector('[data-clubhouse-game="1"]').click();
           const card=root.querySelector('[data-clubhouse-matchup="1"]'),button=card.querySelector('[data-gameday-player]'),identity=button,bench=card.querySelector('.gd-compare-bench'),positions=card.querySelector('.clubhouse-position-stats');
           check(bench&&positions,'Bench/positional stats missing');bench.open=true;positions.open=true;button.focus();button.scrollIntoView({behavior:'instant',block:'center'});
-          // Isolate the player milestone. A simultaneous lead flip correctly
-          // claims the model's one moment and suppresses a second celebration.
-          f.rows[0].points=44;f.rows[0].players_points['demo-1-0']=25;f.center.update({rows:f.rows,players:f.players,nfl:f.nfl,force:true});
+          f.rows[0].points=48;f.rows[0].players_points['demo-1-0']=25;f.center.update({rows:f.rows,players:f.players,nfl:f.nfl,force:true});
           check(document.activeElement===identity&&identity.isConnected&&bench.open&&positions.open,'Refresh lost focus or expanded stats');
           check(card.querySelector('.gd-moment-caption')&&card.querySelector('.clubhouse-pressure-label'),'Actual live moment/close-game context missing');
           f.pending(f.bundle);await settle();
@@ -900,7 +901,6 @@ with sync_playwright() as p:
     page.goto(url, wait_until='domcontentloaded')
     page.wait_for_function('!!window.reviewVfx', timeout=15000)
     page.locator('.bx-pause').click()
-    page.locator('.bx-story-picker>summary').click()
     page.locator('[data-bx-go="0"]').click()
     page.evaluate('document.fonts.ready')
     page.wait_for_timeout(1600)
@@ -973,7 +973,7 @@ with sync_playwright() as p:
     page.wait_for_timeout(300)
     metrics['renderer'] = page.locator('canvas.gd-vfx-canvas').get_attribute('data-renderer')
     assert metrics['renderer'] == 'webgl', 'Animated score renderer did not start'
-    metrics['fonts'] = page.evaluate('({headline:getComputedStyle(document.querySelector(".bx-home-title")).fontFamily,score:getComputedStyle(document.querySelector(".gd-thermal-value")).fontFamily,stroke:getComputedStyle(document.querySelector(".gd-thermal-value")).webkitTextStrokeWidth,loaded:document.fonts.check("700 30px Rajdhani")})')
+    metrics['fonts'] = page.evaluate('({headline:getComputedStyle(document.querySelector(".bx-home-title")).fontFamily,score:getComputedStyle(document.querySelector(".gd-thermal-value")).fontFamily,stroke:getComputedStyle(document.querySelector(".gd-thermal-value")).webkitTextStrokeWidth,loaded:document.fonts.check("30px Anton")})')
     assert metrics['fonts']['loaded'] and 'Rajdhani' in metrics['fonts']['headline'] and 'DFL Broadcast' not in metrics['fonts']['score'], 'Pixel display font is still active'
     assert metrics['fonts']['stroke'] == '0px', 'Synthetic score stroke is still active'
     metrics['refinement'] = page.evaluate("""() => ({playerFont:parseFloat(getComputedStyle(document.querySelector('.home-thermal-leaders .gd-thermal-number')).fontSize),paper:getComputedStyle(document.querySelector('#home-wrap')).getPropertyValue('--bg').trim(),hero:document.querySelector('.bx-home-art').complete,visibleLore:!document.querySelector('[data-home-lore-slot]').closest('details'),visibleWall:!document.querySelector('[data-wall-slot]').closest('details')})""")
@@ -993,7 +993,7 @@ with sync_playwright() as p:
         metrics['unevenTeamNames'].append({'width':width,'rows':names})
     page.set_viewport_size({'width':390,'height':844})
     metrics['readingOrder'] = page.evaluate("""() => {
-      const selectors=['.home-frontpage','.home-broadcast','[data-home-alert-slot]','[data-home-rankings-slot]','[data-home-highlights-slot]','.home-week-desk','.home-league-desk','.home-injury-panel','[data-home-lore-slot]','.home-banter'];
+      const selectors=['.home-frontpage','[data-home-highlights-slot]','.home-broadcast','[data-home-rankings-slot]','.home-week-desk','.home-league-desk','.home-injury-panel','[data-home-lore-slot]','.home-banter'];
       const root=document.querySelector('#home-wrap'),children=[...root.querySelectorAll('*')];
       return selectors.map(selector=>({selector,index:children.indexOf(root.querySelector(selector))}));
     }""")
@@ -1007,11 +1007,11 @@ with sync_playwright() as p:
         page.set_viewport_size({'width':width,'height':844})
         typography = page.evaluate('''() => {
             const type=s=>{const e=document.querySelector(s),c=getComputedStyle(e);return {size:parseFloat(c.fontSize),family:c.fontFamily,weight:Number(c.fontWeight),line:parseFloat(c.lineHeight),transform:c.textTransform}};
-            const labelElements=[...document.querySelectorAll('.home-rank-head span')],labels=labelElements.map(e=>e.getBoundingClientRect()),labelsClipped=getComputedStyle(document.querySelector('.home-rank-head')).clipPath==='inset(50%)';
-            return {width:innerWidth,fontLoaded:document.fonts.check('600 13px "Inter"'),heading:type('.home-rankings-card h2'),body:type('.home-league-story p'),name:type('.home-thermal-leaders .dfl-player-copy strong'),metadata:type('.home-thermal-leaders .dfl-player-copy small'),detail:type('[data-page-detail="home-week"] summary strong'),rankLabelsFit:labelsClipped?labelElements.every(e=>e.textContent.trim()):labelElements.every(e=>e.scrollWidth<=e.clientWidth+1)&&labels.every((r,i)=>!i||labels[i-1].right<=r.left+1),masthead:document.querySelector('.home-newspaper-masthead').offsetHeight};
+            const labelElements=[...document.querySelectorAll('.home-rank-head span')],labels=labelElements.map(e=>e.getBoundingClientRect());
+            return {width:innerWidth,fontLoaded:document.fonts.check('600 13px "Inter"'),heading:type('.home-rankings-card h2'),body:type('.home-league-story p'),name:type('.home-thermal-leaders .dfl-player-copy strong'),metadata:type('.home-thermal-leaders .dfl-player-copy small'),detail:type('[data-page-detail="home-week"] summary strong'),rankLabelsFit:labelElements.every(e=>e.scrollWidth<=e.clientWidth+1)&&labels.every((r,i)=>!i||labels[i-1].right<=r.left+1),masthead:document.querySelector('.home-newspaper-masthead').offsetHeight};
         }''')
         assert typography['fontLoaded'] and all('Inter' in typography[k]['family'] for k in ['heading','body','name','metadata','detail']), f'Home type did not load consistently: {typography}'
-        assert typography['heading']['size'] == (16 if width<=360 else 18) and typography['body']['size'] == 13 and typography['name']['size'] == 15 and typography['metadata']['size'] == 12, f'Home text scale is inconsistent: {typography}'
+        assert typography['heading']['size'] == 16 and typography['body']['size'] == 13 and typography['name']['size'] == 15 and typography['metadata']['size'] == 12, f'Home text scale is inconsistent: {typography}'
         assert typography['heading']['weight'] == 700 and typography['name']['weight'] == 600 and typography['heading']['transform'] == 'none' and typography['name']['transform'] == 'none' and typography['rankLabelsFit'], f'Home headings or rank columns are crowded: {typography}'
         metrics['mobileType'].append(typography)
     page.set_viewport_size({'width':390,'height':844})
@@ -1044,9 +1044,9 @@ with sync_playwright() as p:
             for route in ['home','clubhouse','sportsbook','trade','analyzer','wall','history','golf']:
                 page.evaluate("""route => {document.querySelector('#view').dataset.route=route;document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));(document.querySelector(`#tabbar [data-route="${route}"]`)||document.querySelector('#more-btn')).classList.add('on');window.reviewSyncNav()}""", route)
                 page.wait_for_timeout(350)
-                page.wait_for_function("""() => {const active=document.querySelector('#tabbar .on');const marker=getComputedStyle(document.querySelector('#tabbar'),'::before');return active && (marker.backgroundColor===getComputedStyle(active).color||marker.backgroundImage.includes(getComputedStyle(active).color)) && Math.abs(new DOMMatrix(marker.transform).m41-active.offsetLeft)<1}""", timeout=5000)
+                page.wait_for_function("""() => {const active=document.querySelector('#tabbar .on');const marker=getComputedStyle(document.querySelector('#tabbar'),'::before');return active && marker.backgroundImage.includes(getComputedStyle(active).color) && Math.abs(new DOMMatrix(marker.transform).m41-active.offsetLeft)<1}""", timeout=5000)
                 nav = page.evaluate("""() => {const bar=document.querySelector('#tabbar'),active=bar.querySelector('.on'),s=getComputedStyle(bar),a=getComputedStyle(active),i=getComputedStyle(active.querySelector('svg'));return {height:bar.getBoundingClientRect().height,background:s.backgroundColor,color:a.color,font:a.fontSize,iconWidth:i.width,filter:i.filter,icons:[...bar.querySelectorAll('use')].map(e=>e.getAttribute('href'))}}""")
-                assert 44 <= nav['height'] <= (50 if width>=900 else 76), f'Navigation is not compact: {nav}'
+                assert 44 <= nav['height'] <= 50, f'Navigation is not compact: {nav}'
                 assert page.evaluate("[...document.querySelectorAll('#tabbar a,#tabbar .tabmore')].every(e=>e.getBoundingClientRect().height>=44)"), 'Navigation targets are too small'
                 if reference is None: reference = nav
                 assert page.evaluate("[...document.querySelectorAll('#tabbar a > span,#tabbar .tabmore > span')].every(e=>{const a=e.parentElement.getBoundingClientRect(),b=e.getBoundingClientRect();return b.left>=a.left-.5&&b.right<=a.right+.5})"), f'Navigation labels overflow at {width}'
@@ -1057,7 +1057,7 @@ with sync_playwright() as p:
                     return {height:bar.getBoundingClientRect().height,background:getComputedStyle(bar).backgroundColor,color:getComputedStyle(bar).color,innerHeight:inner.getBoundingClientRect().height,controls:[...bar.querySelectorAll('.topbar-actions > button')].map(e=>{const b=e.getBoundingClientRect(),c=getComputedStyle(e);return {left:b.left,right:b.right,height:b.height,font:c.fontSize,color:c.color,order:c.order}})};
                 }""")
                 if header_reference is None: header_reference = header
-                assert header == header_reference and header['height'] == (56 if width<=360 else 64), f'Header changes on {route} at {width}: {header}'
+                assert header == header_reference and header['height'] == 44, f'Header changes on {route} at {width}: {header}'
                 assert all(c['height'] >= 44 and c['left'] >= 0 and c['right'] <= width for c in header['controls']), header
                 assert page.locator('.bottomline').count() == 0, f'Ticker returned on {route}'
                 metrics['sharedHeader'].append({'mode':nav_mode,'width':width,'route':route,**header})
@@ -1076,17 +1076,6 @@ with sync_playwright() as p:
     page.locator('#tabbar').evaluate("e=>e.style.removeProperty('padding-bottom')")
     page.wait_for_timeout(300)
     page.evaluate("document.querySelector('#view').dataset.route='home'")
-    # The active wide Sports Desk was exercised above with the Home controls.
-    # Keep the classic renderer's separate gallery/gesture contracts below;
-    # capture-broadcast-wide.py owns the current wide slide geometry and text.
-    page.evaluate('''async()=>{
-      window.reviewStage.stop();
-      document.querySelector('#home-wrap').removeAttribute('data-home-edition');
-      const {renderStage,startStage}=await import('./js/broadcast-stage.js');
-      const host=document.querySelector('.home-broadcast');host.innerHTML=renderStage(window.reviewDeck,{editorial:true});
-      window.reviewStage=startStage(host.querySelector('[data-bx-stage]'),window.reviewDeck);
-      host.querySelector('[data-bx-pause]').click();
-    }''')
     metrics['slides'] = []
     count = page.evaluate('window.reviewDeck.length')
     for width in [320, 390, 768, 1000, 1280]:
@@ -1399,10 +1388,10 @@ with sync_playwright() as p:
             assert spacing['gap'] >= spacing['expected'] - 1, f'Masthead touches fixed controls: {spacing}'
             nav = page.evaluate("""() => {
                 const bar=document.querySelector('#tabbar'),link=bar.querySelector('.on'),s=getComputedStyle(link),marker=getComputedStyle(bar,'::before');
-                return {height:bar.getBoundingClientRect().height,color:s.color,icon:getComputedStyle(link.querySelector('svg')).color,markerDisplay:marker.display,markerPaint:marker.backgroundImage,markerColor:marker.backgroundColor,markerSize:marker.backgroundSize,markerHeight:parseFloat(marker.height),markerWidth:parseFloat(marker.width),targetWidth:link.offsetWidth,targetHeight:link.offsetHeight,aligned:Math.abs(new DOMMatrix(marker.transform).m41-link.offsetLeft)<1,extraMarker:getComputedStyle(link,'::before').display};
+                return {height:bar.getBoundingClientRect().height,color:s.color,icon:getComputedStyle(link.querySelector('svg')).color,markerDisplay:marker.display,markerPaint:marker.backgroundImage,markerSize:marker.backgroundSize,markerHeight:parseFloat(marker.height),markerWidth:parseFloat(marker.width),targetWidth:link.offsetWidth,targetHeight:link.offsetHeight,aligned:Math.abs(new DOMMatrix(marker.transform).m41-link.offsetLeft)<1,extraMarker:getComputedStyle(link,'::before').display};
             }""")
-            assert 44 <= nav['height'] <= (50 if width>=900 else 76) and nav['icon'] == nav['color'], f'Navigation presentation differs in {mode}: {nav}'
-            assert nav['markerDisplay'] == 'block' and (nav['color']==nav['markerColor'] or nav['color'] in nav['markerPaint']) and nav['markerHeight'] == 3 and abs(nav['markerWidth']-nav['targetWidth'])<1 and nav['aligned'] and nav['extraMarker'] == 'none', f'Active navigation indicator is missing or duplicated: {nav}'
+            assert 44 <= nav['height'] <= 50 and nav['icon'] == nav['color'], f'Navigation presentation differs in {mode}: {nav}'
+            assert nav['markerDisplay'] == 'block' and nav['color'] in nav['markerPaint'] and nav['markerSize'].split(',')[0].strip() == '52% 3px' and nav['markerHeight'] == nav['targetHeight'] and nav['markerHeight'] >= 44 and abs(nav['markerWidth']-nav['targetWidth'])<1 and nav['aligned'] and nav['extraMarker'] == 'none', f'Active navigation indicator is missing or duplicated: {nav}'
             assert page.evaluate("[...document.querySelectorAll('#tabbar a,#tabbar .tabmore')].every(e=>e.getBoundingClientRect().height>=44)"), 'Navigation targets are too small'
             assert page.evaluate("document.documentElement.scrollWidth<=innerWidth"), f'Theme overflows at {mode}/{width}'
             page.locator('.home-banter').scroll_into_view_if_needed()
@@ -1432,7 +1421,7 @@ with sync_playwright() as p:
             if mode in ['light','dark']:
                 page.evaluate("window.scrollTo({top:800,behavior:'instant'})")
                 sticky = page.locator('.topbar').evaluate("e=>({top:e.getBoundingClientRect().top,height:e.getBoundingClientRect().height,background:getComputedStyle(e).backgroundColor,scroll:scrollY})")
-                assert sticky['scroll'] > 500 and abs(sticky['top']) < 1 and sticky['height'] == (56 if width<=360 else 64) and sticky['background'] != 'rgba(0, 0, 0, 0)', f'Top bar does not stay visible: {sticky}'
+                assert sticky['scroll'] > 500 and abs(sticky['top']) < 1 and sticky['height'] == 44 and sticky['background'] != 'rgba(0, 0, 0, 0)', f'Top bar does not stay visible: {sticky}'
                 metrics['stickyTopbar'].append({'mode':mode,'width':width,**sticky})
                 page.screenshot(path=str(OUT / f'sticky-{mode}-{width}.png'))
                 badge = page.locator('.home-newspaper-date')
@@ -1516,7 +1505,7 @@ with sync_playwright() as p:
                   return {headline:slide.querySelector('h2')?.textContent,displaySizes:[...slide.querySelectorAll('.bx-head,.bx-name,.bx-home-title')].map(e=>parseFloat(getComputedStyle(e).fontSize)),copySizes:[...slide.querySelectorAll('.bx-sub,.bx-body,.bx-when-text')].map(e=>parseFloat(getComputedStyle(e).fontSize)),fit:content.every(e=>{const b=e.getBoundingClientRect();return b.left>=box.left-1&&b.right<=box.right+1&&b.top>=box.top-1&&b.bottom<=box.bottom+1&&e.scrollWidth<=e.clientWidth+1}),overflow:document.documentElement.scrollWidth>innerWidth,contrast:window.reviewTextContrast().failures};
                 }''')
                 assert check['fit'] and not check['overflow'] and not check['contrast'], f'Themed slide unreadable: {mode}/{width}/{index}: {check}'
-                assert all(size>=20 for size in check['displaySizes']) and all(size>=12 for size in check['copySizes']), f'Broadcast text shrunk below its reading scale: {check}'
+                assert all(size>=28 for size in check['displaySizes']) and all(size>=15 for size in check['copySizes']), f'Broadcast text shrunk below its reading scale: {check}'
                 if index==0:
                     opener=page.evaluate('({headline:window.reviewDeck[0].headline,subtitle:window.reviewDeck[0].subtitle})')
                     assert all(text in check['headline'] for text in opener.values()) and page.locator('.bx-home-headline-art').count()==0, 'Edition opener must remain live theme-aware text'

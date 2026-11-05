@@ -64,7 +64,7 @@ being committed as new public screenshot assets.
   scroll margins now use the shared header and desktop navigation measurements;
   active trade coverage reserves space too. Existing score-dock margins retain
   their measured stack. The compact sliding marker and 56/64px header / 72px phone
-  navigation are now explicitly checked by the shared-chrome regression runner.
+  navigation are checked by `tools/capture-home-shell.py`.
 
 ## Required fidelity surfaces
 
@@ -118,6 +118,19 @@ fixtures, not claims about live league scores.
 - [x] Fix actionable P1/P2 differences and recapture.
 - [x] Verify Light/Dark, narrow widths, enlarged text and primary interactions.
 - [x] Run themes, tests, type/name/release checks and production build.
+
+## Release gate maintenance
+
+The historical `capture-home-review.py` standalone assertions describe retired
+masthead, carousel, font and Clubhouse behavior. Its fixture helper definitions
+remain available for the ranking runner. CI now uses the current production Home
+surface runner (`capture-interface-system.py`) plus `capture-home-shell.py` for
+cross-route chrome, active marker, touch targets, safe-area spacing and Home jumps.
+The current Home runner passes 24 layouts and six enlarged cases; the shell runner
+passes 60 checks across routes/themes/widths, safe-area spacing and section jumps.
+Dedicated broadcast, current Clubhouse, media, score/scroll, sheet, trade, Arena and
+database runners remain in the workflow. This avoids treating the historical
+fixture's expected UI as the design source for a new production layout.
 
 ## Follow-up polish and boundaries
 

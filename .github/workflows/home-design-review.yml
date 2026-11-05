@@ -395,8 +395,10 @@ jobs:
         env:
           DFL_SLEEPER_REVIEW_DIR: home-review-output/sleeper
         run: python tools/capture-sleeper-actions.py
-      - name: Check full themed Home screens
-        run: python tools/capture-home-review.py
+      - name: Check current Home surfaces and shared navigation
+        run: |
+          python tools/capture-interface-system.py
+          python tools/capture-home-shell.py
       - name: Check weekly player lines and PPR averages on phones
         env:
           DFL_PLAYER_WEEK_REVIEW_DIR: ${{ github.workspace }}/home-review-output/player-week-review
