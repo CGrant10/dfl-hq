@@ -54,17 +54,17 @@ export async function render(view) {
   const storySeason=Number(storyParams.get('season'));if(Number.isInteger(storySeason)&&storySeason>=2010&&storySeason<=2100){season=storySeason;savePageChoice('history-season',String(season));}
   const requestedEntry=Number(storyParams.get('entry'));
   if(requestedEntry)tab="fame";
-  view.innerHTML = `<header class="utility-head"><small>DFL ARCHIVE</small><h1>History</h1><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Weekly archive →</a></header>` + loading("Reading the record book…");
+  view.innerHTML = `<header class="utility-head archive-page-head"><h1>History</h1><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Weekly archive →</a></header>` + loading("Reading the record book…");
 
   /* ONE LOAD for every tab on this page, and the same one a profile reads.
      The record book used to fetch the matchup table separately the first
      time somebody opened its tab; it is all one fetch now, cached in
      lore.js for the rest of the visit. */
   const data = await loadLore();
-  if (data.error) { view.innerHTML = `<header class="utility-head"><small>DFL ARCHIVE</small><h1>History</h1><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Weekly archive →</a></header>` + errorBox(data.error); return; }
+  if (data.error) { view.innerHTML = `<header class="utility-head archive-page-head"><h1>History</h1><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Weekly archive →</a></header>` + errorBox(data.error); return; }
 
   if (!data.manual.length && !data.leagues.length) {
-    view.innerHTML = `<header class="utility-head"><small>DFL ARCHIVE</small><h1>History</h1><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Weekly archive →</a></header>
+    view.innerHTML = `<header class="utility-head archive-page-head"><h1>History</h1><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Weekly archive →</a></header>
       <div id="hist-body">
         ${empty("No league history yet.")}
         ${canEdit() ? `<div class="row-end">${addControl("history", "Add entry")}</div>` : ""}
@@ -74,7 +74,7 @@ export async function render(view) {
   }
 
   view.innerHTML = `
-    <header class="utility-head"><small>DFL ARCHIVE</small><h1>History</h1><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Weekly archive →</a></header>
+    <header class="utility-head archive-page-head"><h1>History</h1><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Weekly archive →</a></header>
     <!--
       FIVE TABS DO NOT FIT A PHONE, and .tabs has always been a horizontal
       scroller - the problem was that it did not look like one. At 375px the

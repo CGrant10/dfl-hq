@@ -1,3 +1,30 @@
+## 1.544.0 — complete the Sports Desk page adoption
+
+Trades keeps its current goal/search summary and offer-type counts visible;
+optional goal shortcuts now live inside Edit search, bringing actual offers
+higher. Goal changes update the visible summary without replacing the controls
+or their focus. Existing goal exclusions, counteroffer preview/apply/Undo,
+package routing and offer values are preserved.
+
+Team Analyzer removes surplus roster-picker padding and aligns both start/sit
+players by identity, projection, injury, recent form and kickoff through intrinsic
+subgrid rows. The existing flex layout remains the fallback. Full names,
+player-card/compare controls and 44px native targets remain available. Archive
+uses a single title/action row, a flat featured season and champions first.
+The photo decorator now recognizes the current trophy-case markup and inserts
+its gallery after the champions, keeping photo submission available.
+
+Reviewed actual read-only Trades, Analyzer and Archive screens in Light/Dark at
+390px/default text and 320px/200% text (12 captures). No page errors or document
+overflow; start/sit projections align and the photo action follows champions.
+The trade goal/repair runner passes 136 checks across both modes and default/
+enlarged text, including focus, rapid changes, exclusions, fair repair and Undo.
+Secondary renderer checks cover 320/390/768px, four theme values and both text
+scales, including long names, team selection and broken-photo fallbacks. The
+2,446-test suite, theme/release/name checks, typecheck and production build pass.
+No new UI color, font, media asset or animation loop was added. Physical Safari,
+assistive-technology speech and subgrid fallback rendering were not tested.
+
 ## 1.543.0 — Clubhouse adopts the Home Sports Desk rhythm
 
 The native week/tools disclosure shares the title row and expands in normal

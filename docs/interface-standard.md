@@ -10,7 +10,7 @@ Trades, Book and More are the five primary destinations. Team Analyzer belongs
 in Clubhouse's Week & tools and More. The shared header uses the supplied round
 DFL mark; the shield remains reserved for the icon/update screen.
 
-The user-selected Sports Desk composition (Home 1.541.0, Clubhouse 1.543.0)
+The user-selected Sports Desk composition (Home 1.541.0, Clubhouse 1.543.0, roster/archive tools 1.544.0)
 is owned by `css/home-sports-desk.css` and `css/clubhouse-sports-desk.css` after
 the shared component sheets. Preserve this direction when extending other pages.
 
@@ -27,6 +27,13 @@ section tabs lead directly into one matchup rail/scoreboard and opposing player
 rows, followed by supporting panels. Keep names, weekly stat lines, PPR averages,
 44px targets, semantic phases and hot/cold effects. Late chip-size changes may
 reveal the selected matchup; deliberate rail browsing must retain its position.
+
+Trade keeps its active goal, teams, package limits and Fair/Aggressive/Steal
+counts visible. Goal shortcuts belong inside Edit search, retaining native
+controls and reversible disclosure behavior. Team Analyzer aligns corresponding
+start/sit fields across both players, with complete names and intrinsic heights.
+Archive leads with the existing champions; photo submission follows the trophy
+case. Keep the compact title/action row and the year hierarchy.
 
 The shared phone navigation uses 56px buttons, 22px icons and 11px labels at the
 default text size (1.542.0). Native safe-area space is additional; enlarged text
