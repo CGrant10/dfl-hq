@@ -62,8 +62,12 @@ with sync_playwright() as p:
  page.evaluate('fixture("home")');page.wait_for_timeout(150)
  intro=page.evaluate("()=>{const h=document.querySelectorAll('.story h2')[1];return {y:h.getBoundingClientRect().top+scrollY-400,height:document.documentElement.scrollHeight}}")
  page.evaluate('y=>scrollTo(0,y)',intro['y']-600)
+ # Deliver each synthetic scroll before sending the next. On a busy runner,
+ # wall-clock sleeps alone can coalesce gentle steps into a fast scroll, which
+ # the production observer correctly suppresses instead of animating.
  for delta in range(0,601,24):
-  page.evaluate('y=>scrollTo(0,y)',intro['y']-600+delta);page.wait_for_timeout(int(os.environ.get('DFL_SCROLL_SAMPLE_MS','30')))
+  page.evaluate("async y=>{scrollTo({top:y,behavior:'instant'});await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame)}",intro['y']-600+delta)
+  page.wait_for_timeout(int(os.environ.get('DFL_SCROLL_SAMPLE_MS','30')))
  # A completed 260ms entrance can fall between remote samples. Record the
  # real animations when created, then assert once after observer delivery.
  page.evaluate('async()=>{await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame)}')
