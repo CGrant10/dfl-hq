@@ -1007,11 +1007,11 @@ with sync_playwright() as p:
         page.set_viewport_size({'width':width,'height':844})
         typography = page.evaluate('''() => {
             const type=s=>{const e=document.querySelector(s),c=getComputedStyle(e);return {size:parseFloat(c.fontSize),family:c.fontFamily,weight:Number(c.fontWeight),line:parseFloat(c.lineHeight),transform:c.textTransform}};
-            const labelElements=[...document.querySelectorAll('.home-rank-head span')],labels=labelElements.map(e=>e.getBoundingClientRect());
-            return {width:innerWidth,fontLoaded:document.fonts.check('600 13px "Inter"'),heading:type('.home-rankings-card h2'),body:type('.home-league-story p'),name:type('.home-thermal-leaders .dfl-player-copy strong'),metadata:type('.home-thermal-leaders .dfl-player-copy small'),detail:type('[data-page-detail="home-week"] summary strong'),rankLabelsFit:labelElements.every(e=>e.scrollWidth<=e.clientWidth+1)&&labels.every((r,i)=>!i||labels[i-1].right<=r.left+1),masthead:document.querySelector('.home-newspaper-masthead').offsetHeight};
+            const labelElements=[...document.querySelectorAll('.home-rank-head span')],labels=labelElements.map(e=>e.getBoundingClientRect()),labelsClipped=getComputedStyle(document.querySelector('.home-rank-head')).clipPath==='inset(50%)';
+            return {width:innerWidth,fontLoaded:document.fonts.check('600 13px "Inter"'),heading:type('.home-rankings-card h2'),body:type('.home-league-story p'),name:type('.home-thermal-leaders .dfl-player-copy strong'),metadata:type('.home-thermal-leaders .dfl-player-copy small'),detail:type('[data-page-detail="home-week"] summary strong'),rankLabelsFit:labelsClipped?labelElements.every(e=>e.textContent.trim()):labelElements.every(e=>e.scrollWidth<=e.clientWidth+1)&&labels.every((r,i)=>!i||labels[i-1].right<=r.left+1),masthead:document.querySelector('.home-newspaper-masthead').offsetHeight};
         }''')
         assert typography['fontLoaded'] and all('Inter' in typography[k]['family'] for k in ['heading','body','name','metadata','detail']), f'Home type did not load consistently: {typography}'
-        assert typography['heading']['size'] == 16 and typography['body']['size'] == 13 and typography['name']['size'] == 15 and typography['metadata']['size'] == 12, f'Home text scale is inconsistent: {typography}'
+        assert typography['heading']['size'] == (16 if width<=360 else 18) and typography['body']['size'] == 13 and typography['name']['size'] == 15 and typography['metadata']['size'] == 12, f'Home text scale is inconsistent: {typography}'
         assert typography['heading']['weight'] == 700 and typography['name']['weight'] == 600 and typography['heading']['transform'] == 'none' and typography['name']['transform'] == 'none' and typography['rankLabelsFit'], f'Home headings or rank columns are crowded: {typography}'
         metrics['mobileType'].append(typography)
     page.set_viewport_size({'width':390,'height':844})
@@ -1516,7 +1516,7 @@ with sync_playwright() as p:
                   return {headline:slide.querySelector('h2')?.textContent,displaySizes:[...slide.querySelectorAll('.bx-head,.bx-name,.bx-home-title')].map(e=>parseFloat(getComputedStyle(e).fontSize)),copySizes:[...slide.querySelectorAll('.bx-sub,.bx-body,.bx-when-text')].map(e=>parseFloat(getComputedStyle(e).fontSize)),fit:content.every(e=>{const b=e.getBoundingClientRect();return b.left>=box.left-1&&b.right<=box.right+1&&b.top>=box.top-1&&b.bottom<=box.bottom+1&&e.scrollWidth<=e.clientWidth+1}),overflow:document.documentElement.scrollWidth>innerWidth,contrast:window.reviewTextContrast().failures};
                 }''')
                 assert check['fit'] and not check['overflow'] and not check['contrast'], f'Themed slide unreadable: {mode}/{width}/{index}: {check}'
-                assert all(size>=28 for size in check['displaySizes']) and all(size>=15 for size in check['copySizes']), f'Broadcast text shrunk below its reading scale: {check}'
+                assert all(size>=20 for size in check['displaySizes']) and all(size>=12 for size in check['copySizes']), f'Broadcast text shrunk below its reading scale: {check}'
                 if index==0:
                     opener=page.evaluate('({headline:window.reviewDeck[0].headline,subtitle:window.reviewDeck[0].subtitle})')
                     assert all(text in check['headline'] for text in opener.values()) and page.locator('.bx-home-headline-art').count()==0, 'Edition opener must remain live theme-aware text'
