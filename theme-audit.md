@@ -20,7 +20,7 @@ share/send validation remains in place. No new data provider, poller or network
 write is introduced. Selection is bounded to two, clears when changing the
 working team, and retains its packages across tier/filter/review updates.
 
-Reviewed screens: /workspace/dfl-trade-1555/board-photo/
+Reviewed screens: /workspace/dfl-trade-1555/board-ready/
 (compact offers, two-offer comparisons, quick edits, 200% Comfortable text,
 Light/Dark at 320/390); reading/ (existing actual offer/disclosure/edit-return
 checks at 320/390/768); local-final/ (compiled current-data board, comparison and
@@ -33,7 +33,7 @@ both the editor and any nested replacement picker.
 Validation: pnpm check passes 2,469 tests plus release/theme/type/name/build
 checks. Five model tests cover current-value re-evaluation, stale ownership,
 three-team routing, immutable replacements, locks, position filters, duplicates
-and season-long absences. Browser coverage includes 88 comparison/edit/route
+and season-long absences. Browser coverage includes 96 comparison/edit/route
 states, loaded portrait containment, projected metric changes, reset, keyboard
 close, source focus, selections on return, large text and Reduced Motion; the
 existing offer-reading suite passes 112 checks. These board checks now run in CI.

@@ -12,7 +12,7 @@ const name=t=>t.team_name||t.ownerName||`Team ${t.id}`;
 const signed=n=>Number.isFinite(Number(n))?`${n>0?'+':n<0?'−':''}${Math.abs(Number(n)).toFixed(1)}`:'—';
 const label=deal=>deal.parties.slice(1).map(name).join(' + ');
 const metric=(title,value)=>`<div><dt>${title}</dt><dd>${esc(value)}</dd></div>`;
-function figures(deal){const p=tradePerspective(deal.result),a=tradeAssessment(p);return `<dl class="tob-metrics">${metric(deal.parties.length>2?'Group balance':'Value balance',Math.round(deal.result.fairness)+'%')}${metric('Your lineup / wk',signed(p.weeklyDeltaA))}${metric('Your depth / wk',signed(p.depthDeltaA))}</dl>`}
+function figures(deal){const p=tradePerspective(deal.result),a=tradeAssessment(p);return `<dl class="tob-metrics">${metric(deal.parties.length>2?'Group balance':'Value balance',Math.round(deal.result.fairness)+'%')}${metric('Lineup · ROS/wk',signed(p.weeklyDeltaA))}${metric('Depth · ROS/wk',signed(p.depthDeltaA))}</dl>`}
 function risks(deal,pool){const p=tradePerspective(deal.result),a=tradeAssessment(p),drops=p.requiredDropsA||[];return `${drops.length?`<p class="tob-risk">Drop: ${esc(drops.map(id=>pool.get(String(id))?.name||id).join(', '))}</p>`:''}${a.flags.length?`<p class="tob-risk">${esc(a.flags.join(' · '))}</p>`:''}`}
 function players(ids,pool,{deal,owner,editable=false,locked=[]}={}){
  return `<ul class="tob-players">${ids.map(id=>{const p=pool.get(String(id));const to=deal?.parties.length>2?deal.parties.find(t=>String(t.id)===String(deal.destinations[id])):null;return `<li>${p?playerPortrait(p):''}<div><strong>${esc(p?.name||id)}</strong><small>${esc([p?.position,p?.nflTeam].filter(Boolean).join(' · '))}${to?` · → ${esc(name(to))}`:''}</small></div>${editable?`<button type="button" data-tob-swap="${esc(id)}" data-owner="${owner}" ${locked.map(String).includes(String(id))?'disabled':''} aria-label="Replace ${esc(p?.name||id)}">Swap</button>`:''}</li>`}).join('')}</ul>`;
@@ -44,7 +44,7 @@ export function mountTradeOfferBoard(root,{getData,getMine,getOffer,getRestricti
  };
  const show=(type,source)=>{
   stopDialog();kind=type;dialog=document.createElement('dialog');dialog.className='trade-offer-sheet';dialog.setAttribute('aria-labelledby','trade-offer-sheet-title');dialog.innerHTML=`<header><h2 id="trade-offer-sheet-title">${type==='edit'?'Edit offer':'Compare offers'}</h2><button type="button" data-tob-close>Close</button></header><div class="tob-body" data-sheet-body></div>`;
-  document.body.append(dialog);sheet=mountMobileSheet(dialog,{onClosed:()=>{stopPicker();draft=null;},restoreFocus:()=>{if(source?.isConnected)source.focus({preventScroll:true});else root.querySelector('[data-tob-open]')?.focus({preventScroll:true})}});
+  document.body.append(dialog);sheet=mountMobileSheet(dialog,{onClosed:()=>{stopPicker();draft=null;},restoreFocus:()=>{if(source?.isConnected&&!source.disabled)source.focus({preventScroll:true});else (root.querySelector('[data-tob-open]:not([disabled])')||root.querySelector('[data-tob-clear]')||root.querySelector('[data-tob-compare]'))?.focus({preventScroll:true})}});
   dialog.addEventListener('click',event=>{
    const button=event.target.closest('button');if(!button)return;
    const data=getData();

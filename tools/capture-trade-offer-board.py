@@ -37,6 +37,8 @@ with sync_playwright() as p:
    check(tag+' loaded portraits stay inside their player rows',sheet.locator('.dfl-player-portrait img').evaluate_all('es=>es.every(e=>{const b=e.getBoundingClientRect(),p=e.parentElement.getBoundingClientRect();return b.left>=p.left-1&&b.top>=p.top-1&&b.right<=p.right+1&&b.bottom<=p.bottom+1})'))
    sheet.screenshot(path=str(OUT/f'comparison-{width}-{theme}.png'))
    sheet.locator('[data-tob-close]').click();page.wait_for_function('!document.querySelector(".trade-offer-sheet[open]")');check(tag+' close returns to compare control',page.locator('[data-tob-open]').evaluate('e=>e===document.activeElement'))
+   page.locator('[data-tob-open]').click();sheet=page.locator('.trade-offer-sheet[open]');sheet.locator('[data-tob-remove="0"]').click();sheet.locator('[data-tob-close]').click();page.wait_for_function('!document.querySelector(".trade-offer-sheet[open]")');check(tag+' removing one offer returns focus to an enabled control',page.locator('[data-tob-clear]').evaluate('e=>e===document.activeElement'))
+   first.locator('[data-tob-compare]').click();check(tag+' an alternative can be selected after removal',page.locator('[data-tob-open]').is_enabled())
    first.locator('[data-tob-edit]').click();sheet=page.locator('.trade-offer-sheet[open]');page.wait_for_timeout(300)
    original=sheet.locator('[data-tob-swap]').evaluate_all('es=>es.map(e=>e.dataset.tobSwap)')
    initial=sheet.locator('.tob-metrics dd').all_text_contents();swap=sheet.locator('[data-tob-swap]:not([disabled])').first;old=swap.get_attribute('data-tob-swap');page.evaluate('window.unchangedTradePhoto=[...document.querySelectorAll(".trade-offer-sheet .tob-players img")].at(-1)');swap.click();picker=page.locator('.trade-player-picker[open]');picker.wait_for()
