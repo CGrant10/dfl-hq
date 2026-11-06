@@ -34,6 +34,10 @@ loading/stale media, exact points, profile/clip returns and teardown. The compil
 app was inspected read-only with actual league/NFL data and a playing current
 Justice Hill clip in both themes, including the embedded Fantasy view. No page
 errors or horizontal overflow were found. Evidence: `/workspace/dfl-nfl-1553`.
+The legacy comparison check now follows matching position slots and retains
+strict visible-field alignment; an absent owner label is not measured as text.
+The older replay teardown fixture restores motion/score visibility before its
+setup click, while native Replay interactions retain their own coverage.
 Physical Safari frame pacing and VoiceOver speech remain unmeasured.
 
 ## 1.552.0 — NFL game center and game swiping
