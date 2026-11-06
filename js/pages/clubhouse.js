@@ -1,3 +1,4 @@
+import {mountViewedPlayerPoints} from '../viewed-player-points.js';
 import {mountPersonalPostgame} from '../personal-postgame.js';
 import {mountClubhouseNfl} from '../clubhouse-nfl.js';
 import {mountClubhouseTeamHighlights} from '../clubhouse-team-highlights.js';
@@ -50,11 +51,13 @@ export async function render(view){
    <div id="clubhouse-panel-leaders" role="tabpanel" aria-labelledby="clubhouse-tab-leaders" ${initialTab==='leaders'?'':'hidden'}><section class="card clubhouse-section"><div data-clubhouse-leaders><div data-clubhouse-leader-board><p role="status">Loading player scores…</p></div></div><div data-clubhouse-nfl-scoreboard></div></section></div>
    <div id="clubhouse-panel-recap" role="tabpanel" aria-labelledby="clubhouse-tab-recap" ${initialTab==='recap'?'':'hidden'}><div data-personal-postgame hidden></div><section class="card clubhouse-section"><div class="clubhouse-heading" data-ui-section><div><small>WEEK ${model.week} · ${model.season}</small><h2>Week in review</h2></div><span class="clubhouse-status">${model.completed?'Final receipts':'In progress'}</span></div><div data-clubhouse-recap>${recapHtml(model)}</div></section><div data-recap-advice></div></div>
   </div>`;
+  delete view.dataset.pointsChecked;
+  const returnPoints=mountViewedPlayerPoints(view,{getScope:()=>`${currentMember()?.id||'guest'}:${model.season}:${model.week}`,active,getMotion:()=>view.querySelector('.clubhouse-page')?.dataset.motion!=='off'});
   const center=mountClubhouseCenter(view,model,{active,autoFinish:!params.has('archive')&&latest?.season===model.season&&latest?.week===model.week});
   const teamReel=mountClubhouseTeamHighlights(view,{getModel:center.getModel,getGame:center.getGame,getDirectory:center.getPlayerDirectory,active});
   const nflCenter=mountClubhouseNfl(view,{getModel:center.getModel,getDirectory:center.getPlayerDirectory,active,onClip:(id,source)=>teamReel.openClip(id,{source,returnToGame:true})});
   const postgame=mountPersonalPostgame(view,{getModel:center.getModel,active});
-  stopLive=mountMatchupLive(view,model,threadIds,active,{onUpdate:center.update,onError:center.fail,onStop:()=>{postgame.stop();nflCenter.stop();teamReel.stop();center.stop()}});
+  stopLive=mountMatchupLive(view,model,threadIds,active,{onUpdate:center.update,onError:center.fail,onStop:()=>{returnPoints.stop();postgame.stop();nflCenter.stop();teamReel.stop();center.stop()}});
   wirePageDisclosures(view);
   wireClubhouseTabs(view,initialTab);
   for(const button of view.querySelectorAll('[data-clubhouse-nfl-open]'))button.addEventListener('click',async event=>{

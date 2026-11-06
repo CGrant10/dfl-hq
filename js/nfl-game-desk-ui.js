@@ -15,8 +15,8 @@ export function nflGameDeskMarkup({uid,mode,embedded=false,games,gameId,observed
  <div class="nfl-center-body" id="${uid}-view" data-nfl-center-body aria-busy="${loading&&!summary}">
   <div class="nfl-live-grid"${selected?'':' hidden'}>
    ${mode==='fantasy'?`
-   <section class="nfl-live-stats" id="${uid}-stats" data-nfl-section="fantasy" tabindex="-1" aria-labelledby="${uid}-stats-title"><header class="nfl-section-head"><h3 id="${uid}-stats-title">Fantasy stats</h3></header>
-    <div id="${uid}-stat-rows" data-nfl-stats-rows>${nflFantasyMarkup(fantasy,teams,{uid,loading:loading&&!summary,error,season:context?.season,week:context?.week,state:observed?.state,showScores:false})}</div>
+   <section class="nfl-live-stats" id="${uid}-stats" data-nfl-section="fantasy" tabindex="-1" aria-labelledby="${uid}-stats-title"><header class="nfl-section-head"><h3 id="${uid}-stats-title">Fantasy stats</h3><small>PPR</small></header>
+    <div id="${uid}-stat-rows" data-nfl-stats-rows>${nflFantasyMarkup(fantasy,teams,{uid,loading:loading&&!summary,error,season:context?.season,week:context?.week,state:observed?.state,showScores:false,checkedAt:checked,leagueCheckedAt:context?.checkedAt})}</div>
    </section>
    `:`
    <section class="nfl-live-plays" id="${uid}-plays" data-nfl-section="plays" tabindex="-1" aria-labelledby="${uid}-plays-title"><header class="nfl-section-head"><h3 id="${uid}-plays-title">Play-by-play</h3>${selected?`<label class="nfl-center-filter"><span class="sr-only">Show plays</span><select data-nfl-center-filter aria-label="Filter NFL plays"><option value="all" ${filter==='all'?'selected':''}>All plays</option><option value="scoring" ${filter==='scoring'?'selected':''}>Scoring</option><option value="big" ${filter==='big'?'selected':''}>Big plays</option></select></label>`:''}</header>
