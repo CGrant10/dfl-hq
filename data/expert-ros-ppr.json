@@ -7,7 +7,7 @@
   "season": 2026,
   "experts": 7,
   "updatedAt": 1793967222000,
-  "fetchedAt": 1793986414835,
+  "fetchedAt": 1794003969701,
   "players": [
     {
       "sourceId": 22968,
@@ -1993,7 +1993,7 @@
       "sourceId": 15642,
       "name": "Jacoby Brissett",
       "position": "QB",
-      "team": "ARI",
+      "team": "BAL",
       "rank": 188,
       "positionRank": 28,
       "minRank": 139,
