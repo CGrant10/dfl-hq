@@ -68,7 +68,7 @@ with sync_playwright() as p:
      pg.locator('[data-nfl-center-filter]').select_option('all')
     else:
      sides=pg.locator('.nfl-fantasy-side');check(tag+' away and home stay side by side',sides.count()==2 and sides.nth(0).bounding_box()['x']<sides.nth(1).bounding_box()['x'])
-     check(tag+' NFL score labels and actual league totals are explicit',pg.locator('.nfl-fantasy-team-score>small').all_text_contents()==['NFL','NFL'] and '22.0' in pg.locator('[data-nfl-your-player]').inner_text() and 'League' in pg.locator('[data-nfl-your-player]').inner_text())
+     check(tag+' NFL score labels and actual league totals are explicit',pg.locator('.nfl-fantasy-team-score>small').all_text_contents()==['NFL','NFL'] and '22.0' in pg.locator('[data-nfl-your-player]').inner_text() and pg.locator('[data-nfl-your-player] small[title="DFL league scoring"]').count()>0)
      check(tag+' unknown player points are not made up',pg.locator('.nfl-fantasy-value>span>b').evaluate_all('ns=>ns.some(n=>n.textContent==="—")'))
      check(tag+' each team keeps full player names and stat lines',pg.locator('.nfl-fantasy-player').evaluate_all('ns=>ns.every(n=>n.scrollWidth<=n.clientWidth+1&&!!n.querySelector(".nfl-fantasy-stat-line").textContent)'))
      aligned=pg.locator('.nfl-center-fantasy').evaluate('''e=>{

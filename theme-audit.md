@@ -1,3 +1,47 @@
+## 1.554.0 — Clubhouse reading and last-view player points
+
+The NFL section drops the unrelated fantasy matchup rail and duel, keeping its
+week control, section tabs, NFL game choices and separate Plays/Fantasy views.
+Fantasy rows retain position-aligned tracks, full names, zero-point records and
+stable ordering. Inter sizes, row padding, photo alignment and points labels are
+consistent. Scoring provenance remains in each score's accessible label and
+its points-label title; the section labels the PPR format once.
+
+Visible players gain a temporary signed change on returning to Clubhouse. The
+existing metadata space under the score holds the badge without moving rows or
+thermal effects. Matchups, Leaders and NFL Fantasy use the same seen-point
+controller. First views establish a baseline, negative corrections work, and
+member/week/scoring-source scopes stay separate on the device. Missing points,
+older cached samples, offscreen rows, inactive sections, previews and modal-covered
+players cannot consume an unseen change. Only a sustained visible score is
+acknowledged. Reduced Motion and app Motion off keep a static, timed badge.
+There is no added network polling. Device storage is bounded and writes batch;
+observers, pending views and animation handles stop with the page.
+
+Broadcast news, numbers and results have distinct editorial compositions using
+the shared palette, rules, margins and footer. Annual awards use opposite poster
+layouts and complete illustrations with no hard background panel behind them.
+The first daily slide, accurate destinations, current-story priority, daily
+archive variation and one-pass playback rules remain intact.
+
+Reviewed screenshots: /workspace/dfl-clubhouse-1554/points-page-ready/ and
+points-ready/ (actual Clubhouse returns and row-controller states,
+Light/Dark at 320/390); clubhouse/ (all sections, profiles, clips, enlarged text);
+nfl/ (Light/Dark 320/390/430/768 and large text); broadcast/ (90 standard and 56
+enlarged layouts, both themes); local/ (compiled app with actual current league
+and NFL data, Home, Clubhouse and native video playing in both themes).
+
+Validation: pnpm check passes 2,464 tests plus release/theme/type/name/build
+checks. The return-point browser suite covers 72 states including stale arrival
+followed by a fresh score, profile/week isolation, modal return, cleanup and
+motion preferences. A separate full-page fixture checks actual gained/corrected
+player totals after reopening Clubhouse. The full Clubhouse review passes 317
+checks and the NFL desk passes 126; broadcast tests cover full copy, control
+geometry, enlarged text, one-pass/manual replay and Reduced Motion. Compiled
+current-data review has no page errors or horizontal overflow and plays a real
+Justice Hill touchdown clip in both themes. Provider writes are blocked during
+review. Physical Safari frame pacing and VoiceOver speech are not measured.
+
 ## 1.553.0 — smoother NFL navigation and coherent replay viewing
 
 Replay adopts NFL live's Inter hierarchy, theme-token surfaces, compact game

@@ -287,3 +287,21 @@ Game previews can prepare a maximum of two inert neighbors during idle time.
 They must not fetch game/stat data or create background polling. Keep selected
 styles through arrival, cancel pending work on teardown, and preserve vertical
 scroll, rapid reversal and reduced-motion navigation.
+
+## Clubhouse return points and focused NFL chrome — 1.554.0
+
+Keep NFL's game and fantasy-league matchup controls in their own sections. NFL
+Fantasy retains aligned position tracks, compact name/points/stat typography,
+and accessible scoring-source labels without repeating provenance in every row.
+
+A return-point badge compares only a player's last genuinely viewed numeric score
+for the current member, week and scoring source. First views establish a baseline;
+missing and stale samples do not create a loss. Account for negative corrections.
+Use the existing score-metadata slot so the fade never changes row geometry or
+thermal positioning. Hidden, offscreen, preview and modal-covered scores must not
+be acknowledged. Keep it static with reduced motion and remove all transient work
+on exit. Persist only bounded device-local points; do not add a network poller.
+
+Broadcast story categories may differ in composition while retaining the same
+palette, copy rhythm, margins and controls. Preserve full copy at enlarged sizes,
+real destinations and one-pass/daily edition rules.

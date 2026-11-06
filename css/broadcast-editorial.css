@@ -190,3 +190,24 @@
 #home-wrap .bx-stage[data-bx-format="wide"][data-bx-large-text] .bx-brief-injuries>div { display:grid; grid-template-columns:minmax(0,1fr); gap:4px; }
 @media(prefers-reduced-motion:reduce) { #home-wrap .bx-edition-progress>span { transition:none!important; } }
 html[data-ui-motion="off"] #home-wrap .bx-edition-progress>span { transition:none!important; }
+
+/* Story-specific editorial rhythms share the same margins and footer. */
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-news { gap:10px; background:radial-gradient(ellipse 75% 85% at 100% 0,color-mix(in srgb,var(--accent) 4%,transparent),transparent 90%),var(--bg-2); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-news>.bx-kicker { padding-left:8px; border-left:2px solid var(--accent); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-news>.bx-head { font-size:1.375rem; line-height:1.18; letter-spacing:-.025em; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-news>.bx-brief-body { font-weight:400; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-metric { background:radial-gradient(ellipse 35% 90% at 88% 45%,color-mix(in srgb,var(--accent) 6%,transparent),transparent 90%),var(--bg-2); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-metric .bx-brief-value { border-left:1px solid var(--line-soft); padding-left:10px; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-result>.bx-head { font-size:.8125rem; font-weight:500; color:var(--body-text); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-result .bx-brief-scores b { letter-spacing:-.035em; font-variant-numeric:tabular-nums; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-result .bx-brief-scores .is-winner b { color:var(--accent); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-result .bx-brief-scores { flex:1; align-items:center; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief[data-bx-temporal="live"]>.bx-kicker::before { content:''; display:inline-block; width:5px; height:5px; margin:0 6px 2px 0; border-radius:50%; background:var(--ok); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-news.bx-brief-with-art>.bx-brief-art { background:none; -webkit-mask-image:linear-gradient(to right,#000 82%,transparent); mask-image:linear-gradient(to right,#000 82%,transparent); }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-metric .bx-brief-value { border:0; padding:0; }
+/* The two annual awards read as opposite posters, using full illustrations. */
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award>.bx-brief-art { background:none; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-chip>.bx-brief-art { inset:20px 10px 12px auto; width:38%; padding:0; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-chip>:is(.bx-kicker,.bx-head,.bx-brief-body,.bx-brief-action) { width:58%; max-width:58%; margin-left:0; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-chip>:is(.bx-kicker,.bx-head,.bx-brief-body,.bx-brief-action) { width:100%; max-width:100%; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-chip>.bx-brief-art { position:static; width:100%; height:60px; }

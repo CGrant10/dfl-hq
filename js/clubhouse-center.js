@@ -60,6 +60,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  };
  const enter=(card,options={})=>polish.enter(card,options);
  const paintActive=()=>{
+  if(last)root.dataset.pointsChecked=String(last.checkedAt);
   const game=selectedGame(),card=game&&cardOf(game.id);if(!card)return;
   setViewingMatchup(card,viewingMatchup(model,game));
   const duel=duelFor(game.id);if(duel){patchGameDay(duel,clubhouseDuelHtml(game,model));setViewingMatchup(duel,viewingMatchup(model,game));}
@@ -94,7 +95,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   host.dataset.motion=motion?'on':'off';patchGameDay(host.querySelector('[data-clubhouse-leader-board]'),leaguePanel(model,{filter:leaderFilter,includeBench}));
   if(!leaderVfx)leaderVfx=mountScoreVfx(host);else leaderVfx.refresh();
   const nfl=root.querySelector('[data-clubhouse-nfl-scoreboard]');if(nfl)patchGameDay(nfl,model.events.length?`<details class="clubhouse-nfl-scoreboard"><summary>NFL scoreboard · ${model.events.length} games</summary><ul>${model.events.map(event=>`<li><strong>${event.teams.map(team=>esc(team.name)+(team.score==null?'':` ${Number(team.score)}`)).join(' · ')}</strong><span>${esc(event.label||event.state)}</span></li>`).join('')}</ul></details>`:'');
-  void details.update();
+  void details.update();root.dispatchEvent(new CustomEvent('dfl:player-points-painted'));
  };
  const archiveReady=event=>{const detail=event.detail;if(!current()||detail?.season!==week.season||detail.week!==week.week)return;week.recordArchive=detail.archive;model.recordArchive=detail.archive;paintActive()};
  root.addEventListener('dfl:record-archive-ready',archiveReady);

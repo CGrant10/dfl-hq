@@ -96,6 +96,16 @@ with sync_playwright() as p:
    page.evaluate('scrollTo(0,0)');page.wait_for_timeout(700);page.screenshot(path=str(OUT/f'{width}-{mode}-clubhouse-default.png'));page.locator('.clubhouse-matchup-desk').screenshot(path=str(OUT/f'{width}-{mode}-matchup-content.png'))
    check(tag+' starting players are visible on the first phone screen',page.locator('[data-clubhouse-matchup="1"] .gd-lineup-pairs .gd-compare-row').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-70'))
    check(tag+' matchup uses compact chips and a compact first player pair',page.locator('.clubhouse-matchup-strip').evaluate('e=>e.clientHeight<=56') and page.locator('[data-clubhouse-matchup="1"] .gd-compare-row').first.evaluate('e=>e.clientHeight<=100'))
+   if os.environ.get('DFL_CLUBHOUSE_POINTS_ONLY'):
+    page.evaluate('''async()=>{f.page.leave();localStorage.removeItem('dfl.player-points.v1');const {currentMember}=await import('/js/members.js');const {recordViewedPoints}=await import('/js/viewed-player-points.js');const scope=`${currentMember()?.id||'guest'}:2026:7:league`,at=Date.now()-60000;recordViewedPoints(localStorage,scope,'1',18.6,at);recordViewedPoints(localStorage,scope,'4',14.5,at);await f.page.render(document.getElementById('view'))}''')
+    page.wait_for_selector('[data-gameday-player="1"]');page.locator('[data-clubhouse-matchup="1"] .gd-compare-row').first.scroll_into_view_if_needed()
+    page.wait_for_selector('.player-return-delta')
+    check(tag+' real Clubhouse return shows the gained and corrected player points',set(page.locator('.player-return-delta').all_text_contents())=={'+3.4','−2.5'})
+    check(tag+' return changes sit alongside their actual player totals',page.locator('[data-viewed-player="1"]').filter(visible=True).inner_text().startswith('22.00') and page.locator('[data-viewed-player="4"]').filter(visible=True).inner_text().startswith('12.00'))
+    check(tag+' return changes align beneath the points without covering digits',page.locator('.player-return-delta').evaluate_all('es=>Math.abs(es[0].getBoundingClientRect().top-es[1].getBoundingClientRect().top)<1&&es.every(e=>e.getBoundingClientRect().top>=e.parentElement.getBoundingClientRect().bottom-1)'))
+    page.screenshot(path=str(OUT/f'{width}-{mode}-clubhouse-return-points.png'))
+    check(tag+' real return changes fit without page overflow',page.evaluate('document.documentElement.scrollWidth<=innerWidth') and not errors)
+    page.evaluate('f.page.leave()');check(tag+' leaving Clubhouse removes return effects',page.locator('.player-return-delta').count()==0);c.close();continue
    if os.environ.get('DFL_CLUBHOUSE_SWIPE_ONLY'):
     from clubhouse_swipe_review import review_matchup_swipes
     review_matchup_swipes(page,c,check,OUT,tag,width,mode)
@@ -226,13 +236,14 @@ with sync_playwright() as p:
    page.locator('[data-home-reel-game]').select_option('401900001');check(tag+' choosing an NFL game narrows the grid',page.locator('[data-home-reel-clip]').count()==1)
    page.locator('[data-home-reel-game]').select_option('');page.locator('[data-home-reel-search]').fill('Metcalf');check(tag+' grid search finds the requested player',page.locator('[data-home-reel-clip]').count()==1);page.locator('[data-home-reel-search]').fill('')
    page.locator('[data-clubhouse-nfl-open="plays"]').click();page.wait_for_selector('[data-nfl-center-game] option[value="401873011"]',state='attached');page.wait_for_selector('.nfl-center-plays li',timeout=15000)
+   check(tag+' NFL view removes unrelated league matchup chrome',page.locator('.clubhouse-duel-host').is_hidden() and page.locator('[data-clubhouse-scoreboard]').is_hidden())
    check(tag+' NFL game center shows the full play-by-play',page.locator('.nfl-center-plays li').count()>100)
    check(tag+' selected NFL game is fully readable',page.locator('[data-nfl-center-game]').evaluate('e=>{const s=getComputedStyle(e),c=document.createElement("canvas").getContext("2d");c.font=s.font;return c.measureText(e.selectedOptions[0].text).width+parseFloat(s.paddingLeft)+parseFloat(s.paddingRight)<=e.clientWidth+1}'))
    page.locator('[data-nfl-center-filter]').select_option('big');check(tag+' big plays show full names and a compact emphasized result',page.locator('.nfl-center-plays [data-play-kind="big-play"]').count()>0 and page.locator('.nfl-center-plays [data-play-kind="big-play"] .nfl-play-result').evaluate_all('es=>es.every(e=>parseFloat(getComputedStyle(e).fontSize)===16)'))
    play=page.locator('.nfl-center-plays [data-play-kind="big-play"]').first;check(tag+' full NFL descriptions are always visible',play.locator('.nfl-play-details>p').is_visible() and page.locator('.nfl-center-plays details,.nfl-center-plays summary').count()==0)
    page.screenshot(path=str(OUT/f'{width}-{mode}-nfl-big-plays.png'))
    page.locator('[data-nfl-center-filter]').select_option('scoring');check(tag+' NFL scoring filter is precise',page.locator('.nfl-center-plays li').count()>2 and page.locator('.nfl-center-plays li').count()<20)
-   page.locator('[data-clubhouse-nfl-open="fantasy"]').click();check(tag+' fantasy overview identifies your players and league scoring',page.locator('[data-nfl-your-player]').count()>0 and 'League' in page.locator('.nfl-center-fantasy').inner_text())
+   page.locator('[data-clubhouse-nfl-open="fantasy"]').click();check(tag+' fantasy overview identifies your players and league scoring',page.locator('[data-nfl-your-player]').count()>0 and page.locator('[data-nfl-your-player] .nfl-fantasy-value small[title="DFL league scoring"]').count()>0)
    page.wait_for_timeout(650)
    check(tag+' stats shortcut brings its section below the game toolbar',page.locator('[data-nfl-section="fantasy"] h3').first.evaluate('e=>{const y=e.getBoundingClientRect().top,b=document.querySelector(".nfl-center-tools").getBoundingClientRect().bottom;return y>=b-2&&y<=b+72}'))
    check(tag+' fantasy is its own selected view',page.locator('#clubhouse-tab-nfl').get_attribute('aria-selected')=='true' and page.locator('.nfl-live-stats').is_visible() and page.locator('.nfl-live-plays').count()==0 and page.locator('[data-nfl-center-mode="fantasy"]').get_attribute('aria-pressed')=='true')
