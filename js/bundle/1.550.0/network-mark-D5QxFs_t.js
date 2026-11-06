@@ -1,0 +1,1 @@
+import{Nr as e}from"./app-core-7Mx30Im1.js";function t(t){return`<span class="dfl-network-mark"><b>DFL</b><span>${e(t)}</span><i aria-hidden="true"></i></span>`}export{t};
