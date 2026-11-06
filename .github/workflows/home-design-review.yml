@@ -37,6 +37,9 @@ on:
       - 'js/sportsbook-account-motion.js'
       - 'tools/capture-dfl-network.py'
       - 'tools/capture-trade-offer-reading.py'
+      - 'tools/capture-trade-offer-board.py'
+      - 'js/trade-offer-board*'
+      - 'css/trade-offer-board.css'
       - 'tools/capture-sportsbook-slip-review.py'
       - 'tools/render-sheet-review.mjs'
       - 'css/tokens.css'
@@ -530,12 +533,14 @@ jobs:
           DFL_TRADE_REVIEW_DIR: ${{ github.workspace }}/trade-book-fixture
           DFL_NETWORK_TRADE_DIR: ${{ github.workspace }}/trade-book-fixture
           DFL_TRADE_READING_DIR: trade-book-output/trade
+          DFL_TRADE_BOARD_DIR: trade-book-output/board
           DFL_SHEET_REVIEW_DIR: ${{ github.workspace }}/trade-book-output/book
           DFL_NETWORK_REVIEW_DIR: trade-book-output/network
         run: |
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           node tools/render-trade-review.mjs
           python tools/capture-trade-offer-reading.py
+          python tools/capture-trade-offer-board.py
           node tools/render-sheet-review.mjs
           python tools/capture-sportsbook-slip-review.py
           python tools/capture-dfl-network.py

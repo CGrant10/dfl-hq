@@ -305,3 +305,19 @@ on exit. Persist only bounded device-local points; do not add a network poller.
 Broadcast story categories may differ in composition while retaining the same
 palette, copy rhythm, margins and controls. Preserve full copy at enlarged sizes,
 real destinations and one-pass/daily edition rules.
+
+## Compact trade offers — 1.555.0
+
+Keep complete outgoing/incoming packages readable without expanding a result.
+Use the shared Inter scale, theme surfaces, quiet rules, small contained player
+portraits and reserved verdict placement. Adding controls must not enlarge every
+card: reuse the existing inspection row for Edit. Preserve 44px action targets
+and allow actions to wrap at enlarged text instead of clipping.
+
+Compare two immutable packages by IDs/destinations, restoring them against current
+rosters/values on open. Align send/receive/value rows in the two-column phone view.
+Never show an actionable stale grade after ownership changes. Quick replacement
+uses the same evaluator, position restrictions, anchor locks, availability and
+routing rules as the analyzer. Keep other players/destinations intact; Reset only
+resets the open draft. Final review uses the existing analyzer and fresh-send/share
+checks. Use the shared sheet lifecycle, Reduced Motion and clean route teardown.

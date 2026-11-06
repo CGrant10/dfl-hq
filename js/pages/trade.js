@@ -1,3 +1,4 @@
+import {mountTradeOfferBoard} from '../trade-offer-board.js';
 import {patchGameDay} from '../game-day-dom.js';
 import {animateUi} from '../ui-motion.js';
 import {tradeOpportunities,scoutSnapshot,readScoutBaseline,saveScoutBaseline} from '../trade-opportunities.js';
@@ -79,7 +80,7 @@ function offerPlayerRows(ids, pool, routing=null) {
 
 function offerPackage(ids,pool,label,routing=null){
  const sorted=[...ids].sort((a,b)=>(pool.get(String(b))?.tradeValue||0)-(pool.get(String(a))?.tradeValue||0));
- return `<section class="tb-package"><small>${label}</small>${offerPlayerRows(sorted,pool,routing)}</section>`;
+ return `<section class="tb-package"><small>${label} · ${ids.length}</small>${offerPlayerRows(sorted,pool,routing)}</section>`;
 }
 
 function offerSummary(offer,pool){
@@ -89,23 +90,23 @@ function offerSummary(offer,pool){
 
 function offerControls(offer,pool){
  const pins=offer.parties?'':`<details class="tb-offer-pin"><summary aria-label="Keep a player in the search">Keep</summary><div>${[['send',offer.sendA],['receive',offer.sendB]].flatMap(([side,ids])=>ids.map(id=>`<button type="button" data-tb-pin="${esc(id)}" data-pin-side="${side}">Keep ${esc(pool.get(String(id))?.name||id)}</button>`)).join('')}</div></details>`;
- return `<div class="tb-card-actions"><button type="button" data-tb-pass>Pass</button><button type="button" data-tb-save>Save</button>${pins}</div>`;
+ return `<div class="tb-card-actions"><button type="button" data-tb-pass>Pass</button><button type="button" data-tb-save>Save</button><button type="button" data-tob-compare aria-pressed="false">Compare</button>${pins}</div>`;
 }
 function offerBalance(offer){
  const p=tradePerspective(offer),a=tradeAssessment(p),drops=offer.parties?(offer.requiredDrops||[]).map(ids=>ids.length):[p.requiredDropsA?.length||0,p.requiredDropsB?.length||0],window=offer.windowWeeks?.length?`Weeks ${offer.windowWeeks[0]}–${offer.windowWeeks.at(-1)}`:'Rest of season';
  return `<div class="tb-offer-balance"><span>Value balance <b>${Math.round(a.fairness)}%</b></span><span class="tb-offer-horizon">${esc(window)}</span>${a.flags.length||drops.some(Boolean)?`<span class="tb-offer-caution">${drops.some(Boolean)?offer.parties?`Roster drops: ${drops.join(' / ')}`:`Drops: you ${drops[0]} · them ${drops[1]}`:'Estimate · check risk'}</span>`:''}</div>`;
 }
-const offerPreview=(offer,pool)=>`<details class="tb-offer-preview"><summary><span>Lineup & risk<small>${esc(tradeLineupFitLabel(offer.windowDeltas||offer.weeklyDeltas||[offer.weeklyDeltaA,offer.weeklyDeltaB]))}</small></span><i aria-hidden="true"></i></summary>${offerSummary(offer,pool)}<div data-offer-lineup></div></details>`;
+const offerPreview=(offer,pool)=>`<div class="tb-offer-inspect"><details class="tb-offer-preview"><summary><span>Lineup & risk<small>${esc(tradeLineupFitLabel(offer.windowDeltas||offer.weeklyDeltas||[offer.weeklyDeltaA,offer.weeklyDeltaB]))}</small></span><i aria-hidden="true"></i></summary>${offerSummary(offer,pool)}<div data-offer-lineup></div></details><button type="button" data-tob-edit>Edit</button></div>`;
 
 function offerMarkup(offer, pool) {
-  if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerBalance(offer)}${offerPreview(offer,pool)}<footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-ui-action="primary" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze trade <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer></article>`;
+  if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerBalance(offer)}${offerPreview(offer,pool)}<footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-ui-action="primary" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer></article>`;
   const assessment=tradeAssessment(offer);
   const call = (assessment.needsReview&&assessment.price.headline==='Balanced'?'Estimated balance':assessment.price.headline);
   return `<article class="tb-offer" data-offer-key="${esc(offerKey(offer))}">
     <header><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<strong>${esc(teamName(offer.other))}</strong></small><b>${call}</b></header>
     <div class="tb-offer-flow">${offerPackage(offer.sendA,pool,'You send')}${offerPackage(offer.sendB,pool,'You get')}</div>
     ${offerBalance(offer)}${offerPreview(offer,pool)}
-    <footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-ui-action="primary" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(','))}" data-send-b="${esc(offer.sendB.join(','))}" data-weekly-delta="${Number(offer.weeklyDeltaA)||0}">Analyze trade <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer>
+    <footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-ui-action="primary" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(','))}" data-send-b="${esc(offer.sendB.join(','))}" data-weekly-delta="${Number(offer.weeklyDeltaA)||0}">Analyze <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer>
   </article>`;
 }
 
@@ -242,6 +243,7 @@ function tradeLab(team, teams, pool, shop) {
       <button type="button" class="btn tb-browse-offers" data-tb-view-offers>View offers <span aria-hidden="true">→</span></button></div>
     </details>
     <div class="tb-intent" aria-label="Offer type"><span>SHOW ME</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "Fair"], ["aggressive", "Aggressive"], ["steal", "Steal"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" aria-pressed="${intent === value}" aria-label="${esc(intentLabel(value,label))}" class="${intent === value ? "is-active" : ""}"><span>${label}</span><span class="tb-intent-count" data-tb-intent-count>(${intentCount(value)})</span></button>`).join("")}</div></div>
+    <div data-tb-board-tools hidden></div>
     <section class="tb-layout-section" data-tb-offers tabindex="-1">
       <h2 class="section-title" data-ui-section-head>Generated offers<span class="count">${searching?'Finding offers…':failed?'Try again':closestOffers.length?`${closestOffers.length} alternatives`:`Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}`}</span></h2>
       ${tradeOpportunitiesMarkup(opportunities,{loading:searching,open:shop.scoutOpen})}<div class="tb-offers-card" aria-busy="${searching}">${shop.lastPassed?'<div class="tb-pass-status" role="status">Offer passed <button type="button" class="linkbtn" data-tb-undo-pass>Undo</button></div>':''}
@@ -313,13 +315,14 @@ function page(data, tradeAlerts = []) {
       const connection=createTradeConnection(),openPreviews=new Set();
       let stopped=false;
       const current=()=>!stopped&&view.isConnected;
-      stopOffers=()=>{stopped=true;shop.intentStamp=(shop.intentStamp||0)+1;connection.stop();stopDesk();stopPickers();catalog.stop();negotiation.stop();intentions.stop();};
+      stopOffers=()=>{stopped=true;shop.intentStamp=(shop.intentStamp||0)+1;offerBoard.stop();connection.stop();stopDesk();stopPickers();catalog.stop();negotiation.stop();intentions.stop();};
       const intentions=createTradeIntentions({member:me,getData:()=>data,
         onChange:context=>{if(!current())return;shop.intentions=context;shop.intentionsStamp=(shop.intentionsStamp||0)+1;shop.visibleCount=OFFER_BATCH_SIZE;if(catalog)paintOffers();},
         onTarget:id=>{const mine=data.teams.find(t=>String(t.sleeper_user_id)===String(me?.sleeper_user_id));if(mine)selectedId=mine.id;shop.partnerId=id;shop.anchorPartnerId='';shop.receiveAnchors=[];shop.sendAnchors=[];shop.memberIds=[];shop.mode='offers';draw();body.querySelector('[data-tb-offers]')?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}});
       const negotiation=createTradeNegotiation({member:me,getData:()=>data,getDeal:()=>deal,
         onEdit:next=>{if(next){selectedId=next.parties[0].id;applyTradeDeal(trade,next);}shop.mode='manual';shop.customOpen=true;draw();body.querySelector('.td-custom')?.scrollIntoView({block:'start',behavior:'instant'});body.querySelector('.td-working-as select')?.focus({preventScroll:true});},
         onRoom:()=>{shop.mode='room';shop.customOpen=false;draw();body.querySelector('[data-tr-host]')?.scrollIntoView({block:'start',behavior:'instant'});}});
+      const offerBoard=mountTradeOfferBoard(body,{getData:()=>data,getMine:()=>data.teams.find(t=>String(t.id)===String(selectedId)),getOffer:key=>shop.offerState?.offers?.find(o=>offerKey(o)===key),getRestrictions:()=>({positions:normalizeReceivePositions(shop.receivePositions),locked:[...shop.sendAnchors,...shop.receiveAnchors]}),onUse:(next,key)=>{const card=key&&body.querySelector(`[data-offer-key="${CSS.escape(key)}"]`);activeOfferKey=key||null;offerReturn=card?{key,top:card.getBoundingClientRect().top}:null;negotiation.clearEdit();selectedId=next.parties[0].id;applyTradeDeal(trade,next);shop.mode='manual';shop.customOpen=true;draw();body.querySelector('[data-td-verdict]')?.scrollIntoView({block:'start',behavior:'instant'});}});
       const restoreOfferPosition=()=>{
         if(!pendingReturn||shop.mode!=='offers')return false;
         const card=body.querySelector(`[data-offer-key="${CSS.escape(pendingReturn.key)}"]`);
@@ -381,11 +384,11 @@ function page(data, tradeAlerts = []) {
           button.setAttribute('aria-label',next.getAttribute('aria-label'));
         });
         const scoutButton=body.querySelector('[data-tb-scout]');if(scoutButton)scoutButton.textContent=shop.scoutCount==null?'Scout':`Scout (${shop.scoutCount})`;
-        if(countsOnly)return;
+        if(countsOnly){offerBoard.sync();return;}
         const next=template.content.querySelector('[data-tb-offers]');
         if(preservePrevious&&next.querySelector('.tb-offers-card[aria-busy="true"]')&&old.querySelector('.tb-offer')){
           old.setAttribute('aria-busy','true');
-          old.querySelectorAll('[data-td-load-offer],[data-tb-pass],[data-tb-save],[data-tb-pin]').forEach(button=>button.disabled=true);
+          old.querySelectorAll('[data-td-load-offer],[data-tb-pass],[data-tb-save],[data-tb-pin],[data-tob-compare],[data-tob-edit]').forEach(button=>button.disabled=true);
           if(!old.querySelector('[data-ti-search-status]')){const status=document.createElement('p');status.className='tb-search-status';status.dataset.tiSearchStatus='';status.setAttribute('role','status');status.textContent='Updating offers…';old.querySelector('.tb-offers-card')?.prepend(status);}
           return;
         }
@@ -394,7 +397,7 @@ function page(data, tradeAlerts = []) {
           const retained=previousCards.get(fresh.dataset.offerKey);
           if(retained){patchGameDay(retained,fresh.innerHTML);fresh.replaceWith(retained)}else entering.push(fresh);
         }
-        old.replaceWith(next);wireOfferTiers(next);
+        old.replaceWith(next);wireOfferTiers(next);offerBoard.sync();
         // Retained offers stay fully painted. Only visible new cards enter.
         for(const card of entering){const r=card.getBoundingClientRect();if(r.bottom>80&&r.top<innerHeight-60)animateUi(card,[{opacity:.65,transform:'translateY(4px)'},{opacity:1,transform:'none'}],{duration:180})}
         if(!restoreOfferPosition()){
@@ -467,7 +470,7 @@ function page(data, tradeAlerts = []) {
           shop.customOpen = open;
           saveDraft?.();
         });
-        wireOfferTiers(body);
+        wireOfferTiers(body);offerBoard.sync();
         if (shop.justRefreshed) {
           const stamp = shop.refreshStamp;
           setTimeout(() => {
