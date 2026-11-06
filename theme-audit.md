@@ -17,6 +17,8 @@ with all destinations reachable, native scrolling and no Home glimpse underneath
 Mobile checks cover 320/390/430px, More at 768px, 125/200% text and Comfortable
 reading. Whole offer-intent controls wrap at enlarged text; the fixed horizontal
 marker gives way to an individual selected state when those controls stack.
+The font-loaded 320px offer review also verifies compact balance metadata and
+real disclosure reversal without shrinking player/action targets.
 44px targets, keyboard return/trapping, interrupted menu close/reopen, Reduced
 Motion and app-motion-off behavior are preserved. Book claim/slip checks use an
 isolated wallet and cover retry, single-flight and late-response navigation; no

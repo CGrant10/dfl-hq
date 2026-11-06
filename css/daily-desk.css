@@ -79,7 +79,7 @@
 #view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-player-link>.dfl-player-copy { display:grid; gap:1px; }
 #view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-player-link>.dfl-player-copy small { color:var(--body-text); font:400 var(--ui-label)/1.35 var(--font-ui); }
 #view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-player-link .dfl-player-portrait { width:28px; height:32px; min-width:28px; flex-basis:28px; }
-#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-offer-balance { margin-top:2px; padding-block:4px; border-color:var(--line-soft); }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-offer-balance { column-gap:8px; margin-top:2px; padding-block:4px; border-color:var(--line-soft); }
 #view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-offer-preview { border-color:var(--line-soft); }
 #view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-offer-footer { border-color:var(--line-soft); }
 #view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-card-actions :is(button,summary) { color:var(--body-text); font:500 var(--ui-meta)/1.35 var(--font-ui); }
