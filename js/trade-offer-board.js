@@ -1,3 +1,5 @@
+import {patchGameDay} from './game-day-dom.js';
+import {animateUi} from './ui-motion.js';
 import {esc,toast} from './ui.js';
 import {playerPortrait} from './player-presentation.js';
 import {tradePerspective} from './trade-routing.js';
@@ -34,10 +36,10 @@ export function mountTradeOfferBoard(root,{getData,getMine,getOffer,getRestricti
   if(!dialog)return;const {pool}=getData(),body=dialog.querySelector('[data-sheet-body]');
   if(kind==='edit'){
    const a=tradeAssessment(tradePerspective(draft.result));
-   body.innerHTML=`<div class="tob-verdict"><b>${esc(a.price.headline)}</b><span>${esc({fair:'Fair',aggressive:'Aggressive',steal:'Steal'}[a.tier])}</span></div>${packages(draft,pool,true,getRestrictions().locked||[])}${figures(draft)}${risks(draft,pool)}<div class="tob-editor-actions"><button type="button" data-tob-use>Review this offer</button><button type="button" data-tob-add-edit>Add to comparison</button><button type="button" data-tob-reset>Reset</button></div>`;
+   patchGameDay(body,`<div class="tob-verdict"><b>${esc(a.price.headline)}</b><span>${esc({fair:'Fair',aggressive:'Aggressive',steal:'Steal'}[a.tier])}</span></div>${packages(draft,pool,true,getRestrictions().locked||[])}${figures(draft)}${risks(draft,pool)}<div class="tob-editor-actions"><button type="button" data-tob-use>Review this offer</button><button type="button" data-tob-add-edit>Add to comparison</button><button type="button" data-tob-reset>Reset</button></div>`);
   }else{
    const deals=choices.map(restore);
-   body.innerHTML=`<div class="tob-comparison">${choices.map((choice,i)=>{const d=deals[i],a=d&&tradeAssessment(tradePerspective(d.result));return `<section><header><small>Offer ${i+1}</small><h3>${esc(d?label(d):'Roster changed')}</h3><button type="button" data-tob-remove="${i}" aria-label="Remove offer ${i+1}">Remove</button></header>${d?`<div class="tob-verdict"><b>${esc(a.price.headline)}</b><span>${esc({fair:'Fair',aggressive:'Aggressive',steal:'Steal'}[a.tier])}</span></div><h4>You send</h4>${players(d.sends[0],pool)}<h4>You get</h4>${players(d.receives[0],pool)}${figures(d)}<div class="tob-risks">${risks(d,pool)}</div>${d.parties.length>2?`<details class="tob-routing"><summary>All ${d.parties.length} teams</summary>${packages(d,pool)}</details>`:'<div></div>'}<div class="tob-editor-actions"><button type="button" data-tob-review="${i}">Review offer</button><button type="button" data-tob-edit-choice="${i}">Edit players</button></div>`:'<p class="tob-risk">Refresh offers to rebuild this package.</p>'}</section>`}).join('')}</div>`;
+   patchGameDay(body,`<div class="tob-comparison">${choices.map((choice,i)=>{const d=deals[i],a=d&&tradeAssessment(tradePerspective(d.result));return `<section><header><small>Offer ${i+1}</small><h3>${esc(d?label(d):'Roster changed')}</h3><button type="button" data-tob-remove="${i}" aria-label="Remove offer ${i+1}">Remove</button></header>${d?`<div class="tob-verdict"><b>${esc(a.price.headline)}</b><span>${esc({fair:'Fair',aggressive:'Aggressive',steal:'Steal'}[a.tier])}</span></div><h4>You send</h4>${players(d.sends[0],pool)}<h4>You get</h4>${players(d.receives[0],pool)}${figures(d)}<div class="tob-risks">${risks(d,pool)}</div>${d.parties.length>2?`<details class="tob-routing"><summary>All ${d.parties.length} teams</summary>${packages(d,pool)}</details>`:'<div></div>'}<div class="tob-editor-actions"><button type="button" data-tob-review="${i}">Review offer</button><button type="button" data-tob-edit-choice="${i}">Edit players</button></div>`:'<p class="tob-risk">Refresh offers to rebuild this package.</p>'}</section>`}).join('')}</div>`);
   }
  };
  const show=(type,source)=>{
@@ -51,7 +53,7 @@ export function mountTradeOfferBoard(root,{getData,getMine,getOffer,getRestricti
     const owner=Number(button.dataset.owner),old=button.dataset.tobSwap,restriction=getRestrictions(),selected=draft.sends.flat(),team=draft.parties[owner];
     stopPicker=openTradeReplacement(button,{root:dialog,pool:data.pool,selected,team:{...team,playerIds:team.playerIds.filter(id=>{const p=data.pool.get(String(id));return p&&automaticTradePlayer(p)&&(!restriction.positions||restriction.positions.includes(p.position))})},onSelect:id=>{
      if(!valid()||!draft)return null;const next=replaceBoardPlayer(draft,owner,old,id,getData().pool,restriction);if(!next){toast('That replacement is no longer available.',true);return button}
-     draft=next;paint();return dialog.querySelector(`[data-tob-swap="${CSS.escape(id)}"]`);
+     draft=next;paint();const target=dialog.querySelector(`[data-tob-swap="${CSS.escape(id)}"]`);animateUi(target?.closest('li'),[{opacity:.6},{opacity:1}],{duration:160});return target;
     }});return;
    }
    if(button.hasAttribute('data-tob-reset')){draft=restore(origin);if(draft)paint();else close();return;}
