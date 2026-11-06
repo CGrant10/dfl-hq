@@ -239,3 +239,5 @@ html[data-ui-motion="off"] [data-nfl-layout="combined"] .nfl-stats-expand svg { 
  #view [data-nfl-layout="combined"] .nfl-center-jumps { border-top:1px solid var(--line-soft); }
  #view [data-nfl-layout="combined"] .nfl-center-jumps button { flex:1; }
 }
+/* Keep the live-return control clear of the shared mobile navigation. */
+#view [data-nfl-layout="combined"] .nfl-latest { bottom:calc(var(--dfl-nav-height,calc(60px + env(safe-area-inset-bottom))) + 12px); max-width:100%; border-color:var(--accent); border-radius:var(--ui-control-radius); background:var(--action-fill); color:var(--action-ink); box-shadow:none; font:600 var(--ui-row)/1.4 var(--font-ui); }

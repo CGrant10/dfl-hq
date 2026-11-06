@@ -47,6 +47,11 @@ with sync_playwright() as p:
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(mode,width)
    assert page.locator('[data-bet-outcome]').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-100'),(mode,width,'market hidden by setup')
    page.screenshot(path=str(OUT/f'{mode}-{width}-book.png'))
+   page.locator('[data-bet-outcome]').first.click();page.wait_for_function('document.querySelector("[data-bet-outcome]")?.getAttribute("aria-pressed")==="true"');page.wait_for_timeout(250)
+   assert page.locator('.sb-outcome.is-picked>.sb-price').first.evaluate('async e=>{const s=getComputedStyle(e),{reviewTextContrast}=await import("/tools/home-review-contrast.js");return s.backgroundColor!=="rgba(0, 0, 0, 0)"&&!reviewTextContrast(e).failures.length}'),(mode,width,'selected odds contrast')
+   page.screenshot(path=str(OUT/f'{mode}-{width}-selected-odds.png'))
+   page.locator('[data-bet-outcome]').first.click();page.wait_for_function('document.querySelector("[data-bet-outcome]")?.getAttribute("aria-pressed")==="false"')
+
    for size in [16,32]:
     page.evaluate('size=>document.documentElement.style.fontSize=size+"px"',size);page.wait_for_timeout(80)
     claim=page.locator('#sb-claim')

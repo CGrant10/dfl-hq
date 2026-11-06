@@ -59,7 +59,7 @@
  background:var(--bg-2); box-shadow:none; color:var(--text); font:700 1.125rem/1.2 var(--font-ui);
 }
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-outcome.is-picked { background:color-mix(in srgb,var(--accent) 7%,transparent); }
-#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-outcome.is-picked>.sb-price { background:var(--action-bg); color:var(--action-ink); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-outcome.is-picked>.sb-price { background:var(--action-fill); color:var(--action-ink); }
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-ticket { padding:14px 0; border:0; border-bottom:1px solid var(--line-soft); border-radius:0; background:transparent; box-shadow:none; }
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] .sb-ticket h3 { font:600 var(--ui-row)/1.4 var(--font-ui); }
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] .sb-leg { border-color:var(--line-soft); }

@@ -5,7 +5,7 @@ from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
 from playwright.sync_api import sync_playwright
 ROOT=Path(__file__).resolve().parents[1];OUT=Path(os.environ.get('DFL_NFL_COMBINED_DIR','/tmp/dfl-nfl-combined'));OUT.mkdir(parents=True,exist_ok=True)
 head=(ROOT/'index.html').read_text().split('<head>')[1].split('</head>')[0]
-html='<!doctype html><html lang="en"><head>'+head+'''<style>html{--topbar-h:44px}body{margin:0}.topbar{height:44px}#view{padding:12px 16px;max-width:1080px;margin:0 auto}.topbar>strong{padding:12px 16px;font-size:14px}</style></head><body><header class="topbar"><strong>DFL · NFL live</strong></header><main id="view" class="view" data-route="clubhouse"><section id="feed"></section></main></body></html>'''
+html='<!doctype html><html lang="en"><head>'+head+'''<style>html{--topbar-h:44px}body{margin:0}.topbar{height:44px}#view{padding:12px 16px;max-width:1080px;margin:0 auto}.topbar>strong{padding:12px 16px;font-size:14px}</style></head><body><header class="topbar"><strong>DFL · NFL live</strong></header><main id="view" class="view" data-route="clubhouse"><section id="feed"></section></main><nav id="tabbar" class="bottomnav" aria-hidden="true" style="position:fixed;bottom:0;left:0;right:0;height:54px"></nav></body></html>'''
 class Handler(SimpleHTTPRequestHandler):
  def __init__(self,*a,**kw):super().__init__(*a,directory=str(ROOT),**kw)
  def do_GET(self):
@@ -98,6 +98,10 @@ with sync_playwright() as p:
  check('weekly-stat failures keep the last points and do not retry every poll',pg.evaluate('f.statsReads')==failed_reads and pg.locator('.nfl-fantasy-player').filter(has_text='Aaron Rodgers').locator('.nfl-fantasy-value b').inner_text()=='17.4')
  pg.evaluate('f.failStats=false');pg.clock.run_for(20020)
  check('weekly-stat reads recover on the bounded cadence',pg.evaluate('f.statsReads')==failed_reads+1)
+ for live_theme in ['light','dark']:
+  pg.evaluate('setTheme',live_theme);pg.clock.run_for(300)
+  check(live_theme+' live-return target stays above navigation and receives the tap',pg.locator('[data-nfl-latest]').evaluate('e=>{const r=e.getBoundingClientRect(),n=document.querySelector("#tabbar").getBoundingClientRect();return r.bottom<=n.top-8&&e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))}'))
+  contrast=pg.locator('[data-nfl-latest]').evaluate('e=>reviewContrast(e)');check(live_theme+' live-return text meets contrast '+json.dumps(contrast['failures']),not contrast['failures'])
  pg.locator('[data-nfl-latest]').click();check('Latest returns to the first play',pg.locator('.nfl-center-plays li[id]').first.bounding_box()['y']>=pg.locator('.nfl-center-tools').bounding_box()['y'])
  pg.locator('[data-nfl-stats-expand]').evaluate('e=>e.click()');pg.clock.run_for(300)
  pg.evaluate('async()=>{f.center.stop();document.querySelector("#view").dataset.routeReturning="true";await f.remount();f.center.pause()}')

@@ -15,10 +15,13 @@ smallest game picker wraps above its section actions, with measured jump offsets
 so headings stay below the sticky controls. All-player expansion supports rapid
 reversal, Reduced Motion and app-motion-off without fixed-height residue.
 
-The 178-check combined review verifies mobile targets/contrast, one five-second
+The 182-check combined review verifies mobile targets/contrast, one five-second
 game poll, bounded weekly-stat reads and retries, no DOM changes for unchanged
 updates, stable old-play reading positions, real PPR refresh, Back restoration
-and teardown. The full Clubhouse review also covers game switching, exact player
+and teardown. The live-return button uses action tokens and clears the mobile
+navigation with a verified tap target. Corrected an undefined action-background
+reference to the existing action-fill token, including Book’s selected odds, so
+Light-mode action ink retains its contrast. The full Clubhouse review also covers game switching, exact player
 links, filters and video return. Existing field, focused stats and live-refresh
 reviews pass. No production writes are used in these fixture checks.
 
