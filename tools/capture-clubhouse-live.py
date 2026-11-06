@@ -235,7 +235,7 @@ with sync_playwright() as p:
    page.locator('[data-clubhouse-nfl-open="fantasy"]').click();check(tag+' fantasy overview identifies your players and league scoring',page.locator('[data-nfl-your-player]').count()>0 and 'League' in page.locator('.nfl-center-fantasy').inner_text())
    page.wait_for_timeout(650)
    check(tag+' stats shortcut brings its section below the game toolbar',page.locator('[data-nfl-section="fantasy"] h3').first.evaluate('e=>{const y=e.getBoundingClientRect().top,b=document.querySelector(".nfl-center-tools").getBoundingClientRect().bottom;return y>=b-2&&y<=b+72}'))
-   check(tag+' one NFL page keeps play-by-play and fantasy stats visible',page.locator('#clubhouse-tab-nfl').get_attribute('aria-selected')=='true' and page.locator('.nfl-live-stats').is_visible() and page.locator('.nfl-live-plays').is_visible() and page.locator('.nfl-center-modes').count()==0)
+   check(tag+' fantasy is its own selected view',page.locator('#clubhouse-tab-nfl').get_attribute('aria-selected')=='true' and page.locator('.nfl-live-stats').is_visible() and page.locator('.nfl-live-plays').count()==0 and page.locator('[data-nfl-center-mode="fantasy"]').get_attribute('aria-pressed')=='true')
    check(tag+' NFL teams and player stats sit side by side',page.locator('.nfl-fantasy-side').count()==2 and page.locator('.nfl-center-fantasy').evaluate('e=>getComputedStyle(e).gridTemplateColumns.split(" ").length===2') and page.locator('.nfl-fantasy-side').nth(0).bounding_box()['x']<page.locator('.nfl-fantasy-side').nth(1).bounding_box()['x'])
    check(tag+' each stat column contains only its NFL team',page.locator('.nfl-fantasy-side').evaluate_all('es=>es.every(e=>[...e.querySelectorAll(".nfl-fantasy-value>small")].every(n=>n.textContent.includes(e.querySelector("h3").textContent)))'))
    check(tag+' player names and scores fit their columns',page.locator('.nfl-fantasy-player').evaluate_all('es=>es.every(e=>e.scrollWidth<=e.clientWidth+1)'))
@@ -262,7 +262,7 @@ with sync_playwright() as p:
    page.locator('[data-nfl-center-filter]').select_option('all')
    reading=page.locator('.nfl-center-plays li[id]').nth(12);reading.evaluate('e=>e.scrollIntoView({block:"center"})');reading_id=reading.get_attribute('id');reading_top=reading.bounding_box()['y']
    page.locator('[data-nfl-center-mode="fantasy"]').click();page.wait_for_selector('.nfl-fantasy-player');page.locator('[data-nfl-center-mode="plays"]').click()
-   check(tag+' section jumps preserve the play row and its complete details',page.locator('#'+reading_id+' .nfl-play-details>p').is_visible() and page.locator('.nfl-live-stats').is_visible() and page.locator('.nfl-live-plays').is_visible())
+   check(tag+' separate views restore the exact play reading row',page.locator('#'+reading_id+' .nfl-play-details>p').is_visible() and page.locator('.nfl-live-stats').count()==0 and abs(page.locator('#'+reading_id).bounding_box()['y']-reading_top)<3)
    page.locator('[data-nfl-center-clip]').first.evaluate('e=>e.scrollIntoView({block:"center"})');page.wait_for_timeout(60)
    source=page.locator('[data-nfl-center-clip]').first;source.evaluate('e=>e.addEventListener("click",()=>f.clipSourceTop=e.getBoundingClientRect().top,{once:true,capture:true})');source.click();page.wait_for_function('document.querySelector(".home-reel-player")?.open')
    check(tag+' watching a play keeps the NFL game selected underneath',page.locator('#clubhouse-tab-nfl').get_attribute('aria-selected')=='true' and page.locator('[data-reel-close]').get_attribute('aria-label')=='Back to game')

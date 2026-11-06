@@ -165,7 +165,7 @@ on:
       - 'tools/capture-scoreboard-finish.py'
       - 'tools/capture-week-ahead-finish.py'
       - 'tools/capture-nfl-center-finish.py'
-      - 'tools/capture-nfl-combined.py'
+      - 'tools/capture-nfl-desk.py'
       - 'tools/capture-nfl-field.py'
       - 'supabase/migrations/*gameday_score_history*'
       - 'supabase/tests/gameday_score_history.sql'
@@ -678,7 +678,7 @@ jobs:
         run: |
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           python tools/capture-nfl-center-finish.py
-          DFL_NFL_COMBINED_DIR=nfl-center-output/combined python tools/capture-nfl-combined.py
+          DFL_NFL_DESK_DIR=nfl-center-output/desk python tools/capture-nfl-desk.py
       - name: Check field movement, team identity and early plays
         env:
           DFL_NFL_FIELD_DIR: nfl-center-output/field
