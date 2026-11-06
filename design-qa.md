@@ -6,7 +6,7 @@ final result: passed
 
 Verified source: Sleeper's official NFL game-center image from its 2023 redesign,
 https://sleeper.com/blog/sleepers-app-redesign-whats-new/ . Local visual truth:
-`/workspace/dfl-sleeper-reference/official-nfl-field-2023.png` (382 × 820).
+`/workspace/dfl-sleeper-reference/official-nfl-field-2023.png` (383 × 820).
 The source was opened and inspected before implementation. Public current App
 Store material did not expose every requested native screen; this is a faithful
 adaptation of the verified game-center composition and interaction pattern, not
