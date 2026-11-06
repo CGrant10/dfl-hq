@@ -182,19 +182,28 @@ status/kickoff text must not steal the player-name column. No new mascot or
 shield artwork belongs in this composition.
 
 
-### Next consistency pass — current-screen review, 1.548.0
+### Daily tool adoption — 1.549.0
 
-The daily-page baseline is Home and Clubhouse. A fresh 390px Light/Dark review
-identified Book's stacked card/price outlines and section rules, Trades' repeated
-accent labels and mixed display headings, and More's condensed type/steel icons
-as the clearest remaining visual differences. Analyzer, History and Profile are
-closer; their secondary buttons and small labels can follow the same component
-adoption. Preserve distinctive editorial art and league banter.
+Book, Trades and More adopt the approved Home/Clubhouse reading hierarchy through
+explicit `data-daily-desk` ownership and semantic title, row, number and action
+roles in `css/daily-desk.css`. These opt-in roles leave editorial artwork and
+sports identities under their existing owners. Continue migrating shared roles
+rather than introducing another visual direction.
 
-Recommended order: Book rows/cards, Trade offer/receipt rows, More and secondary
-header actions, then shared motion/loading/empty/error states. Reuse shared title,
-section, row, numeric-column, button, tab and sheet roles rather than extending
-page-specific overrides. Keep the approved tab glide, player-card transition and
-reversible disclosures as the motion reference. Validate each adoption on mobile
-in both modes, including larger text, interrupted gestures and keyboard return.
-This is a proposed next pass, not a claim that those migrations are complete.
+Book uses aligned team/odds rows, one section divider and quiet price surfaces.
+Selected odds retain action-token contrast; the personal matchup keeps its accent
+edge in the main board. Trades uses full player names above position/team metadata,
+quiet assessment labels and one clear Analyze action. Offer counts, balance,
+lineup/risk previews and secondary actions remain available. More uses Inter,
+the same paper surface, supplied flat glyphs and 48px rows. Its opaque cover,
+finite entrance, focus trap and return behavior remain intact.
+
+Compact text remains small without reducing 44px targets. Comfortable reading
+explicitly enlarges player names, metadata and navigation labels; rows can grow.
+Preserve reduced-motion and app-motion preferences, reversible disclosures,
+exact receipt routes, native scrolling and the existing selection rail.
+
+Home/Clubhouse retain their current composition, and the active trade notice
+remains subtle at the top of Home. This pass adds no dashboard modules or
+explanatory UI copy. Physical device motion and screen-reader speech still need
+on-device review; browser layout checks are not a measured frame-rate claim.

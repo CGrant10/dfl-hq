@@ -5,7 +5,7 @@ from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
 from playwright.sync_api import sync_playwright
 ROOT=Path(__file__).resolve().parents[1];OUT=Path(os.environ.get('DFL_WIRE_BOOK_DIR','/tmp/dfl-wire-book'));OUT.mkdir(parents=True,exist_ok=True)
 index=re.sub(r'<script\b[^>]*>[\s\S]*?</script>','',(ROOT/'index.html').read_text())
-index=re.sub(r'<main id="view"[^>]*>[\s\S]*?</main>','<main id="view" class="view" data-route="sportsbook" data-page-system></main>',index)
+index=re.sub(r'<main id="view"[^>]*>[\s\S]*?</main>','<main id="view" class="view" data-route="sportsbook" data-page-system data-daily-desk="sportsbook"></main>',index)
 class Handler(SimpleHTTPRequestHandler):
  def __init__(self,*a,**kw):super().__init__(*a,directory=str(ROOT),**kw)
  def do_GET(self):

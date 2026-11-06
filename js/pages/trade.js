@@ -73,7 +73,7 @@ function offerPlayerRows(ids, pool, routing=null) {
   return ids.map(id => {
     const player = pool.get(String(id)) || {id,name:String(id)};
     const recipient=routing?.parties.find(t=>String(t.id)===String(routing.destinations?.[id]));
-    return `<span class="tb-player" data-ui-player-row><button type="button" class="tb-player-link" data-player-card="${esc(id)}" aria-label="View ${esc(player.name)} player card">${playerPortrait(player)}<span class="dfl-player-copy"><strong>${esc(player.name)}</strong><small>${esc([player.position,player.nflTeam].filter(Boolean).join(' · '))}</small>${routing?`<small class="tb-player-destination">→ ${esc(recipient?teamName(recipient):'Choose recipient')}</small>`:''}</span></button></span>`;
+    return `<span class="tb-player" data-ui-player-row><button type="button" class="tb-player-link" data-player-card="${esc(id)}" aria-label="View ${esc(player.name)} player card">${playerPortrait(player)}<span class="dfl-player-copy"><strong data-ui-row-title>${esc(player.name)}</strong><small>${esc([player.position,player.nflTeam].filter(Boolean).join(' · '))}</small>${routing?`<small class="tb-player-destination">→ ${esc(recipient?teamName(recipient):'Choose recipient')}</small>`:''}</span></button></span>`;
   }).join("");
 }
 
@@ -98,14 +98,14 @@ function offerBalance(offer){
 const offerPreview=(offer,pool)=>`<details class="tb-offer-preview"><summary><span>Lineup & risk<small>${esc(tradeLineupFitLabel(offer.windowDeltas||offer.weeklyDeltas||[offer.weeklyDeltaA,offer.weeklyDeltaB]))}</small></span><i aria-hidden="true"></i></summary>${offerSummary(offer,pool)}<div data-offer-lineup></div></details>`;
 
 function offerMarkup(offer, pool) {
-  if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerBalance(offer)}${offerPreview(offer,pool)}<footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze trade <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer></article>`;
+  if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerBalance(offer)}${offerPreview(offer,pool)}<footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-ui-action="primary" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze trade <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer></article>`;
   const assessment=tradeAssessment(offer);
-  const call = (assessment.needsReview&&assessment.price.headline==='Balanced'?'Estimated balance':assessment.price.headline).toUpperCase();
+  const call = (assessment.needsReview&&assessment.price.headline==='Balanced'?'Estimated balance':assessment.price.headline);
   return `<article class="tb-offer" data-offer-key="${esc(offerKey(offer))}">
     <header><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<strong>${esc(teamName(offer.other))}</strong></small><b>${call}</b></header>
-    <div class="tb-offer-flow">${offerPackage(offer.sendA,pool,'YOU SEND')}${offerPackage(offer.sendB,pool,'YOU GET')}</div>
+    <div class="tb-offer-flow">${offerPackage(offer.sendA,pool,'You send')}${offerPackage(offer.sendB,pool,'You get')}</div>
     ${offerBalance(offer)}${offerPreview(offer,pool)}
-    <footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(','))}" data-send-b="${esc(offer.sendB.join(','))}" data-weekly-delta="${Number(offer.weeklyDeltaA)||0}">Analyze trade <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer>
+    <footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-ui-action="primary" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(','))}" data-send-b="${esc(offer.sendB.join(','))}" data-weekly-delta="${Number(offer.weeklyDeltaA)||0}">Analyze trade <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer>
   </article>`;
 }
 
@@ -243,7 +243,7 @@ function tradeLab(team, teams, pool, shop) {
     </details>
     <div class="tb-intent" aria-label="Offer type"><span>SHOW ME</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "Fair"], ["aggressive", "Aggressive"], ["steal", "Steal"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" aria-pressed="${intent === value}" aria-label="${esc(intentLabel(value,label))}" class="${intent === value ? "is-active" : ""}"><span>${label}</span><span class="tb-intent-count" data-tb-intent-count>(${intentCount(value)})</span></button>`).join("")}</div></div>
     <section class="tb-layout-section" data-tb-offers tabindex="-1">
-      <h2 class="section-title">Generated offers<span class="count">${searching?'Finding offers…':failed?'Try again':closestOffers.length?`${closestOffers.length} alternatives`:`Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}`}</span></h2>
+      <h2 class="section-title" data-ui-section-head>Generated offers<span class="count">${searching?'Finding offers…':failed?'Try again':closestOffers.length?`${closestOffers.length} alternatives`:`Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}`}</span></h2>
       ${tradeOpportunitiesMarkup(opportunities,{loading:searching,open:shop.scoutOpen})}<div class="tb-offers-card" aria-busy="${searching}">${shop.lastPassed?'<div class="tb-pass-status" role="status">Offer passed <button type="button" class="linkbtn" data-tb-undo-pass>Undo</button></div>':''}
         ${searching?'<p class="tb-search-status" role="status">Finding offers…</p><div class="tb-search-placeholder" aria-hidden="true"><i></i><i></i><i></i></div>':failed?'<p class="tb-search-status" role="status">Couldn’t find offers.</p><button type="button" class="btn ghost small" data-tb-retry>Try again</button>':`
         ${tierOffers.length || !closestOffers.length ? `<div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, true, tierOffers.length)}</div>` : ""}
@@ -804,7 +804,7 @@ export async function render(view) {
     if(tx||params.get('receipts')==='1'){
       const alerts=tx?[await loadTradeAlertByTransaction(tx)].filter(Boolean):await loadTradeAlerts({limit:100});
       if(!view.isConnected||epoch!==renderEpoch)return;
-      view.innerHTML=`<header class="page-identity tb-head-row td-receipt-page-head"><div><small>DFLYZER</small><h1>${tx?'Trade receipt':'Trade receipts'}</h1></div><a class="btn ghost small" href="${tx?'#/trade?receipts=1':'#/trade'}">${tx?'All receipts':'Trade board'}</a></header>${alerts.length?completedTradeMarkup(alerts,tx||'',{standalone:true}):'<section class="state"><h2>Receipt unavailable</h2><a class="btn ghost small" href="#/trade?receipts=1">Trade receipts</a></section>'}`;
+      view.innerHTML=`<header class="page-identity tb-head-row td-receipt-page-head"><div><small>DFLYZER</small><h1>${tx?'Trade receipt':'Trade receipts'}</h1></div><a class="btn ghost small" data-ui-action="quiet" href="${tx?'#/trade?receipts=1':'#/trade'}">${tx?'All receipts':'Trade board'}</a></header>${alerts.length?completedTradeMarkup(alerts,tx||'',{standalone:true}):'<section class="state"><h2>Receipt unavailable</h2><a class="btn ghost small" href="#/trade?receipts=1">Trade receipts</a></section>'}`;
       return;
     }
     const [data, tradeAlerts] = await Promise.all([

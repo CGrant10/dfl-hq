@@ -42,7 +42,7 @@ const link = ({ route, label, icon, lead = false }) =>
   `<a href="#/${route}" data-route="${route}"${route === "sportsbook" ? ' aria-label="Sportsbook"' : ""}${lead ? ' class="season-lead-tab"' : ""}><svg class="ico" aria-hidden="true"><use href="#dfl-nav-${primaryIcons[route]}"></use></svg><span>${navLabel(label)}</span></a>`;
 
 const quickLink = ({ route, label, icon }) =>
-  `<a href="#/${route}"><svg class="ico" aria-hidden="true"><use href="#i-${icon}-steel"></use></svg><span class="qn-label">${label}</span></a>`;
+  `<a href="#/${route}"><svg class="ico" aria-hidden="true"><use href="#i-${icon}-line"></use></svg><span class="qn-label">${label}</span></a>`;
 
 export function primarySeasonNavMarkup() {
   return `${PRIMARY_SEASON_ROUTES.map(link).join("")}<button type="button" id="more-btn" class="tabmore" aria-expanded="false" aria-controls="more"><svg class="ico" aria-hidden="true"><use href="#dfl-nav-ellipsis"></use></svg><span>More</span></button>`;

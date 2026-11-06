@@ -330,6 +330,7 @@ async function renderRoutePage({ retry = false, visit } = {}) {
   if(visit.id!=null)view.dataset.routeVisitId=String(visit.id);else delete view.dataset.routeVisitId;
   view.classList.remove("page-in");
   view.toggleAttribute("data-page-system", standardPageRoutes.has(name));
+  if(["trade","sportsbook"].includes(name))view.dataset.dailyDesk=name;else delete view.dataset.dailyDesk;
   view.classList.add("is-route-loading");
   view.inert = true;
   view.setAttribute('aria-busy', 'true');

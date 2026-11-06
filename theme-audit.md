@@ -1,3 +1,36 @@
+## 1.549.0 — daily tools follow the approved Home/Clubhouse direction
+
+Book, Trades and More now use opt-in daily reading/action roles: Inter titles,
+section headings, player/team names, quieter metadata, tabular prices and shared
+quiet/primary actions. Medicine Wheel Light/Dark backgrounds, text, rules,
+action ink and semantic market/assessment states come from existing tokens.
+More reuses the supplied glyph paths with currentColor instead of steel gradients;
+no new logo, mascot or color palette was introduced.
+
+Inspected current compiled Home, Clubhouse, Trades, Book and More in both modes.
+Home's subtle top trade alert and Clubhouse's approved composition remain intact.
+Book has one section divider, aligned odds rows and a restrained personal-matchup
+edge; offer packages retain full names, balance and risk/lineup access. The receipt
+header action now stays compact on a narrow phone. More remains an opaque cover,
+with all destinations reachable, native scrolling and no Home glimpse underneath.
+
+Mobile checks cover 320/390/430px, More at 768px, 125/200% text and Comfortable
+reading. Whole offer-intent controls wrap at enlarged text; the fixed horizontal
+marker gives way to an individual selected state when those controls stack.
+The font-loaded 320px offer review also verifies compact balance metadata and
+real disclosure reversal without shrinking player/action targets.
+44px targets, keyboard return/trapping, interrupted menu close/reopen, Reduced
+Motion and app-motion-off behavior are preserved. Book claim/slip checks use an
+isolated wallet and cover retry, single-flight and late-response navigation; no
+real wallet changes were made. Production trade fixtures cover package routing,
+player pickers, search controls and exact two-/three-team receipts in both modes.
+
+`pnpm check` passes the 2,450-test suite, theme/release/name/type checks and
+production build. Browser captures/check reports are in the session's
+`/workspace/dfl-daily-desk-1549` artifact directory. Physical Safari frame pacing,
+VoiceOver speech and real monetary actions are not measured by these browser
+checks. See [interface-standard.md](docs/interface-standard.md).
+
 ## 1.548.0 — top-of-Home trade alert and UI consistency review
 
 Moved active trade coverage to the first Home slot, directly under the shared
