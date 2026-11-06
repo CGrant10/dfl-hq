@@ -556,7 +556,7 @@ export async function render(view) {
     const phase=rhythm.update(homeEdition);
     if(phase?.layoutAllowed)weekFlow.update(homeEdition,{phase});
   };
-  homeHighlightReel=mountHomeHighlights(view.querySelector('[data-home-highlights-slot]'),{previewLayout:'feature',getContext:()=>homeEdition.model,active:()=>mine===generation&&view.isConnected&&location.hash.startsWith('#/home'),getPlayers:()=>homeEdition.model?.games.flatMap(game=>game.sides.flatMap(side=>[...side.lineup,...side.bench]))||[]});deferredStops.push(homeHighlightReel.stop);
+  homeHighlightReel=mountHomeHighlights(view.querySelector('[data-home-highlights-slot]'),{previewLayout:'feature',getContext:()=>({...homeEdition.model,playerDirectory:homeEdition.playerDirectory}),active:()=>mine===generation&&view.isConnected&&location.hash.startsWith('#/home'),getPlayers:()=>homeEdition.model?.games.flatMap(game=>game.sides.flatMap(side=>[...side.lineup,...side.bench]))||[]});deferredStops.push(homeHighlightReel.stop);
   deferredStops.push(mountHomeMatchupPreview(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,onModel:edition=>{homeEdition=edition;homeHighlightReel?.updatePlayers();updateWeekFlow();refreshEdition?.();requestAnimationFrame(()=>requestAnimationFrame(startAnalysis))},active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
   // Archive stories load independently of the live weekly model.
   lorePromise.then(got => {

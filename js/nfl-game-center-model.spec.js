@@ -17,8 +17,29 @@ it('keeps all plays in order, deduplicates scoring plays and preserves their rea
 it('uses exact weekly Sleeper PPR including conversions, never estimated points',()=>{
  const weekly=[{season:2026,week:7,season_type:'regular',team:'PIT',player:{first_name:'DK',last_name:'Metcalf',position:'WR'},stats:{pts_ppr:23.9}}];
  const options={weekly,season:2026,week:7},owner={id:'1',name:'Tyler Shough',nflTeam:'NO',position:'QB',points:22,owner:'Bayou Bombers',isMine:true};
- const rows=nflFantasyRows(summary,[owner],options),qb=rows[0];expect(qb).toMatchObject({name:'Tyler Shough',points:22,league:true,isMine:true,owner:'Bayou Bombers'});expect(qb.line).toContain('pass yd');expect(rows.find(p=>p.name==='DK Metcalf')).toMatchObject({league:false,points:23.9});
+ const rows=nflFantasyRows(summary,[owner],options),qb=rows.find(p=>p.name==='Tyler Shough');expect(qb).toMatchObject({name:'Tyler Shough',points:22,league:true,isMine:true,owner:'Bayou Bombers'});expect(qb.line).toContain('pass yd');expect(rows.find(p=>p.name==='DK Metcalf')).toMatchObject({league:false,points:23.9});
  expect(nflFantasyRows(summary,[{...owner,nflTeam:'PIT',points:999}],options).find(p=>p.name==='Tyler Shough').points).toBe(null);
  expect(nflFantasyRows(summary,[],{...options,week:8}).find(p=>p.name==='DK Metcalf').points).toBe(null);
  expect(nflFantasyRows(summary,[],{...options,weekly:[...weekly,...weekly]}).find(p=>p.name==='DK Metcalf').points).toBe(null);
+});
+
+it('keeps a fixed position/name order through score swings, zero points and ownership changes',()=>{
+ const athlete=(id,displayName)=>({id:String(id),displayName});
+ const group=(name,keys,athletes)=>({name,keys,athletes});
+ const source={boxscore:{players:[{team:{abbreviation:'PIT'},statistics:[
+  group('passing',['passingYards'],[{athlete:athlete(1,'A Quarterback'),stats:['0']}]),
+  group('rushing',['rushingYards'],[{athlete:athlete(2,'Z Runningback'),stats:['100']},{athlete:athlete(3,'B Runningback'),stats:['0']}]),
+  group('receiving',['receptions','receivingYards'],[{athlete:athlete(4,'C Receiver'),stats:['0','0']},{athlete:athlete(5,'D Tightend'),stats:['1','8']}]),
+  group('kicking',['longFieldGoalMade'],[{athlete:athlete(6,'E Kicker'),stats:['0']}]),
+ ]}]}};
+ const directory={a:{n:'Z Runningback',p:'RB',t:'PIT'},b:{n:'B Runningback',p:'RB',t:'PIT'},c:{n:'C Receiver',p:'WR',t:'PIT'},d:{n:'D Tightend',p:'TE',t:'PIT'}};
+ const players=[{id:'owned',name:'C Receiver',nflTeam:'PIT',position:'WR',points:40,isMine:true}];
+ const first=nflFantasyRows(source,players,{directory});
+ expect(first.map(p=>p.id)).toEqual(['1','3','2','4','5','6']);
+ expect(first.map(p=>p.position)).toEqual(['QB','RB','RB','WR','TE','K']);
+ expect(first.find(p=>p.id==='3').line).toBe('0 rush yd');
+ for(const g of source.boxscore.players[0].statistics)g.athletes.reverse();
+ const second=nflFantasyRows(source,[{...players[0],points:0,isMine:false},{id:'rb',name:'Z Runningback',nflTeam:'PIT',position:'RB',points:50,isMine:true}],{directory});
+ expect(second.map(p=>p.id)).toEqual(first.map(p=>p.id));
+ expect(second.find(p=>p.id==='4').points).toBe(0);
 });

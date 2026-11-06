@@ -51,8 +51,8 @@ export async function render(view){
    <div id="clubhouse-panel-recap" role="tabpanel" aria-labelledby="clubhouse-tab-recap" ${initialTab==='recap'?'':'hidden'}><div data-personal-postgame hidden></div><section class="card clubhouse-section"><div class="clubhouse-heading" data-ui-section><div><small>WEEK ${model.week} · ${model.season}</small><h2>Week in review</h2></div><span class="clubhouse-status">${model.completed?'Final receipts':'In progress'}</span></div><div data-clubhouse-recap>${recapHtml(model)}</div></section><div data-recap-advice></div></div>
   </div>`;
   const center=mountClubhouseCenter(view,model,{active,autoFinish:!params.has('archive')&&latest?.season===model.season&&latest?.week===model.week});
-  const teamReel=mountClubhouseTeamHighlights(view,{getModel:center.getModel,getGame:center.getGame,active});
-  const nflCenter=mountClubhouseNfl(view,{getModel:center.getModel,active,onClip:(id,source)=>teamReel.openClip(id,{source,returnToGame:true})});
+  const teamReel=mountClubhouseTeamHighlights(view,{getModel:center.getModel,getGame:center.getGame,getDirectory:center.getPlayerDirectory,active});
+  const nflCenter=mountClubhouseNfl(view,{getModel:center.getModel,getDirectory:center.getPlayerDirectory,active,onClip:(id,source)=>teamReel.openClip(id,{source,returnToGame:true})});
   const postgame=mountPersonalPostgame(view,{getModel:center.getModel,active});
   stopLive=mountMatchupLive(view,model,threadIds,active,{onUpdate:center.update,onError:center.fail,onStop:()=>{postgame.stop();nflCenter.stop();teamReel.stop();center.stop()}});
   wirePageDisclosures(view);

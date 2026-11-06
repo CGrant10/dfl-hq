@@ -59,6 +59,17 @@ with sync_playwright() as p:
     pg.evaluate('document.documentElement.style.fontSize="32px";document.documentElement.dataset.readability="comfortable"');pg.wait_for_timeout(100)
     check(theme+' Comfortable 200% text keeps full names inside columns',pg.evaluate('document.documentElement.scrollWidth<=innerWidth+1') and pg.locator('.nfl-fantasy-player').evaluate_all('es=>es.every(e=>e.scrollWidth<=e.clientWidth+1)'))
     pg.screenshot(path=str(OUT/f'{theme}-large.png'));pg.evaluate('document.documentElement.style.fontSize="";document.documentElement.dataset.readability="compact"')
+ # Scores and ownership must not change the NFL box-score reading order.
+ pg.locator('[data-nfl-center-mode="fantasy"]').click();pg.wait_for_timeout(180)
+ pg.evaluate('f.rowOrder=[...document.querySelectorAll(".nfl-fantasy-player")].map(e=>e.id);f.savedPlayers=f.players;f.players=f.players.map(p=>({...p,points:p.position==="QB"?0:55,isMine:!p.isMine}));f.contextReads=f.summaryReads;f.center.updateContext()')
+ check('Fantasy keeps fixed rows through score swings and ownership changes',pg.locator('.nfl-fantasy-player').evaluate_all('es=>JSON.stringify(es.map(e=>e.id))===JSON.stringify(f.rowOrder)') and pg.evaluate('f.summaryReads===f.contextReads'))
+ check('recorded zero-point players remain visible',pg.locator('.nfl-fantasy-player').filter(has_text='Tyler Shough').locator('.nfl-fantasy-value b').inner_text()=='0.0')
+ pg.evaluate('f.players=f.savedPlayers;f.center.updateContext()')
+ photo=pg.locator('.nfl-fantasy-photo img').first;photo.dispatch_event('error')
+ pg.wait_for_function('(()=>{const p=document.querySelector(".nfl-fantasy-photo img");return p?.src.includes("/teamlogos/nfl/")&&p.parentElement.classList.contains("has-photo")})()')
+ pg.evaluate('f.fallbackSrc=document.querySelector(".nfl-fantasy-photo img").src;f.originalPoints=f.players[0].points;f.players[0].points=0;f.center.updateContext()')
+ check('an unavailable headshot keeps its loaded NFL fallback through score updates',photo.evaluate('e=>e.src===f.fallbackSrc&&e.parentElement.classList.contains("has-photo")'))
+ pg.evaluate('f.players[0].points=f.originalPoints;f.center.updateContext()')
  # A mode change is navigation, so it returns to each view's saved reading row.
  pg.locator('[data-nfl-center-mode="plays"]').click();pg.wait_for_timeout(200);row=pg.locator('.nfl-center-plays li[id]').nth(12);row.scroll_into_view_if_needed();rid=row.get_attribute('id');y=row.bounding_box()['y']
  pg.locator('[data-nfl-center-mode="fantasy"]').click();pg.wait_for_timeout(200)

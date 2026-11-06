@@ -1,3 +1,41 @@
+## 1.553.0 — smoother NFL navigation and coherent replay viewing
+
+Replay adopts NFL live's Inter hierarchy, theme-token surfaces, compact game
+identity/score, quieter rules, a sliding Clips/Plays/Fantasy indicator and clean
+thumbnail selection. Footage retains its full image and native playback controls;
+filters, two-column browsing, minimize/restore and separate Plays/Fantasy remain
+available. The embedded NFL center now uses the same modern desk presentation,
+with its duplicate internal mode bar hidden. Current scores are labeled by their
+actual status; the video remains explicitly a replay.
+
+A divider grabbed during a resize now starts from the rendered height. Drag
+limits are measured once per gesture, and video survives resize, search and view
+changes. Cached thumbnails cover loading; paused clips say Selected, with Playing
+reserved for actual playback. Buffer indication respects motion preferences.
+Open motion only connects to a visible source; the browser settles in behind it.
+
+NFL swipes prepare at most two inert neighboring previews during idle time,
+without game/stat requests or pollers. Release timing follows remaining travel;
+interruptions continue from the rendered position. Incoming selected/team styles
+remain visible through arrival. Fantasy uses stable QB/RB/WR/TE/K/DEF position
+blocks and names, without points or ownership ranking. Unequal position blocks
+share paired tracks; zero-point records stay visible. Existing player metadata
+supplies roles without another directory fetch. Indexed matching avoids repeated
+full-list scans, and context updates repaint current roster points without an
+extra game refresh. Points reserve width, and loaded headshot fallbacks survive
+score patches through the existing portrait reconciliation.
+
+Validation: pnpm check passes 2,456 tests with release/theme/type/name checks and
+production build. Browser reviews cover 280 replay checks, 126 NFL desk checks,
+60 real-touch game checks, the full 317-check Clubhouse flow and live-refresh
+behavior. Reviewed Light/Dark, short portrait, landscape, enlarged text, target
+sizes/contrast, interrupted resize/swipes, video identity, zero-point ordering,
+loading/stale media, exact points, profile/clip returns and teardown. The compiled
+app was inspected read-only with actual league/NFL data and a playing current
+Justice Hill clip in both themes, including the embedded Fantasy view. No page
+errors or horizontal overflow were found. Evidence: `/workspace/dfl-nfl-1553`.
+Physical Safari frame pacing and VoiceOver speech remain unmeasured.
+
 ## 1.552.0 — NFL game center and game swiping
 
 The NFL desk now uses a compact logo/score strip, a perspective field above the

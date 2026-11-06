@@ -85,6 +85,10 @@ with sync_playwright() as p:
    page.wait_for_function('document.querySelector(".home-reel-player video")?.currentTime>0.1')
    check(tag+' plays a native inline video with controls and a safe publisher source',sheet.locator('video').evaluate('e=>e.playsInline&&e.controls&&e.videoWidth>0&&e.src.startsWith("https://espnmedia-cdn.akamaized.net/espn/media/")') and sheet.locator('iframe').count()==0)
    if width==390 and theme=='dark':
+    page.evaluate('f.pauseVideo=document.querySelector(".home-reel-player video");f.pauseVideo.pause()');page.wait_for_function('document.querySelector(".reel-playing")?.textContent==="Selected"')
+    check('paused playback has a truthful Selected badge',page.evaluate('f.pauseVideo===document.querySelector(".home-reel-player video")'))
+    page.evaluate('f.pauseVideo.play()');page.wait_for_function('document.querySelector(".reel-playing")?.textContent==="Playing"')
+    check('resuming playback keeps the same native video and Playing badge',page.evaluate('f.pauseVideo===document.querySelector(".home-reel-player video")&&!f.pauseVideo.paused'))
     held_media['on']=True;sheet.locator('h2').focus();page.keyboard.press('ArrowRight');page.wait_for_timeout(80)
     check('a pending clip keeps its poster over the player until a frame is ready',sheet.locator('.reel-frame-cover').count()==1 and sheet.locator('[data-reel-screen]').get_attribute('aria-busy')=='true')
     page.keyboard.press('ArrowRight');page.wait_for_timeout(80);held_media['on']=False
@@ -112,6 +116,14 @@ with sync_playwright() as p:
    page.screenshot(path=str(OUT/f'{width}-{theme}-watch.png'))
    grip.focus();grip.press('Enter');page.wait_for_timeout(260);before=stage.evaluate('e=>e.clientHeight');grip.press('ArrowUp');page.wait_for_timeout(260)
    check(tag+' splitter supports keyboard resizing',stage.evaluate('e=>e.clientHeight')<before and int(grip.get_attribute('aria-valuenow'))<50)
+   if width==390 and theme=='dark':
+    grip.press('Enter');page.wait_for_timeout(260);sheet.locator('[data-reel-layout="browse"]').click()
+    page.wait_for_function('document.querySelector(".home-reel-stage").getAnimations().some(a=>a.transitionProperty==="flex-basis")')
+    stage.evaluate('e=>{const a=e.getAnimations().find(a=>a.transitionProperty==="flex-basis");a.pause();a.currentTime=100}')
+    before=stage.evaluate('e=>e.getBoundingClientRect().height');box=grip.bounding_box()
+    page.mouse.move(box['x']+box['width']/2,box['y']+box['height']/2);page.mouse.down();page.wait_for_timeout(30)
+    check('grabbing an unfinished resize continues at its visible height',abs(stage.evaluate('e=>e.getBoundingClientRect().height')-before)<2 and page.evaluate('f.layoutVideo===document.querySelector(".home-reel-player video")'))
+    page.mouse.up();page.wait_for_timeout(280)
    grip.press('Enter');page.wait_for_timeout(260);box=grip.bounding_box();before=queue.evaluate('e=>e.clientHeight')
    page.mouse.move(box['x']+box['width']/2,box['y']+box['height']/2);page.mouse.down();page.mouse.move(box['x']+box['width']/2,box['y']+box['height']/2-220,steps=8);page.mouse.up();page.wait_for_timeout(50)
    check(tag+' dragging continuously resizes the panes without recreating playback',queue.evaluate('e=>e.clientHeight')>before and page.evaluate('f.layoutVideo===document.querySelector(".home-reel-player video")') and not sheet.evaluate('e=>e.hasAttribute("data-reel-resizing")'))
