@@ -35,14 +35,14 @@ with sync_playwright() as p:
    });
    f.video=document.querySelector('video');await f.video.play();
   }''',theme)
-  pg.wait_for_selector('.nfl-center-plays h4');count=pg.locator('.nfl-center-plays li').count();tag=theme+' live feed'
+  pg.wait_for_selector('.nfl-play-details h4');count=pg.locator('.nfl-center-plays li').count();tag=theme+' live feed'
   pg.evaluate("f.mutations=0;f.observer=new MutationObserver(ns=>f.mutations+=ns.length);f.observer.observe(document.querySelector('#feed'),{attributes:true,subtree:true,childList:true,characterData:true})")
   pg.clock.run_for(5020)
   check(tag+' unchanged automatic updates make no DOM mutations',pg.evaluate('f.mutations')==0)
   check(tag+' play-only viewing makes no weekly-stat reads',pg.evaluate('f.statsReads')==0)
   pg.evaluate('f.observer.disconnect()')
   pg.evaluate('f.add()');before=pg.evaluate('f.reads');pg.clock.run_for(5020)
-  check(tag+' gets the next play automatically after five seconds',pg.evaluate('f.reads')==before+1 and pg.locator('.nfl-center-plays li').count()==count+1 and 'DK Metcalf' in pg.locator('.nfl-center-plays h4').first.inner_text())
+  check(tag+' gets the next play automatically after five seconds',pg.evaluate('f.reads')==before+1 and pg.locator('.nfl-center-plays li').count()==count+1 and 'DK Metcalf' in pg.locator('.nfl-play-details h4').first.inner_text())
   check(tag+' keeps newest plays at the top without moving the video',pg.locator('#feed').evaluate('e=>e.scrollTop===0') and pg.evaluate('f.video===document.querySelector("video")&&!f.video.paused'))
   pg.locator('.nfl-center-plays li').nth(12).scroll_into_view_if_needed();anchor=pg.locator('.nfl-center-plays li').nth(12);anchor_id=anchor.get_attribute('id');before_y=anchor.bounding_box()['y'];pg.evaluate('f.add()');pg.clock.run_for(10020)
   check(tag+' adds plays without moving an older play being read',abs(pg.locator('#'+anchor_id).bounding_box()['y']-before_y)<2)

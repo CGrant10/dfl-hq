@@ -1,3 +1,31 @@
+## 1.551.0 — separate NFL views and refined play animation
+
+Play-by-play and Fantasy are separate again, using the current desk typography,
+Medicine Wheel surfaces and a compact sliding mode indicator. Fantasy retains
+all players in side-by-side NFL columns. Play-by-play uses quarter landmarks,
+full descriptions, team-colored rails and a selected-play state. Mode and reading
+position are preserved on return; filters stay in place.
+
+Field motion now coordinates a restrained ball flight, ground shadow, drawing
+progress trail, landing ring and result settle between official endpoints. It
+uses finite native animations, one optional touchdown emphasis and no idle loop.
+Replay requires no network request and cancels prior layers. No-play, zero-gain
+and missing-coordinate cases remain honest; Reduced Motion/app motion off show
+static final positions. NFL colors remain meaningful; new functional text and
+controls use existing theme tokens.
+
+Inspected Light/Dark mobile layouts, large text, selected plays and motion
+captures at multiple points in the movement. Desk, full Clubhouse, field replay
+and live-refresh checks cover exact positions, finite cleanup, rapid replay,
+reading preservation, mode selection, point values, contrast and 44px targets.
+The four added motion-model tests check endpoints, direction, duration and
+nullified/missing data. Physical iOS frame pacing and VoiceOver remain unmeasured.
+The compiled app was checked read-only with current NFL and league data in both
+themes, including an actual selected-play replay. No page errors or horizontal
+overflow were found. The desk review passes 123 checks; pnpm check passes 2,454
+tests plus theme/release/type/name checks and the production build.
+Evidence is in `/workspace/dfl-nfl-1551`.
+
 ## 1.550.0 — unified Clubhouse NFL live page
 
 The full NFL game page now shows one score/field, compact two-team fantasy stats
