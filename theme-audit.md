@@ -1,3 +1,45 @@
+## 1.555.0 — compact offer board, quick edits and direct comparison
+
+Offer results use open surfaces, quiet rules, compact Inter names and small
+portraits in the existing Medicine Wheel defaults. Every outgoing/incoming player
+and its package count remains visible. Edit shares the existing Lineup & risk
+row so the new controls do not enlarge every result. Fair/Aggressive/Steal counts,
+all-team default, passes, saved deals, anchors, positions and lazy lineup previews
+remain available. The comparison tray appears only after a selection and stays
+available while browsing. Its markup and control focus survive count updates.
+
+Two offers compare in a native sheet with aligned send, receive and metric rows.
+There are no copied result values in selection state: opening restores immutable
+package IDs/destinations against the current roster and pool. Invalid roster
+choices have no actionable stale verdict. A compact edit sheet reuses the native
+searchable replacement picker and existing evaluator. Replacements preserve other
+picks, ownership and three-team destinations, respect position filters in both
+directions and locked anchors, and exclude unavailable automatic-trade players.
+Unchanged player rows and loaded portraits stay mounted during swaps; the changed row gets a short opacity settle. Reset changes only that draft. Review loads the existing analyzer; its fresh
+share/send validation remains in place. No new data provider, poller or network
+write is introduced. Selection is bounded to two, clears when changing the
+working team, and retains its packages across tier/filter/review updates.
+
+Reviewed screens: /workspace/dfl-trade-1555/board-ready/
+(compact offers, two-offer comparisons, quick edits, 200% Comfortable text,
+Light/Dark at 320/390); reading/ (existing actual offer/disclosure/edit-return
+checks at 320/390/768); local-final/ (compiled current-data board, comparison and
+quick editor in both themes). Standalone portraits explicitly contain loaded
+images/fallback initials; sheet headers and controls use Inter on the page palette.
+Selected/pressed states and focus use shared accent tokens. Dismissal reuses the
+shared finite sheet motion and Reduced Motion behavior. Page teardown closes
+both the editor and any nested replacement picker.
+
+Validation: pnpm check passes 2,469 tests plus release/theme/type/name/build
+checks. Five model tests cover current-value re-evaluation, stale ownership,
+three-team routing, immutable replacements, locks, position filters, duplicates
+and season-long absences. Browser coverage includes 96 comparison/edit/route
+states, loaded portrait containment, projected metric changes, reset, keyboard
+close, source focus, selections on return, large text and Reduced Motion; the
+existing offer-reading suite passes 112 checks. These board checks now run in CI.
+Compiled current-data checks block provider writes. Physical Safari frame pacing
+and VoiceOver speech are not measured.
+
 ## 1.554.0 — Clubhouse reading and last-view player points
 
 The NFL section drops the unrelated fantasy matchup rail and duel, keeping its
