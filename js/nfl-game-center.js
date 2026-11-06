@@ -50,7 +50,7 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
   const saved=readings.get(viewKey()),row=saved?.id?root.querySelector('#'+CSS.escape(saved.id)):null;
   if(row)scroller.scrollTop+=row.getBoundingClientRect().top-edge()-saved.offset;
   else if(saved)scroller.scrollTop=saved.scroll;
-  else {const body=root.querySelector('[data-nfl-center-body]');if(body)scroller.scrollTop+=body.getBoundingClientRect().top-edge();}
+  else {const body=root.querySelector(combined?'.nfl-center-score':'[data-nfl-center-body]');if(body)scroller.scrollTop+=body.getBoundingClientRect().top-edge();}
   pendingReading=false;return true;
  };
  const atLatest=()=>{const first=root.querySelector('.nfl-center-plays li[id]');return !first||first.getBoundingClientRect().top>=edge()-24};
@@ -109,7 +109,7 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
   }catch{if(request===token&&current())error=true}
   finally{if(request===token&&current()){loading=false;paint();if(focusPlay){root.querySelector('[data-nfl-focused-play]')?.scrollIntoView({block:'nearest'});focusPlay=''}schedule()}}
  }
- const change=event=>{if(event.target.matches('[data-nfl-center-game]'))selectGame(event.target.value);if(event.target.matches('[data-nfl-center-filter]')){saveReading();filter=event.target.value;pendingReading=true;remember();paint()}};
+ const change=event=>{if(event.target.matches('[data-nfl-center-game]'))selectGame(event.target.value);if(event.target.matches('[data-nfl-center-filter]')){const section=combined?root.querySelector('.nfl-live-plays'):null,top=section?.getBoundingClientRect().top;saveReading();filter=event.target.value;pendingReading=!combined;remember();paint();if(section?.isConnected)scroller.scrollTop+=section.getBoundingClientRect().top-top}};
  function changeMode(next){
   if(combined){if(!current()||!summary)return;syncToolbarSize();const section=root.querySelector(`[data-nfl-section="${next==='fantasy'?'fantasy':'plays'}"]`);if(section){section.focus({preventScroll:true});section.scrollIntoView({block:'start',behavior:document.documentElement.dataset.uiMotion!=='off'&&!matchMedia('(prefers-reduced-motion: reduce)').matches?'smooth':'instant'})}return;}
   if(!['plays','fantasy'].includes(next)||next===mode)return;

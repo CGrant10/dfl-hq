@@ -66,7 +66,9 @@ with sync_playwright() as p:
    pg.screenshot(path=str(OUT/f'{theme}-{width}-all-players.png'))
    check(tag+' all players keep full names, lines and two aligned columns',pg.locator('.nfl-fantasy-player').count()==20 and pg.locator('.nfl-fantasy-player').evaluate_all('es=>es.every(e=>e.scrollWidth<=e.clientWidth+1&&e.querySelector(".nfl-fantasy-stat-line").textContent)'))
    pg.locator('[data-nfl-stats-expand]').click();pg.wait_for_timeout(300)
+   pg.locator('[data-nfl-center-filter]').scroll_into_view_if_needed();filter_top=pg.locator('.nfl-live-plays .nfl-section-head').bounding_box()['y']
    pg.locator('[data-nfl-center-filter]').select_option('big')
+   check(tag+' filtering keeps the play heading in place',abs(pg.locator('.nfl-live-plays .nfl-section-head').bounding_box()['y']-filter_top)<2)
    check(tag+' filtering plays keeps the same fantasy rows and real points',pg.locator('.nfl-fantasy-player').count()==4 and '22.0' in pg.locator('[data-nfl-your-player]').inner_text() and pg.locator('[data-play-kind="touchdown"]').count()>0)
    pg.locator('[data-nfl-center-filter]').select_option('all')
   pg.set_viewport_size({'width':320,'height':844});pg.evaluate('document.documentElement.style.fontSize="32px";document.documentElement.dataset.readability="comfortable"');pg.wait_for_timeout(100);pg.evaluate('scrollTo(0,0)')

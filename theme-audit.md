@@ -15,7 +15,7 @@ smallest game picker wraps above its section actions, with measured jump offsets
 so headings stay below the sticky controls. All-player expansion supports rapid
 reversal, Reduced Motion and app-motion-off without fixed-height residue.
 
-The 168-check combined review verifies mobile targets/contrast, one five-second
+The 178-check combined review verifies mobile targets/contrast, one five-second
 game poll, bounded weekly-stat reads and retries, no DOM changes for unchanged
 updates, stable old-play reading positions, real PPR refresh, Back restoration
 and teardown. The full Clubhouse review also covers game switching, exact player
