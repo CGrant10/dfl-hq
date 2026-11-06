@@ -9660,3 +9660,127 @@ html[data-ui-motion="off"] #view.view[data-route="clubhouse"] .clubhouse-matchup
  #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player .gameday-player-score { width:2.5rem; min-width:min-content; }
  #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player .gameday-player-score>small { max-width:100%; }
 }
+
+
+/* Source: css/daily-desk.css */
+/* Shared reading/action roles for the daily tools. Home and Clubhouse remain
+   the reference; route ownership is explicit so editorial art is independent. */
+#view.view[data-page-system][data-route][data-daily-desk],
+#more[data-daily-desk] {
+ --font-body:var(--font-ui); --font-display:var(--font-ui);
+ --desk-row:var(--ui-row); --desk-meta:var(--ui-meta);
+ --desk-rule:var(--line-soft); --desk-control-radius:var(--ui-control-radius);
+ font:400 var(--ui-copy)/1.5 var(--font-ui); letter-spacing:0;
+}
+#view.view[data-page-system][data-route][data-daily-desk] [data-ui-row-title] {
+ font:600 var(--ui-row)/1.35 var(--font-ui); letter-spacing:-.01em;
+ text-transform:none; white-space:normal; overflow-wrap:break-word;
+}
+#view.view[data-page-system][data-route][data-daily-desk] [data-ui-number] {
+ font:700 var(--ui-number-size,1.125rem)/1.2 var(--font-ui);
+ font-variant-numeric:tabular-nums; letter-spacing:-.02em;
+}
+#view.view[data-page-system][data-route][data-daily-desk] [data-ui-section-head] {
+ min-width:0; font:700 var(--ui-section)/1.35 var(--font-ui);
+ letter-spacing:-.015em; text-transform:none;
+}
+:is(#view.view[data-page-system][data-route][data-daily-desk],#more[data-daily-desk]) [data-ui-action] {
+ min-width:44px; min-height:44px; border:0; border-radius:var(--ui-control-radius);
+ padding:8px 6px; background:transparent; text-transform:none; letter-spacing:0;
+ font:600 var(--ui-row)/1.35 var(--font-ui); color:var(--body-text);
+}
+:is(#view.view[data-page-system][data-route][data-daily-desk],#more[data-daily-desk]) [data-ui-action="primary"] { color:var(--accent); }
+:is(#view.view[data-page-system][data-route][data-daily-desk],#more[data-daily-desk]) [data-ui-action]:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+
+/* Sportsbook: one section rule, aligned team rows and one quiet price control. */
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-board-head {
+ align-items:flex-end; flex-wrap:wrap; gap:4px 12px; margin:16px 0 0;
+ padding:0 0 10px; border-bottom:1px solid var(--line-soft);
+}
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-board-head::after { content:none; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-board-head h2 { margin:3px 0 0; font:700 var(--ui-section)/1.35 var(--font-ui); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-board-head small { color:var(--body-text); font:500 var(--ui-label)/1.4 var(--font-ui); letter-spacing:.04em; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-board-head>span { padding:0; font:400 var(--ui-meta)/1.4 var(--font-ui); color:var(--body-text); text-transform:none; letter-spacing:0; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] .sb-market-grid { gap:0; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] .sb-market-grid>.sb-market {
+ margin:0; padding:12px 0; border:0; border-bottom:1px solid var(--line-soft);
+ border-radius:0; background:transparent; box-shadow:none;
+}
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] .sb-market-grid>.sb-your-matchup { border-left:2px solid var(--accent); padding-left:10px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] .sb-market>.card-title-row { gap:4px 12px; padding:0 0 4px; margin:0; border:0; flex-wrap:wrap; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] .sb-market-kicker { color:var(--body-text); font:400 var(--ui-label)/1.4 var(--font-ui); letter-spacing:0; text-transform:none; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] .sb-market-status { gap:4px 8px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] .sb-locks { padding:0; border:0; background:transparent; color:var(--body-text); font:400 var(--ui-meta)/1.4 var(--font-ui); letter-spacing:0; text-transform:none; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-outcomes { margin:0; padding:0; border:0; border-radius:0; background:transparent; overflow:visible; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-outcome {
+ grid-template-columns:32px minmax(0,1fr) auto; gap:10px; min-height:60px; padding:8px 0;
+ border:0; border-bottom:1px solid var(--line-soft); border-radius:0; background:transparent; box-shadow:none;
+}
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-outcome:last-child { border-bottom:0; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] .sb-team-mark { width:32px; height:32px; border-radius:50%; border:1px solid var(--line-soft); box-shadow:none; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] .sb-outcome-label>small { color:var(--body-text); font:400 var(--ui-meta)/1.4 var(--font-ui); letter-spacing:0; text-transform:none; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-outcome>.sb-price {
+ min-width:64px; padding:10px 8px; border:0; border-radius:var(--ui-control-radius);
+ background:var(--bg-2); box-shadow:none; color:var(--text); font:700 1.125rem/1.2 var(--font-ui);
+}
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-outcome.is-picked { background:color-mix(in srgb,var(--accent) 7%,transparent); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-outcome.is-picked>.sb-price { background:var(--action-bg); color:var(--action-ink); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-ticket { padding:14px 0; border:0; border-bottom:1px solid var(--line-soft); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] .sb-ticket h3 { font:600 var(--ui-row)/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] .sb-leg { border-color:var(--line-soft); }
+
+/* Trades: package names lead, repeated assessment labels recede. */
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-layout-section>.section-title { display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; margin:8px 0 0; padding:0 0 10px; border-bottom:1px solid var(--line-soft); }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-layout-section>.section-title::after { content:none; }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-layout-section>.section-title>.count { margin-left:auto; padding:0; border:0; border-radius:0; background:transparent; color:var(--body-text); font:400 var(--ui-meta)/1.4 var(--font-ui); text-transform:none; letter-spacing:0; }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-offer { padding:8px 0 0; border:0; border-bottom:1px solid var(--line-soft); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-tier>div { gap:0; }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-offer>header { gap:6px 12px; padding-bottom:4px; }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-offer>header>b { color:var(--body-text); font:500 var(--ui-meta)/1.35 var(--font-ui); text-transform:none; letter-spacing:0; }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-offer-owner strong { font:650 var(--ui-row)/1.35 var(--font-ui); }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-package>small { font:500 var(--ui-label)/1.4 var(--font-ui); text-transform:none; color:var(--body-text); letter-spacing:0; }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-package+.tb-package { border-color:var(--line-soft); }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-player-link { min-height:44px; padding-block:1px; align-items:center; gap:6px; }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-player-link>.dfl-player-copy { display:grid; gap:1px; }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-player-link>.dfl-player-copy small { color:var(--body-text); font:400 var(--ui-label)/1.35 var(--font-ui); }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-player-link .dfl-player-portrait { width:28px; height:32px; min-width:28px; flex-basis:28px; }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-offer-balance { margin-top:2px; padding-block:4px; border-color:var(--line-soft); }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-offer-preview { border-color:var(--line-soft); }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-offer-footer { border-color:var(--line-soft); }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-card-actions :is(button,summary) { color:var(--body-text); font:500 var(--ui-meta)/1.35 var(--font-ui); }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-offer-analyze { font:600 var(--ui-row)/1.35 var(--font-ui); }
+
+/* More: same paper, Inter hierarchy and supplied flat line glyphs. The opaque
+   cover, native scrolling, focus trap and existing finite entrance are retained. */
+#more[data-daily-desk],#more[data-daily-desk] .sheet-card { background:var(--bg); color:var(--text); }
+#more[data-daily-desk] .sheet-card { padding-inline:var(--ui-gutter); scroll-padding-top:76px; }
+#more[data-daily-desk] .sheet-head { top:-16px; min-height:56px; gap:12px; border-bottom:1px solid var(--line-soft); background:var(--bg); }
+#more[data-daily-desk] .sheet-head h2 { margin:0; text-transform:none; font:700 var(--ui-title)/1.25 var(--font-ui); letter-spacing:-.025em; }
+#more[data-daily-desk] #more-close { min-width:52px; border:0; background:transparent; box-shadow:none; color:var(--body-text); font:600 var(--ui-row)/1.35 var(--font-ui); }
+#more[data-daily-desk] .quicknav-group h2 { margin:16px 0 4px; color:var(--body-text); font:600 var(--ui-label)/1.4 var(--font-ui); text-transform:uppercase; letter-spacing:.06em; }
+#more[data-daily-desk] .quicknav-group a { min-height:48px; padding:10px 0; gap:12px; border-color:var(--line-soft); border-radius:0; background:transparent; }
+#more[data-daily-desk] .quicknav-group .qn-label { color:var(--text); font:600 var(--ui-row)/1.4 var(--font-ui); letter-spacing:0; }
+#more[data-daily-desk] .quicknav-group svg { width:20px; height:20px; color:var(--body-text)!important; }
+#more[data-daily-desk] .quicknav-group a::after { border-color:var(--body-text); }
+@media(hover:hover) {
+ #more[data-daily-desk] .quicknav-group a:hover { background:color-mix(in srgb,var(--accent) 5%,transparent); }
+ #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-outcome:not(:disabled):hover { background:color-mix(in srgb,var(--accent) 5%,transparent); }
+}
+
+/* Respect the existing larger-reading preference without constraining rows. */
+html[data-readability="comfortable"] #view.view[data-page-system][data-route][data-daily-desk] [data-ui-row-title] { font-size:1rem; line-height:1.45; }
+html[data-readability="comfortable"] #view.view[data-page-system][data-route][data-daily-desk="trade"] :is(.tb-package>small,.tb-player-link>.dfl-player-copy small) { font-size:.875rem; line-height:1.5; }
+html[data-readability="comfortable"] #more[data-daily-desk] .quicknav-group h2 { font-size:.8125rem; }
+html[data-readability="comfortable"] #more[data-daily-desk] .quicknav-group .qn-label { font-size:1rem; line-height:1.45; }
+/* Enlarged labels reflow as whole controls, never narrow vertical words. */
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-intent-options { display:flex; flex-wrap:wrap; }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-intent-options>button { flex:1 1 5.5rem; }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-intent-count { font-size:var(--ui-meta); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-tabs { flex-wrap:wrap; gap:0 18px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-tabs>button { flex:1 1 max-content; white-space:nowrap; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-tabs>button span { min-width:1.6em; min-height:1.6em; width:auto; height:auto; padding:.1em .25em; font-size:var(--ui-meta); }
+#view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-intent { container-type:inline-size; }
+@container (width < 16.5rem) {
+ #view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-intent-options>i { display:none; }
+ #view.view[data-page-system][data-route][data-daily-desk="trade"] .tb-intent-options>button.is-active { background:var(--ok-bg); box-shadow:inset 0 0 0 1px var(--ok-line); }
+}

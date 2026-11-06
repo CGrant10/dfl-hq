@@ -313,7 +313,7 @@ function wireMarketActivities(view){
 function trendingPicks(rows){
   const picks=(rows||[]).slice(0,3);
   return `<section class="sb-trending" aria-labelledby="sb-trending-title">
-    <div class="sb-board-head"><div><small>Action report</small><h2 id="sb-trending-title">Trending picks</h2></div><span>Top 3</span></div>
+    <div class="sb-board-head" data-ui-section-head><div><small>Action report</small><h2 id="sb-trending-title">Trending picks</h2></div><span>Top 3</span></div>
     ${picks.length?`<ol class="sb-trend-grid">${picks.map((pick,index)=>`<li class="sb-trend-card">
       <span class="sb-trend-rank">${index+1}</span>
       <span class="sb-trend-copy"><strong>${esc(pick.outcome_label)}</strong><small>${esc(pick.market_title)}</small></span>
@@ -336,7 +336,7 @@ function weeklyRecapMarkup(recap){
   const start=new Date(recap.startsAt),end=new Date(recap.endsAt);
   const range=`${start.toLocaleDateString([],{month:"short",day:"numeric"})}–${end.toLocaleDateString([],{month:"short",day:"numeric"})}`;
   return `<section class="sb-recap" aria-labelledby="sb-recap-title">
-    <div class="sb-board-head"><div><small>${esc(range)} &middot; ${num(recap.tickets)} graded tickets</small><h2 id="sb-recap-title">Sportsbook aftermath</h2></div><button type="button" class="linkbtn" data-share-recap>Share</button></div>
+    <div class="sb-board-head" data-ui-section-head><div><small>${esc(range)} &middot; ${num(recap.tickets)} graded tickets</small><h2 id="sb-recap-title">Sportsbook aftermath</h2></div><button type="button" class="linkbtn" data-share-recap>Share</button></div>
     <div class="sb-recap-grid">${cards.map(card=>`<article><small>${card.eyebrow}</small><strong>${esc(card.name)}</strong><b>${esc(card.value)}</b><p>${esc(card.copy)}</p></article>`).join("")}</div>
   </section>`;
 }
@@ -401,8 +401,8 @@ function outcomeButtons(m,outcomes,picked,held,members=[]){
     return `
     <button class="sb-outcome${held?" is-mine":""}${inSlip?" is-picked":""}" data-bet-outcome="${o.id}" aria-pressed="${inSlip}"${!isOpen(m)?' disabled':''}>
       ${prop?`<span class="sb-prop-side" aria-hidden="true">${i===0?"O":"U"}</span>`:teamPortrait({team_name:o.label,identity:identities.get(identityKey(o.label))||null},{className:"sb-team-mark"})}
-      <span class="sb-outcome-label"><span class="sb-outcome-name">${esc(o.label)}${held?`<span class="sb-held">Held</span>`:""}</span><small>${prop?propSource:projected[i]?`${esc(projected[i])} projected`:"Moneyline"}</small></span>
-      <strong class="sb-price">${fmtOdds(o.odds_american)}</strong>
+      <span class="sb-outcome-label"><span class="sb-outcome-name" data-ui-row-title>${esc(o.label)}${held?`<span class="sb-held">Held</span>`:""}</span><small>${prop?propSource:projected[i]?`${esc(projected[i])} projected`:"Moneyline"}</small></span>
+      <strong class="sb-price" data-ui-number>${fmtOdds(o.odds_american)}</strong>
     </button>`}).join("")}</div>`;
 }
 function houseControls(m,outcomes,canBook){return canBook?`<div class="sb-house">${outcomes.map(o=>`<button type="button" class="linkbtn" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)}</button>`).join(" · ")} · <button type="button" class="linkbtn" data-void-market="${m.id}">Void</button></div>`:""}
@@ -453,7 +453,7 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
       const metas=[...games.values()].flatMap(game=>game.rows.map(row=>row.meta));
       const positionOrder=["QB","RB","WR","TE"];const positions=[...new Set(metas.map(meta=>meta.position).filter(Boolean))].sort((a,b)=>(positionOrder.indexOf(a)<0?99:positionOrder.indexOf(a))-(positionOrder.indexOf(b)<0?99:positionOrder.indexOf(b))||a.localeCompare(b));
       const playerCount=[...games.values()].reduce((count,game)=>count+groupPropPlayers(game.rows).length,0);
-      return `<section class="block sb-section sb-props"><div class="sb-board-head"><div><small>NFL</small><h2>Player props</h2></div><span data-prop-total>${playerCount} players · ${group.length} lines</span></div>
+      return `<section class="block sb-section sb-props"><div class="sb-board-head" data-ui-section-head><div><small>NFL</small><h2>Player props</h2></div><span data-prop-total>${playerCount} players · ${group.length} lines</span></div>
         <div class="sb-prop-tools"><label class="sb-prop-search"><span>Find a player</span><input type="search" id="sb-prop-search" placeholder="Player or team"></label><button type="button" class="sb-prop-favorites" data-prop-favorites aria-pressed="false">★ Favorites</button><label class="sb-prop-position"><span>Position</span><select id="sb-prop-position"><option value="">All positions</option>${positions.map(value=>`<option>${esc(value)}</option>`).join("")}</select></label></div>
         <div class="sb-prop-games">${[...games].map(([key,game])=>`<details data-prop-game data-prop-key="${esc(key)}"><summary><span>${esc(game.label)}</span><b data-prop-count>${groupPropPlayers(game.rows).length} players · ${game.rows.length} lines</b></summary><div class="sb-market-grid" data-prop-grid></div></details>`).join("")}</div>
         <p class="sb-empty" data-prop-empty hidden>No props match that filter.</p></section>`;
@@ -466,7 +466,7 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
     const heading=matchups?"Fantasy matchup winners":`${esc(cat)} lines`;
     const unit=matchups?"games":"lines";
     const count=matchups?`${group.filter(isOpen).length} open &middot; ${group.filter(m=>!isOpen(m)).length} locked`:`${cards.length} ${unit}`;
-    return `<section class="block sb-section"><div class="sb-board-head"><div><small>${eyebrow}</small><h2>${heading}</h2></div><span>${count}</span></div>${matchups?'<p class="muted tiny">Pick a fantasy team to add its win to your slip. Bets lock at the first NFL kickoff of the week; locked matchups stay visible.</p>':""}<div class="sb-market-grid">${cards.join("")}</div></section>`;
+    return `<section class="block sb-section"><div class="sb-board-head" data-ui-section-head><div><small>${eyebrow}</small><h2>${heading}</h2></div><span>${count}</span></div>${matchups?'<p class="muted tiny">Pick a fantasy team to add its win to your slip. Bets lock at the first NFL kickoff of the week; locked matchups stay visible.</p>':""}<div class="sb-market-grid">${cards.join("")}</div></section>`;
   }).join("");
 }
 
@@ -480,7 +480,7 @@ function fantasySlateHtml(slate,clock,byMarket,canBook,picked,held,members,membe
   const card=marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held,members);
   return mine?card.replace('class="card sb-market"','class="card sb-market sb-your-matchup" data-your-matchup').replace('<small class="sb-market-kicker">','<span class="sb-your-matchup-label">Your matchup</span><small class="sb-market-kicker">'):card;
  }).join('');
- return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head"><div><small>${slate.period==='current'?'THIS WEEK':upcoming?'UPCOMING':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${openCount} open · ${slate.markets.length-openCount} locked</span></div><div class="sb-market-grid">${cards}</div></section>`;
+ return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head" data-ui-section-head><div><small>${slate.period==='current'?'THIS WEEK':upcoming?'UPCOMING':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${openCount} open · ${slate.markets.length-openCount} locked</span></div><div class="sb-market-grid">${cards}</div></section>`;
 }
 
 function propPlayersMarkup(rows,byMarket,picked,held,favorites){
@@ -489,7 +489,7 @@ function propPlayersMarkup(rows,byMarket,picked,held,favorites){
     return `<div class="sb-player-line" data-prop-card data-prop-key="${esc(meta.key)}"><div class="sb-player-stat"><span>${esc(meta.stat)}</span><strong>${esc(line)}</strong></div><div class="sb-player-prices">${choices.map(outcome=>{
       const side=outcome.provider_side || (/^over\b/i.test(outcome.label)?'over':/^under\b/i.test(outcome.label)?'under':'');
       const label=side==='over'?'Over':side==='under'?'Under':outcome.label,active=picked.has(String(outcome.id));
-      return `<button type="button" class="sb-outcome${active?' is-picked':''}${held.has(String(outcome.id))?' is-mine':''}" data-bet-outcome="${esc(outcome.id)}" aria-pressed="${active}" aria-label="${esc(`${meta.player}, ${meta.stat}, ${label} ${line}, ${fmtOdds(outcome.odds_american)}`)}"${!isOpen(market)?' disabled':''}><span>${esc(label)}${held.has(String(outcome.id))?'<small class="sb-held">Held</small>':''}</span><strong class="sb-price">${fmtOdds(outcome.odds_american)}</strong></button>`;
+      return `<button type="button" class="sb-outcome${active?' is-picked':''}${held.has(String(outcome.id))?' is-mine':''}" data-bet-outcome="${esc(outcome.id)}" aria-pressed="${active}" aria-label="${esc(`${meta.player}, ${meta.stat}, ${label} ${line}, ${fmtOdds(outcome.odds_american)}`)}"${!isOpen(market)?' disabled':''}><span>${esc(label)}${held.has(String(outcome.id))?'<small class="sb-held">Held</small>':''}</span><strong class="sb-price" data-ui-number>${fmtOdds(outcome.odds_american)}</strong></button>`;
     }).join('')}</div><button type="button" class="sb-prop-favorite${favorites.has(meta.key)?' is-favorite':''}" data-prop-favorite="${esc(meta.key)}" aria-label="${favorites.has(meta.key)?'Remove from':'Add to'} favorite props" aria-pressed="${favorites.has(meta.key)}">★</button></div>`;
   }).join('')}</div></article>`).join('');
 }
@@ -640,7 +640,7 @@ function wireSlipAndPicks(view,outcomeMap,marketMap,wallet){
 // ---------------------------------------------------------------------
 function ticketBoardHead(bets){
   const open=bets.filter(b=>b.status==="open").length;
-  return `<div class="sb-board-head"><div><small>Your money</small><h2>Tickets</h2></div><span>${open} open</span></div>`;
+  return `<div class="sb-board-head" data-ui-section-head><div><small>Your money</small><h2>Tickets</h2></div><span>${open} open</span></div>`;
 }
 function ticketsMarkup(bets,marketMap,outcomeMap,recent=new Set(),order=[]){
   const visible=bets.filter(b=>b.status==='open'||recent.has(String(b.id)));
