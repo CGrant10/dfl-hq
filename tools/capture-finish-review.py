@@ -98,8 +98,13 @@ with sync_playwright() as p:
  page.emulate_media(reduced_motion='reduce');page.locator('.clubhouse-matchup-card [data-finish-replay]').click();page.wait_for_timeout(80)
  assert page.locator('[data-finish-playing]').count()==0
  checks.append('reduced motion shows complete static receipt')
- # Observe the finite reveal launch even if a slow runner samples after it ends.
- page.emulate_media(reduced_motion='no-preference');page.evaluate('finishFixture.revealStarts=0');page.locator('.clubhouse-matchup-card [data-finish-replay]').click();page.wait_for_function('finishFixture.revealStarts>0')
+ # This is setup for the late-share/teardown check; native replay and reduced
+ # motion clicks are exercised above. Restore the media state and visible score
+ # first, then avoid native action auto-scroll hiding that score during setup.
+ page.emulate_media(reduced_motion='no-preference');page.wait_for_function('!matchMedia("(prefers-reduced-motion: reduce)").matches')
+ page.locator('.clubhouse-matchup-card .clubhouse-game-teams').scroll_into_view_if_needed()
+ page.evaluate('()=>new Promise(requestAnimationFrame)');page.evaluate('finishFixture.revealStarts=0')
+ page.locator('.clubhouse-matchup-card [data-finish-replay]').evaluate('e=>e.click()');page.wait_for_function('finishFixture.revealStarts>0')
  page.evaluate('finishFixture.holdShare=true')
  page.locator('.clubhouse-matchup-card [data-finish-share]').click();page.wait_for_function('typeof finishFixture.rejectShare==="function"')
  before=page.locator('.clubhouse-matchup-card [data-finish-share]').evaluate('e=>e.outerHTML')

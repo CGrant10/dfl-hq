@@ -43,23 +43,33 @@ export function nflCenterPlays(summary,game=null){
 }
 // Keep official NFL stat lines alongside actual Sleeper points. No estimated
 // PPR totals: conversions and unusual scoring must survive intact.
-export function nflFantasyRows(summary,players=[],{weekly=[],season,week}={}){
+function fantasyIndex(rows,keyOf){const index=new Map();for(const row of rows){const key=keyOf(row);index.set(key,index.has(key)?null:row)}return index;}
+const fantasyPositions=['QB','RB','WR','TE','K','DEF'];
+const directoryIndexes=new WeakMap();
+function fantasyDirectory(directory){
+ if(!directory||typeof directory!=='object')return new Map();
+ if(directoryIndexes.has(directory))return directoryIndexes.get(directory);
+ const index=new Map();
+ for(const p of Object.values(directory)){if(!p||typeof p!=='object')continue;const position=p.p||p.position;if(!fantasyPositions.includes(position))continue;const key=`${name(p.n||p.full_name||p.name)}:${footballTeam(p.t||p.team||p.nflTeam)}`;index.set(key,index.has(key)?null:position);}
+ directoryIndexes.set(directory,index);return index;
+}
+export function nflFantasyRows(summary,players=[],{weekly=[],season,week,directory=null}={}){
+ const catalog=fantasyDirectory(directory),owners=fantasyIndex(players,p=>`${name(p.name)}:${footballTeam(p.nflTeam)}`);
+ const recorded=fantasyIndex(weekly.filter(r=>Number(r.season)===Number(season)&&Number(r.week)===Number(week)&&r.season_type==='regular'),r=>`${name(r.player?.full_name||`${r.player?.first_name||''} ${r.player?.last_name||''}`)}:${footballTeam(r.team||r.player?.team)}`);
  const rows=new Map(),groups={passing:['passingYards','passingTouchdowns','interceptions'],rushing:['rushingYards','rushingTouchdowns'],receiving:['receptions','receivingYards','receivingTouchdowns'],fumbles:['fumblesLost'],kicking:['longFieldGoalMade']};
  for(const club of summary?.boxscore?.players||[])for(const group of club.statistics||[]){
   if(!groups[group.name])continue;
   for(const item of group.athletes||[]){
    const athlete=item.athlete,code=footballTeam(club.team?.abbreviation);if(!nflGameId(athlete?.id)||!clean(athlete.displayName)||!code)continue;
-   const key=String(athlete.id),row=rows.get(key)||{id:key,name:clean(athlete.displayName),nflTeam:code,stats:{},position:group.name==='passing'?'QB':group.name==='kicking'?'K':''};
+   const key=String(athlete.id),row=rows.get(key)||{id:key,name:clean(athlete.displayName),nflTeam:code,stats:{},position:clean(athlete.position?.abbreviation)|| (group.name==='passing'?'QB':group.name==='kicking'?'K':'')};
    for(const field of groups[group.name]){const i=(group.keys||[]).indexOf(field),raw=item.stats?.[i];if(i>=0&&raw!==''&&raw!=null&&Number.isFinite(Number(raw)))row.stats[field]=Number(raw)}
    if(group.name==='kicking')for(const [field,key]of [['fieldGoalsMade/fieldGoalAttempts','fg'],['extraPointsMade/extraPointAttempts','xp']]){const raw=item.stats?.[(group.keys||[]).indexOf(field)];if(/^\d+\/\d+$/.test(String(raw)))row.stats[key]=String(raw)}
    rows.set(key,row);
   }
  }
  return [...rows.values()].filter(row=>Object.keys(row.stats).some(k=>k!=='fumblesLost')).map(row=>{
-  const s=row.stats,matching=players.filter(p=>name(p.name)===name(row.name)&&footballTeam(p.nflTeam)===row.nflTeam),owned=matching.length===1?matching[0]:null;
-  const recorded=weekly.filter(r=>Number(r.season)===Number(season)&&Number(r.week)===Number(week)&&r.season_type==='regular'&&footballTeam(r.team||r.player?.team)===row.nflTeam&&name(r.player?.full_name||`${r.player?.first_name||''} ${r.player?.last_name||''}`)===name(row.name));
-  const stats=recorded.length===1?recorded[0]:null,points=typeof stats?.stats?.pts_ppr==='number'&&Number.isFinite(stats.stats.pts_ppr)?stats.stats.pts_ppr:null;
+  const s=row.stats,key=`${name(row.name)}:${row.nflTeam}`,owned=owners.get(key),stats=recorded.get(key),points=typeof stats?.stats?.pts_ppr==='number'&&Number.isFinite(stats.stats.pts_ppr)?stats.stats.pts_ppr:null;
   const line=[s.passingYards!=null?`${s.passingYards} pass yd`:null,s.passingTouchdowns?`${s.passingTouchdowns} pass TD`:null,s.interceptions?`${s.interceptions} INT`:null,s.rushingYards!=null?`${s.rushingYards} rush yd`:null,s.rushingTouchdowns?`${s.rushingTouchdowns} rush TD`:null,s.receptions!=null?`${s.receptions} rec`:null,s.receivingYards!=null?`${s.receivingYards} rec yd`:null,s.receivingTouchdowns?`${s.receivingTouchdowns} rec TD`:null,s.fumblesLost?`${s.fumblesLost} lost`:null,s.fg?`${s.fg} FG`:null,s.xp?`${s.xp} XP`:null,s.longFieldGoalMade?`${s.longFieldGoalMade} long`:null].filter(Boolean).join(' · ');
-  return {...row,playerId:owned?.id,owner:owned?.owner||'',isMine:owned?.isMine===true,position:owned?.position||stats?.player?.position||row.position,points:typeof owned?.points==='number'?owned.points:points,league:typeof owned?.points==='number',line};
- }).sort((a,b)=>Number(b.isMine)-Number(a.isMine)||(b.points??-Infinity)-(a.points??-Infinity)||a.name.localeCompare(b.name));
+  return {...row,playerId:owned?.id,owner:owned?.owner||'',isMine:owned?.isMine===true,position:owned?.position||catalog.get(`${name(row.name)}:${row.nflTeam}`)||stats?.player?.position||row.position,points:typeof owned?.points==='number'?owned.points:points,league:typeof owned?.points==='number',line};
+ }).sort((a,b)=>{const rank=p=>{const i=fantasyPositions.indexOf(p.position);return i<0?fantasyPositions.length:i};return rank(a)-rank(b)||a.name.localeCompare(b.name)||a.id.localeCompare(b.id)});
 }

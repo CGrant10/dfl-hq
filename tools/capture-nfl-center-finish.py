@@ -71,8 +71,17 @@ with sync_playwright() as p:
      check(tag+' NFL score labels and actual league totals are explicit',pg.locator('.nfl-fantasy-team-score>small').all_text_contents()==['NFL','NFL'] and '22.0' in pg.locator('[data-nfl-your-player]').inner_text() and 'League' in pg.locator('[data-nfl-your-player]').inner_text())
      check(tag+' unknown player points are not made up',pg.locator('.nfl-fantasy-value>span>b').evaluate_all('ns=>ns.some(n=>n.textContent==="—")'))
      check(tag+' each team keeps full player names and stat lines',pg.locator('.nfl-fantasy-player').evaluate_all('ns=>ns.every(n=>n.scrollWidth<=n.clientWidth+1&&!!n.querySelector(".nfl-fantasy-stat-line").textContent)'))
-     aligned=pg.locator('.nfl-center-fantasy').evaluate('''e=>{const sides=[...e.querySelectorAll('.nfl-fantasy-side')].map(s=>[...s.querySelectorAll('.nfl-fantasy-player')]);return sides[0].every((row,i)=>!sides[1][i]||['.nfl-fantasy-player-head :is(button,strong)','.nfl-fantasy-value>span','.nfl-fantasy-value>small','.nfl-fantasy-owner','.nfl-fantasy-stat-line'].every(sel=>Math.abs(row.querySelector(sel).getBoundingClientRect().top-sides[1][i].querySelector(sel).getBoundingClientRect().top)<1))}''')
-     check(tag+' both teams align player names, points, owners and stat lines',aligned)
+     aligned=pg.locator('.nfl-center-fantasy').evaluate('''e=>{
+      const sides=[...e.querySelectorAll('.nfl-fantasy-side')].map(s=>[...s.querySelectorAll('.nfl-fantasy-players>.nfl-fantasy-player,.nfl-fantasy-players>.nfl-fantasy-gap')]);
+      return sides[0].length===sides[1].length&&sides[0].every((row,i)=>{
+       const paired=sides[1][i],a=row.getBoundingClientRect(),b=paired.getBoundingClientRect();
+       if(Math.abs(a.top-b.top)>=1||Math.abs(a.height-b.height)>=1)return false;
+       if(row.matches('.nfl-fantasy-gap')||paired.matches('.nfl-fantasy-gap'))return true;
+       const pos=n=>n.querySelector('.nfl-fantasy-value>small').textContent.split(' · ')[1]||'';
+       return pos(row)===pos(paired)&&['.nfl-fantasy-player-head :is(button,strong)','.nfl-fantasy-value>span','.nfl-fantasy-value>small','.nfl-fantasy-owner','.nfl-fantasy-stat-line'].every(sel=>{const a=row.querySelector(sel),b=paired.querySelector(sel);return sel==='.nfl-fantasy-owner'&&(!a.textContent.trim()||!b.textContent.trim())||Math.abs(a.getBoundingClientRect().top-b.getBoundingClientRect().top)<1});
+      });
+     }''')
+     check(tag+' both teams align matching position slots, names, points and stat lines',aligned)
      check(tag+' smaller player names and points',pg.locator('.nfl-fantasy-player').first.evaluate('e=>parseFloat(getComputedStyle(e.querySelector(".nfl-fantasy-player-head button,.nfl-fantasy-player-head strong")).fontSize)===13&&parseFloat(getComputedStyle(e.querySelector(".nfl-fantasy-value b")).fontSize)===18'))
      if width==390:pg.screenshot(path=str(OUT/f'{theme}-fantasy.png'))
      if width==320:

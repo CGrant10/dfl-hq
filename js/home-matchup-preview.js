@@ -47,7 +47,7 @@ export function mountHomeMatchupPreview(root,{members,member,active,standings=[]
    next.standings=reconcileLeagueResults({season:week.season,teams:next.games.flatMap(g=>g.sides.map(t=>({...t,roster_id:t.roster,sleeper_user_id:t.uid}))),standings,snapshot:value(5)}).standings;
    next.checkedAt=Date.now();next.snapshot.checkedAt=next.checkedAt;next.scoreStatus='ready';next.nflAvailable=!!nfl;next.playersAvailable=!!value(1);next.recordArchive=value(4)?buildRecordArchive(value(4),{season:next.season,week:next.week}):null;
    const previous=model?.season===next.season&&model?.week===next.week?model.snapshot:null;model=next;paint();
-   onModel?.({model,history:value(4)?.matchups||[],leagueState:state,openingWeek,openingNfl:openingWeek===Number(week.week)?nfl:value(6)});
+   onModel?.({model,playerDirectory:players,history:value(4)?.matchups||[],leagueState:state,openingWeek,openingNfl:openingWeek===Number(week.week)?nfl:value(6)});
    if(previous)stopMotion=animateScoreChanges(card,{previous,model,feedback:true,motion:readPageChoice('gameday-motion',['on','off'],'on')==='on'});
    recovery.hidden=true;content.removeAttribute('aria-busy');freshness.update({state:navigator.onLine===false?'offline':'ready',checkedAt:next.checkedAt,nflAvailable:!!nfl,playersAvailable:!!value(1),completed:week.completed});return true;
   }catch{if(current()){freshness.update({state:navigator.onLine===false?'offline':'error'});recovery.hidden=false;root.querySelector('[data-gameday-recovery-message]').textContent=model?'Refresh unavailable. Showing the last checked scores.':'Your matchup couldn’t load. Try again.';content.removeAttribute('aria-busy');if(!model)content.innerHTML=''}return false}

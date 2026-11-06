@@ -261,3 +261,29 @@ finite. Use the existing shared refresh and bounded weekly-stat cadence.
 Sleeper's official public game-center image grounds the composition. Retain DFL
 branding, current shared type roles and Medicine Wheel themes. Do not claim
 pixel-exact parity with the current native Sleeper build without that capture.
+
+
+## Replay and stable Fantasy reading — 1.553.0
+
+Replay shares NFL live's compact Inter hierarchy, Medicine Wheel surfaces and
+sliding view indicator. Preserve a clean video frame, full thumbnails, native
+controls, two-column browsing and the same mounted video while changing layout,
+filters or companion views. Use actual game status alongside the Replay label;
+never imply the video's score is a live moment. Clips, Plays and Fantasy remain
+separate choices; embedded game centers hide their duplicate inner mode bar.
+
+Interrupted divider motion must resume from the rendered height. Measure drag
+limits before movement, not on every pointer event. Source-connected opening
+requires a visible source rectangle. Playback labels must reflect actual state;
+loading and stale media completions must not replace a newer selected clip.
+
+Fantasy stays in QB/RB/WR/TE/K/DEF position blocks, with stable names within each
+block. Points, ownership and scoring events must not rank or shuffle the list.
+Align both NFL sides by position, retain zero-point records, reserve numeric
+space, and keep a successful portrait fallback across score updates. Reuse the
+existing directory and recorded league/PPR data; never invent player points.
+
+Game previews can prepare a maximum of two inert neighbors during idle time.
+They must not fetch game/stat data or create background polling. Keep selected
+styles through arrival, cancel pending work on teardown, and preserve vertical
+scroll, rapid reversal and reduced-motion navigation.
