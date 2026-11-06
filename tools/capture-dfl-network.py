@@ -51,7 +51,8 @@ with sync_playwright() as p:
     document.getElementById('award').innerHTML=(await import('/js/weekly-clubhouse-ui.js')).weeklyAwardsHtml({week:7,awards:[{key:'high-score',label:'Final boss',winners:[{name:'Bastards of the Realm'}],detail:'142.32 points'}]});
    }''',theme)
    tag=f'{width}px {theme}';pg.wait_for_selector('.multigame-card')
-   check(tag+' shows every game despite legacy pins, with zero scores and actual roster points',pg.locator('.multigame-card').count()==4 and '22.0' in pg.locator('.multigame-card').first.inner_text() and pg.locator('.multigame-score b').first.inner_text()=='0')
+   check(tag+' compact strip shows every game despite legacy pins, with zero scores and real team logos',pg.locator('.multigame-card').count()==4 and pg.locator('.multigame-score b').first.inner_text()=='0' and pg.locator('.multigame-score img').count()==8)
+   check(tag+' logo-only games retain accessible team and status labels',all(code in pg.locator('[data-desk-game="401873011"]').get_attribute('aria-label') for code in ['NO','PIT','Q3 8:20']) and pg.locator('.multigame-people,.multigame-latest,.multigame-follow').count()==0)
    pg.locator('[data-desk-game="401900001"]').click();check(tag+' follows a chosen game with one selected tile',pg.evaluate('f.selected.at(-1)==="401900001"') and pg.locator('[data-desk-game][aria-pressed="true"]').count()==1)
    check(tag+' no pinning controls or three-game limit remain',pg.locator('[data-desk-pin],#multigame-edit').count()==0 and pg.locator('[data-desk-game="401900003"]').count()==1)
    pg.evaluate("window.deskButton=document.querySelector('[data-desk-game]');f.desk.update(f.board,'401900003')");pg.wait_for_timeout(80)

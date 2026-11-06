@@ -19,7 +19,8 @@ passes 60, including canceled/short/edge swipes, quick reversal, vertical scroll
 preview without game-data requests, live refresh during a drag, late-response
 cancellation, Fantasy selection/reading return, targets/contrast, Reduced Motion,
 app motion off and teardown. Existing field, full Clubhouse and live refresh
-reviews also pass. pnpm check passes 2,455 tests and the release/theme/type/name
+reviews also pass. The network/scout review now checks the compact NFL strip
+instead of its removed roster-preview rows; all 114 checks pass. pnpm check passes 2,455 tests and the release/theme/type/name
 checks/build; final markup and styles also received a fresh build and focused
 checks. The compiled app was inspected read-only with current NFL/league data in
 both themes, with no page errors or horizontal overflow.
