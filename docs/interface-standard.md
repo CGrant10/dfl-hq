@@ -237,3 +237,27 @@ current player-card links, video handoff, pause/reconnect and teardown.
 Verify both themes, narrow/large text, exact endpoints, interrupted replay,
 mode switching, live refresh and keyboard targets. Chromium checks are not a
 physical Safari frame-rate or VoiceOver speech measurement.
+
+
+## NFL game center — 1.552.0
+
+The compact NFL strip shows every game, real logos and current scores. A native
+picker and previous/next buttons remain available. Touching the game window
+moves the live stage and one inert neighbor together; only a committed arrival
+selects the next game. Interrupted transitions resume at the rendered position.
+Never start game/stat fetches for a partial preview, mount extra game pollers,
+change the current Plays/Fantasy choice, or let a late response replace a new
+game. Vertical scroll, native controls and player-card taps retain their paths.
+
+Plays leads with the latest source description, a perspective field and one NFL
+score. The field uses official endpoints, not player tracking. Its normal-size
+down label belongs inside the field; enlarged text returns it to flow. Missing
+coordinates retain the text without a fabricated field position. Replay and
+historical-play return stay available. Fantasy remains a separate aligned
+side-by-side view with real player headshots, stat lines and exact league/PPR
+points. Keep source descriptions visible, old reading anchors stable and motion
+finite. Use the existing shared refresh and bounded weekly-stat cadence.
+
+Sleeper's official public game-center image grounds the composition. Retain DFL
+branding, current shared type roles and Medicine Wheel themes. Do not claim
+pixel-exact parity with the current native Sleeper build without that capture.
