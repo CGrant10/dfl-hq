@@ -207,3 +207,33 @@ Home/Clubhouse retain their current composition, and the active trade notice
 remains subtle at the top of Home. This pass adds no dashboard modules or
 explanatory UI copy. Physical device motion and screen-reader speech still need
 on-device review; browser layout checks are not a measured frame-rate claim.
+
+### Unified Clubhouse NFL desk — 1.550.0
+
+Clubhouse's NFL live page uses `combined:true` in the existing game controller.
+`js/nfl-game-desk-ui.js` and the combined-layout section of
+`css/clubhouse-viewing.css` own the composition: one game score, the field,
+side-by-side fantasy stats and the complete latest-first play feed. The clip
+browser retains its focused plays/stats controls in the smaller video surface.
+
+Mobile starts with two fantasy players per NFL team. All players expand in
+place with reversible height motion; no player names or play descriptions are
+line-clamped. Plays/Stats controls jump to sections without hiding content or
+pretending to select another view. Their offset uses the measured toolbar height,
+including narrow/enlarged layouts. Wide containers place plays and stats beside
+each other. Use Inter and the shared type, action, border and paper tokens;
+real NFL team colors retain their meaning on the field and play rail.
+
+Preserve exact league/weekly PPR values, unknown-point placeholders, current
+player-card links and season/week context. One existing game poll updates both
+sections; weekly stats use a bounded 20-second cadence, including failures.
+Updates preserve old plays being read and keep the existing new-play return,
+filters, game snapshots, video handoff, background/modal pause and teardown.
+Back restores the expanded stats; a fresh visit starts compact. Don't add another
+poller or duplicate scores above the player lists.
+
+Browser checks cover the combined controller and actual Clubhouse in both
+Medicine Wheel modes, narrow and wide screens, 200%/Comfortable text, contrast,
+44px targets, native game selection, section jumps, rapid expansion reversal,
+Reduced Motion, app motion off, live PPR updates and error recovery. Physical iOS
+frame pacing and screen-reader speech still require device review.

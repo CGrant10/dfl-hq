@@ -1,3 +1,39 @@
+## 1.550.0 — unified Clubhouse NFL live page
+
+The full NFL game page now shows one score/field, compact two-team fantasy stats
+and the complete play-by-play on the same page. Section jumps replace mutually
+exclusive modes in Clubhouse. The clip viewer retains its focused compact modes.
+Type uses Inter/shared sizes, row rules use line-soft, and actions/text/surfaces
+use the existing Medicine Wheel tokens. NFL identity colors remain on the field
+and play rails; no alternate palette or new theme picker entry was added.
+
+Inspected Light/Dark combined-page and real Clubhouse-controller screenshots at
+320/390/430/768/1100px, including 200% text and Comfortable reading. NFL scores
+appear once, unknown points stay unknown, player names and source descriptions
+remain complete, and player columns align through intrinsic grid tracks. The
+smallest game picker wraps above its section actions, with measured jump offsets
+so headings stay below the sticky controls. All-player expansion supports rapid
+reversal, Reduced Motion and app-motion-off without fixed-height residue.
+
+The 182-check combined review verifies mobile targets/contrast, one five-second
+game poll, bounded weekly-stat reads and retries, no DOM changes for unchanged
+updates, stable old-play reading positions, real PPR refresh, Back restoration
+and teardown. The live-return button uses action tokens and clears the mobile
+navigation with a verified tap target. Corrected an undefined action-background
+reference to the existing action-fill token, including Book’s selected odds, so
+Light-mode action ink retains its contrast. The full Clubhouse review also covers game switching, exact player
+links, filters and video return. Existing field, focused stats and live-refresh
+reviews pass. No production writes are used in these fixture checks.
+
+The compiled app was also inspected read-only against the current live NFL game
+and league player data in both themes, including section jumps and all-player
+expansion. No page errors or horizontal overflow were found. `pnpm check` passes
+2,450 tests, theme/release/type/name checks and the production build.
+
+Evidence is retained in `/workspace/dfl-nfl-1550`. Physical Safari frame rate and
+VoiceOver speech are not measured by the Chromium review. See
+[interface-standard.md](docs/interface-standard.md).
+
 ## 1.549.0 — daily tools follow the approved Home/Clubhouse direction
 
 Book, Trades and More now use opt-in daily reading/action roles: Inter titles,
