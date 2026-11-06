@@ -167,6 +167,9 @@ on:
       - 'tools/capture-nfl-center-finish.py'
       - 'tools/capture-nfl-desk.py'
       - 'tools/capture-nfl-field.py'
+      - 'tools/capture-nfl-game-swipe.py'
+      - 'js/nfl-game-swipe.js'
+      - 'js/nfl-stadium-ui.js'
       - 'supabase/migrations/*gameday_score_history*'
       - 'supabase/tests/gameday_score_history.sql'
       - 'js/matchup-highlights*'
@@ -685,6 +688,7 @@ jobs:
         run: |
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           python tools/capture-nfl-field.py
+          DFL_NFL_SWIPE_DIR=nfl-center-output/swipe python tools/capture-nfl-game-swipe.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -6,6 +6,7 @@ export function nflPlayColors(code){
  return club?`--nfl-team-color:${club.primary};--nfl-team-alt:${club.secondary}`:'';
 }
 const x=percent=>50+percent*5;
+export const stadiumX=percent=>Math.round((86.62+percent*4.2676)*100)/100;
 export function nflFieldMarkup(play,game,{uid,historical=false}={}){
  const field=play?.field,sides=game?.sides||[],offense=field?.start.team||'',colors=nflPlayColors(offense);
  const current=!!field&&!historical&&!!field.end.down;
@@ -28,22 +29,23 @@ export function nflFieldMarkup(play,game,{uid,historical=false}={}){
 }
 
 // A presentation of official endpoints, not player tracking or invented routes.
-export function nflFieldMotion(play){
+export function nflFieldMotion(play,{stadium=false}={}){
  const field=play?.field;
  if(!field?.animate||field.voided)return null;
- const from=x(field.start.x),to=x(field.end.x),distance=Math.abs(to-from);
+ const position=stadium?stadiumX:x,base=stadium?92:75;
+ const from=position(field.start.x),to=position(field.end.x),distance=Math.abs(to-from);
  const air=!field.turnover&&/pass|punt|kick|field goal/i.test(play.typeLabel||'');
  const lift=air?Math.min(22,10+distance*.035):3;
  const duration=Math.round(760+Math.min(260,distance*.65));
- const frames=Array.from({length:17},(_,i)=>{const t=i/16,px=Math.round((from+(to-from)*t)*100)/100,py=Math.round((75-Math.sin(Math.PI*t)*lift)*100)/100;return {offset:t,transform:`translate(${px}px,${py}px)`,opacity:Math.min(1,t*10)}});
+ const frames=Array.from({length:17},(_,i)=>{const t=i/16,px=Math.round((from+(to-from)*t)*100)/100,py=Math.round((base-Math.sin(Math.PI*t)*lift)*100)/100;return {offset:t,transform:`translate(${px}px,${py}px)`,opacity:Math.min(1,t*10)}});
  return {frames,duration};
 }
 export function animateNflField(root,play,animate){
- const motion=nflFieldMotion(play);if(!motion)return;
+ const stadium=!!root.querySelector('[data-field-stadium]'),motion=nflFieldMotion(play,{stadium});if(!motion)return;
  const field=play.field,{frames,duration}=motion,easing='cubic-bezier(.2,.75,.25,1)';
  animate(root.querySelector('.nfl-field-ball'),frames,{duration,easing});
  animate(root.querySelector('.nfl-field-ball-body'),[{transform:'rotate(-12deg)'},{transform:'rotate(8deg)',offset:.6},{transform:'rotate(0deg)'}],{duration,easing});
- animate(root.querySelector('.nfl-field-shadow'),frames.map(f=>({...f,transform:f.transform.replace(/,[^,]*px\)/,',84px)'),opacity:.24-Math.sin(Math.PI*f.offset)*.1})),{duration,easing});
+ animate(root.querySelector('.nfl-field-shadow'),frames.map(f=>({...f,transform:f.transform.replace(/,[^,]*px\)/,stadium?',100px)':',84px)'),opacity:.24-Math.sin(Math.PI*f.offset)*.1})),{duration,easing});
  animate(root.querySelector('.nfl-field-travel'),[{strokeDashoffset:1},{strokeDashoffset:0}],{duration,easing});
  animate(root.querySelector('.nfl-field-land'),[{opacity:0,transform:'scale(.5)'},{opacity:.65,offset:.35},{opacity:0,transform:'scale(1.65)'}],{delay:duration-90,duration:380});
  animate(root.querySelector('.nfl-field-result b'),[{transform:'scale(1)'},{transform:'scale(1.07)',offset:.4},{transform:'scale(1)'}],{delay:duration-90,duration:280});

@@ -22,6 +22,12 @@ describe('official endpoint play animation',()=>{
   const height=p=>Math.min(...nflFieldMotion(p).frames.map(f=>Number(f.transform.match(/,([-\d.]+)px/)[1])));
   expect(height(play(10,70,'Pass Reception'))).toBeLessThan(height(play(10,70,'Rush')));
  });
+ it('projects the same official yard lines onto the stadium without changing the data',()=>{
+  const source=play(0,100),before=structuredClone(source),motion=nflFieldMotion(source,{stadium:true});
+  expect(motion.frames[0].transform).toBe('translate(86.62px,92px)');
+  expect(motion.frames.at(-1).transform).toBe('translate(513.38px,92px)');
+  expect(source).toEqual(before);
+ });
  it('never invents movement for missing, nullified or zero-distance field data',()=>{
   expect(nflFieldMotion(null)).toBeNull();
   expect(nflFieldMotion(play(50,50))).toBeNull();

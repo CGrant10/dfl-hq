@@ -1,3 +1,35 @@
+## 1.552.0 — NFL game center and game swiping
+
+The NFL desk now uses a compact logo/score strip, a perspective field above the
+score, and full-width separate Plays/Fantasy tabs. The selected play has a real
+NFL logo marker, official yard-line endpoints, a finite progress/flight/landing
+animation and Replay. Down/spot labels sit within the field at normal text sizes;
+enlarged text moves them into flow. Empty coordinates never invent a position.
+
+Shared Inter roles and Medicine Wheel Light/Dark tokens remain the interface
+system. Team end zones, score washes, identity rails and player portraits retain
+actual NFL identity. The dark field and its white paint are sporting data art,
+not retired red/white/blue interface colors. The down label has an explicit dark
+surface for contrast. Controls use supplied Phosphor icons through currentColor
+masks, and the existing native 16px game picker remains available.
+
+Reviewed actual browser screenshots in Light/Dark at 320/390/430/768px and 200%
+Comfortable text. The desk passes 123 checks; the new real-touch game review
+passes 60, including canceled/short/edge swipes, quick reversal, vertical scroll,
+preview without game-data requests, live refresh during a drag, late-response
+cancellation, Fantasy selection/reading return, targets/contrast, Reduced Motion,
+app motion off and teardown. Existing field, full Clubhouse and live refresh
+reviews also pass. The network/scout review now checks the compact NFL strip
+instead of its removed roster-preview rows; all 114 checks pass. pnpm check passes 2,455 tests and the release/theme/type/name
+checks/build; final markup and styles also received a fresh build and focused
+checks. The compiled app was inspected read-only with current NFL/league data in
+both themes, with no page errors or horizontal overflow.
+
+Source and rendered comparisons are recorded in design-qa.md. Evidence:
+`/workspace/dfl-nfl-1552`. This adapts Sleeper's verified public game-center
+reference; exact parity with its latest native app is unverified. Physical iOS
+frame pacing and VoiceOver speech remain unmeasured. No production league writes.
+
 ## 1.551.0 — separate NFL views and refined play animation
 
 Play-by-play and Fantasy are separate again, using the current desk typography,
