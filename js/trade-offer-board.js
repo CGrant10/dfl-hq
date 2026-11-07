@@ -15,9 +15,14 @@ const metric=(title,value)=>`<div><dt>${title}</dt><dd>${esc(value)}</dd></div>`
 function figures(deal){const p=tradePerspective(deal.result),a=tradeAssessment(p);return `<dl class="tob-metrics">${metric(deal.parties.length>2?'Group balance':'Value balance',Math.round(deal.result.fairness)+'%')}${metric('Lineup · ROS/wk',signed(p.weeklyDeltaA))}${metric('Depth · ROS/wk',signed(p.depthDeltaA))}</dl>`}
 function risks(deal,pool){const p=tradePerspective(deal.result),a=tradeAssessment(p),drops=p.requiredDropsA||[];return `${drops.length?`<p class="tob-risk">Drop: ${esc(drops.map(id=>pool.get(String(id))?.name||id).join(', '))}</p>`:''}${a.flags.length?`<p class="tob-risk">${esc(a.flags.join(' · '))}</p>`:''}`}
 function players(ids,pool,{deal,owner,editable=false,locked=[]}={}){
- return `<ul class="tob-players">${ids.map(id=>{const p=pool.get(String(id));const to=deal?.parties.length>2?deal.parties.find(t=>String(t.id)===String(deal.destinations[id])):null;return `<li>${p?playerPortrait(p):''}<div><strong>${esc(p?.name||id)}</strong><small>${esc([p?.position,p?.nflTeam].filter(Boolean).join(' · '))}${to?` · → ${esc(name(to))}`:''}</small></div>${editable?`<button type="button" data-tob-swap="${esc(id)}" data-owner="${owner}" ${locked.map(String).includes(String(id))?'disabled':''} aria-label="Replace ${esc(p?.name||id)}">Swap</button>`:''}</li>`}).join('')}</ul>`;
+ return `<ul class="tob-players">${ids.map(id=>{
+  const p=pool.get(String(id)),to=deal?.parties.length>2?deal.parties.find(t=>String(t.id)===String(deal.destinations[id])):null;
+  const context=`<small>${esc([p?.position,p?.nflTeam].filter(Boolean).join(' · '))}${to?` · → ${esc(name(to))}`:''}</small>`;
+  return editable?`<li class="tob-edit-player"><button type="button" class="tob-player-name" data-tob-swap="${esc(id)}" data-owner="${owner}" ${locked.map(String).includes(String(id))?'disabled':''} aria-label="Replace ${esc(p?.name||id)}">${p?playerPortrait(p):''}<span class="tob-edit-hint" aria-hidden="true">Swap</span><span class="tob-name-text">${esc(p?.name||id)}</span>${context}</button></li>`:`<li>${p?playerPortrait(p):''}<div class="tob-player-copy"><strong>${esc(p?.name||id)}</strong>${context}</div></li>`;
+ }).join('')}</ul>`;
 }
-function packages(deal,pool,editable=false,locked=[]){return `<div class="tob-packages">${deal.parties.map((t,i)=>`<section><h3>${esc(i===0?'You send':deal.parties.length===2?'You get':name(t)+' sends')} <small>${deal.sends[i].length}</small></h3>${players(deal.sends[i],pool,{deal,owner:i,editable,locked})}</section>`).join('')}</div>`}
+
+function packages(deal,pool,editable=false,locked=[]){return `<div class="tob-packages">${deal.parties.map((t,i)=>`<section><header class="tob-package-head"><h3>${esc(i===0?'You send':deal.parties.length===2?'You get':name(t)+' sends')} <small>${deal.sends[i].length}</small></h3>${deal.parties.length===2?`<small>${esc(name(t))}</small>`:''}</header>${players(deal.sends[i],pool,{deal,owner:i,editable,locked})}</section>`).join('')}</div>`}
 
 export function mountTradeOfferBoard(root,{getData,getMine,getOffer,getRestrictions=()=>({}),onUse}={}){
  let stopped=false,choices=[],dialog=null,sheet=null,draft=null,origin=null,stopPicker=()=>{},ownerId=String(getMine()?.id),kind='',lastSlot=null,lastTray='';
