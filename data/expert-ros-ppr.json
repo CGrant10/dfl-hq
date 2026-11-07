@@ -7,7 +7,7 @@
   "season": 2026,
   "experts": 8,
   "updatedAt": 1794023503000,
-  "fetchedAt": 1794043078560,
+  "fetchedAt": 1794080411161,
   "players": [
     {
       "sourceId": 22968,
@@ -2290,7 +2290,7 @@
       "sourceId": 24360,
       "name": "Kendre Miller",
       "position": "RB",
-      "team": "NO",
+      "team": "FA",
       "rank": 229,
       "positionRank": 57,
       "minRank": 199,
