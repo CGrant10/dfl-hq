@@ -1,3 +1,50 @@
+## 1.556.0 — player-card hierarchy and stable game reading
+
+The player sheet uses the same compact Inter hierarchy, Medicine Wheel surfaces,
+quiet rules and flat controls as the recent Trade/Clubhouse work. Player name,
+portrait, roster identity, selected game's points/status and genuine season PPR
+average stay prominent. The neutral Healthy/No tag/Sleeper explanation row is
+omitted when it adds no actual injury information; unknown availability is never
+turned into a healthy claim. Actual tags/details remain visible. Game groups keep
+their expandable stats, now in aligned two-column grids with smaller labels.
+Deep tools remain folded. No player data, sharing action or game selector is removed.
+
+Recent games use a short, sliding underline while retaining native buttons,
+keyboard selection, the chart scrubber and normal vertical scrolling. Selection
+geometry is included in chart markup so live patches retain the selected game.
+Card Motion off, global Motion off and Reduced Motion suppress this transition.
+Zero, negative and missing scores keep their distinct meaning.
+
+Live score updates reconcile the existing thermal number and value node rather
+than replacing them. Only a numeric change in the same game receives a short
+opacity settle. Selecting a different game cancels that settle, and current-game
+updates cannot overwrite an older game being read. Refreshing data reconciles the
+portrait, controls and open tools; a retained watch button keeps its state and
+handler without another watchlist read. Expanded stat groups survive same-game
+refreshes and reset when selecting a different game. Cold/warm entry, source
+portrait travel, default scroll reset and connected closing keep their existing
+controllers. No new data fetch, poller or provider is added.
+
+Reviewed screenshots: /workspace/dfl-player-1556/reading-final/ (Light/Dark,
+320/390, normal and 200% Comfortable text); finish-final/ (320/390/600, delayed
+average/image, native tools and focused return); local/ (compiled app with
+current roster, player, weekly/season stats, expanded stats and tools in both
+themes). The current-data review blocks provider writes and mocks only the
+watchlist read. Colors and selected/focus states use shared theme tokens; NFL
+portrait identity and hot/cold semantics retain their own meaningful colors.
+
+Validation: pnpm check passes 2,471 tests and release/theme/type/name/build checks.
+The new reading suite passes 67 checks for stable number/photo/control nodes,
+corrections/unknowns, historical-game reading, open groups on fresh data arrival,
+optional data, selected-game geometry, scroll reset, large text and motion
+preferences. The finish suite passes 43 checks; existing motion and sheet gesture
+reviews pass, including delayed-source images, interruption, keyboard viewport,
+body scroll, focus and hit testing. The body-scroll gesture fixture now opens the
+full stats first so the more compact default content has meaningful overflow;
+the actual scrolling and dismissal assertions are unchanged. Current-data compiled
+screens have no page errors or horizontal overflow. Physical Safari frame pacing
+and VoiceOver speech remain unmeasured. The new reading suite also runs in CI.
+
 ## 1.555.0 — compact offer board, quick edits and direct comparison
 
 Offer results use open surfaces, quiet rules, compact Inter names and small

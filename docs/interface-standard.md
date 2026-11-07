@@ -321,3 +321,18 @@ uses the same evaluator, position restrictions, anchor locks, availability and
 routing rules as the analyzer. Keep other players/destinations intact; Reset only
 resets the open draft. Final review uses the existing analyzer and fresh-send/share
 checks. Use the shared sheet lifecycle, Reduced Motion and clean route teardown.
+
+## Player-card reading — 1.556.0
+
+Use the shared Inter scale, flat Medicine Wheel surfaces and quiet section rules.
+Keep the portrait, full name, roster, selected game's score/status and season PPR
+average distinct. Omit empty availability explanations without inventing a health
+status. Keep actual injury details visible and deeper stats/tools expandable.
+Preserve the portrait-first entrance geometry and default scroll/game on reopening.
+
+Score refreshes keep the thermal value node, images, controls and reading position
+mounted. Animate only a changed numeric value in the same game. A historical game
+must remain selected during current-game updates; preserve open stat groups on
+same-game data arrival. Keep watch state/handlers across reconciliation. A short
+week underline follows real selection and respects all motion preferences. No
+presentation feature may add a data poller or estimate missing points.
