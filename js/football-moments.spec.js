@@ -19,7 +19,7 @@ it('ignores baselines, stale/future/unverified plays, defensive players and othe
  for(const patch of [{eligible:false},{at:now-180001},{at:now+1},{kind:null},{players:[{...wr,position:'DEF'}]}]){const a=args();Object.assign(a.feeds[0].plays[0],patch);expect(footballMomentRows(a)).toEqual([])}
  for(const patch of [{week:6},{season:2025},{fetched_at:'bad'},{fetched_at:new Date(now-150001).toISOString()}]){const a=args();Object.assign(a.feeds[0],patch);expect(footballMomentRows(a)).toEqual([])}
 });
-it('does not save bench players, unpaired matchups or ambiguous rosters',()=>{
+it('does not save unrostered players, unpaired matchups or ambiguous rosters',()=>{
  const a=args();a.rows[0].starters=['7'];expect(footballMomentRows(a)).toEqual([]);expect(footballMomentRows({...args(),rows:args().rows.slice(0,1)})).toEqual([]);expect(footballMomentRows({...args(),rows:[args().rows[0],args().rows[0]]})).toEqual([]);
  expect(footballMomentKey(1,'not-a-game','123')).toBeNull();
 });

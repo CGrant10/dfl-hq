@@ -8,8 +8,8 @@ export function savedMoments(rows,model,players={}){
   if(['touchdown','big-play'].includes(r.kind)){
    const play=r.data?.play,involved=r.data?.players;
    if(!play||play.kind!==r.kind||r.event_key!==footballMomentKey(r.roster_id,play.gameId,play.id)||!Number.isFinite(play.at)||!Number.isFinite(play.yards)||play.yards<0||typeof play.text!=='string'||!Array.isArray(involved)||!involved.length||involved.some(p=>!/^\d+$/.test(String(p.id))||!['QB','RB','WR','TE'].includes(p.position)||!['passer','receiver','rusher','scorer'].includes(p.role)))return[];
-   const people=involved.map(p=>({...p,name:players[p.id]?.n||p.name})),label=footballMomentLabel(play,people);
-   return [{key:String(r.id),eventKey:r.event_key,kind:r.kind,text:`${people.map(p=>p.name).join(' + ')} · ${label} · ${side.name}`,at:play.at,observedAt:at,matchupId:String(r.matchup_id),roster:String(r.roster_id),title:label,recap:{play:{...play,label},players:people},team:{team_name:side.name,identity:side.identity},player:people.find(p=>p.role!=='passer')||people[0]}];
+   const people=involved.map(p=>({...p,name:players[p.id]?.n||p.name})),label=(people.every(p=>p.bench)?'BENCH · ':'')+footballMomentLabel(play,people);
+   return [{key:String(r.id),eventKey:r.event_key,kind:r.kind,text:`${people.map(p=>p.name+(p.bench?' (bench)':'')).join(' + ')} · ${label} · ${side.name}`,at:play.at,observedAt:at,matchupId:String(r.matchup_id),roster:String(r.roster_id),title:label,recap:{play:{...play,label},players:people},team:{team_name:side.name,identity:side.identity},player:people.find(p=>p.role!=='passer')||people[0]}];
   }
   if(r.kind==='lead'){const scores=game.sides.map(t=>number(r.data?.scores?.[t.roster]));if(scores.length!==2||scores.some(s=>s==null)||scores[game.sides.indexOf(side)]<=scores[1-game.sides.indexOf(side)])return[];text=`${side.name} moves ahead · ${scores.map(s=>s.toFixed(2)).join(' – ')}`}
   else if(r.kind==='big'&&number(r.data?.points)>=20)text=`${name}: ${number(r.data.points).toFixed(2)} points · ${side.name}`;
@@ -26,8 +26,8 @@ import {footballMomentKey,footballMomentLabel} from './football-moments.js';
 
 export function momentSummary(moment){
  const facts=moment.recap,play=facts?.play,passing=facts?.players?.length>0&&facts.players.every(p=>p.role==='passer'),known=n=>typeof n==='number'&&Number.isFinite(n);
- const label=play?(moment.kind==='touchdown'?(passing?'TD pass':'Touchdown'):'Big play'):moment.kind==='surge'?'Points added':moment.kind==='lead'?'Takes the lead':'Big day';
+ const label=play?(facts.players?.every(p=>p.bench)?'Bench · ':'')+(moment.kind==='touchdown'?(passing?'TD pass':'Touchdown'):'Big play'):moment.kind==='surge'?'Points added':moment.kind==='lead'?'Takes the lead':'Big day';
  const value=play&&known(play.yards)?`${play.yards} yd`:moment.kind==='surge'&&known(facts?.delta)?`+${facts.delta.toFixed(2)}`:known(facts?.points)?facts.points.toFixed(2):'';
- const name=moment.player?.name||moment.team?.team_name||moment.title||label,owner=moment.team?.team_name;
+ const name=(moment.player?.name?moment.player.name+(moment.player.bench?' (bench)':''):null)||moment.team?.team_name||moment.title||label,owner=moment.team?.team_name;
  return {name,label,value,unit:play?'':value?'pts':'',detail:owner&&owner!==name?owner:moment.kind==='lead'&&facts?.sides?.length===2?facts.sides.map(s=>known(s.points)?s.points.toFixed(2):'—').join(' – '):''};
 }

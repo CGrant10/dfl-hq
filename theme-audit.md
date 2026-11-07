@@ -2383,3 +2383,14 @@ Checks cover Compact/Comfortable modes, 100/125/200% text, targets, keyboard/tab
 selection, gestures, exact scores and Home return. Actual Home/Clubhouse checked
 read-only in both themes. Physical Safari behavior and screen-reader speech are
 not measured. Evidence: [matchup-player-polish-1525.md](docs/matchup-player-polish-1525.md).
+
+
+### 1.557.0 — rostered player alerts
+
+Reviewed actual Light/Dark 390px bench big-play alert screenshots from
+`tools/capture-live-football.py`; 320px bounds checked too. The existing themed
+player toast, semantic touchdown/big-play accents, readable bench context and
+44px dismiss control are retained. No new colors or theme options. The 85-check
+mobile suite passes, including static Reduced Motion, native-dialog visibility,
+fresh-event deduplication and cleanup. Physical phone push arrival and iOS
+frame pacing were not measured.
