@@ -1,5 +1,5 @@
 import {nflCenterGames} from './nfl-game-center-model.js';
-import {footballTeam} from './live-football-model.js';
+import {footballTeam,footballPlays} from './live-football-model.js';
 import {team,teamLogoUrl} from './nfl-teams.js';
 import {patchGameDay} from './game-day-dom.js';
 import {esc} from './ui.js';
@@ -12,6 +12,8 @@ export function replayGameEntries(clips,context){
  for(const clip of clips){if(seen.has(clip.game_id)||!/^\d{1,24}$/.test(clip.game_id))continue;seen.add(clip.game_id);const codes=[...new Set(String(clip.game_label||'').split(/[^A-Za-z]+/).map(footballTeam).filter(code=>team(code)))];games.push({id:clip.game_id,label:clip.game_label,status:'Replay',state:'replay',sides:codes.slice(0,2).map(code=>({code,score:null}))})}
  return games;
 }
+// Retain only the verified header and highest play id, not a second box score.
+export function replayGameObservation(summary){let id='';for(const play of [...footballPlays(summary),...(summary?.scoringPlays||[])]){const next=String(play.id||'');if(/^\d{1,24}$/.test(next)&&(!id||BigInt(next)>BigInt(id)))id=next}return {header:summary?.header,drives:{current:{plays:id?[{id}]:[]}}}}
 export function replayGameMarkup(games,selected){const index=games.findIndex(g=>g.id===selected);return games.map((game,i)=>`<button type="button" class="replay-game" id="replay-game-${esc(game.id)}" data-replay-game="${esc(game.id)}" data-replay-neighbor="${i<index?'before':i>index?'after':'current'}" aria-pressed="${game.id===selected}" tabindex="${game.id===selected?0:-1}" aria-label="${esc(game.label)} · ${esc(game.status)}"><span class="replay-game-sides">${game.sides.length?game.sides.map(side=>`<span><img src="${esc(teamLogoUrl(side.code))}" alt="" width="20" height="20" decoding="async" onerror="this.hidden=true"><strong>${esc(side.code)}</strong><b>${side.score??'—'}</b></span>`).join(''):`<strong>${esc(game.label)}</strong>`}</span><small>${esc(game.status)}</small></button>`).join('')}
 
 // Native snap scrolling follows a finger without moving or cloning the video.

@@ -1,6 +1,6 @@
 import {replayWindowMarkup} from './replay-window.js';
 import {replayIcon} from './replay-icons.js';
-import {replayGameEntries,mountReplayGames} from './replay-games.js';
+import {replayGameEntries,replayGameObservation,mountReplayGames} from './replay-games.js';
 import {applyViewingMatchup} from './matchup-view-context.js';
 import {dockReplay,isReplayDocked,restoreReplayDock,detachReplayDock,closeReplayDock} from './replay-dock.js';
 import {readJourneyChoice,writeJourneyChoice} from './journey-memory.js';
@@ -12,7 +12,7 @@ import {loadHomeHighlights} from './home-highlight-data.js';
 import {activeHighlightClips,highlightSession,highlightThumbnail} from './home-highlight-model.js';
 import {homeHighlightMarkup,reelQueueMarkup,reelPlayersMarkup,highlightPosterUrl,reelGameOptions,replayScoreMarkup} from './home-highlight-ui.js';
 import {mountNflGameCenter} from './nfl-game-center.js';
-import {nflCenterGames} from './nfl-game-center-model.js';
+import {nflCenterGames,nflObservedGame} from './nfl-game-center-model.js';
 import {highlightPlayerOptions,browseHighlightClips} from './highlight-browse-model.js';
 import {patchGameDay} from './game-day-dom.js';
 import {mountLiveScoreRefresh} from './live-score-refresh.js';
@@ -27,7 +27,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
   root.innerHTML='<section class="home-highlight-reel home-reel-feature"><header><h2>Weekend reel</h2></header><div class="home-reel-feature-skeleton" aria-hidden="true"><span></span><span></span><span></span></div></section>';
  }
  let stopped=false,nearby=typeof IntersectionObserver==='undefined',clips=[],selected='',dialog=null,opener=null,expiryTimer=null,stopViewport=()=>{},request=0,player='',search='',playerCache={key:'',options:[]};
- let returnPoint=null,sheetDrag=null,clipReturn=null;
+ let returnPoint=null,sheetDrag=null,clipReturn=null;const replayObservations=new Map();
  let game='',kind='',gameStrip=null,pageSearch='',gameCenter=null,browserMode='clips',layout=null,media=null,modeRequest=0,replayContext=null,centerGame='',browseScroll=0;
  const posterError=event=>{
   const image=event.target;if(image.tagName!=='IMG'||image.hasAttribute('data-poster-source')||image.dataset.posterFallback)return;
@@ -47,6 +47,8 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
   exitUi(dialog,()=>{stopVideo();dialog.close()},{immediate:!animated||!motion(),surface:screen,duration:230,transform:frameTransform});
  };
  const visibleClips=()=>activeHighlightClips(clips,now());
+ const replayEntries=()=>{const context=getContext();return replayGameEntries(visibleClips(),context).map(g=>{const observed=replayObservations.get(g.id);return observed?nflObservedGame(g.state==='replay'?{...g,state:'pre'}:g,observed,context?.season):g})};
+ const replayCaption=(clip,entries)=>[clip.game_label,entries.find(e=>e.id===clip.game_id)?.status==='Replay'?'':entries.find(e=>e.id===clip.game_id)?.status].filter(Boolean).join(' · ');
  const playerOptions=()=>{
   const rows=visibleClips(),roster=getPlayers()||[],key=JSON.stringify([rows.map(c=>[c.id,c.headline,c.game_label]),roster.map(p=>[p.id,p.name,p.nflTeam,p.position])]);
   if(key!==playerCache.key)playerCache={key,options:highlightPlayerOptions(rows,roster)};
@@ -58,7 +60,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
   if(!dialog?.open||isReplayDocked(media))return;
   const all=visibleClips(),valid=browseRows();let clip=all.find(clip=>clip.id===selected);
   if(!clip&&valid.length){selected=valid[0].id;clip=valid[0];replace=true}
-  const entries=replayGameEntries(all,getContext());gameStrip?.update(entries,game||clip?.game_id||'');
+  const entries=replayEntries();gameStrip?.update(entries,game||clip?.game_id||'');
   for(const button of dialog.querySelectorAll('[data-reel-kind]'))button.setAttribute('aria-pressed',String(button.dataset.reelKind===kind));
   if(!clip){
    if(!all.length){close();return}
@@ -68,7 +70,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
   }
   const index=valid.findIndex(row=>row.id===selected);dialog.querySelector('[data-reel-source]').hidden=false;
   dialog.querySelector('[data-reel-headline]').textContent=clip.headline;
-  dialog.querySelector('[data-reel-context]').textContent=[clip.game_label,entries.find(e=>e.id===clip.game_id)?.status==='Replay'?'':entries.find(e=>e.id===clip.game_id)?.status].filter(Boolean).join(' · ');
+  dialog.querySelector('[data-reel-context]').textContent=replayCaption(clip,entries);
   layout?.refresh();if(gameCenter&&browserMode!=='clips')gameCenter.updateContext();
   const context=getContext(),nflGame=context?.nflPayload?nflCenterGames(context.nflPayload,context.season,context.week).find(g=>g.id===clip.game_id):null;
   patchGameDay(dialog.querySelector('[data-reel-game-score]'),replayScoreMarkup(nflGame,clip.game_label));
@@ -111,7 +113,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
   selected=id;drawPlayer(true);if(align)scrollQueue();
  };
  const setBrowserMode=async mode=>{
-  browserMode=mode;const ticket=++modeRequest;dialog.style.setProperty('--reel-mode',String({clips:0,plays:1,stats:2}[mode]));
+  browserMode=mode;dialog.dataset.replayMode=mode;const ticket=++modeRequest;dialog.style.setProperty('--reel-mode',String({clips:0,plays:1,stats:2}[mode]));
   for(const button of dialog.querySelectorAll('[data-reel-mode]'))button.setAttribute('aria-pressed',String(button.dataset.reelMode===mode));
   dialog.querySelector('.reel-grid-heading').hidden=mode!=='clips';dialog.querySelector('[data-reel-clip-browser]').hidden=mode!=='clips';dialog.querySelector('[data-reel-game-browser]').hidden=mode==='clips';
   if(mode==='clips'){gameCenter?.pause();drawPlayer();return}
@@ -124,7 +126,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
     replayContext=edition;gameCenter?.stop();gameCenter=null;centerGame=target;
    }
    if(!gameCenter){
-    host.replaceChildren();gameCenter=mountNflGameCenter(host,{embedded:true,desk:true,restoreChoice:false,initialMode:mode==='stats'?'fantasy':'plays',getContext:()=>({...replayContext,playerDirectory:getContext()?.playerDirectory||replayContext.playerDirectory,players:getPlayers().map(p=>Number(replayContext.week)===Number(getContext()?.week)?p:{...p,points:null,owner:'',isMine:false})}),active:()=>current()&&dialog.open&&browserMode!=='clips',getClips:visibleClips,initialGame:centerGame,onGameChange:id=>{centerGame=id;game=id;kind='';player='';search='';clipReturn=null;dialog.querySelector('[data-reel-search]').value='';selected=visibleClips().find(c=>c.game_id===id)?.id||'';drawPlayer(true)},onClip:id=>{clipReturn={id,mode:browserMode};player='';kind='';search='';dialog.querySelector('[data-reel-search]').value='';choose(id);layout?.watch();void setBrowserMode('clips')}});
+    host.replaceChildren();gameCenter=mountNflGameCenter(host,{embedded:true,desk:true,restoreChoice:false,onSummary:(g,result)=>{replayObservations.set(g.id,replayGameObservation(result.summary));const entries=replayEntries(),clip=visibleClips().find(c=>c.id===selected);gameStrip?.update(entries,game||clip?.game_id||'');if(clip)dialog.querySelector('[data-reel-context]').textContent=replayCaption(clip,entries)},initialMode:mode==='stats'?'fantasy':'plays',getContext:()=>({...replayContext,playerDirectory:getContext()?.playerDirectory||replayContext.playerDirectory,players:getPlayers().map(p=>Number(replayContext.week)===Number(getContext()?.week)?p:{...p,points:null,owner:'',isMine:false})}),active:()=>current()&&dialog.open&&browserMode!=='clips',getClips:visibleClips,initialGame:centerGame,onGameChange:id=>{centerGame=id;game=id;kind='';player='';search='';clipReturn=null;dialog.querySelector('[data-reel-search]').value='';selected=visibleClips().find(c=>c.game_id===id)?.id||'';drawPlayer(true)},onClip:id=>{clipReturn={id,mode:browserMode};player='';kind='';search='';dialog.querySelector('[data-reel-search]').value='';choose(id);layout?.watch();void setBrowserMode('clips')}});
    }else{gameCenter.setMode(mode==='stats'?'fantasy':'plays');gameCenter.resume()}
    if(clipReturn?.mode===mode){const clip=clipReturn.id;clipReturn=null;drawPlayer();requestAnimationFrame(()=>{if(current()&&dialog.open&&browserMode===mode)dialog.querySelector(`[data-nfl-center-clip="${CSS.escape(clip)}"]`)?.focus({preventScroll:true})});}
   }catch{if(ticket===modeRequest&&current()){host.innerHTML='<p class="nfl-center-empty">Game unavailable. <button type="button" class="linkbtn" data-reel-game-retry>Try again</button></p>'}}

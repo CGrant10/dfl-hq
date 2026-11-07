@@ -2477,3 +2477,17 @@ No retired red/white/blue accent additions. `pnpm themes` and 2,498 tests pass;
 Physical Safari frame pacing and screen-reader speech remain unmeasured.
 See `design-qa.md` for source/implementation normalization and intentional
 functional differences from the visual mock.
+
+### 1.561.1 — Enlarged-text and game-center integration
+
+Reviewed the 200% replay captures at 320/390px in both themes. Enlarged mode
+labels no longer run into each other; game codes/scores get room, and Plays/
+Fantasy have a clear workspace. The same base theme tokens and red selection
+rule remain in use. The black media empty state uses readable light text in
+both themes. Closing/Back targets remain reachable. Normal text sizes keep
+the selected Broadcast Window arrangement. Verified final-score observations
+update the rail without changing status meanings or provider polling.
+Evidence: `/workspace/dfl-replay-1561/clubhouse-release/`.
+
+Final patch validation: all 349 Clubhouse and 72 focused replay checks pass;
+`pnpm check` passes 2,500 tests including theme checks.
