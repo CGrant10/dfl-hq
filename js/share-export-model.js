@@ -11,6 +11,7 @@ export function footballMomentShareSpec(moment,{season,week}={}){
   players:sharePlayers(moment.recap.players),footer:'DFL · Talk your shit. Keep the receipt.'};
 }
 export function matchupShareSpec(data){return {
+ nightGame:{footer:'DFL / FINAL RECEIPT',title:data.winner?'THAT’S\nA\nWIN.':'ALL\nSQUARE.',label:data.winner?.name||'Final',primary:{label:data.winner?.name||'Final score',value:n(data.sides.find(t=>t.name===data.winner?.name)?.score??data.sides[0]?.score)},banter:data.winner?'Talk your shit.':'Nobody gets the last word.',margin:data.winner?`Won by ${n(data.margin)}`:'Final · Tied'},
  kind:'Matchup final',context:`${data.season} / WEEK ${String(data.week).padStart(2,'0')}`,
  headline:data.winner?'BRAGGING\nRIGHTS.':'ALL\nSQUARE.',photoHeadline:data.winner?.name||'All square.',photoCaption:data.winner?`Wins by ${n(data.margin)}`:'Final · Tied',
  summary:data.winner?`${data.winner.name} wins by ${n(data.margin)}`:'Final · Tied',status:'Final',

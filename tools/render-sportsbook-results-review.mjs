@@ -13,6 +13,7 @@ import {ticketData,ticketCanvas} from '/js/sportsbook-ticket.js';
 import {ticketShareSpec} from '/js/share-export-model.js';
 import {shareImageDescription} from '/js/share-layout-model.js';
 import {editorialShareCanvas} from '/js/share-editorial.js';
+import {prepareNightGame} from '/js/share-night-game.js';
 import {shareSealReady} from '/js/share.js';
 import {mountSportsbookLive} from '/js/sportsbook-live.js';
 import {esc} from '/js/ui.js';
@@ -44,7 +45,7 @@ const updateAccount=()=>{view.querySelector('[data-review-tickets]').innerHTML=b
 ${source.slice(controllerStart,controllerEnd).replace("import('../sportsbook-fantasy-data.js')","import('/js/sportsbook-fantasy-data.js')")}
 window.reviewStop=mountSportsbookLive(view,{client:db(),memberId:1,outcomeMap,active,onUpdate:()=>{},onError:e=>{window.reviewRefreshError=e.stack},onRefresh:force=>refreshFantasy({force}),interval:30000});
 window.reviewRefresh=()=>refreshFantasy({force:true});window.reviewTheme=pinMode;
-window.reviewShare=async(id,style='clean')=>{await shareSealReady;const t=ticketData({bet:bets.find(b=>b.id===id),legs:entryLegs(bets.find(b=>b.id===id),marketMap,outcomeMap),member:{display_name:'DFL Member'},season:2026}),spec=ticketShareSpec(t);return {data:editorialShareCanvas(spec,{style}).toDataURL('image/png'),text:shareImageDescription(spec),ticket:t}};
+window.reviewShare=async(id,style='clean')=>{await Promise.all([shareSealReady,style==='photo'?prepareNightGame():null]);const t=ticketData({bet:bets.find(b=>b.id===id),legs:entryLegs(bets.find(b=>b.id===id),marketMap,outcomeMap),member:{display_name:'DFL Member'},season:2026}),spec=ticketShareSpec(t);return {data:editorialShareCanvas(spec,{style}).toDataURL('image/png'),text:shareImageDescription(spec),ticket:t}};
 window.reviewOfficial=()=>{marketMap.get('1').status='settled';outcomeMap.get('2').is_winner=true;outcomeMap.get('3').is_winner=false;return refreshFantasy({force:true})};
 window.reviewReady=true;
 `;
