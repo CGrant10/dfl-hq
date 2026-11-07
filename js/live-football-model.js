@@ -70,10 +70,11 @@ export function footballPlay(play,game,players=new Map()){
  return {id:playId,gameId:game.id,at:Number.isFinite(at)?at:null,sequence:Number(play.sequenceNumber)||Number(playId),text:clean(play.text),yards,period:Number(play.period?.number)||null,clock:clean(play.clock?.displayValue),
   kind:eligible&&roles.size?(td?'touchdown':'big-play'):null,players:[...roles.values()]};
 }
-export function liveStarterEvents(games=[],model,{gameId=null,ownOnly=false,now=Date.now()}={}){
+export function liveStarterEvents(games=[],model,{gameId=null,ownOnly=false,includeOwnRoster=false,now=Date.now()}={}){
  if(!model||model.completed)return [];
  const sides=(model.games||[]).filter(game=>!gameId||String(game.id)===String(gameId)).flatMap(game=>game.sides).filter(side=>!ownOnly||String(side.memberId)===String(model.memberId));
- const starters=new Map(sides.flatMap(side=>(side.lineup||[]).filter(p=>!p.empty&&['QB','RB','WR','TE'].includes(p.position)).map(p=>[String(p.id),{...p,owner:side.name,roster:String(side.roster)}])));
+ if(includeOwnRoster&&model.memberId!=null)for(const side of (model.games||[]).flatMap(game=>game.sides).filter(side=>String(side.memberId)===String(model.memberId)))if(!sides.includes(side))sides.push(side);
+ const starters=new Map(sides.flatMap(side=>[...(side.lineup||[]),...(includeOwnRoster&&model.memberId!=null&&String(side.memberId)===String(model.memberId)?(side.bench||[]).map(p=>({...p,bench:true})):[])].filter(p=>!p.empty&&['QB','RB','WR','TE'].includes(p.position)).map(p=>[String(p.id),{...p,owner:side.name,roster:String(side.roster)}])));
  return games.flatMap(feed=>{
   if(Number(feed.season)!==Number(model.season)||Number(feed.week)!==Number(model.week))return [];
   const fetched=Date.parse(feed.fetched_at);if(!Number.isFinite(fetched)||now-fetched<0||now-fetched>LIVE_FEED_AGE)return [];

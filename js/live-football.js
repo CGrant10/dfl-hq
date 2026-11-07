@@ -40,7 +40,7 @@ export function mountLiveFootball(root,{getModel,getHost,getGameId=()=>null,getM
   if(!event.players.some(p=>p.isMine))return;
   toastOwner?.();clearToast();toastOwner=clearToast;
   const owned=event.players.filter(p=>p.isMine),player=owned[0],passing=owned.every(p=>p.role==='passer'),label=event.kind==='touchdown'?(passing?'TD PASS':'TOUCHDOWN'):`${event.yards}-YD ${passing?'PASS':owned.some(p=>p.role==='receiver')?'RECEPTION':'RUN'}`;
-  const action=passing?'pass':owned.some(p=>p.role==='receiver')?'catch':owned.some(p=>p.role==='rusher')?'run':'play',detail=[event.kind==='touchdown'&&Number.isFinite(event.yards)?`${event.yards} yd ${action}`:null,event.period?event.period>4?'OT':`Q${event.period}`:null,event.clock].filter(Boolean).join(' · ');
+  const action=passing?'pass':owned.some(p=>p.role==='receiver')?'catch':owned.some(p=>p.role==='rusher')?'run':'play',detail=[owned.every(p=>p.bench)?'Bench':owned.some(p=>p.bench)?`Bench: ${owned.filter(p=>p.bench).map(p=>p.name).join(' + ')}`:null,event.kind==='touchdown'&&Number.isFinite(event.yards)?`${event.yards} yd ${action}`:null,event.period?event.period>4?'OT':`Q${event.period}`:null,event.clock].filter(Boolean).join(' · ');
   toast=document.createElement('section');toast.className='nfl-play-toast';toast.dataset.kind=event.kind;toast.setAttribute('aria-label','New live player moment');toast.dataset.motion=motion()?'on':'off';
   const club=team(player.nflTeam);if(club)toast.style.setProperty('--nfl-team',club.primary);
   toast.innerHTML=`<button type="button" class="nfl-toast-player" data-player-card="${esc(player.id)}" aria-label="View ${esc(player.name)} player card">${playerPortrait(player)}<span><strong>${esc(label)}</strong><b>${esc(event.players.filter(p=>p.isMine).map(p=>p.name).join(' + '))}</b></span></button><button type="button" class="linkbtn nfl-toast-close" aria-label="Dismiss player moment">×</button><p>${esc(detail)}</p>`;
@@ -71,7 +71,7 @@ export function mountLiveFootball(root,{getModel,getHost,getGameId=()=>null,getM
    if(!exists){const badge=document.createElement('span');badge.dataset.redZoneBadge='';badge.className='nfl-red-badge';badge.textContent='RED ZONE';badge.setAttribute('aria-label','NFL offense in the red zone');row.querySelector('.gameday-player-score')?.append(badge)}
   }
   let announcement=root.querySelector('[data-football-announcement]');if(!announcement){announcement=document.createElement('span');announcement.className='sr-only';announcement.dataset.footballAnnouncement='';announcement.setAttribute('role','status');root.append(announcement)}
-  const events=liveStarterEvents(feeds,model,{gameId:getGameId(),ownOnly});
+  const events=liveStarterEvents(feeds,model,{gameId:getGameId(),ownOnly,includeOwnRoster:true});
   if(!initialized){initialized=true;startedAt=Date.now();primeFootballEvents(events);return}
   const fresh=events.filter(event=>event.at>=startedAt&&!seen.has(event.key));primeFootballEvents(events);
   // Coalesce one poll into the strongest moment. No backlog of overlapping

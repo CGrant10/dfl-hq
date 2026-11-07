@@ -7,7 +7,7 @@ export function footballMomentShareSpec(moment,{season,week}={}){
  const play=moment?.recap?.play;if(!play||!['touchdown','big-play'].includes(moment.kind)||!moment.eventKey)return null;
  return {kind:'Matchup highlight',context:`${season} / WEEK ${String(week).padStart(2,'0')}`,headline:moment.title,photoHeadline:moment.title,
   summary:moment.text,photoCaption:moment.team?.team_name,status:[play.period?play.period>4?'OT':`Q${play.period}`:null,play.clock].filter(Boolean).join(' · '),
-  results:[{label:'Play distance',value:`${play.yards} YDS`}],sections:[{label:'The play',copy:play.text},{label:'The lineup',rows:(moment.recap.players||[]).map(p=>({name:p.name,detail:[p.position,p.nflTeam,p.role].filter(Boolean).join(' · ')}))}],
+  results:[{label:'Play distance',value:`${play.yards} YDS`}],sections:[{label:'The play',copy:play.text},{label:'The lineup',rows:(moment.recap.players||[]).map(p=>({name:p.name,detail:[p.position,p.nflTeam,p.role,p.bench?'Bench':null].filter(Boolean).join(' · ')}))}],
   players:sharePlayers(moment.recap.players),footer:'DFL · Talk your shit. Keep the receipt.'};
 }
 export function matchupShareSpec(data){return {

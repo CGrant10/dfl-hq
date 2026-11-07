@@ -63,7 +63,7 @@ Deno.serve(async request=>{
   if(!feeds.length)throw Error('All live game providers unavailable');
   const drafts=footballNotificationDrafts({season,week,feeds,rows,rosters,members:members.data||[],optedMemberIds:(opted.data||[]).map(row=>Number(row.member_id)),clips:videoClips,now});
   if(dryRun)return Response.json({ok:true,dryRun,season,week,games:feeds.map(feed=>({id:feed.game_id,redZone:feed.snapshot.redZone,plays:feed.plays.length,verified:feed.plays.filter((p:any)=>p.kind).length})),drafts:[],wouldCapture:feeds.length});
-  const moments=footballMomentRows({leagueId:String(league.league_id),season,week,feeds,rows,now});
+  const moments=footballMomentRows({leagueId:String(league.league_id),season,week,feeds,rows,rosters,now});
   if(moments.length){const saved=await admin.from('gameday_moments').upsert(moments,{onConflict:'league_id,season,week,event_key',ignoreDuplicates:true});if(saved.error)throw saved.error}
   let created=0,duplicates=0;
   for(const draft of drafts){const response=await fetch(`${url}/functions/v1/send-notification`,{method:'POST',headers:{'Content-Type':'application/json','x-dfl-cron-token':token},body:JSON.stringify(draft),signal:AbortSignal.timeout(10000)});const result=await response.json();if(!response.ok||!result.ok)throw Error(`Live notification delivery ${response.status}`);if(result.duplicate)duplicates++;else if(!result.skipped)created++}
