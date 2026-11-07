@@ -2394,3 +2394,20 @@ player toast, semantic touchdown/big-play accents, readable bench context and
 mobile suite passes, including static Reduced Motion, native-dialog visibility,
 fresh-event deduplication and cleanup. Physical phone push arrival and iOS
 frame pacing were not measured.
+
+
+### 1.558.0 — Sportsbook reading and controls
+
+Reviewed actual compiled Sportsbook with current Sleeper names, pictures and
+projections in Light/Dark at 390px; provider reads only, account/claim mocked.
+Reviewed board, props, Pick’em and loading screenshots from the real-page
+fixture at 320/390/430px, including 200% text. The account/claim shares one
+header, matchup odds align, own-matchup emphasis remains semantic, and prop
+choices use the same action fill/ink tokens as the board. Fixed an old selected
+prop background overriding its readable ink; contrast assertions check actual
+visible selected prices. Shared defaults/theme choices are unchanged.
+
+The existing bet-slip and result/share checks pass in both themes; swipe,
+keyboard, rapid reversal and Reduced Motion checks pass. Physical Safari
+frame pacing and VoiceOver speech remain unmeasured. Evidence:
+`/workspace/dfl-book-1558/{reading-release,actual-final,slip-final,results,tabs}`.

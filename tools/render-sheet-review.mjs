@@ -9,6 +9,7 @@ const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const head=index.slice(index.indexOf('<head>')+6,index.indexOf('</head>')).replace('</title>','</title><link rel="stylesheet" href="css/sportsbook.css">');
 const fixture=`import {groupPropPlayers} from './js/sportsbook-featured-props.js';
 import {propLine} from './js/sportsbook-core-props.js';
+import {nflTeams,team as nflTeam} from './js/nfl-teams.js';
 import {mountSheetDrag,enterSheet,exitSheet} from './js/sheet-drag.js';
 import {animateUi,cancelUiMotion,cancelUiExit,exitUi,startUiMotion} from './js/ui-motion.js';
 import {fitDialogToViewport} from './js/dialog-viewport.js';
@@ -27,7 +28,7 @@ const MAX_PICKS=6;
 const outcomes=new Map([['1',{id:1,market_id:1,label:'Ja’Marr Chase over 89.5 receiving yards',odds_american:-110}],['2',{id:2,market_id:2,label:'Joe Burrow over 1.5 passing touchdowns',odds_american:120}]]);
 const markets=new Map([['1',{title:'Bengals receiving',status:'open'}],['2',{title:'Bengals passing',status:'open'}]]);
 ${source.slice(start,end)}
-${source.slice(source.indexOf("function propPlayersMarkup("),source.indexOf("function wirePropFilters("))}
+${source.slice(source.indexOf("function propTeamLabel("),source.indexOf("function wirePropFilters("))}
 ${source.slice(source.indexOf('function slipBar('),source.indexOf('\n}\n',source.indexOf('function slipBar('))+3)}
 ${source.slice(source.indexOf('function wireSlipAndPicks('),source.indexOf('\n}\n',source.indexOf('function wireSlipAndPicks('))+3)}
 window.showReviewBoard=()=>{

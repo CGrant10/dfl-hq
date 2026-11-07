@@ -76,3 +76,13 @@ dialog.dfl-player-card { height:min(720px,calc(100dvh - 24px),var(--dialog-viewp
 .analyzer-recovery { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:0 0 8px; color:var(--muted); font-size:12px; }
 .analyzer-recovery[hidden] { display:none; }
 .analyzer-recovery button { min-height:44px; }
+
+/* Sportsbook skeleton keeps the account beside its title, matching the board. */
+.is-sportsbook .loading-book-head { display:grid; grid-template-columns:minmax(0,1fr) 96px; align-items:center; gap:12px; min-height:96px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--line-soft); }
+.is-sportsbook .loading-book-head .loading-masthead { padding:0; margin:0; border:0; }
+.is-sportsbook .loading-book-head .loading-masthead i:first-child { width:85%; }
+.is-sportsbook .loading-book-head .loading-wallet { grid-template-columns:minmax(0,1fr); justify-items:end; gap:6px; padding:0; margin:0; border:0; border-radius:0; background:transparent; }
+.is-sportsbook .loading-book-head .loading-wallet>i:first-child { width:64px; height:24px; }
+.is-sportsbook .loading-book-head .loading-action { height:44px; margin:0; }
+.is-sportsbook .loading-tabs { padding:0 0 10px; margin-bottom:10px; border-bottom:1px solid var(--line-soft); }
+.is-sportsbook .route-placeholder-art>.loading-panel { padding:0; border:0; border-radius:0; background:transparent; }
