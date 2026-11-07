@@ -19,3 +19,10 @@ export function playerGameHeadline(game,position){
 export function playerAverageMarkup(average){
  return `<span class="player-card-season-average"${average?'':' hidden'}>${average?`<strong>${esc(average.value.toFixed(1))}</strong><small>Season PPR/g${average.stale?' · cached':''}</small>`:'<strong>—</strong><small>Season PPR/g</small>'}</span>`;
 }
+
+export function playerAvailabilityMarkup(injury={}){
+ const tag=String(injury.tag||'').trim(),detail=[injury.availability,injury.body].filter(value=>value&&!/^(latest sleeper tag|no injury tag in sleeper|available)$/i.test(value)).join(' · ');
+ if(!detail&&/^(healthy|available|no tag|none)?$/i.test(tag))return '';
+ const tone=/out|ir|pup|doubt|^(o|d)$/i.test(tag)?'out':/question|^q$/i.test(tag)?'questionable':'neutral';
+ return `<div class="player-card-availability" data-availability="${tone}"><b>${esc(tag)}</b><span>${esc(detail)}</span></div>`;
+}

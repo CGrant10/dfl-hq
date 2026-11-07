@@ -1,3 +1,5 @@
+import {patchGameDay} from './game-day-dom.js';
+import {patchPlayerCardScore} from './player-card-score.js';
 import {applyViewingMatchup,setViewingMatchup} from './matchup-view-context.js';
 import {playerJourneyLinks} from './player-journey.js';
 import { esc } from './ui.js';
@@ -19,7 +21,7 @@ import {playerCardPreviewMatches} from './player-card-model.js';
 import {sleeperAction} from './sleeper-links.js';
 import {mountPlayerGameExplorer,playerGameDetailsHtml} from './player-game-explorer.js';
 import {playerGame} from './player-game-model.js';
-import {playerGameHeadline,playerAverageMarkup} from './player-card-summary.js';
+import {playerGameHeadline,playerAverageMarkup,playerAvailabilityMarkup} from './player-card-summary.js';
 import {mountDisclosureMotion} from './disclosure-motion.js';
 
 let dialog, body, request = 0, opener, returnContainer, activeContext = null, sheetDrag, stopConnection = () => {};
@@ -72,14 +74,17 @@ function render(model) {
   const props = ['QB', 'RB', 'WR', 'TE'].includes(p.position);
   const trade = model.owner && model.myRosterId != null && String(model.owner.id) !== String(model.myRosterId) && me?.sleeper_user_id;
   const state = { live: 'Live', final: 'Final', upcoming: 'Yet to play', unknown: 'Status pending' }[model.state] || 'Recorded stats';
-  const availability = /out|ir|pup|doubt|^(o|d)$/i.test(model.injury.tag) ? "out" : /question|^q$/i.test(model.injury.tag) ? "questionable" : "neutral";
   const club = team(p.nflTeam);
   const heroStyle = club ? ` style="--player-primary:${esc(club.primary)};--player-secondary:${esc(club.secondary)}"` : '';
   const newActions=`<nav class="player-card-actions player-card-primary" aria-label="Player actions"><button type="button" class="linkbtn" data-player-compare="${esc(p.id)}">Compare player</button><button type="button" class="linkbtn" data-player-watch aria-pressed="false">Watch player</button></nav>`;
   const moreTools=`<details class="player-card-more"><summary>More player tools <i aria-hidden="true"></i></summary><nav class="player-card-tools" aria-label="More player actions">${journey.highlights?`<a class="linkbtn" href="${esc(journey.highlights)}">Highlights</a>`:''}${journey.matchup?`<a class="linkbtn" href="${esc(journey.matchup)}">View matchup</a>`:''}${props ? `<a class="linkbtn" href="#/sportsbook?player=${encodeURIComponent(p.name)}">Player props</a>` : ''}${trade ? `<a class="linkbtn" href="#/trade?team=${encodeURIComponent(model.myRosterId)}&target=${encodeURIComponent(p.id)}&partner=${encodeURIComponent(model.owner.id)}">Explore a trade</a>` : ''}<a class="linkbtn" href="#/analyzer">Team analyzer</a>${sleeperAction(model.leagueId,model.owner?'roster':'waivers',{className:'linkbtn'})}</nav></details>`;
-  body.innerHTML = `<section class="player-card-hero"${heroStyle} aria-label="Player identity">${playerIdentity({ ...p, injuryStatus: '' },{portraitSize:116})}<div class="player-card-owner"><small>DFL ROSTER</small>${model.owner?.memberId ? `<a href="#/profile?id=${esc(model.owner.memberId)}">${esc(model.ownerLabel)}</a>` : `<strong>${esc(model.ownerLabel)}</strong>`}</div></section><div class="player-card-availability" data-availability="${availability}"><b>${esc(model.injury.tag)}</b><span>${esc([model.injury.availability, model.injury.body].filter(Boolean).join(' · '))}</span></div><div class="gameday-spotlight-score"><span>${thermalScore(model.points, playerScoreTemperature({ ...p, points: model.points, state: model.state, afterHalftime: model.afterHalftime }), { tag: 'strong' })}<small>Fantasy points</small></span><span>${esc(state)} · Week ${model.week}</span></div><div class="player-card-week-summary"><p data-player-game-line>${esc(playerGameHeadline(playerGame(model),p.position))}</p>${playerAverageMarkup(model.seasonAverage)}</div>${newActions}<div data-player-game-chart>${playerFormHtml(model,{interactive:true})}</div><section class="player-card-game-stats" data-player-game-details aria-label="Selected game stats">${playerGameDetailsHtml(playerGame(model))}</section>${moreTools}${model.stats.updatedAt ? `<time class="gameday-stat-time" datetime="${esc(new Date(model.stats.updatedAt).toISOString())}">Stats · ${esc(new Date(model.stats.updatedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }))}</time>` : ''}`;
+  const oldWeek=gameExplorer?.selectedWeek,openStats=new Set([...body.querySelectorAll('[data-player-stat-key][aria-expanded="true"]')].map(b=>b.dataset.playerStatKey));
+  const oldWatch=body.querySelector('[data-player-watch]'),watchState=oldWatch?{text:oldWatch.textContent,pressed:oldWatch.getAttribute('aria-pressed'),hidden:oldWatch.hidden,disabled:oldWatch.disabled}:null;
+  patchGameDay(body,`<section class="player-card-hero"${heroStyle} aria-label="Player identity">${playerIdentity({ ...p, injuryStatus: '' },{portraitSize:116})}<div class="player-card-owner"><small>DFL ROSTER</small>${model.owner?.memberId ? `<a href="#/profile?id=${esc(model.owner.memberId)}">${esc(model.ownerLabel)}</a>` : `<strong>${esc(model.ownerLabel)}</strong>`}</div></section>${playerAvailabilityMarkup(model.injury)}<div class="gameday-spotlight-score"><span>${thermalScore(model.points, playerScoreTemperature({ ...p, points: model.points, state: model.state, afterHalftime: model.afterHalftime }), { tag: 'strong' })}<small>Fantasy points</small></span><span>${esc(state)} · Week ${model.week}</span></div><div class="player-card-week-summary"><p data-player-game-line>${esc(playerGameHeadline(playerGame(model),p.position))}</p>${playerAverageMarkup(model.seasonAverage)}</div>${newActions}<div data-player-game-chart>${playerFormHtml(model,{interactive:true,selectedWeek:oldWeek??model.week})}</div><section class="player-card-game-stats" data-player-game-details aria-label="Selected game stats">${playerGameDetailsHtml(playerGame(model))}</section>${moreTools}${model.stats.updatedAt ? `<time class="gameday-stat-time" datetime="${esc(new Date(model.stats.updatedAt).toISOString())}">Stats · ${esc(new Date(model.stats.updatedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }))}</time>` : ''}`);
+  const watch=body.querySelector('[data-player-watch]');if(watch===oldWatch&&watchState){watch.textContent=watchState.text;watch.setAttribute('aria-pressed',watchState.pressed);watch.hidden=watchState.hidden;watch.disabled=watchState.disabled;}else mountWatchButton(watch,p.id);
   const photo=body.querySelector('.player-card-hero img');if(photo)photo.loading='eager';
   wireGameExplorer(model);
+  if(oldWeek===gameExplorer?.selectedWeek)for(const b of body.querySelectorAll('[data-player-stat-key]'))if(openStats.has(b.dataset.playerStatKey)){b.setAttribute('aria-expanded','true');b.nextElementSibling.hidden=false;}
 
 }
 export async function openPlayerCard(selection, { context = null, motion = true, source = document.activeElement } = {}) {
@@ -130,7 +135,7 @@ export async function openPlayerCard(selection, { context = null, motion = true,
     await entranceDone;
     if (token !== request || !dialog.open || dialog.dataset.uiClosing || (currentMember()?.id??null)!==memberId) return;
     const scroll=body.scrollTop,unchanged=hasPreview&&JSON.stringify(preview?.model)===JSON.stringify(model);
-    if(!unchanged){render(model);mountWatchButton(body.querySelector('[data-player-watch]'),model.player.id);body.scrollTop=scroll;}
+    if(!unchanged){render(model);body.scrollTop=scroll;}
     body.querySelectorAll('.player-card-primary,.player-card-tools').forEach(node=>node.inert=false);
     preview={model,memberId,at:Date.now()};painted=true;
     finish();
@@ -145,11 +150,10 @@ export async function openPlayerCard(selection, { context = null, motion = true,
 export function updatePlayerCard(context, motion = true) {
   if (!dialog?.open || !activeContext || String(activeContext.id) !== String(context?.id)) return;
   if(activeContext.points!==context.points||activeContext.week!==context.week||activeContext.state!==context.state)preview=null;
-  activeContext = context; dialog.dataset.motion = motion ? 'on' : 'off';
+  activeContext = context; dialog.dataset.motion = motion ? 'on' : 'off';if(!motion)cancelUiMotion(body.querySelector('.gd-thermal-value'));
   if(gameExplorer){gameExplorer.update(context);return;}
   const score = body.querySelector('.gameday-spotlight-score > span');
-  const scoreStamp=JSON.stringify([context.points,playerScoreTemperature(context)]);
-  if (score&&score.dataset.scoreStamp!==scoreStamp) {score.innerHTML = `${thermalScore(context.points, playerScoreTemperature(context), { tag: 'strong' })}<small>Fantasy points</small>`;score.dataset.scoreStamp=scoreStamp;}
+  patchPlayerCardScore(score,context,{motion,feedback:true});
   const status = body.querySelector('.gameday-spotlight-score > span:last-child');
   const formState = body.querySelector('[data-player-form-current-state]');
   if (formState) formState.textContent = { live:'Live', final:'Final', upcoming:'Yet to play', unknown:'Pending' }[context.state] || 'Recorded';

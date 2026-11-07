@@ -85,7 +85,7 @@ with sync_playwright() as p:
   sheet.locator('[data-player-card-close]' if kind=='Player' else '[data-close]').click();page.wait_for_function('!document.querySelector("dialog[open]")')
   page.evaluate("()=>{if(window.savedViewport)Object.defineProperty(window,'visualViewport',window.savedViewport);else delete window.visualViewport}")
  # Header gesture cannot take a vertical scroll from the player body.
- sheet=open_sheet('Player');body=sheet.locator('[data-player-card-body]');body.evaluate('e=>e.scrollTop=60');box=body.bounding_box();x=box['x']+box['width']/2;y=box['y']+120
+ sheet=open_sheet('Player');body=sheet.locator('[data-player-card-body]');sheet.locator('[data-player-stat-group]').first.click();page.wait_for_timeout(260);body.evaluate('e=>e.scrollTop=60');box=body.bounding_box();x=box['x']+box['width']/2;y=box['y']+120
  touch.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
  for n in range(1,5):touch.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x,'y':y-25*n}]});page.wait_for_timeout(30)
  touch.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});page.wait_for_timeout(150)
