@@ -30,6 +30,15 @@ with sync_playwright() as p:
   page.locator('[data-offer-return]').evaluate('e=>e.click()');page.wait_for_function('document.querySelectorAll(".dfl-connected-portrait").length>0')
   assert page.evaluate('(key)=>document.activeElement.closest(".tb-offer").dataset.offerKey===key',key)
   page.wait_for_timeout(400);checks.append({'width':width,'connectedOffer':True,'boundedPortraits':True,'focusReturn':True})
+  # Freeze only the interrupted return at frame zero to check position continuity.
+  page.evaluate("""()=>{const original=HTMLElement.prototype.animate;HTMLElement.prototype.animate=function(frames,options){const animation=original.call(this,frames,options);if(window.pauseTradeReturn&&this.classList.contains('dfl-connected-portrait')){animation.pause();animation.currentTime=0}return animation}}""")
+  page.locator('.tb-offer').first.locator('[data-td-load-offer]').evaluate('e=>e.click()');page.wait_for_function('document.querySelectorAll(".dfl-connected-portrait").length>0');page.wait_for_timeout(70)
+  page.evaluate("""()=>{window.tradePainted=[...document.querySelectorAll('.dfl-connected-portrait')].map(e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y}});window.pauseTradeReturn=true;document.querySelector('[data-offer-return]').click()}""")
+  page.wait_for_function('document.querySelectorAll(".dfl-connected-portrait").length>0')
+  continuous=page.locator('.dfl-connected-portrait').evaluate_all('es=>es.every(e=>{const r=e.getBoundingClientRect();return tradePainted.some(p=>Math.hypot(p.x-r.x,p.y-r.y)<3)})')
+  assert continuous,'Interrupted return jumped away from its painted portraits'
+  page.evaluate("window.pauseTradeReturn=false;document.querySelectorAll('.dfl-connected-portrait').forEach(e=>e.getAnimations().forEach(a=>a.play()))");page.wait_for_timeout(400)
+  assert not page.locator('.dfl-connected-portrait').count();checks.append({'width':width,'interruptedReturnContinuity':True})
   # Reduced motion and a route teardown both settle without a temporary layer.
   page.emulate_media(reduced_motion='reduce');page.locator('.tb-offer').first.locator('[data-td-load-offer]').evaluate('e=>e.click()');page.wait_for_timeout(80);assert page.locator('.dfl-connected-portrait').count()==0
   page.locator('[data-offer-return]').evaluate('e=>e.click()');page.emulate_media(reduced_motion='no-preference')

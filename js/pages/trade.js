@@ -328,7 +328,7 @@ function page(data, tradeAlerts = []) {
         const card=body.querySelector(`[data-offer-key="${CSS.escape(pendingReturn.key)}"]`);
         if(!card&&body.querySelector('.tb-offers-card[aria-busy="true"]'))return false;
         const target=card||body.querySelector('[data-tb-offers]');
-        if(target){window.scrollBy({top:target.getBoundingClientRect().top-(card?pendingReturn.top:80),behavior:'instant'});connection.play(pendingReturn.origins,target);(card?.querySelector('[data-td-load-offer]')||target)?.focus({preventScroll:true});}
+        if(target){window.scrollBy({top:target.getBoundingClientRect().top-(card?pendingReturn.top:80),behavior:'instant'});connection.play(pendingReturn.origins,target,{surface:true,returning:true});(card?.querySelector('[data-td-load-offer]')||target)?.focus({preventScroll:true});}
         pendingReturn=null;return true;
       };
       const fillOfferPreview=(details,opening=details.open)=>{
@@ -778,7 +778,7 @@ function page(data, tradeAlerts = []) {
         trade.editing = false;
         shop.mode='manual';shop.customOpen = true;
         draw();
-        const target=body.querySelector("[data-td-verdict]");target?.scrollIntoView({behavior:"instant",block:"start"});connection.play(origins,target);const heading=target?.querySelector("h2");if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}
+        const target=body.querySelector("[data-td-verdict]");target?.scrollIntoView({behavior:"instant",block:"start"});connection.play(origins,target,{surface:true});const heading=target?.querySelector("h2");if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}
       });
       if(shop.horizon==='next4'&&!shop.weekSchedules?.length)void loadSchedules();else draw();
       stopRefresh?.();

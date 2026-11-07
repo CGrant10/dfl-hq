@@ -24,6 +24,13 @@ with sync_playwright() as p:
    page.evaluate('''async theme=>{const {saveMode}=await import('/js/theme.js');saveMode(theme);const {mountPageMotion,startUiMotion}=await import('/js/ui-motion.js');startUiMotion();window.stopEditMotion=mountPageMotion(document.querySelector('#view'));}''',theme)
    page.locator('.tb-offer').first.locator('[data-td-load-offer]').click();page.wait_for_selector('.td-ticket');page.wait_for_timeout(350)
    page.screenshot(path=str(OUT/f'analyze-{width}-{theme}.png'))
+   ticket=page.locator('.td-ticket[data-trade-reading]');cols=ticket.locator('.td-col')
+   check(f'{width}/{theme} verdict precedes packages and supporting metrics',ticket.evaluate('e=>{const head=e.querySelector(".td-ticket-head").getBoundingClientRect(),packages=e.querySelector(".td-cols").getBoundingClientRect(),metrics=e.querySelector(".td-decision").getBoundingClientRect();return head.bottom<=packages.top+1&&packages.bottom<=metrics.top+1&&!!e.querySelector(".td-stamp h2").textContent.trim()}'))
+   check(f'{width}/{theme} packages share equal columns',cols.evaluate_all('es=>{const [a,b]=es.map(e=>e.getBoundingClientRect());return Math.abs(a.top-b.top)<1&&Math.abs(a.width-b.width)<1}'))
+   check(f'{width}/{theme} totals align under both packages',ticket.locator('.td-total').evaluate_all('es=>Math.abs(es[0].getBoundingClientRect().bottom-es[1].getBoundingClientRect().bottom)<1'))
+   page.evaluate('document.documentElement.style.fontSize="32px"');page.wait_for_timeout(150)
+   check(f'{width}/{theme} large text gives each package a full row',cols.evaluate_all('es=>es[0].getBoundingClientRect().bottom<=es[1].getBoundingClientRect().top+1') and page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
+   page.screenshot(path=str(OUT/f'analyze-large-{width}-{theme}.png'));page.evaluate('document.documentElement.style.fontSize=""');page.wait_for_timeout(100)
    if os.environ.get('DFL_TRADE_EDIT_BEFORE'):
     print(width,theme,page.locator('.td-item-copy').evaluate_all('es=>es.map(e=>({name:e.innerText,width:e.clientWidth,height:e.clientHeight}))'),flush=True);c.close();continue
    check(f'{width}/{theme} readable trade text contrast',not page.evaluate("async()=>{const {reviewTextContrast}=await import('/tools/home-review-contrast.js');return reviewTextContrast(document.querySelector('[data-td-verdict]')).failures.length}"))
@@ -57,7 +64,7 @@ with sync_playwright() as p:
    page.locator('[data-td-clear]').evaluate('e=>e.click()');page.locator('[data-td-add-member]').evaluate('e=>e.click()')
    for i,pid,to in [(0,'1-3','2'),(1,'2-4','3'),(2,'3-1','1')]:
     lane=page.locator('.td-side').nth(i);lane.locator('[data-td-roster]').evaluate('e=>e.open=true');lane.locator('[data-td-filter]').fill('');lane.locator(f'[data-td-pick][value="{pid}"]').check();lane.locator('[data-td-destination]').select_option(to)
-   check(tag+' a complete three-way has a real analysis',page.locator('.td-ticket-head h2').inner_text()=='3-team deal' and page.locator('.td-routed-player').count()==3)
+   check(tag+' a complete three-way has a real analysis',page.locator('.td-ticket-head>small').text_content().strip()=='3-team verdict' and bool(page.locator('.td-ticket-head h2').inner_text()) and page.locator('.td-routed-player').count()==3)
    first=page.locator('.td-side').first;first.locator('[data-td-replace-pick]').click();page.locator('[data-picker-player="1-1"]').click();page.wait_for_timeout(350)
    check(tag+' replacing a three-way player keeps its explicit destination',first.locator('[data-td-destination="1-1"]').input_value()=='2' and page.locator('[data-td-destination="2-4"]').input_value()=='3' and page.locator('[data-td-destination="3-1"]').input_value()=='1')
    page.locator('[data-td-edit-bar] [data-td-undo]').click()

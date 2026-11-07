@@ -343,7 +343,7 @@ function packageRows(ids, pool, side) {
   if (!players.length) return `<div class="td-item is-empty"><span><b>Nobody yet</b></span></div>`;
   return players.map(player => `<div class="td-item" data-trade-player="${esc(player.id)}">
     ${playerPortrait(player)}<span class="td-item-copy"><button type="button" data-td-replace-pick="${side}" data-player-id="${esc(player.id)}" aria-label="Replace ${esc(player.name)}" aria-haspopup="dialog">${esc(player.name)}</button><small>${esc(player.position)} &middot; ${esc(player.nflTeam)}</small></span>
-    <span class="td-item-value">${Math.round(num(player.tradeValue))}</span>
+    <span class="td-item-value" aria-label="${Math.round(num(player.tradeValue))} trade value">${Math.round(num(player.tradeValue))}</span>
   </div>`).join("");
 }
 
@@ -397,6 +397,11 @@ function idleTicket() {
   </div>`;
 }
 
+function ticketHeader(result,team,recommendation,label='Trade verdict'){
+  const caption=recommendationCaption(result,team,recommendation),contextOnly=caption===`For ${teamName(team)}`;
+  return `<header class="td-ticket-head"><small>${label}</small><div class="td-stamp is-compact is-${recommendation.tone}"><h2><strong>${recommendation.action==='REVIEW'?'Check data':recommendation.action}</strong></h2><span${contextOnly?' class="sr-only"':''}>${esc(caption)}</span></div></header>`;
+}
+
 function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
   if (!result) return idleTicket();
   const v = verdictFor(result);
@@ -409,31 +414,22 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
   /* Value and lineup are reported separately and never averaged: a fair trade
      that helps only one starting lineup is a real and common shape, and
      blending the two into one score would hide exactly that. */
-  return `<div class="td-ticket is-${v.tone}">
-    <div class="td-ticket-head">
-      <small>Trade overview</small>
-      <h2>${esc(teamName(teamA))} <i aria-hidden="true">&rlarr;</i> ${esc(teamName(teamB))}</h2>
-
-    </div>
-
-    ${tradeDecisionMarkup(result,pool)}
-    <div class="td-stamp is-compact is-${recommendation.tone}">
-      <strong>${recommendation.action==='REVIEW'?'Check data':recommendation.action}</strong>
-      <span>${esc(recommendationCaption(result, teamA, recommendation))}</span>
-    </div>
+  return `<div class="td-ticket is-${v.tone}" data-trade-reading>
+    ${ticketHeader(result,teamA,recommendation)}
 
     <div class="td-cols">
-      <div class="td-col">
-        <small>You send</small>
+      <section class="td-col" aria-label="You send">
+        <header class="td-package-head"><small>You send</small><strong>${esc(teamName(teamA))}</strong></header>
         ${packageRows(sendA, pool, 0)}
         <div class="td-total"><small>Value out</small><b>${Math.round(num(result.valueToB))}</b></div>
-      </div>
-      <div class="td-col">
-        <small>You receive</small>
+      </section>
+      <section class="td-col" aria-label="You receive">
+        <header class="td-package-head"><small>You receive</small><strong>${esc(teamName(teamB))}</strong></header>
         ${packageRows(sendB, pool, 1)}
         <div class="td-total"><small>Value in</small><b class="td-in">${Math.round(num(result.valueToA))}</b></div>
-      </div>
+      </section>
     </div>
+    ${tradeDecisionMarkup(result,pool)}
     <details class="td-data-context td-impact-details"><summary>Depth &amp; roster fit</summary>
     <div class="td-lines">
       <div class="td-line"><span>Your lineup</span><b class="${result.weeklyDeltaA >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltaA)} avg/wk</b></div>
@@ -462,23 +458,14 @@ function multiTicketMarkup(result, parties, pool, sends) {
   const perspective=tradePerspective(result),v=verdictFor(perspective),recommendation=recommendationFor(perspective);
   const incoming=result.receives?.[0]||sends.at(-1),others={team_name:'Other members'};
   const reasons=tradeReasons(perspective,parties[0],others,pool,sends[0],incoming);
-  return `<div class="td-ticket is-${v.tone}">
-    <div class="td-ticket-head">
-      <small>Trade overview</small>
-      <h2>${parties.length}-team deal</h2>
-
-    </div>
-
-    ${tradeDecisionMarkup(result,pool)}
-    <div class="td-stamp is-compact is-${recommendation.tone}">
-      <strong>${recommendation.action==='REVIEW'?'Check data':recommendation.action}</strong>
-      <span>${esc(recommendationCaption(perspective, parties[0], recommendation))}</span>
-    </div>
+  return `<div class="td-ticket is-${v.tone}" data-trade-reading>
+    ${ticketHeader(perspective,parties[0],recommendation,`${parties.length}-team verdict`)}
 
     <div class="td-legs">
       ${parties.map((from,index)=>`<div class="td-leg"><small>${esc(teamName(from))} SENDS</small>${sends[index].map(id=>`<div class="td-routed-player">${packageRows([id],pool,index)}<small>→ ${esc(teamName(parties.find(t=>String(t.id)===String(result.destinations?.[id]||parties[(index+1)%parties.length].id))))}</small></div>`).join('')}<div class="td-total"><small>Value out</small><b>${num(result.outgoingValues?.[index]??result.values[(index+1)%parties.length])}</b></div><div class="td-total"><small>Value in</small><b>${num(result.values[index])}</b></div></div>`).join('')}
     </div>
 
+    ${tradeDecisionMarkup(result,pool)}
     <details class="td-data-context td-impact-details"><summary>Depth &amp; roster fit</summary>
     <div class="td-lines">
       ${parties.map((party, index) => `<div class="td-line"><span>${esc(teamName(party))} lineup</span><b class="${result.weeklyDeltas[index] >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltas[index])} avg/wk</b></div><div class="td-line"><span>${esc(teamName(party))} depth</span><b class="${num(result.depthDeltas?.[index]) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltas?.[index])} avg/wk</b></div>`).join("")}

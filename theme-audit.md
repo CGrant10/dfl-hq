@@ -2411,3 +2411,27 @@ The existing bet-slip and result/share checks pass in both themes; swipe,
 keyboard, rapid reversal and Reduced Motion checks pass. Physical Safari
 frame pacing and VoiceOver speech remain unmeasured. Evidence:
 `/workspace/dfl-book-1558/{reading-release,actual-final,slip-final,results,tabs}`.
+
+
+### 1.559.0 — trade results and expanded offer reading
+
+Reviewed Check a Trade results and expanded offer editing in Light/Dark at
+320/390px, plus current-data compiled offers, comparisons, editors and analysis
+at 390px. The verdict leads; team names, complete player names and trade values
+share equal columns, with aligned package totals. Supporting balance/lineup
+figures and real risk flags follow. The larger-reading preference stays
+available; 200% text reflows result packages into full rows.
+
+Expanded editing uses one full player control for portrait/name/Swap, retaining
+a 44px minimum target and readable selected action fill/ink. Roster value digits
+no longer split. No new palette or color constants: surfaces use shared theme
+tokens and verdict/risk colors retain their semantic purpose. Actual visible
+result text and the primary review action pass contrast checks in both themes.
+
+Real-component evidence: 100 editing checks, 104 offer-board checks, 112 offer
+reading checks, existing picker controls/motion cases, 37 receipt motion checks
+and connected offer/return motion at 320/390px. Interrupted returns are checked
+against their actually painted portrait positions. Keyboard, Reduced Motion,
+app-motion-off, resizing and teardown remain covered. Physical iOS frame pacing
+and VoiceOver speech remain unmeasured. Evidence:
+`/workspace/dfl-trade-1559/{actual,after/editing,board-release,offer-reading}`.
