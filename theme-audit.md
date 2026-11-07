@@ -2456,3 +2456,24 @@ No uncaught errors in 71 share checks or 48 existing Sportsbook result checks.
 `pnpm themes` and the full 2,493-test check pass. Physical iOS rendering and
 native share sheets remain unmeasured. See `design-qa.md` for the normalized
 source/implementation comparison and documented real-photo framing.
+
+## 1.561.0 — Broadcast Window clip viewer
+
+Reviewed real mobile viewer captures in Light and Dark at 320/390px:
+`/workspace/dfl-replay-1561/window/window-{320,390}-{light,dark}.png`.
+The project Inter hierarchy, Medicine Wheel surfaces, readable text, rules,
+red selection fill and yellow/dark focus accent remain on shared tokens.
+Light retains bone/white surfaces; Dark follows the selected Night Game
+composition without adding a new theme. The existing stadium raster provides
+only a faint header wash. The round DFL logo is used; no shield or mascot.
+
+Active and adjacent NFL identities/scores remain clear, including missing and
+zero scores. Native inline video stays black-backed and unobstructed; previous/
+next controls sit outside it. Clip grid pictures preserve their full ratio.
+Keyboard, reduced motion, 44px-tall controls, press/filter states, no-clip and
+loading/error fallbacks, resizing and close/focus behavior pass in both themes.
+No retired red/white/blue accent additions. `pnpm themes` and 2,498 tests pass;
+72 focused window checks plus the existing 280-check reel journey pass.
+Physical Safari frame pacing and screen-reader speech remain unmeasured.
+See `design-qa.md` for source/implementation normalization and intentional
+functional differences from the visual mock.
