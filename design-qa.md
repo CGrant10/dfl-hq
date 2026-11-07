@@ -1,4 +1,4 @@
-# Broadcast Window — 1.561.0
+# Broadcast Window — 1.561.1
 
 Source visual truth: `/workspace/generated_images/exec-4838ed52-a6f4-4adb-875c-c456f4d97097.png`, the first displayed clip-viewer concept selected by the user.
 Implementation: `/workspace/dfl-replay-1561/window/component-390-dark.png` (real controller, native video and game center). Browser viewport 390×844 CSS px, deviceScaleFactor 1; the dialog capture is 378×820 pixels. Source is 852×1846 pixels. Both component images are uniformly scaled to 390px width, preserving their aspect ratios, in `/workspace/dfl-replay-1561/comparison-final.png`. Focused caption/control/grid comparison: `/workspace/dfl-replay-1561/comparison-details.png`. No device frame or browser chrome is included.
@@ -28,5 +28,17 @@ The existing complete reel journey passes 280 checks, including source fallback,
 `pnpm check`: 2,498 tests / 302 files, release agreement, theme colors, types, unresolved names and production build pass. Final visual adjustments pass the focused browser suite and names/build checks. A compiled-renderer smoke check at the real `/dfl-hq/` base path loads the actual brand image, four game entries and native video with no overflow or browser errors (`/workspace/dfl-replay-1561/compiled/preview.png`). The build retains 88 app modules, three startup/four Home modules and one shared-style request. Fixtures isolate remote reads and block writes; no real messages or league changes were made. Physical iOS frame timing, native-control styling and VoiceOver speech remain unmeasured.
 
 Implementation checklist: selected direction applied to the existing production component; real media and round branding retained; functional matchup/clip/tab actions tested; responsive failures fixed; combined full/focused comparisons reviewed; themes and production bundle checked. P3: platform-native video controls and font rasterization naturally vary by browser.
+
+## Integration and enlarged-text follow-up
+
+The full Clubhouse integration initially retained an assertion for the old personalized title. It now checks the selected DFL REPLAY brand plus the actual personal scope, exact player headline and one-clip queue. Personal filtering behavior remains intact.
+
+The 200% text captures exposed crowded navigation, overlapping matchup text and a constrained video caption. The viewer now detects enlarged text through its existing resize controller, uses readable vertical mode choices, gives Plays/Fantasy the full workspace, and makes the Clips player scrollable. Matchup tiles grow with type and stay within the track. The normal 320/390px presentation retains the selected mock's layout. This adds no new observer or per-pointer-frame typography measurement.
+
+Reviewed revised enlarged-text screenshots in `/workspace/dfl-replay-1561/clubhouse-release/{320,390}-{light,dark}-replay-large-text.png` against the earlier `/workspace/dfl-replay-1561/clubhouse/` captures. Existing close/Back actions remain visible and reachable. Complete label bounds and workspace height are checked, rather than relying only on outer overflow.
+
+The rail also adopts the game center's newer verified score/status. A compact header/highest-play observation preserves the existing freshness rules without retaining duplicate box scores, adding polling or regressing a newer board. Tests cover observed final scores, newer boards and different seasons.
+
+Final 1.561.1 validation: `pnpm check` passes 2,500 tests in 302 files plus release/theme/type/name/build checks; all 349 full Clubhouse checks and 72 focused replay-window checks pass. Revised 320px Dark and 390px Light enlarged-text captures were opened and inspected; complete mode labels, readable active matchup scores and a full stats workspace are preserved. No polling or startup-module increase.
 
 final result: passed

@@ -10137,7 +10137,7 @@ html[data-readability="comfortable"] #more[data-daily-desk] .quicknav-group .qn-
 
 /* Source: css/replay-viewing.css */
 /* Broadcast Window: real media, shared theme tokens, one continuous viewer. */
-.home-reel-player[data-replay-window] { --font-body:var(--font-ui); --font-display:var(--font-ui); width:min(1040px,calc(100vw - 12px)); height:min(900px,calc(var(--dialog-viewport-height,100dvh) - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))); max-height:var(--dialog-viewport-height,calc(100dvh - 24px)); border-color:var(--line-soft); border-radius:8px; background:var(--bg); }
+.home-reel-player[data-replay-window] { --font-body:var(--font-ui); --font-display:var(--font-ui); --replay-game-width:max(116px,7.25rem); width:min(1040px,calc(100vw - 12px)); height:min(900px,calc(var(--dialog-viewport-height,100dvh) - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))); max-height:var(--dialog-viewport-height,calc(100dvh - 24px)); border-color:var(--line-soft); border-radius:8px; background:var(--bg); }
 .home-reel-player[data-replay-window] :is(button,a,input,summary):focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 .home-reel-player[data-replay-window] svg { display:block; width:18px; height:18px; flex:none; fill:currentColor; }
 .home-reel-player[data-replay-window]>header { position:relative; isolation:isolate; min-height:52px; gap:8px; padding:2px 12px; border-color:var(--line-soft); background:var(--bg); }
@@ -10153,15 +10153,15 @@ html[data-readability="comfortable"] #more[data-daily-desk] .quicknav-group .qn-
 .home-reel-player[data-replay-window] .replay-games>button:disabled { opacity:.3; }
 .replay-game-track { position:relative; display:flex; min-width:0; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x mandatory; scrollbar-width:none; touch-action:pan-x pan-y pinch-zoom; }
 .replay-game-track::-webkit-scrollbar { display:none; }
-.replay-game-track::before,.replay-game-track::after { content:''; flex:0 0 max(0px,calc(50% - 58px)); }
-.home-reel-player[data-replay-window] .replay-game { display:flex; align-items:center; justify-content:center; gap:5px; flex:0 0 116px; min-width:0; min-height:60px; padding:6px 4px; margin:0; scroll-snap-align:center; border:0; border-right:1px solid var(--line-soft); border-bottom:2px solid transparent; border-radius:0; background:transparent; color:var(--body-text); font:600 .75rem/1.2 var(--font-ui); }
+.replay-game-track::before,.replay-game-track::after { content:''; flex:0 0 max(0px,calc(50% - var(--replay-game-width)/2)); }
+.home-reel-player[data-replay-window] .replay-game { display:flex; align-items:center; justify-content:center; gap:5px; flex:0 0 min(var(--replay-game-width),100%); min-width:0; min-height:60px; padding:6px 4px; margin:0; scroll-snap-align:center; border:0; border-right:1px solid var(--line-soft); border-bottom:2px solid transparent; border-radius:0; background:transparent; color:var(--body-text); font:600 .75rem/1.2 var(--font-ui); }
 .home-reel-player[data-replay-window] .replay-game[aria-pressed="true"] { color:var(--text); border-bottom-color:var(--accent-fill); }
 .replay-game-sides { display:grid; gap:4px; min-width:0; }
 .replay-game-sides>span { display:flex; align-items:center; gap:3px; }
 .replay-game-sides img { width:16px; height:16px; object-fit:contain; }
-.replay-game-sides strong { min-width:23px; font-weight:600; }
-.replay-game-sides b { min-width:16px; text-align:right; font:750 .8125rem/1 var(--font-ui); font-variant-numeric:tabular-nums; }
-.replay-game>small { max-width:30px; font:500 .5625rem/1.3 var(--font-ui); overflow-wrap:break-word; }
+.replay-game-sides strong { min-width:1.4375rem; font-weight:600; }
+.replay-game-sides b { min-width:1rem; text-align:right; font:750 .8125rem/1 var(--font-ui); font-variant-numeric:tabular-nums; }
+.replay-game>small { max-width:1.875rem; font:500 .5625rem/1.3 var(--font-ui); overflow-wrap:break-word; }
 .home-reel-player[data-replay-window] .home-reel-stage { background:var(--bg); }
 .home-reel-player[data-replay-window] .reel-scorebug,.home-reel-player[data-replay-window] .reel-up-next { display:none!important; }
 .home-reel-player[data-replay-window] :is(.home-reel-screen,.reel-frame-cover) { background:#000; }
@@ -10224,6 +10224,23 @@ html[data-ui-motion="off"] .home-reel-screen[data-reel-buffering]::after { anima
 .home-reel-player[data-replay-window] .replay-no-clips { color:#f3efe6; }
 .home-reel-player[data-replay-window] .replay-no-clips .linkbtn { color:inherit; text-decoration:underline; }
 .home-reel-player[data-replay-window] .replay-no-clips .linkbtn:focus-visible { outline-color:#f3efe6; }
+
+/* At enlarged text sizes, show complete choices and give the selected feed
+   the window. Returning to Clips exposes a scrollable, full-ratio player. */
+ .home-reel-player[data-replay-window][data-replay-large-text]>header { gap:4px; }
+ .home-reel-player[data-replay-window][data-replay-large-text] .replay-brand { display:none; }
+ .home-reel-player[data-replay-window][data-replay-large-text] h2 { font-size:18px; }
+ .home-reel-player[data-replay-window][data-replay-large-text] .reel-browser-modes { display:grid; grid-template-columns:minmax(0,1fr); }
+ .home-reel-player[data-replay-window][data-replay-large-text] .reel-browser-modes button { min-width:0; padding:8px 12px; text-align:left; white-space:normal; }
+ .home-reel-player[data-replay-window][data-replay-large-text] .reel-browser-modes::before { top:0; bottom:auto; width:2px; height:calc(100%/3); transform:translateY(calc(var(--reel-mode,0)*100%)); }
+ .home-reel-player[data-replay-window][data-replay-large-text]:not([data-replay-mode="clips"]) :is(.home-reel-stage,.reel-splitter) { display:none; }
+ .home-reel-player[data-replay-window][data-replay-large-text] .home-reel-stage { overflow-y:auto; }
+ .home-reel-player[data-replay-window][data-replay-large-text] .home-reel-screen { flex:none; aspect-ratio:16/9; }
+ .home-reel-player[data-replay-window][data-replay-large-text] .reel-grid-heading { flex-wrap:wrap; }
+ .home-reel-player[data-replay-window][data-replay-large-text] .reel-kind-filters { order:3; flex:1 0 100%; }
+ .home-reel-player[data-replay-window][data-replay-large-text] .reel-kind-filters button::before { inset:6px 2px; }
+ .home-reel-player[data-replay-window][data-replay-large-text] .home-reel-queue { grid-template-columns:minmax(0,1fr); }
+ .home-reel-player[data-replay-window][data-replay-large-text] .reel-list-copy strong { display:block; overflow:visible; }
 
 
 /* Source: css/clubhouse-finish.css */

@@ -12,7 +12,7 @@ export function replaySnapIndex(sizes,size,velocity=0){
 export function mountReplayLayout(dialog,{motion=()=>true,onSnap=(_index)=>{}}={}){
  const view=dialog.querySelector('.home-reel-view'),stage=dialog.querySelector('.home-reel-stage'),grip=dialog.querySelector('[data-reel-resize]');
  let index=0,frame=0,animation=0,drag=null,stopped=false;
- const sizes=()=>replaySnapSizes(view.clientHeight,view.clientWidth,Math.max(72,stage.querySelector('.reel-caption-row')?.scrollHeight||0));
+ const sizes=()=>{const font=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;dialog.toggleAttribute('data-replay-large-text',dialog.clientWidth<font*16);return replaySnapSizes(view.clientHeight,view.clientWidth,Math.max(72,stage.querySelector('.reel-caption-row')?.scrollHeight||0))};
  function apply(size,animate=false){
   if(stopped)return;clearTimeout(animation);dialog.toggleAttribute('data-reel-layout-motion',animate&&motion());
   dialog.style.setProperty('--reel-stage-size',`${size}px`);
