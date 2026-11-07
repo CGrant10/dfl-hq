@@ -77,6 +77,7 @@ with sync_playwright() as p:
     for name in ['matchup','tie','trade','ticket','keeper','profile','recap','highlight','table']:
      for fmt in ['compact','full'] if name in ['trade','ticket','recap','profile'] else ['compact']:
       page.evaluate('([name,format])=>draw(specs[name],{format,photo:specs[name].players?.length?photo:null})',[name,fmt]);check(f'{name}-{fmt} canvas bounds and image separation',bounds(page));save_canvas(page,f'{name}-{fmt}')
+      if name=='table':check('wide table headers align with scores and frame stays wide',page.locator('#art canvas').evaluate('c=>{const f=c.shareLayoutFacts,h=f.text.find(t=>t.text==="1"),v=f.text.find(t=>t.text==="3"&&t.y>h.y+60);return c.width===1600&&c.height===900&&Math.abs(h.x+h.width/2-v.x-v.width/2)<1}'))
     page.evaluate('draw(spec)');save_canvas(page,'matchup-final');page.set_viewport_size({'width':1080,'height':1450});page.evaluate('document.querySelector("#art").style.cssText="width:1080px;max-width:none;margin:0"');page.locator('#art canvas').screenshot(path=str(OUT/'matchup-browser.png'))
     long=page.evaluate('''()=>draw({...spec,nightGame:{...spec.nightGame,primary:{label:'The Very Long Team Name That Should Never Be Cut Off On A Receipt',value:'1,234.56'}},context:'2026 / Week 08 / A Much Longer Context With All The Information'})''');check('long names and context reserve full space',bounds(page));save_canvas(page,'matchup-long')
    check(tag+' no uncaught errors',not errors);c.close()

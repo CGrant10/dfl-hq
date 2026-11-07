@@ -2452,7 +2452,7 @@ old blue accents or CSS-drawn substitute. Large red title/banter meet large-text
 contrast; readable off-white names/scores and muted supporting labels sit on
 the dark ground. Green/red ticket marks retain meaning and explicit HIT/MISS
 labels. Long text and unavailable photos do not conceal controls or facts.
-No uncaught errors in 70 share checks or 48 existing Sportsbook result checks.
+No uncaught errors in 71 share checks or 48 existing Sportsbook result checks.
 `pnpm themes` and the full 2,493-test check pass. Physical iOS rendering and
 native share sheets remain unmeasured. See `design-qa.md` for the normalized
 source/implementation comparison and documented real-photo framing.

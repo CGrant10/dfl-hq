@@ -79,7 +79,7 @@ export function nightGameShareCanvas(spec,{photo=null,selected='',format='compac
  y=heroBottom;rule(y);y+=30;
  if(spec.table){
   const table=spec.table,nameWidth=280,colWidth=(inner-nameWidth)/Math.max(1,table.columns.length),labelSize=Math.min(26,colWidth*.32);
-  let head=0;table.columns.forEach((col,i)=>{const x=L+nameWidth+i*colWidth,h=text(col.label,x,y,colWidth-8,labelSize,{weight:700});head=Math.max(head,h+text(col.meta,x,y+h+8,colWidth-8,Math.min(22,labelSize),{color:MUTED}));});y+=head+40;
+  let head=0;table.columns.forEach((col,i)=>{const x=L+nameWidth+i*colWidth+(colWidth-8)/2,h=text(col.label,x,y,colWidth-8,labelSize,{weight:700,align:'center'});head=Math.max(head,h+text(col.meta,x,y+h+8,colWidth-8,Math.min(22,labelSize),{color:MUTED,align:'center'}));});y+=head+40;
   for(const r of table.rows){
    const nameH=text(r.name,L,y,nameWidth-22,30,{weight:700});let height=nameH+text(r.detail,L,y+nameH+8,nameWidth-22,24,{color:MUTED});
    const rowY=y;r.values.forEach((value,i)=>{const x=L+nameWidth+i*colWidth,kind=r.marks?.[i],good=['birdie','eagle'].includes(kind),bad=['bogey','double'].includes(kind);if(good||bad)paint.push(()=>{const cx=x+colWidth/2-4,cy=rowY+24,size=48;ctx.fillStyle=good?'#473c1c':'#48242b';ctx.strokeStyle=good?YELLOW:LOSS;ctx.lineWidth=1.5;if(good){ctx.beginPath();ctx.arc(cx,cy,size/2,0,Math.PI*2);ctx.fill();ctx.stroke();if(kind==='eagle'){ctx.beginPath();ctx.arc(cx,cy,size/2-4,0,Math.PI*2);ctx.stroke()}}else{ctx.fillRect(cx-size/2,cy-size/2,size,size);ctx.strokeRect(cx-size/2,cy-size/2,size,size);if(kind==='double')ctx.strokeRect(cx-size/2+4,cy-size/2+4,size-8,size-8)}});height=Math.max(height,text(value,x+(colWidth-8)/2,y,colWidth-8,32,{weight:700,align:'center',color:good?YELLOW:bad?LOSS:INK}))});y+=Math.max(90,height+30);rule(y);y+=20;
@@ -98,8 +98,8 @@ export function nightGameShareCanvas(spec,{photo=null,selected='',format='compac
  for(const note of content.notes||[])y+=text(note,L,y,inner,30,{leading:42})+18;
  const footerText=content.footer||spec.kind,footerHeight=Math.max(106,wrap(ctx,footerText,content.banter?330:inner,25,NIGHT_FONT,500).length*34+55);
  const banterHeight=content.banter?Math.max(110,wrap(ctx,content.banter,580,80,NIGHT_FONT,900).length*94+22):0;
- canvas.height=Math.max(1350,Math.ceil(y+Math.max(footerHeight,banterHeight)+40));ctx=canvas.getContext('2d');ctx.textBaseline='alphabetic';ctx.fillStyle=GROUND;ctx.fillRect(0,0,W,canvas.height);
- if(artwork){const layer=document.createElement('canvas');layer.width=W;layer.height=heroBottom;const bg=layer.getContext('2d');bg.drawImage(artwork,0,0,W,heroBottom);bg.globalCompositeOperation='destination-out';const fade=bg.createLinearGradient(0,heroBottom*.7,0,heroBottom);fade.addColorStop(0,'#0000');fade.addColorStop(1,'#000');bg.fillStyle=fade;bg.fillRect(0,0,W,heroBottom);ctx.drawImage(layer,0,0);}
+ canvas.height=Math.max(wide?900:1350,Math.ceil(y+Math.max(footerHeight,banterHeight)+40));ctx=canvas.getContext('2d');ctx.textBaseline='alphabetic';ctx.fillStyle=GROUND;ctx.fillRect(0,0,W,canvas.height);
+ if(artwork){const layer=document.createElement('canvas');layer.width=W;layer.height=heroBottom;const bg=layer.getContext('2d');const scale=Math.max(W/artwork.width,heroBottom/artwork.height);bg.drawImage(artwork,(W-artwork.width*scale)/2,0,artwork.width*scale,artwork.height*scale);bg.globalCompositeOperation='destination-out';const fade=bg.createLinearGradient(0,heroBottom*.7,0,heroBottom);fade.addColorStop(0,'#0000');fade.addColorStop(1,'#000');bg.fillStyle=fade;bg.fillRect(0,0,W,heroBottom);ctx.drawImage(layer,0,0);}
  if(seal)ctx.drawImage(seal,L,36,104,104);
  ctx.font=font(60,900);ctx.fillStyle=INK;ctx.fillText('DFL HQ',seal?194:L,105);
  [RED,YELLOW,INK,'#77716a'].forEach((ink,i)=>{ctx.fillStyle=ink;ctx.fillRect((seal?194:L)+i*35,124,26,5)});
