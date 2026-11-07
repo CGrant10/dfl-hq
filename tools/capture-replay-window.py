@@ -1,0 +1,66 @@
+"""Real Broadcast Window controller/media/game center; isolated feeds, no writes."""
+import json,os,threading,time
+from pathlib import Path
+from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
+from playwright.sync_api import sync_playwright
+ROOT=Path(__file__).resolve().parents[1];OUT=Path(os.environ.get('DFL_REPLAY_REVIEW_DIR','/workspace/dfl-replay-window-review'));OUT.mkdir(parents=True,exist_ok=True)
+MEDIA=Path(os.environ.get('DFL_REPLAY_MEDIA_DIR',str(OUT/'media')));POSTER=Path(os.environ.get('DFL_REPLAY_POSTER',str(ROOT/'tools/fixtures/player-portrait.png')))
+head=(ROOT/'index.html').read_text().split('<head>')[1].split('</head>')[0]
+fixture='''
+import {mountHomeHighlights} from '/js/home-highlights.js';import {pinMode} from '/js/theme.js';
+window.f={now:()=>Date.parse('2026-11-01T22:00:00Z'),hold:false,release:null,summaryReads:[]};
+const event=(id,a,b,sa,sb)=>({id,date:'2026-11-01T18:00:00Z',competitions:[{status:{type:{state:'post',shortDetail:'Final',completed:true}},competitors:[{homeAway:'away',team:{id:'1',abbreviation:a},score:String(sa)},{homeAway:'home',team:{id:'2',abbreviation:b},score:String(sb)}]}]});
+f.payload={season:{year:2026,type:2},week:{number:8},events:[event('1','PIT','NO',16,10),event('2','CIN','BAL',27,24),event('3','KC','DEN',31,20),event('4','BUF','NYJ',0,0)]};
+f.summary=async game=>{f.summaryReads.push(game.id);if(f.hold&&game.id==='4')await new Promise(r=>f.release=r);return {summary:{header:{id:game.id,season:{year:2026,type:2},week:8,competitions:f.payload.events.find(e=>e.id===game.id).competitions},drives:{previous:[]},scoringPlays:[],boxscore:{players:[]}},fetchedAt:Date.now()}};
+const make=(id,game,name,kind)=>({id:String(id),game_id:game,session_date:'2026-11-01',game_label:{1:'PIT · NO',2:'CIN · BAL',3:'KC · DEN'}[game],headline:name,kind,duration:42,published_at:new Date(f.now()-id*1000).toISOString(),expires_at:'2026-11-05T11:00:00Z',source_url:'https://www.espn.com/video/clip/_/id/'+id,thumbnail_url:'https://espnmedia-cdn.akamaized.net/espn/media/review/'+id+'.jpg',video_url:'https://espnmedia-cdn.akamaized.net/espn/media/review/'+id+'.mp4'});
+f.rows=[make(101,'2','Chase takes it 40 yards to the house.','touchdown'),make(102,'2','Burrow finds Higgins for 28 yards.','big-play'),make(103,'2','Chase makes a leaping touchdown catch.','touchdown'),make(104,'2','Chase breaks free for 32 yards.','big-play'),make(105,'2','Burrow finishes the drive with a touchdown.','touchdown'),make(106,'2','Chase turns a short pass into 27 yards.','big-play'),make(107,'1','Pittsburgh finds the end zone.','touchdown'),make(108,'1','New Orleans breaks a long run.','big-play'),make(109,'3','Kansas City scores through the air.','touchdown'),make(110,'3','Denver gets a first down.','big-play')];
+f.root=document.querySelector('#reel');f.controller=mountHomeHighlights(f.root,{load:async()=>f.rows,now:f.now,getPlayers:()=>[{id:'7564',name:'Ja’Marr Chase',position:'WR',nflTeam:'CIN'},{id:'6770',name:'Joe Burrow',position:'QB',nflTeam:'CIN'}],getContext:()=>({season:2026,week:8,nflPayload:f.payload,players:[]})});await f.controller.refresh();window.setTheme=pinMode;window.ready=true;
+'''
+html='<!doctype html><html lang="en"><head><meta charset="utf-8"><base href="/">'+head+'</head><body><main id="view" class="view"><h1>DFL</h1><div id="reel"></div></main><script type="module">'+fixture+'</script></body></html>'
+class Handler(SimpleHTTPRequestHandler):
+ def do_GET(self):
+  path=self.path.split('?')[0];body={
+   '/js/supabase.js':"export const db=()=>null;export const edge=()=>{throw Error('Writes blocked')};",
+   '/js/members.js':'export const currentMember=()=>null;',
+   '/js/sleeper.js':'export const loadWeeklyStats=async()=>[];',
+   '/js/nfl-game-day.js':'export const loadNflGameDay=async()=>({payload:f.payload,fetchedAt:Date.now()});',
+   '/js/nfl-game-center-data.js':'export const loadNflGameSummary=game=>f.summary(game);'
+  }.get(path)
+  if path=='/replay-review/':body=html
+  if body is not None:self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8' if path=='/replay-review/' else 'text/javascript');self.end_headers();self.wfile.write(body.encode());return
+  super().do_GET()
+ def translate_path(self,path):return str(ROOT/path.split('?')[0].lstrip('/'))
+ def log_message(self,*a):pass
+server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start();checks=[]
+def check(name,ok):
+ checks.append({'check':name,'pass':bool(ok)});(OUT/'checks.json').write_text(json.dumps(checks,indent=2));assert ok,name;print('PASS '+name,flush=True)
+def swipe(page,session,direction):
+ box=page.locator('[data-replay-games]').bounding_box();x=box['x']+box['width']*(.78 if direction<0 else .22);y=box['y']+box['height']/2;start=page.locator('[data-replay-games]').evaluate('e=>e.scrollLeft');session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
+ for i in range(1,13):
+  session.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x+direction*132*i/12,'y':y}]});page.wait_for_timeout(20)
+  if i==6:check('native matchup strip follows finger during drag',abs(page.locator('[data-replay-games]').evaluate('e=>e.scrollLeft')-start)>20)
+ page.wait_for_timeout(100);session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
+with sync_playwright() as p:
+ browser=p.chromium.launch(executable_path=os.environ.get('DFL_REVIEW_CHROMIUM','/usr/bin/chromium'),args=['--no-sandbox','--disable-dev-shm-usage'])
+ for width in [320,390]:
+  for theme in ['light','dark']:
+   c=browser.new_context(viewport={'width':width,'height':844},is_mobile=True,has_touch=True,service_workers='block')
+   def route(r):
+    url=r.request.url
+    if url.startswith('http://127.0.0.1:'):r.continue_();return
+    if url.endswith('.mp4'):r.fulfill(content_type='video/mp4',body=(MEDIA/'still.mp4' if (MEDIA/'still.mp4').exists() else ROOT/'tools/fixtures/highlight-playback.mp4').read_bytes(),headers={'Access-Control-Allow-Origin':'*'});return
+    if r.request.resource_type=='image':
+     logo=MEDIA/(url.split('/')[-1].split('?')[0]);src=logo if '/teamlogos/' in url and logo.is_file() else POSTER;r.fulfill(content_type='image/png' if src.suffix=='.png' else 'image/jpeg',body=src.read_bytes());return
+    r.abort()
+   c.add_init_script("Date.now=()=>Date.parse('2026-11-01T22:00:00Z')+performance.now()");c.route('**/*',route);page=c.new_page();errors=[];page.on('pageerror',lambda e:(errors.append(str(e)),print(str(e),flush=True)));page.goto(f'http://127.0.0.1:{server.server_port}/replay-review/');page.wait_for_function('window.ready');page.evaluate('setTheme',theme);page.wait_for_selector('[data-home-reel-open]');page.click('[data-home-reel-open]');page.wait_for_function('document.querySelector("video")?.readyState>=2');page.wait_for_timeout(350);tag=f'{width}-{theme}';sheet=page.locator('.home-reel-player');
+   check(tag+' real selected clip and verified game agree',sheet.locator('[data-replay-game="2"]').get_attribute('aria-pressed')=='true' and 'Chase' in sheet.locator('[data-reel-headline]').inner_text() and '27' in sheet.locator('[data-replay-game="2"]').inner_text());check(tag+' window and grid fit phone edges',sheet.evaluate('e=>e.scrollWidth<=e.clientWidth&&e.getBoundingClientRect().right<=innerWidth') and page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
+   page.mouse.move(1,1);page.wait_for_timeout(2800);check(tag+' natural full video frame',sheet.locator('[data-reel-screen]').evaluate('e=>Math.abs(e.clientHeight-e.clientWidth*9/16)<3'));check(tag+' four complete preview images visible',sheet.locator('[data-reel-queue]').evaluate('e=>{const q=e.getBoundingClientRect();return [...e.querySelectorAll(".reel-list-poster")].filter(n=>{const b=n.getBoundingClientRect();return b.top>=q.top&&b.bottom<=q.bottom}).length>=4}'));page.screenshot(path=str(OUT/f'window-{tag}.png'));sheet.screenshot(path=str(OUT/f'component-{tag}.png'))
+   page.evaluate('f.video=document.querySelector("video")');page.click('[data-reel-kind="touchdown"]');check(tag+' TD filtering retains playback and only TD clips',sheet.locator('[data-reel-choose]').count()==5 and page.evaluate('f.video===document.querySelector("video")'));page.click('[data-reel-kind=""]');check(tag+' all restores complete queue',sheet.locator('[data-reel-choose]').count()==10)
+   page.click('[data-replay-step="1"]');page.wait_for_function('document.querySelector("#replay-game-3").getAttribute("aria-pressed")==="true"');check(tag+' next game selects its real clip and grid',sheet.locator('[data-reel-choose]').count()==2 and 'Kansas' in sheet.locator('[data-reel-headline]').inner_text());page.click('[data-replay-step="-1"]');page.wait_for_function('document.querySelector("#replay-game-2").getAttribute("aria-pressed")==="true"')
+   if width==390 and theme=='dark':
+    page.wait_for_timeout(400);session=c.new_cdp_session(page);swipe(page,session,-1);page.wait_for_function('document.querySelector("#replay-game-3").getAttribute("aria-pressed")==="true"');page.wait_for_timeout(300);swipe(page,session,1);page.wait_for_function('document.querySelector("#replay-game-2").getAttribute("aria-pressed")==="true"');check('repeated native swipes return to the correct game', 'Chase' in sheet.locator('[data-reel-headline]').inner_text());page.emulate_media(reduced_motion='reduce');page.click('[data-replay-step="1"]');sheet.locator('#replay-game-3').focus();page.keyboard.press('ArrowLeft');check('reduced-motion keyboard selection returns to the correct game',sheet.locator('#replay-game-2').get_attribute('aria-pressed')=='true');page.emulate_media(reduced_motion='no-preference')
+   page.click('[data-replay-game="4"]');page.wait_for_selector('.replay-no-clips');check(tag+' no-clip game clears previous footage and offers plays',sheet.locator('video').count()==0 and sheet.locator('[data-reel-source]').is_hidden() and 'BUF' in sheet.locator('[data-reel-headline]').inner_text());check(tag+' no-clip text has readable contrast on the media stage',page.evaluate('async()=>{const {reviewTextContrast}=await import("/tools/home-review-contrast.js");return !reviewTextContrast(document.querySelector(".replay-no-clips")).failures.length}'));page.evaluate('f.hold=true');page.click('.replay-no-clips [data-reel-mode="plays"]');page.wait_for_function('typeof f.release==="function"');page.wait_for_selector('[data-nfl-center-game]');check(tag+' Plays requests the selected no-clip game',page.evaluate('f.summaryReads.at(-1)==="4"') and sheet.locator('#replay-game-4').get_attribute('aria-pressed')=='true');page.click('[data-replay-game="2"]');page.wait_for_function('document.querySelector("[data-nfl-center-game]")?.value==="2"');page.evaluate('f.hold=false;f.release()');page.wait_for_timeout(80);check(tag+' stale game response cannot replace the selected game',page.locator('[data-nfl-center-game]').input_value()=='2');page.click('.reel-browser-modes [data-reel-mode="stats"]');page.wait_for_selector('.nfl-center-fantasy');check(tag+' Fantasy keeps the selected NFL game',page.locator('[data-nfl-center-game]').input_value()=='2');page.click('[data-replay-game="3"]');page.wait_for_function('document.querySelector("[data-nfl-center-game]")?.value==="3"');page.wait_for_selector('.nfl-center-fantasy');check(tag+' explicit game and Fantasy tab override the remembered game',sheet.locator('#replay-game-3').get_attribute('aria-pressed')=='true' and 'Kansas' in sheet.locator('[data-reel-headline]').inner_text());page.click('.reel-browser-modes [data-reel-mode="clips"]');page.click('[data-reel-layout="watch"]');page.wait_for_timeout(300)
+   page.evaluate('f.kept=document.querySelector("video")');page.click('[data-reel-minimize]');page.wait_for_selector('.replay-dock:not([hidden])');check(tag+' minimizing retains the same playing element',page.evaluate('f.kept===document.querySelector(".replay-dock video")'));page.click('[data-dock-expand]');page.wait_for_selector('.home-reel-player[open]');check(tag+' restore keeps playback identity',page.evaluate('f.kept===document.querySelector(".home-reel-player video")'))
+   page.click('[data-reel-close]');page.wait_for_function('!document.querySelector(".home-reel-player").open');check(tag+' closing releases playback and restores opener',page.evaluate('f.kept.paused&&!f.kept.hasAttribute("src")&&document.activeElement.matches("[data-home-reel-open]")'));check(tag+' no browser errors',not errors);c.close()
+ browser.close()
+server.shutdown();print(f'{len(checks)} replay-window checks passed')

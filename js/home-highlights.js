@@ -1,3 +1,6 @@
+import {replayWindowMarkup} from './replay-window.js';
+import {replayIcon} from './replay-icons.js';
+import {replayGameEntries,mountReplayGames} from './replay-games.js';
 import {applyViewingMatchup} from './matchup-view-context.js';
 import {dockReplay,isReplayDocked,restoreReplayDock,detachReplayDock,closeReplayDock} from './replay-dock.js';
 import {readJourneyChoice,writeJourneyChoice} from './journey-memory.js';
@@ -25,14 +28,14 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
  }
  let stopped=false,nearby=typeof IntersectionObserver==='undefined',clips=[],selected='',dialog=null,opener=null,expiryTimer=null,stopViewport=()=>{},request=0,player='',search='',playerCache={key:'',options:[]};
  let returnPoint=null,sheetDrag=null,clipReturn=null;
- let game='',pageSearch='',gameCenter=null,browserMode='clips',layout=null,media=null,modeRequest=0,replayContext=null,centerGame='',browseScroll=0;
+ let game='',kind='',gameStrip=null,pageSearch='',gameCenter=null,browserMode='clips',layout=null,media=null,modeRequest=0,replayContext=null,centerGame='',browseScroll=0;
  const posterError=event=>{
   const image=event.target;if(image.tagName!=='IMG'||image.hasAttribute('data-poster-source')||image.dataset.posterFallback)return;
   try{const url=new URL(image.src),source=url.hostname==='a.espncdn.com'&&url.pathname==='/combiner/i'?highlightThumbnail(url.searchParams.get('img')):null;
    if(source){image.dataset.posterFallback='1';image.src=source}
   }catch{/* Keep the fixed poster frame if a publisher image is unavailable. */}
  };
- const current=()=>!stopped&&root.isConnected&&active(),motion=()=>readPageChoice('gameday-motion',['on','off'],'on')==='on'&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const current=()=>!stopped&&root.isConnected&&active(),motion=()=>readPageChoice('gameday-motion',['on','off'],'on')==='on'&&document.documentElement.dataset.uiMotion!=='off'&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
  const stopVideo=()=>{if(!isReplayDocked(media))media?.release()};
  const close=({animated=false}={})=>{
   modeRequest++;if(isReplayDocked(media))return;media?.pause();gameCenter?.pause();if(!dialog?.open){stopVideo();return}
@@ -50,13 +53,23 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
   if(player&&!playerCache.options.some(option=>option.key===player))player='';
   return playerCache.options;
  };
- const browseRows=()=>browseHighlightClips(visibleClips(),{player,players:playerOptions(),query:search}).filter(c=>!game||c.game_id===game);
+ const browseRows=()=>browseHighlightClips(visibleClips(),{player,players:playerOptions(),query:search}).filter(c=>(!game||c.game_id===game)&&(!kind||c.kind===kind));
  const drawPlayer=(replace=false)=>{
   if(!dialog?.open||isReplayDocked(media))return;
-  const valid=browseRows(),index=valid.findIndex(clip=>clip.id===selected),clip=visibleClips().find(clip=>clip.id===selected);if(!clip){close();return}
+  const all=visibleClips(),valid=browseRows();let clip=all.find(clip=>clip.id===selected);
+  if(!clip&&valid.length){selected=valid[0].id;clip=valid[0];replace=true}
+  const entries=replayGameEntries(all,getContext());gameStrip?.update(entries,game||clip?.game_id||'');
+  for(const button of dialog.querySelectorAll('[data-reel-kind]'))button.setAttribute('aria-pressed',String(button.dataset.reelKind===kind));
+  if(!clip){
+   if(!all.length){close();return}
+   const entry=entries.find(e=>e.id===game);stopVideo();dialog.querySelector('[data-reel-screen]').innerHTML='<div class="replay-no-clips"><strong>No clips for this game yet.</strong><button type="button" class="linkbtn" data-reel-mode="plays">Follow the plays</button></div>';
+   dialog.querySelector('[data-reel-headline]').textContent=entry?.label||'NFL replay';dialog.querySelector('[data-reel-context]').textContent=entry?.status||'';dialog.querySelector('[data-reel-count]').textContent='No clips';dialog.querySelector('[data-reel-source]').hidden=true;dialog.querySelector('[data-reel-minimize]').hidden=true;
+   dialog.querySelectorAll('[data-reel-previous],[data-reel-next]').forEach(b=>b.disabled=true);patchGameDay(dialog.querySelector('[data-reel-queue]'),reelQueueMarkup([],''));return;
+  }
+  const index=valid.findIndex(row=>row.id===selected);dialog.querySelector('[data-reel-source]').hidden=false;
   dialog.querySelector('[data-reel-headline]').textContent=clip.headline;
-  dialog.querySelector('[data-reel-context]').textContent=clip.game_label+' · ESPN';
-  if(gameCenter&&browserMode!=='clips')gameCenter.updateContext();
+  dialog.querySelector('[data-reel-context]').textContent=[clip.game_label,entries.find(e=>e.id===clip.game_id)?.status==='Replay'?'':entries.find(e=>e.id===clip.game_id)?.status].filter(Boolean).join(' · ');
+  layout?.refresh();if(gameCenter&&browserMode!=='clips')gameCenter.updateContext();
   const context=getContext(),nflGame=context?.nflPayload?nflCenterGames(context.nflPayload,context.season,context.week).find(g=>g.id===clip.game_id):null;
   patchGameDay(dialog.querySelector('[data-reel-game-score]'),replayScoreMarkup(nflGame,clip.game_label));
   dialog.querySelector('[data-reel-game-state]').textContent=nflGame?`WEEK ${context.week}`:replayContext&&centerGame===clip.game_id?`WEEK ${replayContext.week}`:'NFL';
@@ -100,7 +113,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
  const setBrowserMode=async mode=>{
   browserMode=mode;const ticket=++modeRequest;dialog.style.setProperty('--reel-mode',String({clips:0,plays:1,stats:2}[mode]));
   for(const button of dialog.querySelectorAll('[data-reel-mode]'))button.setAttribute('aria-pressed',String(button.dataset.reelMode===mode));
-  dialog.querySelector('[data-reel-clip-browser]').hidden=mode!=='clips';dialog.querySelector('[data-reel-game-browser]').hidden=mode==='clips';
+  dialog.querySelector('.reel-grid-heading').hidden=mode!=='clips';dialog.querySelector('[data-reel-clip-browser]').hidden=mode!=='clips';dialog.querySelector('[data-reel-game-browser]').hidden=mode==='clips';
   if(mode==='clips'){gameCenter?.pause();drawPlayer();return}
   layout?.browse();const clip=visibleClips().find(c=>c.id===selected),host=dialog.querySelector('[data-reel-game-browser]');
   try{
@@ -111,27 +124,32 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
     replayContext=edition;gameCenter?.stop();gameCenter=null;centerGame=target;
    }
    if(!gameCenter){
-    host.replaceChildren();gameCenter=mountNflGameCenter(host,{embedded:true,desk:true,initialMode:mode==='stats'?'fantasy':'plays',getContext:()=>({...replayContext,playerDirectory:getContext()?.playerDirectory||replayContext.playerDirectory,players:getPlayers().map(p=>Number(replayContext.week)===Number(getContext()?.week)?p:{...p,points:null,owner:'',isMine:false})}),active:()=>current()&&dialog.open&&browserMode!=='clips',getClips:visibleClips,initialGame:centerGame,onGameChange:id=>{centerGame=id;game=id;drawPlayer()},onClip:id=>{clipReturn={id,mode:browserMode};player='';search='';dialog.querySelector('[data-reel-search]').value='';choose(id);layout?.watch();void setBrowserMode('clips')}});
+    host.replaceChildren();gameCenter=mountNflGameCenter(host,{embedded:true,desk:true,restoreChoice:false,initialMode:mode==='stats'?'fantasy':'plays',getContext:()=>({...replayContext,playerDirectory:getContext()?.playerDirectory||replayContext.playerDirectory,players:getPlayers().map(p=>Number(replayContext.week)===Number(getContext()?.week)?p:{...p,points:null,owner:'',isMine:false})}),active:()=>current()&&dialog.open&&browserMode!=='clips',getClips:visibleClips,initialGame:centerGame,onGameChange:id=>{centerGame=id;game=id;kind='';player='';search='';clipReturn=null;dialog.querySelector('[data-reel-search]').value='';selected=visibleClips().find(c=>c.game_id===id)?.id||'';drawPlayer(true)},onClip:id=>{clipReturn={id,mode:browserMode};player='';kind='';search='';dialog.querySelector('[data-reel-search]').value='';choose(id);layout?.watch();void setBrowserMode('clips')}});
    }else{gameCenter.setMode(mode==='stats'?'fantasy':'plays');gameCenter.resume()}
    if(clipReturn?.mode===mode){const clip=clipReturn.id;clipReturn=null;drawPlayer();requestAnimationFrame(()=>{if(current()&&dialog.open&&browserMode===mode)dialog.querySelector(`[data-nfl-center-clip="${CSS.escape(clip)}"]`)?.focus({preventScroll:true})});}
   }catch{if(ticket===modeRequest&&current()){host.innerHTML='<p class="nfl-center-empty">Game unavailable. <button type="button" class="linkbtn" data-reel-game-retry>Try again</button></p>'}}
  };
  const setup=()=>{
   if(dialog)return;
-  dialog=document.createElement('dialog');dialog.className='home-reel-player';dialog.setAttribute('aria-labelledby','home-reel-player-title');
-  dialog.innerHTML='<header><span class="reel-network" aria-hidden="true">DFL <b>REPLAY</b></span><h2 id="home-reel-player-title" tabindex="-1">Weekend reel</h2><span data-reel-count></span><a class="home-reel-source-link" data-reel-source aria-label="Watch this clip on ESPN" target="_blank" rel="noopener noreferrer">ESPN <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" d="M7 17 17 7M7 7h10v10"/></svg></a><button type="button" class="linkbtn" data-reel-minimize aria-label="Minimize video"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18h14" stroke="currentColor" stroke-width="2"/></svg></button><button type="button" class="linkbtn" data-reel-close aria-label="Close highlights">×</button></header><div class="home-reel-view"><div class="home-reel-stage"><div class="reel-stadium-lights" aria-hidden="true"></div><div class="reel-scorebug"><div data-reel-game-score></div><small data-reel-game-state></small><b>REPLAY</b></div><div class="home-reel-screen" data-reel-screen></div><div class="reel-caption-row"><div class="home-reel-player-copy"><div class="reel-now-row"><small data-reel-context></small></div><h3 data-reel-headline></h3><p data-reel-error role="status" hidden>Clip unavailable here. Open it on ESPN.</p></div><nav class="home-reel-player-controls" aria-label="Reel playback"><button type="button" class="btn ghost" data-reel-previous aria-label="Previous clip"><span class="nfl-game-icon is-previous" aria-hidden="true"></span></button><button type="button" class="btn" data-reel-next aria-label="Next clip"><span class="nfl-game-icon is-next" aria-hidden="true"></span></button></nav></div><button type="button" class="reel-up-next" data-reel-up-next></button></div><section class="home-reel-browser" aria-label="Find highlights and NFL plays"><div class="reel-splitter"><button type="button" data-reel-layout="watch" aria-pressed="true">Watch</button><span data-reel-resize role="separator" aria-label="Resize video and clip browser" aria-orientation="horizontal" tabindex="0"><i aria-hidden="true"></i></span><button type="button" data-reel-layout="browse" aria-pressed="false">Browse</button></div><div class="reel-browser-modes" role="group" aria-label="Replay studio view"><button type="button" data-reel-mode="clips" aria-pressed="true">Clips</button><button type="button" data-reel-mode="plays" aria-pressed="false">Plays</button><button type="button" data-reel-mode="stats" aria-pressed="false">Fantasy</button></div><div class="reel-clip-browser" data-reel-clip-browser><label class="reel-game-label">Game<select data-reel-game></select></label><div class="reel-search-row"><label for="home-reel-search" class="sr-only">Search players or plays</label><input id="home-reel-search" data-reel-search type="search" maxlength="80" placeholder="Find clips" autocomplete="off"><button type="button" class="linkbtn" data-reel-clear aria-label="Clear highlight filters">Clear</button></div><details class="reel-people-picker"><summary>Players <span data-reel-people-label>All players</span></summary><div class="home-reel-players" data-reel-players role="group" aria-label="Filter clips by player"></div></details><ol class="home-reel-queue" data-reel-queue aria-label="Choose a highlight"></ol></div><div class="reel-game-browser" data-reel-game-browser hidden></div></section></div>';
-  const filterPlayer=value=>{dialog.querySelector('.reel-people-picker').open=false;player=value;remember();search='';dialog.querySelector('[data-reel-search]').value='';paint();const rows=browseRows();if(rows.length)choose(rows[0].id)};
+  dialog=document.createElement('dialog');dialog.className='home-reel-player';dialog.dataset.replayWindow='broadcast';dialog.setAttribute('aria-labelledby','home-reel-player-title');
+  dialog.innerHTML=replayWindowMarkup();
+  const filterPlayer=value=>{dialog.querySelector('.reel-people-picker').open=false;player=value;kind='';remember();search='';dialog.querySelector('[data-reel-search]').value='';paint();const rows=browseRows();if(rows.length)choose(rows[0].id)};
 
-  document.body.append(dialog);layout=mountReplayLayout(dialog,{motion,onSnap:index=>{if(index===0)dialog.querySelector('.reel-people-picker').open=false;if(index>0)requestAnimationFrame(()=>{const queue=dialog?.querySelector('[data-reel-queue]');if(queue)queue.scrollTop=browseScroll})}});media=mountReplayMedia(dialog.querySelector('[data-reel-screen]'),{motion,onEnded:()=>{if(!current()||!dialog.open)return;const rows=browseRows(),index=rows.findIndex(row=>row.id===selected);if(rows[index+1]&&!dialog.querySelector('[data-reel-search]').matches(':focus'))choose(rows[index+1].id)},onError:()=>{if(current()&&dialog.open)dialog.querySelector('[data-reel-error]').hidden=false},onPlaying:playing=>{if(!dialog)return;dialog.dataset.reelPlaying=String(playing);const badge=dialog.querySelector('.reel-playing');if(badge)badge.textContent=playing?'Playing':'Selected'}});dialog.addEventListener('error',posterError,true);
+  document.body.append(dialog);
+  const switchGame=id=>{game=id;kind='';player='';search='';clipReturn=null;dialog.querySelector('[data-reel-search]').value='';remember();const rows=browseRows();selected=rows[0]?.id||'';drawPlayer(true);dialog.querySelector('[data-reel-queue]').scrollTop=0;if(browserMode!=='clips')void setBrowserMode(browserMode)};
+  gameStrip=mountReplayGames(dialog.querySelector('[data-replay-game-strip]'),{select:switchGame,active:()=>current()&&dialog.open,motion});
+  layout=mountReplayLayout(dialog,{motion,onSnap:index=>{if(index===0)dialog.querySelector('.reel-people-picker').open=false;if(index>0)requestAnimationFrame(()=>{const queue=dialog?.querySelector('[data-reel-queue]');if(queue)queue.scrollTop=browseScroll})}});media=mountReplayMedia(dialog.querySelector('[data-reel-screen]'),{motion,onEnded:()=>{if(!current()||!dialog.open)return;const rows=browseRows(),index=rows.findIndex(row=>row.id===selected);if(rows[index+1]&&!dialog.querySelector('[data-reel-search]').matches(':focus'))choose(rows[index+1].id)},onError:()=>{if(current()&&dialog.open)dialog.querySelector('[data-reel-error]').hidden=false},onPlaying:playing=>{if(!dialog)return;dialog.dataset.reelPlaying=String(playing);const badge=dialog.querySelector('.reel-playing');if(badge)badge.textContent=playing?'Playing':'Selected'}});dialog.addEventListener('error',posterError,true);
   dialog.addEventListener('click',event=>{
    if(!event.target.closest('.reel-people-picker'))dialog.querySelector('.reel-people-picker').open=false;
    if(event.target.closest('[data-player-card]')){media?.pause();return;}
    const button=event.target.closest('button');if(!button)return;
+   if(button.hasAttribute('data-reel-kind')){kind=button.dataset.reelKind;drawPlayer();dialog.querySelector('[data-reel-queue]').scrollTop=0;return}
+   if(button.hasAttribute('data-reel-tools')){layout.browse();dialog.querySelector('[data-reel-search]').focus();return}
    if(button.dataset.reelMode){void setBrowserMode(button.dataset.reelMode);return}
    if(button.hasAttribute('data-reel-game-retry')){void setBrowserMode(browserMode);return}
    if(button.hasAttribute('data-reel-up-next')){const rows=browseRows(),index=rows.findIndex(row=>row.id===selected);if(rows[index+1])choose(rows[index+1].id);return}
    if(button.hasAttribute('data-reel-player-filter')){filterPlayer(button.dataset.reelPlayerFilter);return}
-   if(button.hasAttribute('data-reel-clear')){player='';game='';search='';remember();dialog.querySelector('[data-reel-search]').value='';paint();dialog.querySelector('[data-reel-players]').scrollLeft=0;scrollQueue();return}
+   if(button.hasAttribute('data-reel-clear')){player='';game='';kind='';search='';remember();dialog.querySelector('[data-reel-search]').value='';paint();dialog.querySelector('[data-reel-players]').scrollLeft=0;scrollQueue();return}
    if(button.hasAttribute('data-reel-minimize')){
     const clip=visibleClips().find(c=>c.id===selected);if(!clip)return;
     gameCenter?.pause();modeRequest++;
@@ -142,7 +160,7 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
    const valid=browseRows(),index=valid.findIndex(clip=>clip.id===selected),step=button.hasAttribute('data-reel-next')?1:button.hasAttribute('data-reel-previous')?-1:0;
    if(step&&valid[index+step])choose(valid[index+step].id);
   });
-  dialog.addEventListener('change',event=>{if(event.target.matches('[data-reel-game]')){game=event.target.value;remember();drawPlayer();dialog.querySelector('[data-reel-queue]').scrollTop=0}});
+  dialog.addEventListener('change',event=>{if(event.target.matches('[data-reel-game]')){event.target.value?switchGame(event.target.value):(game='',kind='',remember(),drawPlayer())}});
   dialog.querySelector('[data-reel-search]').addEventListener('focus',()=>{dialog.querySelector('.reel-people-picker').open=false});
   dialog.addEventListener('input',event=>{if(event.target.matches('[data-reel-search]')){search=event.target.value.slice(0,80);drawPlayer()}});
   dialog.addEventListener('keydown',event=>{if(browserMode!=='clips'||event.target.closest('input,textarea,select,video')||!['ArrowLeft','ArrowRight'].includes(event.key))return;const rows=browseRows(),index=rows.findIndex(clip=>clip.id===selected),clip=rows[index+(event.key==='ArrowRight'?1:-1)];if(clip){event.preventDefault();choose(clip.id)}});
@@ -156,9 +174,9 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
    }});
  };
  const open=(id,source,{returnToGame=false}={})=>{
-  clips=visibleClips();search='';const rows=browseRows();if(!rows.length){paint();return}
+  kind='';clips=visibleClips();search='';const rows=browseRows();if(!rows.length){paint();return}
   opener=source;clipReturn=null;returnPoint=source?.isConnected?{top:source.getBoundingClientRect().top}:null;setup();applyViewingMatchup(dialog,returnToGame?source:null);
-  const closeButton=dialog.querySelector('[data-reel-close]');closeButton.textContent=returnToGame?'Back':'×';closeButton.setAttribute('aria-label',returnToGame?'Back to game':'Close highlights');if(isReplayDocked(media))restoreReplayDock(media);else closeReplayDock();browseScroll=0;dialog.querySelector('h2').textContent=returnToGame?'NFL replay':typeof title==='function'?title():title;cancelUiExit(dialog);selected=id||rows[0].id;dialog.querySelector('[data-reel-search]').value='';
+  const closeButton=dialog.querySelector('[data-reel-close]');closeButton.innerHTML=returnToGame?'Back':replayIcon('x-lg');closeButton.setAttribute('aria-label',returnToGame?'Back to game':'Close highlights');if(isReplayDocked(media))restoreReplayDock(media);else closeReplayDock();browseScroll=0;dialog.querySelector('h2').textContent='DFL REPLAY';cancelUiExit(dialog);selected=id||rows[0].id;dialog.querySelector('[data-reel-search]').value='';
   dialog.showModal();stopViewport();stopViewport=fitDialogToViewport(dialog)||(()=>{});layout.reset();drawPlayer(true);scrollQueue(true);const people=dialog.querySelector('[data-reel-players]'),person=people.querySelector('[aria-pressed="true"]');people.scrollLeft=player&&person?Math.max(0,person.offsetLeft-people.offsetLeft-people.clientWidth/2+person.clientWidth/2):0;dialog.querySelector('h2').focus({preventScroll:true});
   setBrowserMode('clips');
   if(motion()){const sourceBox=source?.querySelector('img')?.getBoundingClientRect()||source?.getBoundingClientRect(),screen=dialog.querySelector('[data-reel-screen]'),box=screen.getBoundingClientRect();animateUi(dialog,[{opacity:0},{opacity:1}],{duration:180});if(sourceBox?.width&&sourceBox.height&&sourceBox.bottom>0&&sourceBox.top<innerHeight&&sourceBox.right>0&&sourceBox.left<innerWidth)animateUi(screen,[{transform:`translate(${sourceBox.x+sourceBox.width/2-box.x-box.width/2}px,${sourceBox.y+sourceBox.height/2-box.y-box.height/2}px) scale(${Math.max(.2,Math.min(1,sourceBox.width/box.width))})`,borderRadius:'10px'},{transform:'none',borderRadius:'0px'}],{duration:300,easing:'cubic-bezier(.2,.75,.25,1)'});animateUi(dialog.querySelector('.home-reel-browser'),[{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}],{delay:60,duration:220})}
@@ -185,5 +203,5 @@ export function mountHomeHighlights(root,{active=()=>root.isConnected,load=loadH
  root.addEventListener('error',posterError,true);root.addEventListener('click',click);root.addEventListener('change',change);root.addEventListener('input',input);document.addEventListener('visibilitychange',hidden);
  const observer=typeof IntersectionObserver==='undefined'?null:new IntersectionObserver(entries=>{nearby=entries.some(entry=>entry.isIntersecting);if(nearby)loop.wake()},{rootMargin:'120px 0px'});observer?.observe(root);
  loop.start();scheduleExpiry();
- return {filterPlayer(id,query=''){player=String(id||'');pageSearch=String(query||'').slice(0,80);remember();paint()},openClip(id,options={}){if(!visibleClips().some(c=>c.id===String(id)))return false;player='';game='';search='';open(String(id),options.source||root.querySelector(`[data-home-reel-clip="${id}"]`)||root.querySelector('[data-home-reel-open]'),options);return true},updatePlayers:()=>paint(),refresh:()=>refreshRows().catch(()=>{if(current())paint()}),close:()=>close(),reset(){request++;clips=[];player='';game='';pageSearch='';search='';close();paint()},stop(){stopped=true;request++;sheetDrag?.stop();clearTimeout(expiryTimer);modeRequest++;observer?.disconnect();loop.stop();root.removeEventListener('error',posterError,true);root.removeEventListener('click',click);root.removeEventListener('change',change);root.removeEventListener('input',input);document.removeEventListener('visibilitychange',hidden);stopViewport();layout?.stop();if(isReplayDocked(media))detachReplayDock(media);else media?.stop();gameCenter?.stop();close();dialog?.remove()}};
+ return {filterPlayer(id,query=''){player=String(id||'');pageSearch=String(query||'').slice(0,80);remember();paint()},openClip(id,options={}){if(!visibleClips().some(c=>c.id===String(id)))return false;player='';game='';search='';open(String(id),options.source||root.querySelector(`[data-home-reel-clip="${id}"]`)||root.querySelector('[data-home-reel-open]'),options);return true},updatePlayers:()=>paint(),refresh:()=>refreshRows().catch(()=>{if(current())paint()}),close:()=>close(),reset(){request++;clips=[];player='';game='';pageSearch='';search='';close();paint()},stop(){stopped=true;request++;sheetDrag?.stop();clearTimeout(expiryTimer);modeRequest++;observer?.disconnect();loop.stop();root.removeEventListener('error',posterError,true);root.removeEventListener('click',click);root.removeEventListener('change',change);root.removeEventListener('input',input);document.removeEventListener('visibilitychange',hidden);stopViewport();gameStrip?.stop();layout?.stop();if(isReplayDocked(media))detachReplayDock(media);else media?.stop();gameCenter?.stop();close();dialog?.remove()}};
 }

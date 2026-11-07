@@ -1,7 +1,7 @@
-export function replaySnapSizes(height,width){
+export function replaySnapSizes(height,width,caption=72){
  const expanded=Math.min(96,Math.max(48,height*.16));
- const watch=Math.max(expanded,Math.min(height-220,width*9/16+152));
- const browse=Math.max(expanded,Math.min(watch-36,width*9/16+50,height*.4));
+ const watch=Math.max(expanded,Math.min(height-176,width*9/16+caption));
+ const browse=Math.max(expanded,Math.min(watch-36,width*9/16+28,height*.35));
  return [watch,browse,expanded];
 }
 export function replaySnapIndex(sizes,size,velocity=0){
@@ -12,7 +12,7 @@ export function replaySnapIndex(sizes,size,velocity=0){
 export function mountReplayLayout(dialog,{motion=()=>true,onSnap=(_index)=>{}}={}){
  const view=dialog.querySelector('.home-reel-view'),stage=dialog.querySelector('.home-reel-stage'),grip=dialog.querySelector('[data-reel-resize]');
  let index=0,frame=0,animation=0,drag=null,stopped=false;
- const sizes=()=>replaySnapSizes(view.clientHeight,view.clientWidth);
+ const sizes=()=>replaySnapSizes(view.clientHeight,view.clientWidth,Math.max(72,stage.querySelector('.reel-caption-row')?.scrollHeight||0));
  function apply(size,animate=false){
   if(stopped)return;clearTimeout(animation);dialog.toggleAttribute('data-reel-layout-motion',animate&&motion());
   dialog.style.setProperty('--reel-stage-size',`${size}px`);
@@ -40,5 +40,5 @@ export function mountReplayLayout(dialog,{motion=()=>true,onSnap=(_index)=>{}}={
  const click=event=>{const button=event.target.closest('[data-reel-layout]');if(button)snap(button.dataset.reelLayout==='watch'?0:1)};
  grip.addEventListener('pointerdown',down);grip.addEventListener('pointermove',move);grip.addEventListener('pointerup',up);grip.addEventListener('pointercancel',up);grip.addEventListener('lostpointercapture',up);grip.addEventListener('keydown',key);dialog.addEventListener('click',click);dialog.addEventListener('focusin',focus);
  const observer=new ResizeObserver(()=>{if(dialog.open&&!drag)apply(sizes()[index])});observer.observe(view);
- return {watch(){snap(0)},browse(){snap(1)},expand(){snap(2)},reset(){snap(0,false)},stop(){stopped=true;observer.disconnect();cancelAnimationFrame(frame);clearTimeout(animation);grip.removeEventListener('pointerdown',down);grip.removeEventListener('pointermove',move);grip.removeEventListener('pointerup',up);grip.removeEventListener('pointercancel',up);grip.removeEventListener('lostpointercapture',up);grip.removeEventListener('keydown',key);dialog.removeEventListener('click',click);dialog.removeEventListener('focusin',focus)}};
+ return {refresh(){if(!drag)apply(sizes()[index])},watch(){snap(0)},browse(){snap(1)},expand(){snap(2)},reset(){snap(0,false)},stop(){stopped=true;observer.disconnect();cancelAnimationFrame(frame);clearTimeout(animation);grip.removeEventListener('pointerdown',down);grip.removeEventListener('pointermove',move);grip.removeEventListener('pointerup',up);grip.removeEventListener('pointercancel',up);grip.removeEventListener('lostpointercapture',up);grip.removeEventListener('keydown',key);dialog.removeEventListener('click',click);dialog.removeEventListener('focusin',focus)}};
 }
