@@ -17,7 +17,7 @@ const faceoff = '<div class="loading-faceoff"><div><i class="loading-avatar"></i
 const layouts = {
   home: `${heading}<div class="loading-home-front"><div>${panel(faceoff)}${panel('<i></i><i></i><i class="loading-action"></i>')}</div>${panel('<i></i><i></i><i></i>', 'loading-broadcast')}</div>${tabs}${panel(loadingRows(3))}`,
   clubhouse: `${heading}${tabs}<div class="loading-mini-games">${Array.from({length:3}, () => panel('<i></i><i></i>')).join('')}</div>${panel(faceoff)}${panel(loadingRows(4))}`,
-  sportsbook: `${heading}${tabs}${panel('<i></i><i class="loading-action"></i>', 'loading-wallet')}${panel(loadingRows(5))}`,
+  sportsbook: `<div class="loading-book-head">${heading}${panel('<i></i><i class="loading-action"></i>', 'loading-wallet')}</div>${tabs}${tabs}${panel(loadingRows(4))}`,
   trade: `${heading}${tabs}${panel('<i></i><i class="loading-action"></i>', 'loading-setup')}<div class="loading-packages">${panel(loadingRows(3))}${panel(loadingRows(3))}</div>`,
   analyzer: `${heading}${panel('<i></i><i class="loading-action"></i>', 'loading-setup')}${panel(faceoff)}${panel(loadingRows(4))}`,
   wall: `${heading}${panel('<i></i><i></i><i class="loading-action"></i>', 'loading-composer')}${panel(loadingRows(1)+'<div class="loading-story"><i></i><i></i><i></i></div>')}${panel(loadingRows(1)+'<div class="loading-story"><i></i><i></i></div>')}`,
