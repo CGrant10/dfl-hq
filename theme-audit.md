@@ -2435,3 +2435,24 @@ against their actually painted portrait positions. Keyboard, Reduced Motion,
 app-motion-off, resizing and teardown remain covered. Physical iOS frame pacing
 and VoiceOver speech remain unmeasured. Evidence:
 `/workspace/dfl-trade-1559/{actual,after/editing,board-release,offer-reading}`.
+
+## 1.560.0 — Night Game shared image design
+
+Reviewed real share-preview screenshots at 320/390px in Medicine Wheel Light
+and Dark: `/workspace/dfl-share-1560/preview-{320,390}-{light,dark}.png` and
+`ticket-preview-{320,390}-{light,dark}.png`. Existing dialog buttons, pressed
+style underline, selectors, borders, body text and backdrop use shared tokens;
+44px touch controls and narrow widths pass. Clean remains a remembered explicit
+choice; Night Game is the new export default in either theme, including cards
+without player images. No additional theme entries.
+
+Export artwork deliberately uses the selected charcoal/off-white/red/yellow
+palette. Its round DFL logo and stadium lights are authored assets; no shield,
+old blue accents or CSS-drawn substitute. Large red title/banter meet large-text
+contrast; readable off-white names/scores and muted supporting labels sit on
+the dark ground. Green/red ticket marks retain meaning and explicit HIT/MISS
+labels. Long text and unavailable photos do not conceal controls or facts.
+No uncaught errors in 71 share checks or 48 existing Sportsbook result checks.
+`pnpm themes` and the full 2,493-test check pass. Physical iOS rendering and
+native share sheets remain unmeasured. See `design-qa.md` for the normalized
+source/implementation comparison and documented real-photo framing.

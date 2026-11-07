@@ -1,96 +1,36 @@
-# NFL game center — 1.552.0
+# Night Game shared images — 1.560.0
+
+Source visual truth: `/workspace/generated_images/exec-4e113566-c065-4884-bccd-7157cc13e666.png` (selected option 2).
+Implementation: `/workspace/dfl-share-1560/matchup-browser.png`, captured from the real canvas renderer in Chromium, not a static replacement.
+
+Source 1122×1402; implementation 1080×1355 canvas pixels, browser CSS size 1080×1355, deviceScaleFactor 1. Both are normalized to a common 540×675 frame (0.4% vertical normalization for the implementation) in the combined browser capture `/workspace/dfl-share-1560/comparison-final.png`. The focused score/footer comparison is `/workspace/dfl-share-1560/comparison-details.png` at 720px display width per panel. Local isolated URL: `/night-review/`, served by `tools/capture-night-share-review.py`.
+
+State: final week 8, Bayou Bombers 136.42, Klutch Sports Group 121.88, margin 14.54, actual Sleeper Ja’Marr Chase portrait and 28.40 points. No authenticated league operations or real messages sent. The generated mock's invented full-torso player image is intentionally replaced by the real Sleeper head-and-shoulder cutout, with its native proportions and a soft lower fade. The reserved right image column prevents artwork covering names or scores. The mock's decorative date is omitted because the underlying final-share model does not supply a verified final date.
+
+## Findings and comparison history
+
+- Initial combined comparison: `/workspace/dfl-share-1560/comparison-final-01.png` and `comparison-details-01.png`. [P2] Main result word, team rows and banter were smaller than the selected reference, leaving excess space before the footer. Increased matchup title to 122px with a 148px result word, row names to 44px, and banter to 80px. The new layout keeps each long word together by fitting it before wrapping.
+- The second comparison showed two closely spaced bottom rules. Removed the redundant rule below the margin and captured the same content again.
+- Final combined captures above were opened and inspected together. No actionable P0/P1/P2 findings remain. Real portrait framing and absence of an unverified date are expected product constraints, not assertions of pixel-identical generated imagery.
+
+## Required fidelity surfaces
+
+- Typography: local variable Inter, weight 900 headline/numerals, 700 names, quieter supporting labels. Bold non-condensed letterforms reflect the chosen clean grotesk direction. Long names/context wrap; numeric values fit their reserved column. Unicode player names render correctly. Source headline proportions now carry into the result and footer. The mock's variable generated glyph shapes cannot be reproduced exactly by a real font.
+- Spacing/layout: 64px side margins, aligned full-width score rules, separate image/text tracks, dominant final score, compact metadata. Portrait outputs retain the 4:5 minimum frame; longer trades/tickets expand to retain explicit routes, omitted-item counts or full details. Wide golf scorecards retain their table and scoring marks.
+- Colors/tokens: charcoal, off-white, deep red, soft stadium lights and yellow margin match the selected direction. The new 42KB generated stadium asset fades into the background with no rectangular glow edge. Export art is consistently dark in either app theme; preview controls use existing shared Light/Dark tokens. Semantic hit/miss marks retain green/red, with explicit words as well as color.
+- Image quality: actual round DFL asset; no shield or mascot substitution. Generated stadium has no embedded text or logos. Real portraits keep aspect ratio, sufficient resolution for this source, reserved spacing and soft alpha fade. No fictitious player bodies are generated at runtime.
+- Content: actual scores, names, player credit, margin and league footer retained. Trade packages retain every direction and original balance/confidence facts. Settled, pending and refunded tickets remain distinct; a ten-pick provisional loss cannot become a paid win. Compact omissions are counted, full exports retain all items. No valuation changes.
+
+Wide golf inspection also found left-aligned headers above centered scores, stretched stadium lights behind metadata and an unnecessarily tall frame. Centered each heading over its value/mark, retained the artwork aspect ratio and restored a 1600×900 minimum frame. The revised `/workspace/dfl-share-1560/table-compact.png` was opened and inspected; its extra alignment/frame browser check passes.
+
+## Interactions and responsive verification
+
+71 isolated browser checks pass at 320/390px in actual Medicine Wheel Light and Dark, including default design, persisted Clean choice, 44px controls, no horizontal overflow, usable no-photo cards, failed-photo fallback, full ten-pick pending result, stale render protection, close/focus restoration, route teardown and synchronous native share activation. Full/compact trade, ticket, profile, recap plus matchup/tie, keeper, highlight and golf exports are rendered and checked for text bounds and photo separation. Mobile captures: `/workspace/dfl-share-1560/preview-{320,390}-{light,dark}.png`; exported cards in the same directory. No uncaught browser errors. The compiled production renderer also passes at the real `/dfl-hq/` base path, with stadium and portrait loaded and no errors: `/workspace/dfl-share-1560/compiled-preview.png`.
+
+The inherited full trade review initially expected stacked packages below a 600px viewport. Its assertion now verifies aligned totals after readable rows for either valid container-based layout; the existing complete review passes at 320/390/768px, with no overflow or uncaught errors. This changes the old test, not the trade UI.
+
+Existing Sportsbook result controller regression: 48 checks pass, including both Clean/Night Game exports, losing sixth leg and pending official payout. Native sharing/download are mocked; physical iOS share-sheet appearance and font rasterization are not measured. Static exports have no motion; existing preview focus behavior is preserved.
+
+Implementation checklist: selected art applied; actual photos and logo retained; semantics and fallbacks verified; mobile themes inspected; typography/dividers corrected; final combined comparison reviewed. No further blocking fixes.
 
 final result: passed
-
-## Source, scope and normalization
-
-Verified source: Sleeper's official NFL game-center image from its 2023 redesign,
-https://sleeper.com/blog/sleepers-app-redesign-whats-new/ . Local visual truth:
-`/workspace/dfl-sleeper-reference/official-nfl-field-2023.png` (383 × 820).
-The source was opened and inspected before implementation. Public current App
-Store material did not expose every requested native screen; this is a faithful
-adaptation of the verified game-center composition and interaction pattern, not
-a claim of pixel-exact equivalence to the latest installed Sleeper version.
-
-Implementation: `/workspace/dfl-nfl-1552/swipe-ship/dark-390-plays.png`, 390 × 844
-at a 390 × 844 CSS viewport, deviceScaleFactor 1. Light/Dark mobile captures,
-Fantasy, 320/430/768px, enlarged text and drag state are alongside it. These are
-workspace Chromium/Playwright renders, not a cloud-browser or physical-iOS run.
-The full production app with current read-only league/NFL data is in
-`/workspace/dfl-nfl-1552/local-ship`.
-
-The source shows an in-progress SF/LAR game with Stats selected; the DFL fixture
-shows an in-progress CAR/GB play with Plays selected. Compare the shared live
-play/field/score/tab regions, not unrelated score-table content. Data and clock
-values differ deliberately; current data is never replaced with reference copy.
-The source's iOS device chrome is excluded from the focused comparison.
-
-Full-view comparison, opened together:
-`/workspace/dfl-nfl-1552/full-comparison-final.png`.
-Focused hero comparison, opened together:
-`/workspace/dfl-nfl-1552/hero-comparison-final.png`.
-The source region (366px wide) is normalized to the DFL content width (358px),
-preserving aspect ratio. Overall captures retain their native density; no
-pixel-diff precision is claimed across the distinct games or view choices.
-
-## Findings and iteration history
-
-- Resolved P2: the first hero had a separate down/spot toolbar beneath the field,
-  making the hero taller and less integrated than the source. The first focused
-  comparison is `/workspace/dfl-nfl-1552/hero-comparison.png`. Down/spot now sits
-  inside the field at normal text sizes; Replay moved into the play header.
-  Enlarged text uses normal flow. The final focused comparison confirms the fix.
-- Resolved P2: the initial score looked like a generic neutral row compared with
-  the source's sports presentation. Low-opacity real team-code watermarks and
-  softly blurred NFL identity washes now support the single readable score.
-  The final comparison confirms the treatment without obscuring figures.
-- Resolved interaction regressions: immediate reverse gestures now continue from
-  the actual rendered position, retain the outgoing live stage through arrival,
-  and can start on the stable window. Reading restoration accounts for sticky
-  tabs before and after scroll adjustment. Real-touch and reading-return checks
-  confirm these fixes; they are not inferred from a static screenshot.
-
-No actionable P0/P1/P2 remains within the verified adaptation scope.
-
-## Five fidelity surfaces
-
-- Typography: retained the app's Inter system, compact 13px play/body roles,
-  11px metadata and clear score emphasis. Full descriptions and names wrap;
-  native selects retain 16px text and controls retain 44px targets. Sleeper's
-  proprietary font details are not asserted as a match.
-- Layout: compact game strip; play description and perspective field above one
-  NFL score; separate full-width Plays/Fantasy views. The field's down/spot is
-  integrated into the plot, and the same view remains selected between games.
-  DFL's global shell and two-view scope remain intentional product constraints.
-- Colors: DFL Medicine Wheel Light/Dark tokens, genuine NFL identity, a fixed
-  sporting field surface and high-contrast field paint. Source navy/pink is not
-  substituted for the established app palette. Both modes received contrast,
-  selected/disabled control and screenshot review.
-- Images: genuine ESPN NFL logos and athlete headshots, lazy-loaded with graceful
-  image failure; supplied Phosphor regular icons with MIT license. No generated
-  mascot or decorative stand-in. The live field is a functional vector data
-  diagram plotted from official coordinates; its flight is illustrative, not
-  a raster imitation or invented tracking data.
-- Copy/content: actual game/score/clock, full source play text, meaningful
-  down/yardage, and exact recorded league/PPR points. Quarter, team, selected
-  play, loading/error and game-boundary states remain understandable. No copied
-  marketing text, fake possession or guessed PPR totals.
-
-## Interaction and implementation checklist
-
-- [x] Game-strip taps, native picker and previous/next navigation.
-- [x] Finger tracking, inert neighbor, release settle, cancellation, short/edge
-  resistance, rapid reversal, vertical scroll and deferred live updates.
-- [x] Separate Fantasy with side-by-side players, profiles and exact points.
-- [x] Finite official-endpoint field motion, Replay, selected/latest play return.
-- [x] Saved reading position, filtering, stale-response protection and teardown.
-- [x] Light/Dark, narrow/wide phones, 200% Comfortable text and touch targets.
-- [x] Reduced Motion/app motion off and absence of idle animation loops.
-- [x] Browser console/page errors checked; no production league writes.
-
-## Remaining limits
-
-The latest native Sleeper Plays/Fantasy screens and native swipe timing were not
-directly accessible, so exact current-native fidelity is unverified. Physical
-Safari frame pacing and VoiceOver speech are unmeasured. These are limits of the
-reference/device evidence, not claims that the app matches an unseen screen.
