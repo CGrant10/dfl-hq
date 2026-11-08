@@ -115,9 +115,11 @@ export function ticketData({ bet, legs = [], member, season = null } = {}) {
     market: opponentLine(leg?.market, leg?.label),
     odds: fmtOdds(leg?.odds_american),
     status:bookLegResult(leg).status,pending:bookLegResult(leg).pending,
+    result:bookLegResult(leg).status!=='open'&&Number.isFinite(leg.live_result?.score)?`Final ${Number(leg.live_result.score).toFixed(2)} pts`:['won','lost','void'].includes(leg.status)&&leg.provider_score!=null&&Number.isFinite(Number(leg.provider_score))?`Final ${Number(leg.provider_score)}`:'',
   }));
   const status = String(bet.status || "open");
   return {
+    id:bet.id??null,placedAt:bet.created_at||null,
     who: member?.display_name || "DFL",
     picks,
     /* The headline. One pick is its own headline; a real entry is counted. */

@@ -20,12 +20,12 @@ with sync_playwright() as p:
   for width in [320,390,430]:
    page.set_viewport_size({'width':width,'height':844});page.evaluate('(mode)=>{reviewTheme(mode);showReviewBoard()}',mode)
    for count in [1,2,6]:
-    current=page.locator('.sb-slipbar-chip').count()
+    current=page.locator('[data-bet-outcome][aria-pressed="true"]').count()
     for n in range(current+1,count+1):page.locator(f'[data-bet-outcome="{n}"]').click()
     bar=page.locator('.sb-slipbar');button=bar.locator('[data-slip-open]')
-    metrics=bar.evaluate('''e=>{const b=e.getBoundingClientRect(),go=e.querySelector('[data-slip-open]').getBoundingClientRect(),strip=e.querySelector('.sb-slipbar-chips').getBoundingClientRect(),nav=document.querySelector('#fixture-nav').getBoundingClientRect();return {box:b.toJSON(),nav:nav.toJSON(),inside:b.left>=11&&b.right<=innerWidth-11&&b.bottom<=nav.top-8,button:go.width>=44&&go.height>=44&&go.left>=b.left&&go.right<=b.right,strip:strip.width>=innerWidth*.5,overflow:document.documentElement.scrollWidth>innerWidth}}''')
+    metrics=bar.evaluate('''e=>{const b=e.getBoundingClientRect(),go=e.querySelector('[data-slip-open]').getBoundingClientRect(),clear=e.querySelector('[data-slip-clear]').getBoundingClientRect(),nav=document.querySelector('#fixture-nav').getBoundingClientRect();return {box:b.toJSON(),nav:nav.toJSON(),inside:b.left>=11&&b.right<=innerWidth-11&&b.bottom<=nav.top-8,button:go.width>=44&&go.height>=44&&go.left>=b.left&&go.right<=b.right,clear:clear.width>=44&&clear.height>=44&&clear.right<=b.right&&clear.left>=go.right,overflow:document.documentElement.scrollWidth>innerWidth}}''')
     page.screenshot(path=str(OUT/f'slipbar-{mode}-{width}.png'))
-    assert metrics['inside'] and metrics['button'] and metrics['strip'] and not metrics['overflow'],(mode,width,count,metrics)
+    assert metrics['inside'] and metrics['button'] and metrics['clear'] and not metrics['overflow'],(mode,width,count,metrics)
     button.click();page.wait_for_selector('.sb-slip[open]');page.wait_for_timeout(350)
     assert page.locator('.sb-slip-pick').count()==count,(mode,width,count,'review opened wrong picks')
     assert page.locator('[data-footer-return]').inner_text()==page.locator('[data-return]').inner_text()

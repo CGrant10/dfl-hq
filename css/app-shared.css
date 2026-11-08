@@ -1771,6 +1771,7 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 .dfl-share-preview > footer .btn { position:relative; isolation:isolate; min-height:44px; padding:7px 10px; background:transparent; box-shadow:none; transform:none; color:var(--text); border:0; }
 .dfl-share-preview > footer .btn::before { content:''; position:absolute; inset:5px 0; z-index:-1; border:1px solid var(--line); border-radius:7px; background:var(--bg); }
 .dfl-share-preview > footer [data-share-send]::before { border-color:var(--accent); }
+.dfl-share-styles[hidden] { display:none; }
 
 
 /* Source: css/connected-experience.css */
@@ -10443,3 +10444,73 @@ html[data-ui-motion=off] body dialog.dfl-player-card .player-game-week-list::aft
 body .dfl-player-card[data-motion=off] .player-game-week-list::after,
 body .dfl-player-card[data-motion=off] .player-game-week-list>button,
 body .dfl-player-card[data-motion=off] .player-game-group i { transition:none; }
+
+
+/* Source: css/sportsbook-desk.css */
+/* Selected Matchup Desk: paired identities and price baselines on one surface.
+   Keep the existing controls, live patches and shared swipe/press controller. */
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap {
+ --book-control-radius:5px;
+}
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-masthead { align-items:flex-start; padding:0 0 8px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-tabs>button:is([aria-selected="true"],.is-active) { color:var(--text); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap :is(.sb-tabs,.page-activity-tabs)>.dfl-selection-rail { background:var(--action-fill)!important; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-fantasy-slate .sb-line-columns { display:none; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-fantasy-slate .sb-board-head { padding-bottom:10px; border-bottom:1px solid var(--line-soft); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap [data-fantasy-market] { container-type:inline-size; padding-block:12px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap [data-fantasy-market]>.card-title-row { margin-bottom:8px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes {
+ display:grid; grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr); gap:0 5px; align-items:stretch;
+}
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-versus { grid-area:1/2; display:grid; align-items:center; padding-bottom:44px; color:var(--body-text); font:600 .625rem/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes>.sb-outcome {
+ display:grid; grid-template-columns:32px minmax(0,1fr); grid-template-rows:1fr auto;
+ gap:8px; align-items:center; align-content:stretch; min-width:0; padding:0;
+ grid-column:1; grid-row:1; border:0; background:transparent;
+}
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes>.sb-outcome:last-child { grid-column:3; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes .sb-outcome-label { min-width:0; padding:0; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes .sb-outcome-name { display:block; font:650 .8125rem/1.3 var(--font-ui); white-space:normal; overflow:visible; overflow-wrap:break-word; text-overflow:clip; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes .sb-outcome-label>small { margin-top:4px; font:400 .6875rem/1.35 var(--font-ui); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes>.sb-outcome>.sb-price {
+ grid-column:1/-1; display:flex; align-items:center; justify-content:center; width:100%; min-width:0; min-height:44px;
+ padding:7px; border:1px solid var(--line); border-radius:var(--book-control-radius); background:transparent;
+ font:750 1rem/1.2 var(--font-ui); font-variant-numeric:tabular-nums; color:var(--text);
+}
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes>.sb-outcome.is-picked>.sb-price { color:var(--action-ink); background:var(--action-fill); border-color:var(--action-fill); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-your-matchup .sb-desk-outcomes { padding-block:4px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-market-grid>.sb-your-matchup::before { background:var(--accent); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes .sb-held { display:block; width:max-content; max-width:100%; margin:3px 0 0; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes .sb-team-mark { flex:none; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes>.sb-outcome:focus-visible { outline:2px solid var(--accent); outline-offset:3px; border-radius:var(--book-control-radius); }
+@container (width < 18rem) {
+ #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes { grid-template-columns:minmax(0,1fr); gap:14px; }
+ #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-versus { display:none; }
+ #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes>.sb-outcome,
+ #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes>.sb-outcome:last-child { grid-column:1; grid-row:auto; }
+}
+
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-your-matchup .sb-desk-outcomes>.sb-outcome { grid-template-columns:42px minmax(0,1fr); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-your-matchup .sb-desk-outcomes .sb-team-mark { width:42px; height:42px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-desk-outcomes>.sb-outcome.is-picked .sb-team-mark::after { display:none; }
+/* One row preserves field of view; Review retains every selected leg. */
+#sportsbook-wrap .sb-slipbar { grid-template-columns:minmax(0,1fr) auto auto; gap:8px; padding:8px 10px; border-radius:5px; }
+#sportsbook-wrap .sb-slipbar-clear { min-width:44px; min-height:44px; font:600 .6875rem/1.3 var(--font-ui); }
+#sportsbook-wrap .sb-slipbar-head { gap:3px 8px; }
+#sportsbook-wrap .sb-slipbar-go { min-width:100px; border-radius:5px; }
+@media(max-width:360px) { #sportsbook-wrap .sb-slipbar { gap:5px; padding-inline:8px; } #sportsbook-wrap .sb-slipbar-go { min-width:92px; padding-inline:8px; } }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-your-matchup .sb-outcome-name { font-size:.9375rem; font-weight:750; text-transform:uppercase; }
+
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-brand { padding-top:8px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-fantasy-slate .sb-board-head small { display:none; }
+/* Keep the compact desk proportions without shrinking touch targets. */
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] { padding-top:8px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-account { gap:2px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-wallet>small { line-height:1.2; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-wallet>strong { font-size:1.375rem; line-height:1.05; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-tabs { margin-bottom:4px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .page-activity-tabs { margin-bottom:6px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-fantasy-slate .sb-board-head { margin-top:6px; padding-bottom:8px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap [data-fantasy-market]:not(.sb-your-matchup) { padding-block:8px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap [data-fantasy-market]:not(.sb-your-matchup)>.card-title-row { margin-bottom:2px; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap [data-fantasy-market]:not(.sb-your-matchup) .sb-outcome { gap:4px 8px; }
