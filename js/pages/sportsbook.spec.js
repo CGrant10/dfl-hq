@@ -212,3 +212,17 @@ it('does not reopen the Book when a ticket action finishes after leaving',async(
   expect(view.innerHTML).toBe('Other page');expect(view._bookTicketBusy).toBe(false);
   ticketWrite.pending=null;bets.length=0;
 });
+
+it('keeps the locked current week ahead of collapsed open early lines',async()=>{
+ markets.push({id:301,category:'Fantasy',status:'locked',title:'Current A vs Current B',auto_key:'matchup:2026:4:1'},
+  {id:302,category:'Fantasy',status:'open',title:'Early A vs Early B',auto_key:'matchup:2026:5:1'});
+ outcomes.push({id:3011,market_id:301,label:'Current A',odds_american:120},{id:3021,market_id:302,label:'Early A',odds_american:120});
+ try{const v=fakeView();await render(v);expect(v.innerHTML.indexOf('data-fantasy-week="4"')).toBeLessThan(v.innerHTML.indexOf('data-fantasy-week="5"'));expect(v.innerHTML).toMatch(/<details[^>]*sb-early-lines[^>]*data-fantasy-week="5"[^>]*><summary>/);expect(v.innerHTML).not.toMatch(/<details[^>]*sb-early-lines[^>]* open/);}
+ finally{markets.splice(-2);outcomes.splice(-2)}
+});
+it('keeps settled current results on the board while next-week lines are open',async()=>{
+ markets.push({id:303,category:'Fantasy',status:'settled',title:'Final A vs Final B',auto_key:'matchup:2026:4:1'});
+ outcomes.push({id:3031,market_id:303,label:'Final A',odds_american:120,is_winner:true});
+ try{const v=fakeView();await render(v);expect(v.innerHTML).toContain('Final A');expect(v.innerHTML).toContain('data-fantasy-period="current"');expect(v.innerHTML).toMatch(/data-bet-outcome="3031"[^>]*disabled/);}
+ finally{markets.pop();outcomes.pop()}
+});

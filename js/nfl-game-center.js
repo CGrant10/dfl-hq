@@ -17,7 +17,7 @@ import {loadWeeklyStats} from './sleeper.js';
 import {team,teamLogoUrl} from './nfl-teams.js';
 let serial=0;
 function scoreMarkup(observed,hidden,desk=false){
- return `<header class="nfl-center-score" style="${desk?`--nfl-away:${team(observed.sides?.[0]?.code)?.primary||'transparent'};--nfl-home:${team(observed.sides?.[1]?.code)?.primary||'transparent'}`:''}"${hidden?' hidden':''}>${(observed.sides||[]).map((side,index)=>`${index===1?`<small>${esc(observed.status)}</small>`:''}<span><img src="${esc(teamLogoUrl(side.code))}" alt="" width="28" height="28" decoding="async" onerror="this.hidden=true"><strong${desk?` data-nfl-score-code="${esc(side.code)}"`:""}>${esc(side.code)}</strong><b>${esc(side.score??'—')}</b></span>`).join('')}</header>`;
+ return `<header class="nfl-center-score" data-nfl-score-state="${esc(observed.state||'pre')}" style="${desk?`--nfl-away:${team(observed.sides?.[0]?.code)?.primary||'transparent'};--nfl-home:${team(observed.sides?.[1]?.code)?.primary||'transparent'}`:''}"${hidden?' hidden':''}>${(observed.sides||[]).map((side,index)=>`${index===1?`<small>${esc(observed.status)}</small>`:''}<span><img src="${esc(teamLogoUrl(side.code))}" alt="" width="28" height="28" decoding="async" onerror="this.hidden=true"><strong${desk?` data-nfl-score-code="${esc(side.code)}"`:""}>${esc(side.code)}</strong><b>${esc(side.score??'—')}</b></span>`).join('')}</header>`;
 }
 function playMarkup(p,{uid,teams,clip,view,focused,selected=false,periodStart=false}){
  const score=!p.voided&&p.score&&p.away!=null&&p.home!=null?`<small class="nfl-play-score">${esc(teams[0]?.code)} ${p.away} – ${p.home} ${esc(teams[1]?.code)}</small>`:'';

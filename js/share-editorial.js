@@ -2,6 +2,7 @@ import {FONT,sealImage,shareSealReady,shareCanvasDirect,shareText,saveCanvas} fr
 import {esc} from './ui.js';
 import {nightGameShareCanvas,prepareNightGame} from './share-night-game.js';
 import {bookSlipCanvas,prepareBookSlip} from './share-book-slip.js';
+import {animateUi,cancelUiMotion,cancelUiExit,exitUi} from './ui-motion.js';
 import {tailoredShareCanvas} from './share-layouts.js';
 import {shareImageDescription,shareExportFilename} from './share-layout-model.js';
 const DISPLAY='"DFL Anton",Impact,"Arial Narrow",sans-serif';
@@ -101,14 +102,25 @@ function tableCanvas(spec,attachPreview){
  text(ctx,spec.footer||spec.kind,64,canvas.height-48,1472,20,{color:'#55545a'});if(attachPreview)canvas.openSharePreview=options=>openSharePreview(spec,options);return canvas;
 }
 
-export function openSharePreview(spec,{filename,title,text:shareCopy}={}){
- document.querySelector('.dfl-share-preview')?.close();const restore=document.activeElement,dialog=document.createElement('dialog');dialog.className='dfl-share-preview';dialog.setAttribute('aria-labelledby','dfl-share-preview-title');
+export function openSharePreview(spec,{filename,title,text:shareCopy,origin=null}={}){
+ document.querySelector('.dfl-share-preview')?.close();const restore=origin?.querySelector?.('[data-share-ticket]')||document.activeElement,dialog=document.createElement('dialog');dialog.className='dfl-share-preview';dialog.setAttribute('aria-labelledby','dfl-share-preview-title');
  const slip=spec.template==='ticket',players=slip?[]:spec.players||[];let style='photo',format='compact',selected=players[0]?.id||'',canvas=null,request=0,stopped=false;
  try{if(localStorage.getItem('dfl.share.style')==='clean')style='clean';if(spec.template&&localStorage.getItem('dfl.share.format')==='full')format='full'}catch{}
  if(slip)style='clean';
  dialog.innerHTML=`<header><h2 id="dfl-share-preview-title" tabindex="-1" autofocus>Share image</h2><button type="button" class="linkbtn" data-share-close aria-label="Close share image preview">Close</button></header><div class="dfl-share-styles" role="group" aria-label="Share image style"><button type="button" data-share-style="clean" aria-pressed="true">Clean</button><button type="button" data-share-style="photo" aria-pressed="false">Night game</button></div>${spec.template?'<div class="dfl-share-format"><label for="dfl-share-format">Details</label><select id="dfl-share-format"><option value="compact">Highlights</option><option value="full">Full details</option></select></div>':''}<div class="dfl-share-player"${style==='photo'&&players.length?'':' hidden'}><label for="dfl-share-player">Player</label><select id="dfl-share-player">${players.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></div><div class="dfl-share-art" data-share-art tabindex="0" role="region" aria-label="Image preview"></div><p class="dfl-share-status" role="status" data-share-status>Preparing image…</p><footer><button type="button" class="btn ghost small" data-share-save disabled>Save image</button><button type="button" class="btn small" data-share-send disabled>Share image</button><button type="button" class="linkbtn" data-share-text>Share text</button></footer>`;
- if(slip)dialog.querySelector('.dfl-share-styles').hidden=true;
+ if(slip){dialog.querySelector('.dfl-share-styles').hidden=true;dialog.dataset.ticketPreview='';dialog.querySelector('h2').textContent='Bet slip';}
  document.body.append(dialog);dialog.showModal();dialog.querySelector('h2').focus({preventScroll:true});
+ const source=()=>origin?.isConnected?origin:origin?.id?document.getElementById(origin.id):null;
+ const originTransform=()=>{
+  const from=source()?.getBoundingClientRect(),to=dialog.getBoundingClientRect();
+  if(!from?.width||!to.width||from.bottom<0||from.top>innerHeight)return 'translateY(8px) scale(.97)';
+  const dx=Math.max(-100,Math.min(100,from.left+from.width/2-to.left-to.width/2)),dy=Math.max(-180,Math.min(180,from.top+from.height/2-to.top-to.height/2));
+  return `translate(${dx}px,${dy}px) scale(${Math.max(.7,Math.min(.94,from.height/to.height))})`;
+ };
+ const motion=()=>document.documentElement.dataset.uiMotion!=='off';
+ if(slip&&origin)animateUi(dialog,[{opacity:.25,transform:originTransform()},{opacity:1,transform:'none'}],{duration:300,motion:motion()});
+ const close=()=>{stopped=true;request++;if(slip&&origin)exitUi(dialog,()=>dialog.close(),{transform:originTransform(),duration:190,immediate:!motion()});else dialog.close()};
+ dialog.addEventListener('cancel',event=>{if(slip&&origin){event.preventDefault();close()}});
  const status=dialog.querySelector('[data-share-status]'),art=dialog.querySelector('[data-share-art]');
  const render=async()=>{
   const token=++request;canvas=null;dialog.querySelectorAll('[data-share-send],[data-share-save]').forEach(b=>b.disabled=true);status.textContent='Preparing image…';
@@ -124,7 +136,7 @@ export function openSharePreview(spec,{filename,title,text:shareCopy}={}){
   }catch{if(stopped||token!==request)return;status.textContent=slip?'Could not prepare this ticket. Try Share text.':'Player photo unavailable. Choose Clean or share text.';art.replaceChildren()}
  };
  dialog.addEventListener('click',event=>{
-  const target=event.target,box=dialog.getBoundingClientRect(),outside=event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom;if((target===dialog&&outside)||target.closest('[data-share-close]')){dialog.close();return}
+  const target=event.target,box=dialog.getBoundingClientRect(),outside=event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom;if((target===dialog&&outside)||target.closest('[data-share-close]')){close();return}
   const choice=target.closest('button[data-share-style]');if(choice){style=choice.dataset.shareStyle;try{localStorage.setItem('dfl.share.style',style)}catch{}void render();return}
   const exportName=spec.template?shareExportFilename(filename,format,style):filename;
   if(target.closest('[data-share-send]')&&canvas){try{shareCanvasDirect(canvas,exportName,{title,text:shareCopy})}catch{status.textContent='Could not share this image. Try Save image or Share text.'}return}
@@ -134,6 +146,6 @@ export function openSharePreview(spec,{filename,title,text:shareCopy}={}){
  dialog.querySelector('#dfl-share-player').addEventListener('change',event=>{selected=event.target.value;void render()});
  dialog.querySelector('#dfl-share-format')?.addEventListener('change',event=>{format=event.target.value;try{localStorage.setItem('dfl.share.format',format)}catch{}void render()});
  const routeChanged=()=>dialog.close();window.addEventListener('hashchange',routeChanged);
- dialog.addEventListener('close',()=>{stopped=true;request++;window.removeEventListener('hashchange',routeChanged);dialog.remove();if(restore?.isConnected)restore.focus({preventScroll:true})},{once:true});
+ dialog.addEventListener('close',()=>{stopped=true;request++;cancelUiExit(dialog);cancelUiMotion(dialog);window.removeEventListener('hashchange',routeChanged);dialog.remove();const target=restore?.isConnected?restore:slip?source()?.querySelector('[data-share-ticket]'):null;if(target?.isConnected)target.focus({preventScroll:true})},{once:true});
  void render();return 'preview';
 }
