@@ -2546,3 +2546,20 @@ combined before/after images. `pnpm themes` and 2,515 tests / 304 files pass;
 48 live-ticket, 48 result, 80 interaction and 75 shared-image browser checks pass.
 All account/inbox operations are fixture-only; remote writes are blocked.
 Physical iOS pacing and screen-reader speech remain unmeasured. See design-qa.md.
+
+### 1.565.0 — Deliberate replay selection before GameDay
+
+No palette, asset, typography or layout changes. Reviewed the existing Broadcast
+Window at 320/390px in Light/Dark: game scores and selected rule remain legible,
+media preserves its ratio and grid previews remain complete. Native game rail
+scrolling now browses without changing selection; taps/previous/next or
+Enter/Space explicitly select. Arrow/Home/End move focus without changing clips.
+Reduced Motion retains selection without smooth scrolling. Live score updates
+preserve browsed position and media identity. No redundant themes/old blue.
+
+Evidence: `/workspace/dfl-ready-1565/{replay-final,compiled}`. All 88 replay
+checks and 2,515 unit tests pass, including theme validation. Broader mobile
+Clubhouse, live-feed, points and Sportsbook checks are in
+`docs/gameday-ready-1565.md`. All league/account/notification browser operations
+are fixtures or blocked. Native iOS pacing, VoiceOver and phone push delivery
+are not measured.

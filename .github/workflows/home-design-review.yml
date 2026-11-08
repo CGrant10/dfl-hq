@@ -98,6 +98,7 @@ on:
       - 'js/nfl-field*'
       - 'js/nfl-fantasy-ui.js'
       - 'js/replay-*'
+      - 'tools/capture-replay-window.py'
       - 'js/nfl-play-presentation*'
       - 'js/moment-summary-ui.js'
       - 'js/clubhouse-nfl.js'
@@ -711,6 +712,7 @@ jobs:
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           python tools/capture-nfl-field.py
           DFL_NFL_SWIPE_DIR=nfl-center-output/swipe python tools/capture-nfl-game-swipe.py
+          DFL_REPLAY_REVIEW_DIR=nfl-center-output/replay python tools/capture-replay-window.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
