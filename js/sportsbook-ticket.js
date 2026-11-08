@@ -244,6 +244,7 @@ export async function shareTicket(input) {
   const how = await shareCanvas(canvas, `dfl-ticket-${slug}.png`, {
     title: "DFL Sportsbook",
     text: ticketText(t),
+    origin:input?.origin,
   });
   if (how === "none") await shareText({ title: "DFL Sportsbook", text: ticketText(t) });
   return how;

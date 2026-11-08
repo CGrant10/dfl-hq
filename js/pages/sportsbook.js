@@ -24,6 +24,7 @@ import { esc, toast } from "../ui.js";
 import { parseStake, entryReturn, combineOdds, MAX_PICKS } from "../sportsbook-slip.js";
 import { shareTicket, shareSportsbookRecap } from "../sportsbook-ticket.js";
 import { teamPortrait } from "../team-presentation.js";
+import {replayIcon} from '../replay-icons.js';
 import {nflTeams,team as nflTeam} from '../nfl-teams.js';
 import { loadPickemBoard, pickemMarkup, wirePickem } from "../sportsbook-pickem.js";
 import { sleeperPropImporterMarkup, wireSleeperPropImporter } from "../sleeper-prop-import-ui.js";
@@ -142,6 +143,8 @@ export async function render(view){
   const lockedFantasy=markets.filter(m=>matchupKey(m)&&["open","locked"].includes(m.status)&&!isOpen(m));
   const lastLocked=lockedFantasy.map(m=>matchupKey(m).slice(1,3).map(Number)).sort((a,b)=>b[0]-a[0]||b[1]-a[1])[0];
   const lockedMatchups=lockedFantasy.filter(m=>{const key=matchupKey(m);return Number(key[1])===lastLocked?.[0]&&Number(key[2])===lastLocked?.[1]});
+  const currentMatchups=markets.filter(m=>{const key=fantasyMarketKey(m);return key?.season===leagueWeek.season&&key.week===leagueWeek.week});
+  const boardMarkets=[...new Map([...open,...lockedMatchups,...currentMatchups].map(m=>[String(m.id),m])).values()];
   const onBoard=new Set(open.map(m=>String(m.id)));
   /*
     OFF THE BOARD, AND WHY THAT USED TO TRAP MONEY.
@@ -177,7 +180,7 @@ export async function render(view){
     <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-view="markets" data-sb-tab="markets" data-sb-product="book">Board</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-view="tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button><button type="button" role="tab" aria-selected="false" aria-controls="sb-pickem-panel" id="sb-tab-pickem" data-sb-view="pickem" data-sb-product="pickem" tabindex="-1">NFL Pick'em</button></div>
     <div id="sb-book-panel">
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
-    ${categoryBoard([...open,...lockedMatchups],byMarket,bets,canBook,outcomeMap,marketMap,members,me.id,leagueWeek)}
+    ${categoryBoard(boardMarkets,byMarket,bets,canBook,outcomeMap,marketMap,members,me.id,leagueWeek)}
     ${!open.length?'<p class="sb-empty">No open lines right now. Check back for the next matchup.</p>':""}
     </div>
     <div id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden>
@@ -413,7 +416,7 @@ function marketCard(m,outcomes,canBook,picked,held,members,meta=null,favorite=fa
   const kicker=key?`Week ${key[2]} &middot; Matchup`:m.category==="Player Props"?`${imported?"SLEEPER":"CONSENSUS"} &middot; ${m.provider_updated_at?esc(fmtTime(m.provider_updated_at)):"REAL LINE"}`:esc(m.category||"DFL");
   const prop=m.category==="Player Props",info=meta||propMarketMeta(m,outcomes);
   const attrs=prop?` data-prop-card data-prop-key="${esc(info.key)}" data-prop-player="${esc(info.player)}" data-prop-stat="${esc(info.stat.toLowerCase())}" data-prop-position="${esc(info.position)}" data-prop-team="${esc(info.team)}" data-prop-game="${esc(info.matchup)}" data-prop-source="${esc(info.source)}" data-prop-updated="${info.updatedAt}" data-prop-price="${info.bestPrice}"`:"";
-  return `<article class="card sb-market"${key?' data-fantasy-market':''}${attrs}><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3>${prop?`<span class="sb-market-source">${esc(info.sourceLabel)} · <button type="button" class="player-card-trigger" data-player-card="" data-player-name="${esc(info.player)}" data-player-team="${esc(info.team)}">Player card</button></span>`:""}</div><div class="sb-market-status">${prop?`<button type="button" class="sb-prop-favorite${favorite?" is-favorite":""}" data-prop-favorite="${esc(info.key)}" aria-label="${favorite?"Remove from":"Add to"} favorite props" aria-pressed="${favorite}">★</button>`:""}<span class="sb-market-state ${isOpen(m)?"is-open":"is-locked"}">${isOpen(m)?"OPEN":"LOCKED"}</span>${m.closes_at?`<span class="sb-locks">${isOpen(m)?"Locks":"Locked"} ${esc(fmtTime(m.closes_at))}</span>`:""}</div></div>${outcomeButtons(m,outcomes,picked,held,members)}${houseControls(m,outcomes,canBook)}</article>`;
+  return `<article class="card sb-market"${key?' data-fantasy-market':''}${attrs}><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3>${prop?`<span class="sb-market-source">${esc(info.sourceLabel)} · <button type="button" class="player-card-trigger" data-player-card="" data-player-name="${esc(info.player)}" data-player-team="${esc(info.team)}">Player card</button></span>`:""}</div><div class="sb-market-status">${prop?`<button type="button" class="sb-prop-favorite${favorite?" is-favorite":""}" data-prop-favorite="${esc(info.key)}" aria-label="${favorite?"Remove from":"Add to"} favorite props" aria-pressed="${favorite}">★</button>`:""}<span class="sb-market-state ${isOpen(m)?"is-open":"is-locked"}">${m.status==='settled'?'FINAL':m.status==='void'?'VOID':isOpen(m)?"OPEN":"LOCKED"}</span>${m.closes_at?`<span class="sb-locks">${isOpen(m)?"Locks":"Locked"} ${esc(fmtTime(m.closes_at))}</span>`:""}</div></div>${outcomeButtons(m,outcomes,picked,held,members)}${houseControls(m,outcomes,canBook)}</article>`;
 }
 
 /*
@@ -445,9 +448,10 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
   const cats=[...groups.keys()].sort((a,b)=>{const ai=preferred.indexOf(a),bi=preferred.indexOf(b);return(ai<0?99:ai)-(bi<0?99:bi)||a.localeCompare(b)});
   return cats.map(cat=>{
     const group=groups.get(cat);
-    if(cat==="Fantasy"&&group.every(matchupKey))return fantasyWeekGroups(group,leagueWeek)
-      .sort((a,b)=>Number(b.markets.some(isOpen))-Number(a.markets.some(isOpen)))
-      .map(slate=>fantasySlateHtml(slate,leagueWeek,byMarket,canBook,picked,held,members,memberId)).join("");
+    if(cat==="Fantasy"&&group.every(matchupKey)){
+      const slates=fantasyWeekGroups(group,leagueWeek),missing=leagueWeek.season>=2010&&leagueWeek.week>=1&&!slates.some(s=>s.period==='current');
+      return (missing?`<section class="block sb-section sb-fantasy-slate" data-fantasy-period="current" data-fantasy-week="${leagueWeek.week}"><div class="sb-board-head"><h2>Week ${leagueWeek.week} lines</h2></div><p class="sb-empty">Current-week lines aren’t available.</p></section>`:'')+slates.map(slate=>fantasySlateHtml(slate,leagueWeek,byMarket,canBook,picked,held,members,memberId)).join('');
+    }
     if(cat==="Player Props"){
       const games=new Map(),gameNamesById=propGameNames(markets);group.forEach(market=>{const choices=byMarket.get(String(market.id))||[],meta=propMarketMeta(market,choices,gameNamesById.get(String(market.provider_event_id))),label=meta.matchup,key=String(market.provider_event_id||label),bucket=games.get(key)||{label,rows:[]};bucket.rows.push({market,meta,html:null});games.set(key,bucket)});
       for(const[key,game]of games)propGameCache.set(key,sortPropRows(game.rows,"player"));
@@ -481,7 +485,11 @@ function fantasySlateHtml(slate,clock,byMarket,canBook,picked,held,members,membe
   const card=marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held,members);
   return mine?card.replace('class="card sb-market"','class="card sb-market sb-your-matchup" data-your-matchup').replace('<small class="sb-market-kicker">','<span class="sb-your-matchup-label">Your matchup</span><small class="sb-market-kicker">'):card;
  }).join('');
- return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head" data-ui-section-head><div><small>${slate.period==='current'?'THIS WEEK':upcoming?'UPCOMING':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${openCount} open · ${slate.markets.length-openCount} locked</span></div><div class="sb-line-columns" aria-hidden="true"><span>Team</span><span>Moneyline</span></div><div class="sb-market-grid">${cards}</div></section>`;
+ const finalCount=slate.markets.filter(m=>m.status==='settled'||m.status==='void').length,lockedCount=slate.markets.length-openCount-finalCount;
+ const count=[`${openCount} open`,lockedCount?`${lockedCount} locked`:null,finalCount?`${finalCount} final`:null].filter(Boolean).join(' · ');
+ const body=`<div class="sb-market-grid">${cards}</div>`;
+ if(upcoming)return `<details class="block sb-section sb-fantasy-slate sb-early-lines" data-fantasy-week="${slate.week}" data-fantasy-period="upcoming"><summary><h2>${heading}</h2><span>${openCount} open</span>${replayIcon('chevron-right')}</summary>${body}</details>`;
+ return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head" data-ui-section-head><div><small>${slate.period==='current'?'THIS WEEK':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${count}</span></div>${body}</section>`;
 }
 
 // Provider identifiers stay intact for routing/filtering; labels use NFL codes.
@@ -745,7 +753,7 @@ function ticketCard(b,marketMap,outcomeMap){
         ${stuck?`<span class="sb-ticket-stuck">${stuck}</span>`:""}
         ${canPull?`<button type="button" class="linkbtn sb-pull" id="sb-cancel-bet-${esc(b.id)}" data-cancel-bet="${b.id}">Pull ticket</button>`:""}
         ${b.status!=="open"?`<button type="button" class="linkbtn" id="sb-dismiss-bet-${esc(b.id)}" data-dismiss-bet="${b.id}">Dismiss</button>`:""}
-        <button type="button" class="linkbtn" id="sb-share-ticket-${esc(b.id)}" data-share-ticket="${b.id}">Share card</button>
+        <button type="button" class="linkbtn" id="sb-share-ticket-${esc(b.id)}" data-share-ticket="${b.id}">View slip</button>
       </span>
     </div>
   </article>`;
@@ -835,7 +843,7 @@ function wireTicketActions(view,marketMap,outcomeMap,me,refreshFantasy=async()=>
     if(button.hasAttribute('data-cancel-bet')&&!confirm(`Pull this ticket and take the ${num(bet.stake)} SIN back?`))return;
     view._bookTicketBusy=true;button.disabled=true;
     try{
-      if(button.hasAttribute('data-share-ticket')){await refreshFantasy();if(current())await shareTicket({bet,legs:entryLegs(bet,marketMap,outcomeMap),member:me});}
+      if(button.hasAttribute('data-share-ticket')){await refreshFantasy();if(current())await shareTicket({bet,legs:entryLegs(bet,marketMap,outcomeMap),member:me,origin:button.closest('.sb-ticket')});}
       else{
         const pull=button.hasAttribute('data-cancel-bet');
         const {data,error}=await db().rpc(pull?'sportsbook_cancel_bet':'sportsbook_dismiss_bet',{target_bet_id:Number(id)});

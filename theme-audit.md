@@ -2509,3 +2509,21 @@ Evidence: `/workspace/dfl-book-1562/{visual,reading-verified,shares-release,actu
 Theme/type/name/release checks and 2,505 tests pass. Mobile browser checks cover
 pressed contrast, larger type, keyboard navigation and reduced motion. Physical
 iOS pacing/VoiceOver were not measured. See design-qa.md for source comparisons.
+
+### 1.563.0 — Current-week Book, ticket motion and sports headers
+
+Reviewed Light/Dark at 320/390px and the compiled real-data Home/Book. Current
+locked prices remain legible; upcoming markets use a theme-token native details
+summary, official chevron, keyboard behavior and Reduced Motion. Ticket reveal
+and exit honor app motion settings, return focus/scroll, and retain the fixed
+light printed export and normal preview theme. NFL headers retain actual team
+colors on quiet rules; large translucent code/glow treatments are removed.
+Broadcast figures, names, artwork and actions remain separated. The daily first
+slide/art and exact destinations remain intact. No redundant Medicine Wheel
+options, stale blue accents, new font or image asset.
+
+Theme/type/name/build checks and 2,507 tests pass. Browser evidence:
+`/workspace/dfl-finish-1563/{interactions,desk-after,actual}` and
+`/workspace/dfl-review/wide-*`. Broadcast checks include 56 enlarged layouts;
+Book claims and all league operations are fixtures/blocked. Physical iOS pacing
+and VoiceOver speech were not measured. Full comparisons in design-qa.md.
