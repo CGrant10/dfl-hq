@@ -395,8 +395,9 @@ function outcomeButtons(m,outcomes,picked,held,members=[]){
   }
   const projected=String(m.lore_note||"").match(/projected\s+([\d.]+)[–-]([\d.]+)/i)?.slice(1)||[];
   const prop=["Player Props","Team Totals","Game Totals"].includes(m.category);
+  const paired=!!fantasyMarketKey(m)&&outcomes.length===2;
   const propSource=String(m.provider_key||"").startsWith("sleeper-import:")?"Sleeper line":"Book consensus";
-  return `<div class="sb-outcomes">${outcomes.map((o,i)=>{
+  return `<div class="sb-outcomes${paired?' sb-desk-outcomes':''}">${paired?'<span class="sb-desk-versus" aria-hidden="true">VS</span>':''}${outcomes.map((o,i)=>{
     const held=mine.has(String(o.id)),inSlip=picked.has(String(o.id));
     return `
     <button class="sb-outcome${held?" is-mine":""}${inSlip?" is-picked":""}" data-bet-outcome="${o.id}" aria-pressed="${inSlip}"${!isOpen(m)?' disabled':''}>
@@ -472,7 +473,7 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
 
 function fantasySlateHtml(slate,clock,byMarket,canBook,picked,held,members,memberId){
  const openCount=slate.markets.filter(isOpen).length,upcoming=slate.period==='upcoming';
- const heading=upcoming?`Week ${slate.week} early lines`:`Week ${slate.week} fantasy matchups`;
+ const heading=upcoming?`Week ${slate.week} early lines`:`Week ${slate.week} lines`;
  const member=memberId==null?null:members.find(m=>String(m.id)===String(memberId));
  const ownNames=new Set([member?.team_name,member?.display_name].filter(Boolean).map(identityKey));
  const cards=slate.markets.map(m=>{
@@ -558,10 +559,6 @@ function slipBar(ids,outcomeMap,marketMap){
   if(!ids.length)return "";
   const odds=ids.map(id=>Number(outcomeMap.get(String(id))?.odds_american));
   const combined=combineOdds(odds);
-  const picks=ids.map(id=>{
-    const o=outcomeMap.get(String(id));
-    return `<span class="sb-slipbar-chip">${esc(o?.label||"Pick")} <b>${fmtOdds(o?.odds_american)}</b></span>`;
-  }).join("");
   return `<div class="sb-slipbar" role="region" aria-label="Entry slip">
     <div class="sb-slipbar-body">
       <div class="sb-slipbar-head">
@@ -570,7 +567,7 @@ function slipBar(ids,outcomeMap,marketMap){
       </div>
     </div>
     <button type="button" class="btn sb-slipbar-go" data-slip-open aria-label="Review ${ids.length} selected pick${ids.length===1?'':'s'}">${ids.length===1?"Review bet":"Review picks"}</button>
-    <div class="sb-slipbar-selections"><div class="sb-slipbar-chips" role="group" aria-label="Selected picks" tabindex="0">${picks}</div><button type="button" class="linkbtn" data-slip-clear>Clear</button></div>
+    <button type="button" class="linkbtn sb-slipbar-clear" data-slip-clear aria-label="Clear selected picks">Clear</button>
   </div>`;
 }
 

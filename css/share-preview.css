@@ -21,3 +21,4 @@
 .dfl-share-preview > footer .btn { position:relative; isolation:isolate; min-height:44px; padding:7px 10px; background:transparent; box-shadow:none; transform:none; color:var(--text); border:0; }
 .dfl-share-preview > footer .btn::before { content:''; position:absolute; inset:5px 0; z-index:-1; border:1px solid var(--line); border-radius:7px; background:var(--bg); }
 .dfl-share-preview > footer [data-share-send]::before { border-color:var(--accent); }
+.dfl-share-styles[hidden] { display:none; }

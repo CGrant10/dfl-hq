@@ -183,7 +183,7 @@ it('keeps locked fantasy winner picks visible and disabled',async()=>{
  markets.push({id:99,category:'Fantasy',status:'open',title:'Locked A vs Locked B',auto_key:'matchup:2026:4:1',closes_at:'2026-01-01'});
  outcomes.push({id:991,market_id:99,label:'Locked A',odds_american:-110});
  const view=fakeView();await render(view);
- expect(view.innerHTML).toContain('Week 4 fantasy matchups');
+ expect(view.innerHTML).toContain('Week 4 lines');
  expect(view.innerHTML).toContain('LOCKED');
  expect(view.innerHTML).toMatch(/data-bet-outcome="991"[^>]*disabled/);
  expect(view.innerHTML).toMatch(/data-bet-outcome="2"[^>]*aria-pressed="false"/);

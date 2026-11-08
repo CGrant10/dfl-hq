@@ -2491,3 +2491,21 @@ Evidence: `/workspace/dfl-replay-1561/clubhouse-release/`.
 
 Final patch validation: all 349 Clubhouse and 72 focused replay checks pass;
 `pnpm check` passes 2,500 tests including theme checks.
+
+### 1.562.0 — Matchup Desk and printed bet slip
+
+Reviewed actual paired Book screenshots at 320/390/430px in Light/Dark, including
+selected prices, preserved owner photos, complete names, claim controls and 200%
+text. The board uses the existing theme surface/text/line tokens, crimson action
+fill for the sliding rail and picked odds, and the normal theme accent for own
+matchup/focus. Normal NFL/member identity and result colors remain meaningful.
+The fixed light share export intentionally matches the selected bone printed
+slip in either app theme; green/red leg icons have text labels, pending grading
+is explicit, and losses/refunds cannot look like winning payouts. Native preview
+controls and all other share designs retain their normal app theme/preference.
+No redundant Medicine Wheel options or retired blue accents were introduced.
+
+Evidence: `/workspace/dfl-book-1562/{visual,reading-verified,shares-release,actual}`.
+Theme/type/name/release checks and 2,505 tests pass. Mobile browser checks cover
+pressed contrast, larger type, keyboard navigation and reduced motion. Physical
+iOS pacing/VoiceOver were not measured. See design-qa.md for source comparisons.
