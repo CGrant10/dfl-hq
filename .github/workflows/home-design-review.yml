@@ -30,6 +30,7 @@ on:
       - 'css/league-wire.css'
       - 'tools/capture-league-wire-book.py'
       - 'tools/capture-sports-desk-finish.py'
+      - 'tools/capture-live-ticket-review.py'
       - 'tools/capture-power-review.py'
       - 'tools/capture-secondary-review.py'
       - 'tools/render-secondary-review.mjs'
@@ -571,6 +572,7 @@ jobs:
           DFL_HOME_HIGHLIGHTS_REVIEW_DIR: ${{ github.workspace }}/league-wire-output/clips
           DFL_WIRE_BOOK_DIR: ${{ github.workspace }}/league-wire-output/book
           DFL_SPORTS_DESK_DIR: ${{ github.workspace }}/league-wire-output/sports-desk
+          DFL_LIVE_TICKET_DIR: ${{ github.workspace }}/league-wire-output/live-tickets
           DFL_TAB_REVIEW_DIR: ${{ github.workspace }}/league-wire-output/tabs
           DFL_SCROLL_REVIEW_DIR: ${{ github.workspace }}/league-wire-output/scroll
           DFL_MOTION_REVIEW_DIR: ${{ github.workspace }}/league-wire-output/motion
@@ -581,6 +583,7 @@ jobs:
           python tools/capture-home-highlights.py
           python tools/capture-league-wire-book.py
           python tools/capture-sports-desk-finish.py
+          python tools/capture-live-ticket-review.py
           node tools/render-tab-review.mjs
           python tools/capture-tab-review.py
           python tools/capture-scroll-review.py

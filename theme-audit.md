@@ -2527,3 +2527,22 @@ Theme/type/name/build checks and 2,507 tests pass. Browser evidence:
 `/workspace/dfl-review/wide-*`. Broadcast checks include 56 enlarged layouts;
 Book claims and all league operations are fixtures/blocked. Physical iOS pacing
 and VoiceOver speech were not measured. Full comparisons in design-qa.md.
+
+### 1.564.0 — Live ticket tracking and compact Activity
+
+Reviewed 320/390px My bets in Light/Dark and 200% text; Activity at 320/390/768px
+in both themes with enlarged 320/390px captures. Flat ruled rows use existing
+surface, text, line, focus and action tokens. Live progress/result states have
+visible text as well as semantic color. Current stat/accepted line is explicit;
+unknown is never a fabricated zero. Terminal legs on an open entry remain
+pending, distinct from official payment. Printed shared slips retain their fixed
+light design. All 44px actions, selected filter rail, keyboard, reduced/app-off
+motion, full receipt and focus-return checks pass. Activity trade names reflow;
+unchanged rows/photos remain stable after read/dismiss. No redundant theme
+options, retired blue, new font or image introduced.
+
+Evidence: `/workspace/dfl-live-1564/{live-final,activity-accessible,actual}` and
+combined before/after images. `pnpm themes` and 2,515 tests / 304 files pass;
+48 live-ticket, 48 result, 80 interaction and 75 shared-image browser checks pass.
+All account/inbox operations are fixture-only; remote writes are blocked.
+Physical iOS pacing and screen-reader speech remain unmeasured. See design-qa.md.

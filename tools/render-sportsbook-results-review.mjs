@@ -9,6 +9,8 @@ if([helperStart,helperEnd,outcomeStart,outcomeEnd,controllerStart,controllerEnd]
 const index=readFileSync(new URL('index.html',root),'utf8'),head=index.slice(index.indexOf('<head>')+6,index.indexOf('</head>'));
 const code=`
 import {fantasyMarketKey,fantasyOutcomeResult,withFantasyLegResult,bookLegResult,bookEntryResult,pendingBookReturn} from '/js/sportsbook-fantasy-results.js';
+import {ticketLegView,ticketPreviewIndices} from '/js/sportsbook-live-ticket.js';
+import {slipIcons} from '/js/share-slip-icons.js';
 import {ticketData,ticketCanvas} from '/js/sportsbook-ticket.js';
 import {ticketShareSpec} from '/js/share-export-model.js';
 import {shareImageDescription} from '/js/share-layout-model.js';
@@ -50,5 +52,5 @@ window.reviewOfficial=()=>{marketMap.get('1').status='settled';outcomeMap.get('2
 window.reviewReady=true;
 `;
 writeFileSync(out+'/fixture.js',code);
-writeFileSync(out+'/index.html',`<!doctype html><html lang="en"><head><base href="/">${head}<link rel="stylesheet" href="css/sportsbook.css"></head><body><main id="view" class="view" data-route="sportsbook" data-page-system style="padding:16px;max-width:600px;margin:auto"></main><script type="module" src="/results-review/fixture.js"></script></body></html>`);
+writeFileSync(out+'/index.html',`<!doctype html><html lang="en"><head><base href="/">${head}<link rel="stylesheet" href="css/sportsbook.css"></head><body><main id="view" class="view" data-route="sportsbook" data-page-system data-daily-desk="sportsbook" style="padding:16px;max-width:600px;margin:auto"></main><script type="module" src="/results-review/fixture.js"></script></body></html>`);
 console.log('Sportsbook result fixture rendered');
