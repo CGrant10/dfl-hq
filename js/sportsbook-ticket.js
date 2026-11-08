@@ -42,7 +42,7 @@ const W = 1080, H = 1350;
 const FOOTER = 90;
 const { BG, CARD, CARD_2, LINE, INK, MUTED, GOLD, ACCENT, OK, BRAND_RED, BRAND_YELLOW } = SHARE_INK;
 
-const fmtOdds = (n) => (Number(n) > 0 ? `+${Number(n)}` : String(Number(n)));
+const fmtOdds=n=>n===null||n===undefined||String(n).trim()===''||!Number.isFinite(Number(n))?'—':Number(n)>0?`+${Number(n)}`:String(Number(n));
 const num = (n) => Number(n || 0).toLocaleString("en-US");
 
 /*
@@ -109,7 +109,7 @@ const STATUS_INK = { open: GOLD, won: OK, lost: MUTED, void: ACCENT };
 export function ticketData({ bet, legs = [], member, season = null } = {}) {
   if (!bet) return null;
   const stake = Number(bet.stake) || 0;
-  const ret = Number(bet.potential_payout) || 0;
+  const ret = Number(bet.status==='won'?(bet.payout??bet.potential_payout):bet.potential_payout) || 0;
   const picks = (Array.isArray(legs) ? legs : []).map((leg) => ({
     pick: String(leg?.label || "Pick"),
     market: opponentLine(leg?.market, leg?.label),
@@ -132,7 +132,7 @@ export function ticketData({ bet, legs = [], member, season = null } = {}) {
        everybody and as stake+winnings to the other half. Print both. */
     profit: Math.max(0, ret - stake),
     status,
-    pendingReturn:pendingBookReturn(bet,legs),liveResult:bookEntryResult(legs),gradingPending:picks.some(p=>p.pending),
+    pendingReturn:pendingBookReturn(bet,legs),liveResult:bookEntryResult(legs),gradingPending:picks.some(p=>p.pending)||status==='open'&&bookEntryResult(legs)!=='open',
     /* A ticket the member pulled themselves is not a ticket the house voided,
        and the card should not accuse anybody of the wrong one. */
     pulled: status === "void" && !!bet.cancelled_at,

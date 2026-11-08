@@ -30,7 +30,7 @@ with sync_playwright() as p:
    tag=f'{width}px {theme}'
    check(tag+' finished Sunday matchup marks both winning and losing picks',page.locator('#sb-ticket-1 [data-leg-result="won"]').count()==1 and page.locator('#sb-ticket-2 [data-leg-result="lost"]').count()==1)
    check(tag+' Monday starter keeps its leg open while completed parlay legs show hits',page.locator('#sb-ticket-3 [data-leg-result="won"]').count()==1 and page.locator('#sb-ticket-3 [data-leg-result="open"]').count()==1)
-   check(tag+' ties show a neutral mark',page.locator('#sb-ticket-4 [data-leg-result="void"] .sb-leg-mark').inner_text()=='—')
+   check(tag+' ties show a neutral mark',page.locator('#sb-ticket-4 [data-leg-result="void"] .sb-leg-mark svg.bi-dash-lg').count()==1 and 'Push' in page.locator('#sb-ticket-4').inner_text())
    check(tag+' actual bankroll and official bet status remain unchanged',page.locator('[data-review-wallet]').inner_text()=='420 SIN' and page.locator('#sb-ticket-1').get_attribute('data-ticket-status')=='open' and 'To return' in page.locator('#sb-ticket-1').text_content())
    check(tag+' book board shows hit/miss and actual final scores',page.locator('[data-fantasy-result="won"]').count()==1 and page.locator('[data-fantasy-result="lost"]').count()==1 and '120.50 pts' in page.locator('[data-review-board]').inner_text())
 
@@ -41,7 +41,7 @@ with sync_playwright() as p:
    check(tag+' no horizontal overflow',page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
    page.screenshot(path=str(EVIDENCE/f'book-{width}-{theme}.png'));page.locator('#sb-ticket-3').scroll_into_view_if_needed();page.screenshot(path=str(EVIDENCE/f'tickets-{width}-{theme}.png'))
    before=page.evaluate('resultReads');page.evaluate('mondayFinal=true;dispatchEvent(new Event("focus"))');page.wait_for_function('(before)=>resultReads>before',arg=before);page.wait_for_function('document.querySelectorAll("#sb-ticket-3 [data-leg-result=won]").length===2')
-   check(tag+' foreground refresh marks a newly finished matchup without reloading the page',page.locator('#sb-ticket-3 .pill').inner_text()=='HIT' and page.locator('[data-review-wallet]').inner_text()=='420 SIN')
+   check(tag+' foreground refresh marks a newly finished matchup without reloading the page',page.locator('#sb-ticket-3 .pill').inner_text()=='HIT · PENDING' and page.locator('[data-review-wallet]').inner_text()=='420 SIN')
    if width==390:
     for style in ['clean','photo']:
      share=page.evaluate('async style=>reviewShare(5,style)',style);(EVIDENCE/f'share-{theme}-{style}.png').write_bytes(base64.b64decode(share['data'].split(',')[1]));check(tag+f' {style} share includes the losing sixth leg and pending grading',len(share['ticket']['picks'])==6 and share['ticket']['picks'][5]['status']=='lost' and 'official grading and payout pending' in share['text'] and share['ticket']['status']=='open')

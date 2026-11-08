@@ -59,7 +59,7 @@ export function bookEntryResult(legs,now=Date.now()) {
 }
 
 export function pendingBookReturn(bet,legs,now=Date.now()) {
-  if(bet?.status!=='open'||!legs.some(leg=>bookLegResult(leg,now).pending))return null;
+  if(bet?.status!=='open')return null;
   const result=bookEntryResult(legs,now);
   return result==='lost'?{label:'Est. return',value:0}:result==='void'?{label:'Pending refund',value:Number(bet.stake)||0}:null;
 }

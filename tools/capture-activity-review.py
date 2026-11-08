@@ -37,6 +37,11 @@ with sync_playwright() as p:
    assert not pg.evaluate('document.documentElement.scrollWidth>innerWidth+1')
    assert pg.locator('.notify-setup').count()==0,'Device setup still ahead of inbox'
    if width==390:pg.screenshot(path=str(OUT/f'{mode}-activity.png'),full_page=True)
+   if width in [320,390]:
+    pg.evaluate('document.documentElement.style.fontSize="32px"');pg.wait_for_timeout(100)
+    assert pg.evaluate('document.documentElement.scrollWidth<=innerWidth'),(mode,width,'large activity page')
+    assert pg.locator('.activity-item').evaluate_all('es=>es.every(e=>e.scrollWidth<=e.clientWidth+1)'),(mode,width,'large activity rows')
+    pg.screenshot(path=str(OUT/f'{mode}-{width}-large.png'));pg.evaluate('document.documentElement.style.fontSize=""')
    for key,count in [('trades',2),('plays',1),('book',2),('unread',4),('league',1),('all',6)]:
     pg.locator(f'[data-activity-filter="{key}"]').click();assert pg.locator('.activity-item').count()==count
    assert pg.locator('[data-activity-id="1"] .activity-card').get_attribute('href')=='#/trade?tx=123'
@@ -65,7 +70,7 @@ with sync_playwright() as p:
     assert pg.locator('.notification-settings-sheet').evaluate('e=>e.getAnimations().filter(a=>a.playState==="running").length===0')
     pg.mouse.click(4,4);pg.wait_for_function('!document.querySelector(".notification-settings-sheet")');pg.emulate_media(reduced_motion='no-preference')
    pg.locator('[data-clear-all]').click();confirm=pg.locator('.dfl-confirm-sheet');confirm.wait_for(state='visible');confirm.locator('[data-confirm-close]').last.click();pg.wait_for_function('!document.querySelector(".dfl-confirm-sheet")');assert pg.locator('.activity-item').count()==6
-   pg.locator('[data-delete-notification="6"]').click();pg.wait_for_function('document.querySelectorAll(".activity-item").length===5');pg.locator('[data-read-all]').click();pg.wait_for_function('document.querySelector("[data-activity-count]").textContent==="All caught up"')
+   pg.evaluate('window.sameNotice=document.getElementById("activity-1");window.samePhoto=sameNotice.querySelector("img")');pg.locator('[data-delete-notification="6"]').click();pg.wait_for_function('document.querySelectorAll(".activity-item").length===5');pg.locator('[data-read-all]').click();pg.wait_for_function('document.querySelector("[data-activity-count]").textContent==="All caught up"');assert pg.evaluate('sameNotice===document.getElementById("activity-1")&&samePhoto===sameNotice.querySelector("img")'),'Read state rebuilt unchanged notice/portrait'
    # Reopen the sheet and leave the route; the modal and its listeners must disappear.
    pg.locator('[data-activity-settings]').click();pg.wait_for_selector('.notification-settings-sheet[open]');pg.evaluate('leaveActivity()');assert pg.locator('dialog[open]').count()==0
    pg.evaluate('document.querySelector("#view").hidden=true;document.querySelector("#picker-fixture").hidden=false');pg.locator('[data-trade-picker]').click();picker=pg.locator('.trade-player-picker');picker.wait_for(state='visible');pg.wait_for_timeout(250)

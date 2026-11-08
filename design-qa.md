@@ -1,95 +1,77 @@
-# Sports desk refinement — 1.563.0
+# Live tickets and Activity refinement — 1.564.0
 
-Visual references: the user-approved Matchup Desk/printed-ticket direction from
-1.562.0, plus the actual production broadcast and NFL game-header captures made
-before this refinement. The first daily broadcast and printed slip artwork stay
-in use. This is an extension of the existing product, not a new visual concept.
+Extends the approved Matchup Desk and printed-slip direction: compact Inter,
+flat ruled surfaces, aligned values and Medicine Wheel Dark/Light tokens. No new
+visual concept or replacement artwork. Current games remain primary; early
+lines stay collapsed. The printed shared receipt keeps its selected design.
 
 ## Evidence and comparison
 
-Source baselines: `/workspace/dfl-finish-1563/broadcast-{award,metric}-before.png`
-and `/workspace/dfl-finish-1563/desk-before/dark-390-fantasy.png`.
-Implementations: `/workspace/dfl-review/editorial-dark-{0,2}.png`,
-`/workspace/dfl-finish-1563/desk-after/dark-390-fantasy.png`, and
-`/workspace/dfl-finish-1563/interactions/390-dark-{current,ticket}.png`.
-Combined comparisons (opened and inspected): `comparison-broadcast-award.png`,
-`comparison-broadcast-metric.png`, `comparison-nfl-header.png` in
-`/workspace/dfl-finish-1563/`. Component broadcast images are uniformly displayed
-at 390px width; NFL captures use 390×844 CSS pixels, deviceScaleFactor 1. No image
-stretching or device frame is added. Broader checks cover 320/390/430/768px and
-200% text. Same synthetic teams/scores are used in the NFL before/after pair.
-Bet examples are isolated fixtures; compiled current-data Home/Book screenshots
-are in `/workspace/dfl-finish-1563/actual/`.
+Baseline captures: `/workspace/dfl-live-1564/activity-before/` and
+`/workspace/dfl-live-1564/results-before/evidence/`. Final browser captures:
+`/workspace/dfl-live-1564/activity-accessible/` and
+`/workspace/dfl-live-1564/live-final/`. Opened and inspected combined comparisons:
+`comparison-activity.png` and `comparison-tickets.png` in the same scratch root.
+These use identical synthetic records before/after, uniformly displayed at
+390px width without stretching; the ticket comparison is scrolled to the same
+result examples. Its intermediate renderer uses legacy wrapper typography;
+`live-final/390-dark-tickets.png` is the final actual-page layout, with inline
+small odds and two bounded rows. Compiled current-data Home/Book evidence is in
+`actual/`. Synthetic wagers and inbox entries are fixtures, never real activity.
 
-## Findings and iteration history
+## Findings and refinements
 
-- The Book sorted open upcoming markets before locked current games. It now
-  respects the league week order, includes settled current markets, and uses a
-  closed native disclosure for future slates. A known current week without data
-  shows an honest empty state. Future picks still work after expanding; closing
-  never clears the draft. Current locked rows retain full information contrast.
-- The first ticket-motion check caught lost opener focus: the refresh temporarily
-  disables its button, moving activeElement away. The origin button is now
-  explicitly retained, with a keyed replacement fallback. All focus/scroll tests
-  pass after the fix. Closing invalidates pending rendering, so a late result
-  cannot revive the preview. Escape, repeated Escape, immediate dismissal and
-  route cleanup are covered.
-- Broadcast and NFL header comparisons found no remaining actionable P0/P1/P2
-  issues. Team-colored score rules and readable tabular figures replace NFL
-  backdrop watermarks/glows. Broadcast kicker/icon clutter is reduced, records
-  have a distinct number column, and results have paired score columns. Existing
-  long-name fitting, image containment, routes and controls remain functional.
+- My bets previously expanded every leg and placed money below the picks. Stake
+  and return now lead; two priority legs show at once. A missed or trailing leg
+  is surfaced even when sixth in the accepted order. The full slip retains every
+  leg in its original order and the button explicitly names the total count.
+- A live tie no longer says Push, nor does one completed leg make an entire
+  unresolved multi-leg bet Winning. Trusted final leg observations on an open
+  account entry say pending; an estimated losing return is zero. Official paid
+  amounts override quoted potential return. Nothing credits a wallet or settles
+  an entry in this presentation layer.
+- Prop progress uses the accepted line, with explicit over/under comparison.
+  Unknown stats stay unknown; a real zero remains visible. Missing/invalid odds
+  display an em dash. Invalid progress ranges have no bar. The small fill moves
+  through a bounded transform, respects Reduced Motion and app motion settings,
+  and preserves its node during refreshed stats. No new polling or frame loop.
+- Activity replaces nested rounded cards with ruled rows. Trade previews retain
+  full team names, a lead player/photo and explicit additional-player counts.
+  Clip previews preserve image ratio; read/dismiss updates preserve unchanged
+  rows and photos. Header, metadata, filters and trade rows reflow at large text.
+  Receipt/clip destinations, clear confirmation and notification settings stay
+  available. No push delivery/settings behavior changes.
 
 ## Fidelity surfaces
 
-Typography: local Inter, compact labels, strong aligned tabular scores/prices,
-full wrapped names and the existing receipt type. Current, locked, final and
-pending meanings remain explicit; cosmetic motion does not imply a result.
-
-Spacing/layout: ruled flat surfaces, paired scores and consistent margins.
-Current betting games lead. Future weeks have a 48px summary with a genuine
-chevron affordance, keyboard semantics and reversible opening. View slip opens
-from the existing ticket row; the placeholder reserves the eventual preview
-space. Exit returns to the row without scrolling it away.
-
-Colors/tokens: shared Medicine Wheel Dark/Light tokens for surfaces, text, rules,
-focus and action selection. Authentic NFL colors remain identity cues. The
-printed slip remains intentionally light. No extra theme option or old blue.
-
-Images/icons: actual member/NFL photos/logos, supplied round DFL branding and
-existing broadcast player/chip artwork are reused. No generated replacement,
-mascot or shield introduced. The accordion uses the existing official Bootstrap
-chevron. Decorative header watermarks are removed; no substitute art is drawn.
-
-Content/actions: existing precise story destinations and score metadata stay
-intact. Plays and Fantasy remain separate and retain game swiping, live updates
-and play detail. View slip retains Share/Save/text, pulls/dismissal and official
-settlement behavior. No new request cadence, data provider, mutation or timer.
+Typography: existing local Inter; small secondary labels, tabular money/stats,
+wrapped names and aligned odds. Layout: existing mobile margins, flat separators,
+stake/return summary and 44px actions. Color: shared surface/text/rule/focus tokens,
+crimson selection, text-labeled semantic green/red outcomes. No legacy blue or
+redundant Medicine Wheel choice. Existing player photos and official Bootstrap
+result icons are reused; no new image, font, mascot or shield asset. Full printed
+receipt, Share/Save/text and source-row open/close motion remain in place.
 
 ## Validation
 
-- `pnpm check`: 2,507 tests / 303 files; release, theme, type, name and build checks
-  pass. Final CSS build retains 88 modules, three startup/four Home modules and
-  one shared-style request. No new page image/font request.
-- New persistent `tools/capture-sports-desk-finish.py`: 80 checks at 320/390px in
-  Light/Dark, including current-first/closed-early, draft retention, keyboard and
-  interrupted disclosure, source motion, app-motion-off, Reduced Motion,
-  focus/scroll return, repeated Escape, quick close and route cleanup. Added to
-  the existing league-wire CI job. Fixture-only account data; no remote writes.
-- Existing Book browser checks pass at 320/390/430px with 200% type, selected
-  contrast, claim retry/single-flight/balance/navigation, props, Pick’em and rapid
-  tabs. Existing share suite passes 75 checks including native-share user gesture,
-  Save/text/focus, full tickets and unchanged other share types.
-- Broadcast: 90 normal and 56 enlarged layouts pass, with replay/pause, touch,
-  keyboard, image containment and complete text. Editorial suite passes its
-  routed receipt/picker/visibility tests with zero offscreen scroll layout reads.
-- NFL desk: 126 checks pass for Plays/Fantasy, scores, player order, game changes,
-  loading/error/recovery, large text, reduced motion and teardown.
-- Compiled current-data Home/Book in both themes render without browser errors or
-  horizontal overflow (four route/theme captures). Claims are intercepted; no
-  real wager, league mutation, share delivery or message is performed.
+- `pnpm check`: 2,515 tests across 304 files; release/theme/type/name/build pass.
+  Final CSS rebuild passes; 88 app modules, three startup/four Home modules,
+  one shared stylesheet request. `pnpm themes` passes after final changes.
+- New persistent live-ticket browser fixture: 48 checks, 320/390px Light/Dark,
+  accepted versus moved lines, actual zero/missing stats, under/unknown sides,
+  priority previews, full six-leg receipt, estimated zero return, live refresh
+  preserving node identity, Reduced Motion and 200% text. Added to existing CI.
+- Existing result fixture: 48 checks. Sports-desk interaction suite: 80 checks,
+  including current/early ordering, draft retention, focus/scroll return,
+  interrupted motion, keyboard, app motion off and route cleanup. Shared-image
+  regression: 75 checks including full tickets and native-share gesture handling.
+- Activity: six Light/Dark × 320/390/768px contexts, plus 200% text at 320/390px;
+  filters, settings, clear cancellation, read/dismiss, picker/injury links,
+  focus and stable row/photo identity pass without browser errors.
+- Real-data compiled Home/Book captures use read-only provider calls and mocked
+  account operations. No real wager, claim, notification or league write.
 
-Physical iOS frame pacing, native share delivery and VoiceOver speech were not
-measured. No remaining P0/P1/P2 visual issues; platform rasterization is P3.
+Physical iOS frame pacing, native share delivery and VoiceOver speech are not
+measured. Reviewed normal/large layouts have no remaining actionable P0/P1/P2.
 
 final result: passed

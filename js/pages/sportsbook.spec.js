@@ -72,8 +72,8 @@ it('shows live ticket progress against the accepted line', async()=>{
     accepted_line:14.5,provider_line:15.5,provider_score:17,provider_side:'over',market_status:'locked',category:'Player Props'
   }]});
   const view=fakeView();await render(view);
-  expect(view.innerHTML).toContain('17 / 14.5 · WINNING');
-  expect(view.innerHTML).toContain('Automatic grading follows the final stat');
+  expect(view.innerHTML).toContain('17 / 14.5');expect(view.innerHTML).toContain('Winning');expect(view.innerHTML).toContain('role="progressbar"');
+  expect(view.innerHTML).not.toContain('Automatic grading follows the final stat');
   bets.length=0;
 });
 

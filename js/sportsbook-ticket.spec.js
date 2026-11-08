@@ -136,3 +136,8 @@ describe('sportsbook aftermath share', () => {
     expect(sportsbookRecapText({ available: false })).toBe('');
   });
 });
+
+it('uses an official paid amount and keeps unsettled final legs pending',()=>{
+ const paid=ticketData({bet:{status:'won',stake:25,potential_payout:105,payout:102},legs:[leg('A',120,'won')]});expect(paid.ret).toBe(102);expect(paid.profit).toBe(77);
+ const waiting=ticketData({bet:{status:'open',stake:25,potential_payout:105},legs:[leg('A',120,'lost')]});expect(waiting.gradingPending).toBe(true);expect(waiting.pendingReturn).toEqual({label:'Est. return',value:0});
+});

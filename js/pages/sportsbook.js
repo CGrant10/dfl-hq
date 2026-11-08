@@ -25,12 +25,14 @@ import { parseStake, entryReturn, combineOdds, MAX_PICKS } from "../sportsbook-s
 import { shareTicket, shareSportsbookRecap } from "../sportsbook-ticket.js";
 import { teamPortrait } from "../team-presentation.js";
 import {replayIcon} from '../replay-icons.js';
+import {slipIcons} from '../share-slip-icons.js';
+import {ticketLegView,ticketPreviewIndices} from '../sportsbook-live-ticket.js';
 import {nflTeams,team as nflTeam} from '../nfl-teams.js';
 import { loadPickemBoard, pickemMarkup, wirePickem } from "../sportsbook-pickem.js";
 import { sleeperPropImporterMarkup, wireSleeperPropImporter } from "../sleeper-prop-import-ui.js";
 import { propMarketMeta, propGameNames, propMatches, readPropFavorites, sortPropRows, togglePropFavorite } from "../sportsbook-props.js";
 
-const fmtOdds=n=>Number(n)>0?`+${Number(n)}`:String(Number(n));
+const fmtOdds=n=>n===null||n===undefined||String(n).trim()===''||!Number.isFinite(Number(n))?'—':Number(n)>0?`+${Number(n)}`:String(Number(n));
 const fmtTime=v=>v?new Date(v).toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
 const isOpen=m=>m.status==="open"&&(!m.closes_at||new Date(m.closes_at)>new Date());
 const isGolf=m=>m.category==="Golf"||String(m.auto_key||"").startsWith("golf:");
@@ -682,20 +684,11 @@ function entryLegs(b,marketMap,outcomeMap){
 
 const STATUS_PILL={won:"green",lost:"grey",void:"warn"};
 function legMarketOpen(leg,market){const status=leg.market_status||market?.status,closes=leg.closes_at||market?.closes_at;return status==="open"&&(!closes||new Date(closes)>new Date())}
-function legPulse(leg){
-  const result=bookLegResult(leg);
-  if(result.pending)return {tone:result.status==='won'?'is-ahead':result.status==='lost'?'is-behind':'is-push',text:result.status==='won'?'HIT':result.status==='lost'?'MISS':'PUSH'};
-  if(result.status==="won")return{tone:"is-ahead",text:"CASHED"};
-  if(result.status==="lost")return{tone:"is-behind",text:"MISSED"};
-  if(result.status==="void")return{tone:"",text:"VOID"};
-  const line=Number(leg.accepted_line??leg.provider_line),score=Number(leg.provider_score),hasLine=Number.isFinite(line),hasScore=leg.provider_score!==null&&leg.provider_score!==undefined&&Number.isFinite(score);
-  if(hasLine&&hasScore){const side=String(leg.provider_side||"").toLowerCase(),push=score===line,ahead=side==="over"?score>line:score<line;return{tone:push?"is-push":ahead?"is-ahead":"is-behind",text:`${score} / ${line} · ${push?"PUSH":ahead?"WINNING":"BEHIND"}`}}
-  if(leg.market_status==="locked")return{tone:"is-live",text:"LIVE · AWAITING STAT"};
-  return{tone:"",text:"NOT STARTED"};
-}
+function legPulse(leg){return ticketLegView(leg)}
+
 function ticketCard(b,marketMap,outcomeMap){
   const legs=entryLegs(b,marketMap,outcomeMap);
-  const multi=legs.length>1,entryResult=bookEntryResult(legs),pendingResult=b.status==='open'&&entryResult!=='open'&&legs.some(leg=>bookLegResult(leg).pending);
+  const multi=legs.length>1,entryResult=bookEntryResult(legs),pendingResult=b.status==='open'&&entryResult!=='open';
   const pulled=b.status==="void"&&!!b.cancelled_at;
   const pendingReturn=pendingBookReturn(b,legs),returnLabel=pendingReturn?.label||(b.status==='won'?'Paid':b.status==='lost'?'Returned':b.status==='void'?'Void':'To return');
   const returnValue=pendingReturn?.value??(b.status==='lost'?0:b.status==='void'?'—':b.status==='won'?(b.payout??b.potential_payout):b.potential_payout);
@@ -718,18 +711,19 @@ function ticketCard(b,marketMap,outcomeMap){
   const stuck=!blocking?"" : (()=>{
     const m=blocking.market;
     const category=m?.category||blocking.leg.category;
-    if(pendingResult)return 'Grading pending.';
-    if((m?.source==="provider"||blocking.leg.provider_side)&&ACTIVE_BOOK_CATEGORIES.has(String(category||"")))return `${esc(blocking.leg.label)} is live. Automatic grading follows the final stat.`;
-    if(fantasyMarketKey(m))return 'Matchup result pending.';
+    if(pendingResult)return '';
+    if((m?.source==="provider"||blocking.leg.provider_side)&&ACTIVE_BOOK_CATEGORIES.has(String(category||"")))return '';
+    if(fantasyMarketKey(m))return '';
     if(!m)return "This line is gone from the board. The house has to void it to release your stake.";
     if(isGolf(m)||!isBookCategory(m))return `${esc(blocking.leg.label)} is on a retired line. The house has to void it to release your stake.`;
     return `${esc(blocking.leg.label)} has locked. Waiting on a ruling.`;
   })();
   const won=legs.filter(l=>l.status==="won").length;
-  const pulses=legs.map(legPulse),live=pulses.some(p=>p.tone==="is-live"||p.tone==="is-ahead"||p.tone==="is-behind"||p.tone==="is-push"),behind=pulses.some(p=>p.tone==="is-behind"),ahead=pulses.some(p=>p.tone==="is-ahead")&&!behind;
-  const label=pendingResult?(entryResult==='won'?'HIT':entryResult==='lost'?'MISSED':'PUSH'):pulled?"PULLED":multi&&(b.status==="won"||b.status==="lost")?`${won} OF ${legs.length}`
+  const pulses=legs.map(legPulse),live=pulses.some(p=>p.tone==="is-live"||p.tone==="is-ahead"||p.tone==="is-behind"||p.tone==="is-push"),behind=pulses.some(p=>p.tone==="is-behind"),ahead=pulses.length>0&&pulses.every(p=>p.state==='winning'||p.state==='won');
+  const label=pendingResult?(entryResult==='won'?'HIT · PENDING':entryResult==='lost'?'MISS · PENDING':'PUSH · PENDING'):pulled?"PULLED":multi&&(b.status==="won"||b.status==="lost")?`${won} OF ${legs.length}`
     :b.status==="won"?"PAID":b.status==="lost"?"LOST":b.status==="void"?"VOID"
-      :live?(ahead?"WINNING":"SWEATING"):blocking?"AWAITING RESULT":"OPEN";
+      :live?(behind?"BEHIND":ahead?"WINNING":"LIVE"):blocking?"AWAITING RESULT":"OPEN";
+  const preview=ticketPreviewIndices(pulses),omitted=Math.max(0,legs.length-preview.length);
   return `<article id="sb-ticket-${esc(b.id)}" data-ticket-id="${esc(b.id)}" data-ticket-status="${esc(b.status)}" class="card sb-ticket${multi?" is-entry":""}">
     <div class="card-title-row">
       <div>
@@ -738,22 +732,20 @@ function ticketCard(b,marketMap,outcomeMap){
       </div>
       <span class="pill ${STATUS_PILL[b.status]||''}${pendingResult?` sb-result-pill is-${entryResult}`:''}"${pendingResult?' aria-label="'+label+'; grading pending"':''}>${esc(label)}</span>
     </div>
-    <ol class="sb-ticket-legs">${legs.map((l,i)=>{const pulse=pulses[i],result=bookLegResult(l);return `
-      <li class="sb-leg is-${result.status}" data-leg-result="${result.status}">
-        <span class="sb-leg-mark" aria-hidden="true">${result.status==='won'?'&check;':result.status==='lost'?'&times;':result.status==='void'?'—':i+1}</span>
-        <span class="sb-leg-body"><span class="sb-leg-pick">${esc(l.label)}</span><small>${esc(l.market||"")}</small><em class="sb-leg-pulse ${pulse.tone}">${esc(pulse.text)}</em></span>
+    <div class="sb-ticket-summary"><span><small>${pulled?'Refunded':'Stake'}</small><b>${num(b.stake)} <em>SIN</em></b></span><span class="sb-ticket-return"><small>${returnLabel}</small><b>${returnValue==='—'?'—':num(returnValue)}${returnValue==='—'?'':' <em>SIN</em>'}</b></span></div>
+    <ol class="sb-ticket-legs">${preview.map(i=>{const l=legs[i],pulse=pulses[i],result=bookLegResult(l);return `
+      <li id="sb-ticket-${esc(b.id)}-leg-${i}" class="sb-leg is-${result.status}" data-leg-result="${result.status}" data-leg-index="${i}" data-leg-tone="${pulse.state}">
+        <span class="sb-leg-mark" aria-hidden="true">${pulse.icon?slipIcons[pulse.icon].replace('<svg ','<svg aria-hidden="true" '):i+1}</span>
+        <span class="sb-leg-body"><span class="sb-leg-pick">${esc(l.label)}</span><small>${esc(l.market||'')}</small><span class="sb-leg-observation"><span>${esc(pulse.value)}</span><em class="sb-leg-pulse ${pulse.tone}">${esc(pulse.text)}</em></span>${pulse.ratio!==null?`<span class="sb-stat-track ${pulse.tone}" role="progressbar" aria-label="${esc(l.label)} stat progress" aria-valuemin="0" aria-valuemax="${pulse.line}" aria-valuenow="${Math.max(0,Math.min(pulse.line,pulse.score))}" aria-valuetext="${esc(pulse.value+', '+pulse.text)}"><span style="transform:scaleX(${pulse.ratio})"></span></span>`:''}</span>
         <strong class="sb-leg-odds">${fmtOdds(l.odds_american)}</strong>
-      </li>`}).join("")}</ol>
+      </li>`}).join('')}</ol>
+    ${omitted?`<p class="sb-ticket-omitted">+${omitted} more pick${omitted===1?'':'s'} in the slip</p>`:''}
     <div class="card-meta sb-ticket-foot">
-      <span class="sb-ticket-figures">
-        <span><b>${pulled?"Refunded":"Stake"}</b>${num(b.stake)}</span>
-        <span class="sb-ticket-return${b.status==="lost"||b.status==="void"?" is-dead":""}"><b>${returnLabel}</b>${returnValue==='—'?'—':num(returnValue)}</span>
-      </span>
       <span class="sb-ticket-actions">
         ${stuck?`<span class="sb-ticket-stuck">${stuck}</span>`:""}
         ${canPull?`<button type="button" class="linkbtn sb-pull" id="sb-cancel-bet-${esc(b.id)}" data-cancel-bet="${b.id}">Pull ticket</button>`:""}
         ${b.status!=="open"?`<button type="button" class="linkbtn" id="sb-dismiss-bet-${esc(b.id)}" data-dismiss-bet="${b.id}">Dismiss</button>`:""}
-        <button type="button" class="linkbtn" id="sb-share-ticket-${esc(b.id)}" data-share-ticket="${b.id}">View slip</button>
+        <button type="button" class="linkbtn" id="sb-share-ticket-${esc(b.id)}" data-share-ticket="${b.id}" aria-label="View full ${legs.length}-pick slip">${omitted?`View all ${legs.length}`:'View slip'}</button>
       </span>
     </div>
   </article>`;

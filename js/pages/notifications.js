@@ -1,5 +1,6 @@
 import {currentMember} from '../members.js';
 import {esc,toast} from '../ui.js';
+import {patchGameDay} from '../game-day-dom.js';
 import {DEFAULT_NOTIFICATION_CATEGORIES,NOTIFICATION_CATEGORIES,NOTIFICATION_PRESETS,timeAgo} from '../notification-core.js';
 import {clearInbox,disablePush,dismissNotifications,enablePush,inbox,markRead,pushCapability,pushPreferences,saveSubscription,testNotification} from '../notifications.js';
 import {ensureStylesheet} from '../lazy-css.js';
@@ -51,7 +52,7 @@ export async function render(view){
  if(!current())return;
  view.innerHTML=`<header class="notification-head"><div><small>DFL HQ</small><h1>Activity</h1><p data-activity-count></p></div><button type="button" class="btn ghost small" data-activity-settings aria-haspopup="dialog">Settings</button></header>${activityFiltersMarkup(rows)}<div class="activity-toolbar"><button class="linkbtn" type="button" data-read-all>Mark all read</button><button class="linkbtn" type="button" data-clear-all>Clear inbox</button></div><section class="notification-inbox" aria-label="League activity" data-activity-list></section><p class="sr-only" role="status" data-activity-announcement></p>`;
  const paint=()=>{
-  view.querySelector('[data-activity-list]').innerHTML=activityListMarkup(rows,context,filter);
+  patchGameDay(view.querySelector('[data-activity-list]'),activityListMarkup(rows,context,filter));
   const unread=rows.filter(r=>!r.is_read).length;
   view.querySelector('[data-activity-count]').textContent=unread?`${unread} unread`:'All caught up';
   view.querySelector('[data-read-all]').disabled=!unread;view.querySelector('[data-clear-all]').disabled=!rows.length;
