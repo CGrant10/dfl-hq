@@ -16,20 +16,33 @@ export function replayGameEntries(clips,context){
 export function replayGameObservation(summary){let id='';for(const play of [...footballPlays(summary),...(summary?.scoringPlays||[])]){const next=String(play.id||'');if(/^\d{1,24}$/.test(next)&&(!id||BigInt(next)>BigInt(id)))id=next}return {header:summary?.header,drives:{current:{plays:id?[{id}]:[]}}}}
 export function replayGameMarkup(games,selected){const index=games.findIndex(g=>g.id===selected);return games.map((game,i)=>`<button type="button" class="replay-game" id="replay-game-${esc(game.id)}" data-replay-game="${esc(game.id)}" data-replay-neighbor="${i<index?'before':i>index?'after':'current'}" aria-pressed="${game.id===selected}" tabindex="${game.id===selected?0:-1}" aria-label="${esc(game.label)} · ${esc(game.status)}"><span class="replay-game-sides">${game.sides.length?game.sides.map(side=>`<span><img src="${esc(teamLogoUrl(side.code))}" alt="" width="20" height="20" decoding="async" onerror="this.hidden=true"><strong>${esc(side.code)}</strong><b>${side.score??'—'}</b></span>`).join(''):`<strong>${esc(game.label)}</strong>`}</span><small>${esc(game.status)}</small></button>`).join('')}
 
-// Native snap scrolling follows a finger without moving or cloning the video.
-// Commit once the strip settles; controls and reduced motion use the same path.
+// Native scrolling only browses the rail. A game changes on explicit activation.
+// Keeping selection separate also prevents score refreshes from pulling it back.
 export function mountReplayGames(host,{select,active=()=>true,motion=()=>true}){
  host.innerHTML=`<button type="button" data-replay-step="-1" aria-label="Previous NFL game">${replayIcon('chevron-left')}</button><div class="replay-game-track" data-replay-games role="group" aria-label="Choose an NFL game"></div><button type="button" data-replay-step="1" aria-label="Next NFL game">${replayIcon('chevron-right')}</button>`;
- const track=host.querySelector('[data-replay-games]');let games=[],selected='',key='',timer=0,aligning=false,interacting=false,moving=false,stopped=false;
+ const track=host.querySelector('[data-replay-games]');let games=[],selected='',key='',moving=false,stopped=false,browsing=false,gesture=null,suppressClick=false;
  const buttons=()=>[...track.querySelectorAll('[data-replay-game]')];
- const scrollTo=(id,smooth)=>{const el=buttons().find(b=>b.dataset.replayGame===id);if(!el)return;aligning=true;track.scrollTo({left:el.offsetLeft-(track.clientWidth-el.offsetWidth)/2,behavior:smooth&&motion()?'smooth':'instant'})};
- const move=(id,focus=false)=>{if(!id||!active()||id===selected)return;moving=true;try{select(id)}finally{moving=false}if(stopped)return;if(focus)buttons().find(b=>b.dataset.replayGame===id)?.focus({preventScroll:true})};
- const settle=()=>{clearTimeout(timer);if(stopped||!active()||!track.clientWidth||aligning)return;const center=track.scrollLeft+track.clientWidth/2,nearest=buttons().reduce((best,b)=>Math.abs(b.offsetLeft+b.offsetWidth/2-center)<Math.abs(best.offsetLeft+best.offsetWidth/2-center)?b:best,buttons()[0]);interacting=false;if(nearest){move(nearest.dataset.replayGame);scrollTo(nearest.dataset.replayGame,true)}};
- const scroll=()=>{clearTimeout(timer);timer=setTimeout(settle,140)};
- const touch=()=>{aligning=false;interacting=true};
- const click=event=>{const game=event.target.closest('[data-replay-game]'),step=event.target.closest('[data-replay-step]');if(game){move(game.dataset.replayGame);scrollTo(game.dataset.replayGame,true)}else if(step)move(games[games.findIndex(g=>g.id===selected)+Number(step.dataset.replayStep)]?.id)};
- const keydown=event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const i=games.findIndex(g=>g.id===selected),next=event.key==='Home'?0:event.key==='End'?games.length-1:i+(event.key==='ArrowRight'?1:-1);move(games[next]?.id,true)};
- host.addEventListener('click',click);host.addEventListener('keydown',keydown);track.addEventListener('scroll',scroll,{passive:true});track.addEventListener('scrollend',settle);track.addEventListener('pointerdown',touch,{passive:true});track.addEventListener('wheel',touch,{passive:true});
- const resize=new ResizeObserver(()=>scrollTo(selected,false));resize.observe(track);
- return {update(rows,id){const nextKey=JSON.stringify(rows.map(g=>[g.id,g.status,g.sides]));const changed=nextKey!==key,selection=id!==selected;games=rows;selected=id;key=nextKey;if(changed)patchGameDay(track,replayGameMarkup(rows,id));else for(const b of buttons()){b.setAttribute('aria-pressed',String(b.dataset.replayGame===id));b.tabIndex=b.dataset.replayGame===id?0:-1;b.dataset.replayNeighbor=games.findIndex(g=>g.id===b.dataset.replayGame)<games.findIndex(g=>g.id===id)?'before':b.dataset.replayGame===id?'current':'after'}const i=games.findIndex(g=>g.id===id);host.querySelector('[data-replay-step="-1"]').disabled=i<=0;host.querySelector('[data-replay-step="1"]').disabled=i<0||i===games.length-1;if(selection||changed&&!interacting)scrollTo(id,moving)},stop(){stopped=true;clearTimeout(timer);resize.disconnect();host.removeEventListener('click',click);host.removeEventListener('keydown',keydown);track.removeEventListener('scroll',scroll);track.removeEventListener('scrollend',settle);track.removeEventListener('pointerdown',touch);track.removeEventListener('wheel',touch)}};
+ const scrollTo=(id,smooth)=>{const el=buttons().find(b=>b.dataset.replayGame===id);if(el)track.scrollTo({left:el.offsetLeft-(track.clientWidth-el.offsetWidth)/2,behavior:smooth&&motion()?'smooth':'instant'})};
+ const move=(id,focus=false)=>{if(!id||stopped||!active())return;browsing=false;if(id!==selected){moving=true;try{select(id)}finally{moving=false}}if(stopped)return;scrollTo(id,true);if(focus)buttons().find(b=>b.dataset.replayGame===id)?.focus({preventScroll:true})};
+ const down=event=>{browsing=true;suppressClick=false;gesture={id:event.pointerId,x:event.clientX,y:event.clientY,left:track.scrollLeft}};
+ const drag=event=>{if(gesture?.id===event.pointerId&&(Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)>8||Math.abs(track.scrollLeft-gesture.left)>8))suppressClick=true};
+ const up=event=>{drag(event);gesture=null};
+ const cancel=()=>{if(gesture)suppressClick=true;gesture=null};
+ const wheel=()=>{browsing=true};
+ const click=event=>{const game=event.target.closest('[data-replay-game]'),step=event.target.closest('[data-replay-step]');if(game){if(event.detail&&suppressClick){event.preventDefault();event.stopPropagation();return}move(game.dataset.replayGame)}else if(step)move(games[games.findIndex(g=>g.id===selected)+Number(step.dataset.replayStep)]?.id)};
+ const keydown=event=>{
+  const target=event.target.closest('[data-replay-game]');if(!target||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)||stopped||!active())return;
+  event.preventDefault();event.stopPropagation();browsing=true;
+  const i=games.findIndex(g=>g.id===target.dataset.replayGame),next=event.key==='Home'?0:event.key==='End'?games.length-1:i+(event.key==='ArrowRight'?1:-1),id=games[next]?.id;
+  if(id){for(const b of buttons())b.tabIndex=b.dataset.replayGame===id?0:-1;buttons().find(b=>b.dataset.replayGame===id)?.focus({preventScroll:true});scrollTo(id,true)}
+ };
+ host.addEventListener('click',click);host.addEventListener('keydown',keydown);track.addEventListener('pointerdown',down,{passive:true});track.addEventListener('pointermove',drag,{passive:true});track.addEventListener('pointerup',up,{passive:true});track.addEventListener('pointercancel',cancel,{passive:true});track.addEventListener('wheel',wheel,{passive:true});
+ const resize=new ResizeObserver(()=>{if(!browsing)scrollTo(selected,false)});resize.observe(track);
+ return {update(rows,id){
+  if(stopped)return;const nextKey=JSON.stringify(rows.map(g=>[g.id,g.status,g.sides])),changed=nextKey!==key,selection=id!==selected,focused=selection?id:track.contains(document.activeElement)?document.activeElement.closest('[data-replay-game]')?.dataset.replayGame:id;
+  games=rows;selected=id;key=nextKey;if(changed)patchGameDay(track,replayGameMarkup(rows,id));
+  const i=games.findIndex(g=>g.id===id);for(const b of buttons()){const index=games.findIndex(g=>g.id===b.dataset.replayGame);b.setAttribute('aria-pressed',String(b.dataset.replayGame===id));b.tabIndex=b.dataset.replayGame===(focused||id)?0:-1;b.dataset.replayNeighbor=index<i?'before':index===i?'current':'after'}
+  host.querySelector('[data-replay-step="-1"]').disabled=i<=0;host.querySelector('[data-replay-step="1"]').disabled=i<0||i===games.length-1;
+  if(selection){browsing=false;scrollTo(id,moving)}
+ },stop(){stopped=true;gesture=null;resize.disconnect();host.removeEventListener('click',click);host.removeEventListener('keydown',keydown);track.removeEventListener('pointerdown',down);track.removeEventListener('pointermove',drag);track.removeEventListener('pointerup',up);track.removeEventListener('pointercancel',cancel);track.removeEventListener('wheel',wheel)}};
 }
