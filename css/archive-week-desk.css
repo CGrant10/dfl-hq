@@ -1,0 +1,56 @@
+/* Archive uses the same compact ruled surfaces as the live sports desks. */
+#view.view[data-page-system][data-route="history"] { --font-body:var(--font-ui); --font-display:var(--font-ui); }
+#view.view[data-page-system][data-route="history"] .archive-page-head { margin-bottom:8px; }
+#view.view[data-page-system][data-route="history"] #hist-tabs { margin-block:0 8px; }
+#view.view[data-page-system][data-route="history"] #hist-tabs button { min-height:44px; padding-inline:12px; font:600 .8125rem/1.4 var(--font-ui); white-space:nowrap; }
+#view.view[data-page-system][data-route="history"] .archive-week-desk { min-width:0; }
+#view.view[data-page-system][data-route="history"] .archive-season-tools { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; padding-block:4px 8px; }
+#view.view[data-page-system][data-route="history"] .archive-season-tools label { display:flex; align-items:center; gap:8px; font:500 .6875rem/1.4 var(--font-ui); color:var(--body-text); }
+#view.view[data-page-system][data-route="history"] .archive-season-tools select { width:auto; min-width:5.5rem; min-height:44px; margin:0; padding:4px 28px 4px 8px; border:1px solid var(--line-soft); border-radius:3px; background-color:var(--bg); color:var(--text); font:650 1rem/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route="history"] .archive-season-tools>a { display:flex; white-space:nowrap; margin-left:auto; align-items:center; min-height:44px; font:600 .75rem/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route="history"] .archive-week-strip { position:relative; display:flex; gap:0; max-width:100%; min-width:0; overflow-x:auto; margin:0; padding:0; border-bottom:1px solid var(--line-soft); scrollbar-width:none; overscroll-behavior-x:contain; }
+#view.view[data-page-system][data-route="history"] .archive-week-strip button { flex:0 0 auto; min-width:52px; min-height:44px; padding:8px 12px; margin:0; border:0; border-bottom:2px solid transparent; border-radius:0; background:transparent; color:var(--body-text); font:600 .75rem/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route="history"] .archive-week-strip button[aria-pressed="true"] { color:var(--text); border-bottom-color:var(--accent-fill); }
+#view.view[data-page-system][data-route="history"] .archive-week-strip[data-ui-rail] button[aria-pressed="true"] { border-bottom-color:transparent; }
+#view.view[data-page-system][data-route="history"] .archive-week-heading { display:flex; justify-content:space-between; align-items:end; gap:8px; margin:10px 0; }
+#view.view[data-page-system][data-route="history"] .archive-week-heading small { color:var(--body-text); font:500 .625rem/1.5 var(--font-ui); letter-spacing:.05em; }
+#view.view[data-page-system][data-route="history"] .archive-week-heading h2 { margin:2px 0 0; font:750 1.125rem/1.3 var(--font-ui); letter-spacing:-.02em; text-transform:none; }
+#view.view[data-page-system][data-route="history"] .archive-week-heading>span { color:var(--body-text); font:500 .6875rem/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route="history"] .archive-week-highlights { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,8rem),1fr)); border-block:1px solid var(--line-soft); }
+#view.view[data-page-system][data-route="history"] .archive-week-highlights>button { display:grid; align-content:start; gap:4px; min-width:0; min-height:44px; margin:0; padding:10px 8px 10px 0; border:0; border-radius:0; background:transparent; color:var(--text); text-align:left; }
+#view.view[data-page-system][data-route="history"] .archive-week-highlights small { color:var(--body-text); font:600 .625rem/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route="history"] .archive-week-highlights strong { font:750 1.1875rem/1.2 var(--font-ui); font-variant-numeric:tabular-nums; }
+#view.view[data-page-system][data-route="history"] .archive-week-highlights strong>span { color:var(--body-text); font:500 .625rem/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route="history"] .archive-week-highlights button>span { overflow-wrap:break-word; font:600 .75rem/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route="history"] .archive-week-roast { margin:10px 0; padding:0 0 0 10px; border-left:2px solid var(--accent-fill); color:var(--body-text); font:500 .75rem/1.5 var(--font-ui); overflow-wrap:break-word; }
+#view.view[data-page-system][data-route="history"] .archive-week-state { margin:18px 0; font:500 .8125rem/1.5 var(--font-ui); color:var(--body-text); }
+#view.view[data-page-system][data-route="history"] .archive-match { margin:0; padding:0; border:0; border-bottom:1px solid var(--line-soft); border-radius:0; background:transparent; }
+#view.view[data-page-system][data-route="history"] .archive-match>summary { display:block; padding:10px 0 8px; cursor:pointer; list-style:none; }
+#view.view[data-page-system][data-route="history"] .archive-match>summary::-webkit-details-marker { display:none; }
+#view.view[data-page-system][data-route="history"] .archive-match-score { display:grid; gap:5px; }
+#view.view[data-page-system][data-route="history"] .archive-match-team { display:grid; grid-template-columns:28px minmax(0,1fr) auto; align-items:center; gap:8px; min-width:0; font:550 .8125rem/1.4 var(--font-ui); color:var(--body-text); }
+#view.view[data-page-system][data-route="history"] .archive-match-team>.dfl-team-mark { width:28px; height:28px; font-size:.5625rem; }
+#view.view[data-page-system][data-route="history"] .archive-match-name { min-width:0; overflow-wrap:break-word; }
+#view.view[data-page-system][data-route="history"] .archive-match-team>b { font:700 .9375rem/1.3 var(--font-ui); font-variant-numeric:tabular-nums; text-align:right; }
+#view.view[data-page-system][data-route="history"] .archive-match-team.is-winner { color:var(--text); font-weight:650; }
+#view.view[data-page-system][data-route="history"] .archive-match-tail { display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:24px; margin-left:36px; color:var(--body-text); }
+#view.view[data-page-system][data-route="history"] .archive-match-tail>small { font:500 .625rem/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route="history"] .archive-match-tail>.ico-sm { width:14px; height:14px; transition:transform 220ms cubic-bezier(.2,.75,.25,1); }
+#view.view[data-page-system][data-route="history"] .archive-match[open] .archive-match-tail>.ico-sm { transform:rotate(90deg); }
+#view.view[data-page-system][data-route="history"] .archive-match-detail { padding:4px 0 0 36px; }
+#view.view[data-page-system][data-route="history"] .archive-match-detail dl { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,6rem),1fr)); gap:10px; margin:0 0 12px; padding-top:10px; border-top:1px solid var(--line-soft); }
+#view.view[data-page-system][data-route="history"] .archive-match-detail dt { color:var(--body-text); font:500 .625rem/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route="history"] .archive-match-detail dd { margin:3px 0 0; color:var(--text); font:700 .875rem/1.3 var(--font-ui); font-variant-numeric:tabular-nums; }
+#view.view[data-page-system][data-route="history"] .archive-entering { display:grid; gap:6px; font:500 .6875rem/1.5 var(--font-ui); }
+#view.view[data-page-system][data-route="history"] .archive-entering>span { color:var(--body-text); font-size:.625rem; }
+#view.view[data-page-system][data-route="history"] .archive-entering>div { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; }
+#view.view[data-page-system][data-route="history"] .archive-entering>div>span { min-width:0; overflow-wrap:break-word; }
+#view.view[data-page-system][data-route="history"] .archive-entering a { color:var(--text); text-underline-offset:3px; }
+#view.view[data-page-system][data-route="history"] .archive-entering b { font-weight:650; font-variant-numeric:tabular-nums; }
+#view.view[data-page-system][data-route="history"] .archive-match-open { display:flex; justify-content:flex-end; align-items:center; gap:8px; min-height:44px; font:600 .75rem/1.4 var(--font-ui); }
+html[data-ui-motion="off"] .archive-match-tail>.ico-sm { transition:none; }
+@media(prefers-reduced-motion:reduce) { .archive-match-tail>.ico-sm { transition:none; } }
+@media(min-width:700px) { .archive-week-desk { max-width:760px; } }
+
+#view.view[data-page-system][data-route="history"] #hist-tabs .dfl-selection-rail,
+#view.view[data-page-system][data-route="history"] .archive-week-strip .dfl-selection-rail { background:var(--action-fill)!important; }

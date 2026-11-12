@@ -33,6 +33,9 @@ on:
       - 'tools/capture-live-ticket-review.py'
       - 'tools/capture-power-review.py'
       - 'tools/capture-secondary-review.py'
+      - 'tools/capture-archive-weeks.py'
+      - 'js/archive-week*'
+      - 'css/archive-week-desk.css'
       - 'tools/render-secondary-review.mjs'
       - 'css/trade-book-reading.css'
       - 'js/multigame*'
@@ -609,12 +612,14 @@ jobs:
         env:
           DFL_REVIEW_DIR: ${{ github.workspace }}/league-identity-output/home
           DFL_SECONDARY_REVIEW_DIR: ${{ github.workspace }}/league-identity-output/secondary
+          DFL_ARCHIVE_REVIEW_DIR: ${{ github.workspace }}/league-identity-output/weekly-archive
         run: |
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           node tools/render-home-review.mjs
           python tools/capture-power-review.py
           node tools/render-secondary-review.mjs
           python tools/capture-secondary-review.py
+          python tools/capture-archive-weeks.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

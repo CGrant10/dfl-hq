@@ -126,7 +126,7 @@ const rails = [
   { bar: '.home-feed-tabs' }, { bar: '.gd-watch-tabs' },
   { bar: '.sb-product-tabs' }, { bar: '.sb-tabs' }, { bar: '.page-activity-tabs' },
   { bar: '.td-entry-actions', panel: '.tb-custom,[data-tb-offers]' },
-  { bar: '#hist-tabs', panel: '#hist-body' }, { bar: '#year-picker', panel: '#hist-body' },
+  { bar: '#hist-tabs', panel: '#hist-body' }, { bar: '.archive-week-strip' }, { bar: '#year-picker', panel: '#hist-body' },
   { bar: '#rule-tabs', panel: '#rule-body' }, { bar: '#cal-tabs', panel: '#cal-body' },
   { bar: '#year-tabs', panel: '#keeper-body' }, { bar: '#fin-years', panel: '#fin-body' },
 ];
