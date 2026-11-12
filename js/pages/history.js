@@ -1,3 +1,4 @@
+import {mountArchiveWeeks} from '../archive-weeks.js';
 import {historyMomentKey,markStoryTarget} from '../story-destinations.js';
 import {readPageChoice,savePageChoice} from '../page-disclosure.js';
 // =====================================================================
@@ -46,25 +47,29 @@ function icon(category) {
 
 let tab = "fame";
 let season = null;
+let generation=0,weekDesk=null;
+export function leave(){generation++;weekDesk?.stop();weekDesk=null}
 
 export async function render(view) {
-  tab=readPageChoice('history-tab',['fame','moments','seasons','alltime','records'],'fame');
+  weekDesk?.stop();weekDesk=null;const token=++generation;
+  tab=readPageChoice('history-tab',['weeks','fame','moments','seasons','alltime','records'],'weeks');
   const storyParams=new URLSearchParams(location.hash.split('?')[1]||'');
-  const storyTab=storyParams.get('tab');if(['fame','moments','seasons','alltime','records'].includes(storyTab))tab=storyTab;
+  const storyTab=storyParams.get('tab');if(['weeks','fame','moments','seasons','alltime','records'].includes(storyTab))tab=storyTab;
   const storySeason=Number(storyParams.get('season'));if(Number.isInteger(storySeason)&&storySeason>=2010&&storySeason<=2100){season=storySeason;savePageChoice('history-season',String(season));}
   const requestedEntry=Number(storyParams.get('entry'));
   if(requestedEntry)tab="fame";
-  view.innerHTML = `<header class="utility-head archive-page-head"><h1>History</h1><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Weekly archive →</a></header>` + loading("Reading the record book…");
+  view.innerHTML = `<header class="utility-head archive-page-head"><h1>History</h1></header>` + loading("Reading the record book…");
 
   /* ONE LOAD for every tab on this page, and the same one a profile reads.
      The record book used to fetch the matchup table separately the first
      time somebody opened its tab; it is all one fetch now, cached in
      lore.js for the rest of the visit. */
   const data = await loadLore();
-  if (data.error) { view.innerHTML = `<header class="utility-head archive-page-head"><h1>History</h1><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Weekly archive →</a></header>` + errorBox(data.error); return; }
+  if(token!==generation||!view.isConnected)return;
+  if (data.error) { view.innerHTML = `<header class="utility-head archive-page-head"><h1>History</h1></header>` + errorBox(data.error); return; }
 
   if (!data.manual.length && !data.leagues.length) {
-    view.innerHTML = `<header class="utility-head archive-page-head"><h1>History</h1><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Weekly archive →</a></header>
+    view.innerHTML = `<header class="utility-head archive-page-head"><h1>History</h1></header>
       <div id="hist-body">
         ${empty("No league history yet.")}
         ${canEdit() ? `<div class="row-end">${addControl("history", "Add entry")}</div>` : ""}
@@ -74,9 +79,9 @@ export async function render(view) {
   }
 
   view.innerHTML = `
-    <header class="utility-head archive-page-head"><h1>History</h1><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Weekly archive →</a></header>
+    <header class="utility-head archive-page-head"><h1>History</h1></header>
     <!--
-      FIVE TABS DO NOT FIT A PHONE, and .tabs has always been a horizontal
+      History sections stay in one native horizontal strip, and .tabs has always been a horizontal
       scroller - the problem was that it did not look like one. At 375px the
       strip is wider than the screen with nothing to say so, so "Records"
       simply did not exist unless you happened to swipe. tabscroll adds the
@@ -84,6 +89,7 @@ export async function render(view) {
       keeps the current one in shot.
     -->
     <div class="tabs tabscroll" id="hist-tabs" role="tablist" aria-label="History sections">
+      <button type="button" data-tab="weeks" role="tab" aria-selected="${tab === "weeks"}" class="${tab === "weeks" ? "on" : ""}">Weeks</button>
       <button data-tab="fame"    role="tab" aria-selected="${tab === "fame"}"    class="${tab === "fame" ? "on" : ""}">Hall of Fame</button>
       <button data-tab="moments" role="tab" aria-selected="${tab === "moments"}" class="${tab === "moments" ? "on" : ""}">Moments</button>
       <button data-tab="seasons" role="tab" aria-selected="${tab === "seasons"}" class="${tab === "seasons" ? "on" : ""}">Yearbook</button>
@@ -96,6 +102,8 @@ export async function render(view) {
   const body = view.querySelector("#hist-body");
   const linkedMoment=storyParams.get('moment')&&moments(data).find(m=>historyMomentKey(m)===storyParams.get('moment'));
   const paint = () => {
+    weekDesk?.stop();weekDesk=null;
+    if(tab==='weeks'){weekDesk=mountArchiveWeeks(body,{lore:data,params:new URLSearchParams(storyParams),active:()=>token===generation&&view.isConnected});return;}
     if(tab==='moments'&&storyParams.has('moment')&&!linkedMoment){body.innerHTML='<section class="state" role="status" data-route-focus tabindex="-1">This archive entry has changed. <a class="linkbtn" href="#/history?tab=moments">Latest moments →</a></section>';return;}
     if(tab==='moments'&&linkedMoment){body.innerHTML=`<section class="card" data-route-focus tabindex="-1">${momentRow(linkedMoment)}<a class="linkbtn" href="#/history?tab=moments">All moments →</a></section>`;return;}
     if (tab === "records") return recordsView(body, data);
@@ -148,6 +156,8 @@ export async function render(view) {
   });
 
   paint();
+  if(weekDesk)await weekDesk.ready;
+  if(token!==generation||!view.isConnected)return;
   if(storyParams.get('owner'))markStoryTarget([...view.querySelectorAll('[data-history-owner]')].find(n=>n.dataset.historyOwner===storyParams.get('owner')));
   else if(storyParams.has('season'))markStoryTarget(view.querySelector('.yb-champ'));
   if(requestedEntry){const entry=view.querySelector(`[data-history-entry="${requestedEntry}"]`);if(entry){entry.setAttribute("data-route-focus","");entry.tabIndex=-1;}}

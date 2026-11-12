@@ -25,7 +25,7 @@ refreshes and reset when selecting a different game. Cold/warm entry, source
 portrait travel, default scroll reset and connected closing keep their existing
 controllers. No new data fetch, poller or provider is added.
 
-Reviewed screenshots: /workspace/dfl-player-1556/reading-final/ (Light/Dark,
+Reviewed screenshots: /workspace/dfl-player-1576/reading-final/ (Light/Dark,
 320/390, normal and 200% Comfortable text); finish-final/ (320/390/600, delayed
 average/image, native tools and focused return); local/ (compiled app with
 current roster, player, weekly/season stats, expanded stats and tools in both
@@ -67,7 +67,7 @@ share/send validation remains in place. No new data provider, poller or network
 write is introduced. Selection is bounded to two, clears when changing the
 working team, and retains its packages across tier/filter/review updates.
 
-Reviewed screens: /workspace/dfl-trade-1555/board-ready/
+Reviewed screens: /workspace/dfl-trade-1575/board-ready/
 (compact offers, two-offer comparisons, quick edits, 200% Comfortable text,
 Light/Dark at 320/390); reading/ (existing actual offer/disclosure/edit-return
 checks at 320/390/768); local-final/ (compiled current-data board, comparison and
@@ -113,7 +113,7 @@ layouts and complete illustrations with no hard background panel behind them.
 The first daily slide, accurate destinations, current-story priority, daily
 archive variation and one-pass playback rules remain intact.
 
-Reviewed screenshots: /workspace/dfl-clubhouse-1554/points-page-ready/ and
+Reviewed screenshots: /workspace/dfl-clubhouse-1574/points-page-ready/ and
 points-ready/ (actual Clubhouse returns and row-controller states,
 Light/Dark at 320/390); clubhouse/ (all sections, profiles, clips, enlarged text);
 nfl/ (Light/Dark 320/390/430/768 and large text); broadcast/ (90 standard and 56
@@ -166,7 +166,7 @@ sizes/contrast, interrupted resize/swipes, video identity, zero-point ordering,
 loading/stale media, exact points, profile/clip returns and teardown. The compiled
 app was inspected read-only with actual league/NFL data and a playing current
 Justice Hill clip in both themes, including the embedded Fantasy view. No page
-errors or horizontal overflow were found. Evidence: `/workspace/dfl-nfl-1553`.
+errors or horizontal overflow were found. Evidence: `/workspace/dfl-nfl-1573`.
 The legacy comparison check now follows matching position slots and retains
 strict visible-field alignment; an absent owner label is not measured as text.
 The older replay teardown fixture restores motion/score visibility before its
@@ -201,7 +201,7 @@ checks. The compiled app was inspected read-only with current NFL/league data in
 both themes, with no page errors or horizontal overflow.
 
 Source and rendered comparisons are recorded in design-qa.md. Evidence:
-`/workspace/dfl-nfl-1552`. This adapts Sleeper's verified public game-center
+`/workspace/dfl-nfl-1572`. This adapts Sleeper's verified public game-center
 reference; exact parity with its latest native app is unverified. Physical iOS
 frame pacing and VoiceOver speech remain unmeasured. No production league writes.
 
@@ -231,7 +231,7 @@ The compiled app was checked read-only with current NFL and league data in both
 themes, including an actual selected-play replay. No page errors or horizontal
 overflow were found. The desk review passes 123 checks; pnpm check passes 2,454
 tests plus theme/release/type/name checks and the production build.
-Evidence is in `/workspace/dfl-nfl-1551`.
+Evidence is in `/workspace/dfl-nfl-1571`.
 
 ## 1.550.0 — unified Clubhouse NFL live page
 
@@ -265,7 +265,7 @@ and league player data in both themes, including section jumps and all-player
 expansion. No page errors or horizontal overflow were found. `pnpm check` passes
 2,450 tests, theme/release/type/name checks and the production build.
 
-Evidence is retained in `/workspace/dfl-nfl-1550`. Physical Safari frame rate and
+Evidence is retained in `/workspace/dfl-nfl-1570`. Physical Safari frame rate and
 VoiceOver speech are not measured by the Chromium review. See
 [interface-standard.md](docs/interface-standard.md).
 
@@ -2410,7 +2410,7 @@ visible selected prices. Shared defaults/theme choices are unchanged.
 The existing bet-slip and result/share checks pass in both themes; swipe,
 keyboard, rapid reversal and Reduced Motion checks pass. Physical Safari
 frame pacing and VoiceOver speech remain unmeasured. Evidence:
-`/workspace/dfl-book-1558/{reading-release,actual-final,slip-final,results,tabs}`.
+`/workspace/dfl-book-1578/{reading-release,actual-final,slip-final,results,tabs}`.
 
 
 ### 1.559.0 — trade results and expanded offer reading
@@ -2434,7 +2434,7 @@ and connected offer/return motion at 320/390px. Interrupted returns are checked
 against their actually painted portrait positions. Keyboard, Reduced Motion,
 app-motion-off, resizing and teardown remain covered. Physical iOS frame pacing
 and VoiceOver speech remain unmeasured. Evidence:
-`/workspace/dfl-trade-1559/{actual,after/editing,board-release,offer-reading}`.
+`/workspace/dfl-trade-1579/{actual,after/editing,board-release,offer-reading}`.
 
 ## 1.560.0 — Night Game shared image design
 
@@ -2563,3 +2563,21 @@ Clubhouse, live-feed, points and Sportsbook checks are in
 `docs/gameday-ready-1565.md`. All league/account/notification browser operations
 are fixtures or blocked. Native iOS pacing, VoiceOver and phone push delivery
 are not measured.
+
+### 1.566.0 — Weekly Archive desk
+
+Reviewed History's Weeks view at 320/390/768px in Light/Dark, including 200% text,
+normal/pressed/focus states, current team pictures, complete names, precise
+scores and native expanding results. Flat ruled rows use existing surface,
+text, line, action and focus tokens. The week/section rail uses the same crimson
+action fill as Sportsbook; normal theme links and original SVG cues remain.
+Large text reflows Full recap onto its own line, with no squeezed vertical word
+stack. Highlights stack naturally; text contrast and 44px control checks pass.
+Reduced Motion and app motion off keep native disclosure and explicit selection.
+No old blue, redundant Medicine Wheel option, new font, mascot or shield art.
+
+Evidence: `/workspace/dfl-archive-1566/{finished,actual-final}`. All 157 persistent Archive
+browser checks and 2,526 tests / 305 files pass, including theme checks. Existing
+Hall of Fame, Yearbook, career totals, Moments and records remain accessible.
+All browser league/account mutations are blocked; real data is read only.
+Physical iOS pacing and screen-reader speech are not measured. See design-qa.md.
