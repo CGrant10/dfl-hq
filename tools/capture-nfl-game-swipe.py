@@ -42,7 +42,7 @@ with sync_playwright() as p:
   event('touchStart',x,y)
   for i in range(1,9):event('touchMove',x+dx*i/8,y+dy*i/8);pg.wait_for_timeout(16)
   event('touchCancel' if cancel else 'touchEnd');pg.wait_for_timeout(wait)
- def selected():return pg.locator('[data-nfl-center-game]').input_value()
+ def selected():return pg.locator('#feed').get_attribute('data-nfl-selected-game')
  def settled():return pg.locator('[data-nfl-game-stage]').evaluate('e=>getComputedStyle(e).transform==="none"&&!e.getAnimations().length') and pg.locator('.nfl-game-preview').count()==0
  for theme in ['light','dark']:
   pg.evaluate('setTheme',theme);pg.wait_for_timeout(60)
@@ -89,12 +89,12 @@ with sync_playwright() as p:
  # A late reply must not paint over the game selected by a reverse swipe.
  pg.evaluate('f.hold="401900001"');swipe();check('slow game shows its own loading state',selected()=='401900001')
  swipe(dx=210);pg.evaluate('f.hold="";f.releases["401900001"]()');pg.wait_for_timeout(150)
- check('late response cannot overwrite a reverse swipe',selected()=='401873023' and pg.locator('.nfl-center-score strong').all_text_contents()==['CAR','GB'])
+ check('late response cannot overwrite a reverse swipe',selected()=='401873023' and pg.locator('.nfl-center-score strong').evaluate_all('es=>es.map(e=>e.dataset.nflScoreCode)')==['CAR','GB'])
  # Reduced motion preserves navigation without drag, field or slide animation.
  pg.emulate_media(reduced_motion='reduce');swipe();check('Reduced Motion retains game navigation with no running motion',selected()=='401900001' and pg.locator('#feed').evaluate('e=>e.getAnimations({subtree:true}).length===0') and settled())
  pg.emulate_media(reduced_motion='no-preference');pg.evaluate('async()=>{(await import("/js/page-disclosure.js")).savePageChoice("gameday-motion","off");dispatchEvent(new Event("storage"))}');swipe(dx=210)
  check('app motion off retains game navigation',selected()=='401873023' and settled() and pg.evaluate('document.documentElement.dataset.uiMotion==="off"') and pg.locator('#feed').evaluate('e=>e.getAnimations({subtree:true}).length===0'))
- pg.locator('[data-nfl-game-step="1"]').click();pg.wait_for_timeout(150);check('arrow navigation changes the same selected game',selected()=='401900001')
+ pg.locator('#feed [data-replay-step="1"]').click();pg.wait_for_timeout(150);check('arrow navigation changes the same selected game',selected()=='401900001')
  pg.locator('[data-desk-game="401873023"]').click();pg.wait_for_timeout(150);check('game strip retains native tap selection',selected()=='401873023')
  pg.evaluate('f.center.stop();f.rail.stop()');before=pg.evaluate('f.reads');swipe();check('teardown removes swipe handlers and hidden polling',pg.evaluate('f.reads')==before and settled())
  check('no page errors or production writes',not errors);b.close()

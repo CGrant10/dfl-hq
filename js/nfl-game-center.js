@@ -1,3 +1,4 @@
+import {mountReplayGames} from './replay-games.js';
 import {readJourneyChoice,writeJourneyChoice} from './journey-memory.js';
 import {nflStadiumMarkup} from './nfl-stadium-ui.js';
 import {mountNflGameSwipe} from './nfl-game-swipe.js';
@@ -16,7 +17,9 @@ import {nflBoardAhead} from './nfl-field-model.js';
 import {loadWeeklyStats} from './sleeper.js';
 import {team,teamLogoUrl} from './nfl-teams.js';
 let serial=0;
-function scoreMarkup(observed,hidden,desk=false){
+function scoreMarkup(observed,hidden,desk=false,summary=null){
+ if(desk){const status=String(observed.status||''),phase=status.match(/^(Q[1-4]|OT)\s+(.+)$/),channel=summary?.header?.competitions?.[0]?.broadcasts?.[0]?.media?.shortName||summary?.header?.competitions?.[0]?.broadcasts?.[0]?.names?.[0]||'';return `<header class="nfl-center-score nfl-gamecast-score" data-nfl-score-state="${esc(observed.state||'pre')}"${hidden?' hidden':''}>${(observed.sides||[]).map((side,i)=>`${i===1?`<small class="nfl-gamecast-clock">${phase?`<span>${esc(phase[1])}</span><span class="nfl-gamecast-time">${esc(phase[2])}</span>`:esc(status)}${channel?`<span>${esc(channel)}</span>`:''}</small>`:''}<span class="nfl-gamecast-side is-${i?'home':'away'}" style="--nfl-score-team:${team(side.code)?.primary||'transparent'}"><strong data-nfl-score-code="${esc(side.code)}">${esc(team(side.code)?.name?.split(' ').at(-1)||side.code)}</strong><b>${esc(side.score??'—')}</b></span>`).join('')}</header>`}
+
  return `<header class="nfl-center-score" data-nfl-score-state="${esc(observed.state||'pre')}" style="${desk?`--nfl-away:${team(observed.sides?.[0]?.code)?.primary||'transparent'};--nfl-home:${team(observed.sides?.[1]?.code)?.primary||'transparent'}`:''}"${hidden?' hidden':''}>${(observed.sides||[]).map((side,index)=>`${index===1?`<small>${esc(observed.status)}</small>`:''}<span><img src="${esc(teamLogoUrl(side.code))}" alt="" width="28" height="28" decoding="async" onerror="this.hidden=true"><strong${desk?` data-nfl-score-code="${esc(side.code)}"`:""}>${esc(side.code)}</strong><b>${esc(side.score??'—')}</b></span>`).join('')}</header>`;
 }
 function playMarkup(p,{uid,teams,clip,view,focused,selected=false,periodStart=false}){
@@ -25,7 +28,7 @@ function playMarkup(p,{uid,teams,clip,view,focused,selected=false,periodStart=fa
 }
 export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,getClips=()=>[],onClip=(_id,_source=null)=>{},loadBoard=loadNflGameDay,loadSummary=loadNflGameSummary,loadStats=loadWeeklyStats,initialGame='',initialPlay='',embedded=false,desk=false,initialMode='plays',restoreChoice=true,onGameChange=(_id)=>{},onBoard=(_payload,_selected)=>{},onSummary=(_game,_result)=>{},watchOthers=()=>false,liveOthers=()=>false}={}){
  const memoryKey=embedded?'nfl-replay':'nfl-center',saved=restoreChoice?readJourneyChoice(root,memoryKey):null;
- if(saved){initialGame=nflGameId(saved.game)?saved.game:initialGame;initialMode=['plays','fantasy'].includes(saved.mode)?saved.mode:initialMode}
+ if(saved){initialGame=nflGameId(saved.game)?saved.game:initialGame;initialMode=['plays','fantasy',...(desk?['stats']:[])].includes(saved.mode)?saved.mode:initialMode}
  const uid=`nfl-center-${++serial}`;root.dataset.nflGameCenter='';root.dataset.noSwipe='';
  if(desk)root.dataset.nflLayout='desk';else delete root.dataset.nflLayout;
  let stopped=false,games=[],gameId=initialGame,mode=initialMode,filter=['all','scoring','big'].includes(saved?.filter)?saved.filter:'all',summary=null,weekly=[],checked=0,error=false,loading=false,token=0,timer=null,scope='',focusPlay=initialPlay,fieldPlay='',fieldKey='',rendered='',showRefresh=false,readingFrame=0,statsPending=null,statsScope='',wakeFrame=0;
@@ -38,15 +41,15 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
  const scroller=root.closest('.reel-game-browser')||document.scrollingElement;
  const scrollTarget=scroller===document.scrollingElement?document:scroller;
  const snapshots=new Map(),readings=new Map();let pendingReading=false;
- let statsChecked=0,gameSwipe=null,pendingSwipePaint=false,contextRevision=0;
+ let statsChecked=0,gameSwipe=null,pendingSwipePaint=false,contextRevision=0,boxTeam='',rail=null;
  function deskMarkup(id,{preview=false,allPlays=null}={}){
   const context=getContext(),selected=games.find(g=>g.id===id),cached=id===gameId?{summary,checked,filter}:snapshots.get(id)||{},detail=cached.summary||null,observed=nflObservedGame(selected,detail,context?.season),teams=observed?.sides||[];
-  const all=allPlays||(mode==='plays'?nflCenterPlays(detail,selected):[]),selection=all.find(p=>p.id===(id===gameId?(fieldPlay||focusPlay):''))||all.at(-1),historical=id===gameId&&!!fieldPlay&&selection?.id!==all.at(-1)?.id,selectedFilter=cached.filter||'all';
+  const all=allPlays||(nflCenterPlays(detail,selected)),selection=all.find(p=>p.id===(id===gameId?(fieldPlay||focusPlay):''))||all.findLast(p=>p.field)||all.at(-1),historical=id===gameId&&!!fieldPlay&&selection?.id!==all.at(-1)?.id,selectedFilter=cached.filter||'all';
   const plays=all.filter(p=>selectedFilter==='all'||!p.voided&&(selectedFilter==='scoring'?p.score:p.big||p.score)).reverse(),videos=preview?[]:clips(),nameLookup=preview?nflPlayNameIndex(detail):names();
-  return nflGameDeskMarkup({uid,mode,embedded,games,gameId:id,observed,selected,summary:detail,checked:cached.checked||0,error:!preview&&error,loading:preview?!detail:loading,showRefresh:!preview&&showRefresh,online:online(),filter:selectedFilter,fantasy:mode==='fantasy'?nflFantasyRows(detail,context?.players||[],{weekly,season:context?.season,week:context?.week,directory:context?.playerDirectory}):[],teams,context,field:selected?nflStadiumMarkup(selection,observed,{uid,historical}):'',score:selected?scoreMarkup(observed,false,true):'',playRows:(preview?plays.slice(0,8):plays).map((p,index,rows)=>playMarkup(p,{uid,teams,periodStart:index===0||p.period!==rows[index-1].period,selected:fieldPlay===p.id,clip:!p.voided&&videos.find(c=>c.play_id===p.id&&c.video_url),view:nflPlayPresentation(p,nameLookup),focused:focusPlay===p.id})).join('')});
+  return nflGameDeskMarkup({uid,mode,embedded,games,gameId:id,observed,selected,summary:detail,checked:cached.checked||0,error:!preview&&error,loading:preview?!detail:loading,showRefresh:!preview&&showRefresh,online:online(),filter:selectedFilter,fantasy:mode==='fantasy'?nflFantasyRows(detail,context?.players||[],{weekly,season:context?.season,week:context?.week,directory:context?.playerDirectory}):[],teams,context,boxTeam,field:selected?nflStadiumMarkup(selection,observed,{uid,historical,latest:all.at(-1)}):'',score:selected?scoreMarkup(observed,false,true,detail):'',playRows:(preview?plays.slice(0,8):plays).map((p,index,rows)=>playMarkup(p,{uid,teams,periodStart:index===0||p.period!==rows[index-1].period,selected:fieldPlay===p.id,clip:!p.voided&&videos.find(c=>c.play_id===p.id&&c.video_url),view:nflPlayPresentation(p,nameLookup),focused:focusPlay===p.id})).join('')});
  }
  const viewKey=()=>`${gameId}:${mode}:${mode==='plays'?filter:''}`;
- const rowSelector=()=>mode==='plays'?'.nfl-center-plays li[id]':'.nfl-fantasy-player[id]';
+ const rowSelector=()=>mode==='plays'?'.nfl-center-plays li[id]':mode==='stats'?'.nfl-boxscore tr[id]':'.nfl-fantasy-player[id]';
  const edge=()=>{const tools=root.querySelector('.nfl-center-tools')?.getBoundingClientRect(),tabs=desk?root.querySelector('.nfl-center-modes')?.getBoundingClientRect():null;return Math.max(scroller===document.scrollingElement?0:scroller.getBoundingClientRect().top,tools?.bottom||0,tabs&&tools&&tabs.top<=tools.bottom+1?tabs.bottom:0)};
  const saveReading=()=>{
   if(!summary||!root.getClientRects().length)return;
@@ -84,18 +87,21 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
  const clips=()=>activeHighlightClips(getClips()).filter(c=>c.game_id===gameId);
  function paint(){
   if(!root.isConnected||stopped)return;
+  if(root.dataset.nflSelectedGame!==gameId)root.dataset.nflSelectedGame=gameId;
   if(gameSwipe?.busy){pendingSwipePaint=true;return;}pendingSwipePaint=false;
-  const context=getContext(),selected=game(),allPlays=mode==='plays'?nflCenterPlays(summary,selected):[],plays=allPlays.filter(p=>filter==='all'||!p.voided&&(filter==='scoring'?p.score:p.big||p.score)),fantasy=!desk&&mode==='fantasy'?nflFantasyRows(summary,context?.players||[],{weekly,season:context?.season,week:context?.week,directory:context?.playerDirectory}):[],videos=clips();
+  const context=getContext(),selected=game(),allPlays=desk||mode==='plays'?nflCenterPlays(summary,selected):[],plays=allPlays.filter(p=>filter==='all'||!p.voided&&(filter==='scoring'?p.score:p.big||p.score)),fantasy=!desk&&mode==='fantasy'?nflFantasyRows(summary,context?.players||[],{weekly,season:context?.season,week:context?.week,directory:context?.playerDirectory}):[],videos=clips();
   const observed=nflObservedGame(selected,summary,context?.season),officialState=observed?.state,teams=observed?.sides||[];
-  const fieldSelection=allPlays.find(p=>p.id===(fieldPlay||focusPlay))||allPlays.at(-1),historical=!!fieldPlay&&fieldSelection?.id!==allPlays.at(-1)?.id;
+  const fieldSelection=allPlays.find(p=>p.id===(fieldPlay||focusPlay))||(desk?allPlays.findLast(p=>p.field):null)||allPlays.at(-1),historical=!!fieldPlay&&fieldSelection?.id!==allPlays.at(-1)?.id;
   const markup=desk?deskMarkup(gameId,{allPlays}):`<div class="nfl-center-tools"><div class="nfl-center-picker"><label for="${uid}-game"><span class="sr-only">NFL game</span><select id="${uid}-game" data-nfl-center-game ${games.length?'':'disabled'}>${!games.length?`<option value="">${loading?'Loading games…':'No games this week'}</option>`:''}${games.map(g=>`<option value="${g.id}" ${g.id===gameId?'selected':''}>${esc(g.id===gameId?`${observed.label} · ${observed.status}`:`${g.label} · ${g.status}`)}</option>`).join('')}</select></label><button type="button" class="linkbtn" data-nfl-center-refresh aria-label="Refresh NFL game" aria-busy="${loading&&showRefresh}" ${loading&&showRefresh?'disabled':''}><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M16 8a6 6 0 1 0 0 5M16 3v5h-5"/></svg></button></div>${selected?`<div class="nfl-center-modes" style="--nfl-mode:${mode==='fantasy'?1:0}" ${embedded?'hidden':''} role="group" aria-label="NFL game view"><i aria-hidden="true"></i><button type="button" data-nfl-center-mode="plays" aria-pressed="${mode==='plays'}">Play-by-play</button><button type="button" data-nfl-center-mode="fantasy" aria-pressed="${mode==='fantasy'}">Fantasy stats</button></div>`:''}</div>${selected?scoreMarkup(observed,mode==='fantasy'):''}<p class="nfl-center-status${selected&&summary&&checked&&!error&&online()?' is-quiet':''}" role="status">${!online()?'Offline · reconnecting when available.':error?(summary?'Update unavailable · showing the last box score.':'Game details unavailable. Try Refresh.'):!games.length?(loading?'Loading NFL games…':'No NFL games available for this week.'):loading&&!summary?'Loading game details…':checked?officialState==='in'?'Live':officialState==='post'?'Final':'Scheduled':''}</p><div class="nfl-center-body" data-nfl-center-body aria-busy="${loading&&!summary}">${mode==='plays'?`${selected?nflFieldMarkup(fieldSelection,observed,{uid,historical}):''}${selected?`<label class="nfl-center-filter">Show<select data-nfl-center-filter aria-label="Filter NFL plays"><option value="all" ${filter==='all'?'selected':''}>All plays</option><option value="scoring" ${filter==='scoring'?'selected':''}>Scoring</option><option value="big" ${filter==='big'?'selected':''}>Big plays + scores</option></select></label>`:''}<ol class="nfl-center-plays" aria-label="NFL play-by-play, latest first">${[...plays].reverse().map((p,index,rows)=>playMarkup(p,{uid,teams,periodStart:index===0||p.period!==rows[index-1].period,selected:fieldPlay===p.id,clip:!p.voided&&videos.find(c=>c.play_id===p.id&&c.video_url),view:nflPlayPresentation(p,names()),focused:focusPlay===p.id})).join('')||((!loading||summary)&&!error?`<li class="nfl-center-empty">${selected?.state==='pre'?'Kickoff is coming. Plays appear once the game starts.':'No plays available for this view yet.'}</li>`:'')}</ol>`:nflFantasyMarkup(fantasy,teams,{uid,loading:loading&&!summary,error,season:context?.season,week:context?.week,state:officialState,checkedAt:checked,leagueCheckedAt:context?.checkedAt})}</div><button type="button" class="nfl-latest" data-nfl-latest hidden></button>`;
-  const nextFieldKey=mode==='plays'?`${gameId}:${fieldSelection?.id||''}:${fieldSelection?.field?`${fieldSelection.field.start.x},${fieldSelection.field.end.x},${fieldSelection.field.voided}`:'unknown'}`:'';
+  const fieldVisible=desk?(!embedded||mode==='plays'):mode==='plays';
+  const nextFieldKey=fieldVisible?`${gameId}:${fieldSelection?.id||''}:${fieldSelection?.field?`${fieldSelection.field.start.x},${fieldSelection.field.end.x},${fieldSelection.field.voided}`:'unknown'}`:'';
   if(markup===rendered&&!pendingReading&&nextFieldKey===fieldKey){latestNotice();gameSwipe?.update();return;}
   const previousField=root.querySelector('[data-nfl-field]');
   const scrollTop=scroller.scrollTop,boundary=edge();
   const anchor=[...root.querySelectorAll(rowSelector())].find(row=>row.getBoundingClientRect().bottom>boundary),top=anchor?.getBoundingClientRect().top,latest=mode==='plays'&&root.querySelector('.nfl-center-plays li[id]')?.getBoundingClientRect().top>=boundary-24;
   if(markup!==rendered){patchGameDay(root,markup);rendered=markup;syncToolbarSize();}
-  if(nextFieldKey!==fieldKey){if(previousField)cancelUiMotion(previousField);if(mode==='plays'){const plot=root.querySelector('[data-nfl-field]'),box=plot?.getBoundingClientRect(),bottom=scroller===document.scrollingElement?innerHeight:Math.min(innerHeight,scroller.getBoundingClientRect().bottom);if(!fieldKey||box&&box.bottom>edge()&&box.top<bottom)animateNflField(root,fieldSelection,animateUi);}fieldKey=nextFieldKey;}
+  if(desk&&!embedded){if(!rail){const host=root.querySelector('[data-nfl-center-rail]');if(host)rail=mountReplayGames(host,{select:id=>selectGame(id,'',{start:true}),active:current,idPrefix:uid+'-pick',compact:true,motion:()=>document.documentElement.dataset.uiMotion!=='off'&&!matchMedia('(prefers-reduced-motion: reduce)').matches})}rail?.update(games.map(g=>g.id===gameId?observed||g:g),gameId)}
+  if(nextFieldKey!==fieldKey){if(previousField)cancelUiMotion(previousField);if(fieldVisible){const plot=root.querySelector('[data-nfl-field]'),box=plot?.getBoundingClientRect(),bottom=scroller===document.scrollingElement?innerHeight:Math.min(innerHeight,scroller.getBoundingClientRect().bottom);if(!fieldKey||box&&box.bottom>edge()&&box.top<bottom)animateNflField(root,fieldSelection,animateUi);}fieldKey=nextFieldKey;}
   latestNotice();
   if(!restoreReading()){if(anchor?.isConnected&&!latest)scroller.scrollTop+=anchor.getBoundingClientRect().top-top;else if(latest)scroller.scrollTop=scrollTop;}
   gameSwipe?.update();root.dispatchEvent(new CustomEvent('dfl:player-points-painted',{bubbles:true}));
@@ -114,14 +120,14 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
    if(nflBoardAhead(summary,game()))paint();
    const selected=game();if(selected){
     readFantasyStats();
-    const result=await loadSummary(selected,context.season,{force:force||nflBoardAhead(summary,selected)});if(request!==token||!current()||gameId!==selected.id)return;const before=summary?new Set(nflCenterPlays(summary,selected).map(p=>p.id)):null,following=mode==='plays'&&atLatest();if(before&&!following)for(const play of nflCenterPlays(result.summary,selected))if(!before.has(play.id))pendingPlays.add(play.id);if(following)pendingPlays.clear();summary=result.summary;checked=result.fetchedAt;snapshots.set(gameId,{summary,checked,filter});onSummary(selected,result);
+    const result=await loadSummary(selected,context.season,{force:force||nflBoardAhead(summary,selected)});if(request!==token||!current()||gameId!==selected.id)return;const before=summary?new Set(nflCenterPlays(summary,selected).map(p=>p.id)):null,following=mode==='plays'&&atLatest();if(before&&!following)for(const play of nflCenterPlays(result.summary,selected))if(!before.has(play.id))pendingPlays.add(play.id);if(following)pendingPlays.clear();summary=result.summary;checked=result.fetchedAt;snapshots.set(gameId,{summary,checked,filter,boxTeam});onSummary(selected,result);
    }
   }catch{if(request===token&&current())error=true}
   finally{if(request===token&&current()){loading=false;paint();if(focusPlay){root.querySelector('[data-nfl-focused-play]')?.scrollIntoView({block:'nearest'});focusPlay=''}schedule()}}
  }
  const change=event=>{if(event.target.matches('[data-nfl-center-game]'))selectGame(event.target.value);if(event.target.matches('[data-nfl-center-filter]')){const section=desk?root.querySelector('.nfl-live-plays'):null,top=section?.getBoundingClientRect().top;saveReading();filter=event.target.value;pendingReading=!desk;remember();paint();if(section?.isConnected)scroller.scrollTop+=section.getBoundingClientRect().top-top}};
  function changeMode(next){
-  if(!['plays','fantasy'].includes(next)||next===mode)return;
+  if(!['plays','fantasy',...(desk?['stats']:[])].includes(next)||next===mode)return;
   saveReading();cancelUiMotion(root);mode=next;pendingReading=true;remember();paint();readFantasyStats();
   animateUi(root.querySelector('[data-nfl-center-body]'),[{opacity:.65},{opacity:1}],{duration:160});
  }
@@ -134,6 +140,7 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
 
   if(event.target.closest('[data-nfl-latest]')){pendingPlays.clear();const first=root.querySelector('.nfl-center-plays li[id]');if(first)scroller.scrollTop=Math.max(0,scroller.scrollTop+first.getBoundingClientRect().top-edge()-4);latestNotice();return;}
   const step=event.target.closest('[data-nfl-game-step]');if(step){const next=games[games.findIndex(g=>g.id===gameId)+Number(step.dataset.nflGameStep)];if(next)selectGame(next.id);return;}
+  const box=event.target.closest('[data-nfl-box-team]');if(box){saveReading();boxTeam=box.dataset.nflBoxTeam;paint();return;}
   const modeButton=event.target.closest('[data-nfl-center-mode]');if(modeButton)changeMode(modeButton.dataset.nflCenterMode);
   if(event.target.closest('[data-nfl-center-refresh]'))void refresh({force:true});
   const clip=event.target.closest('[data-nfl-center-clip]');if(clip){saveReading();onClip(clip.dataset.nflCenterClip,clip);}
@@ -142,9 +149,9 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
   if(!nflGameId(id))return;
   saveReading();focusPlay=play;
   if(id!==gameId){
-   if(summary)snapshots.set(gameId,{summary,checked,filter});
+   if(summary)snapshots.set(gameId,{summary,checked,filter,boxTeam});
    fieldPlay='';
-   gameId=id;const cached=snapshots.get(id);summary=cached?.summary||null;checked=cached?.checked||0;filter=cached?.filter||'all';error=false;pendingPlays.clear();onGameChange(id);
+   gameId=id;const cached=snapshots.get(id);summary=cached?.summary||null;checked=cached?.checked||0;filter=cached?.filter||'all';boxTeam=cached?.boxTeam||'';error=false;pendingPlays.clear();onGameChange(id);
   }
   if(start)readings.delete(viewKey());
   pendingReading=true;remember();void refresh({reset:true,force:true});
@@ -169,5 +176,5 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
  const events=[['visibilitychange',visibility,document],['online',wake,window],['offline',offline,window],['focus',wake,window],['pageshow',wake,window],['pagehide',suspend,window]];
  if(desk)gameSwipe=mountNflGameSwipe(root,{active:current,getGames:()=>games,getSelected:()=>gameId,preview:id=>deskMarkup(id,{preview:true}),getPreviewKey:id=>{const g=games.find(g=>g.id===id),c=snapshots.get(id);return JSON.stringify([mode,c?.checked,c?.filter,statsChecked,contextRevision,g?.status,g?.lastPlay?.id,g?.sides.map(s=>s.score)])},select:id=>selectGame(id,'',{start:true}),onSettled:()=>{if(pendingSwipePaint&&current())paint()}});
  scrollTarget.addEventListener('scroll',queueReading,{passive:true});root.addEventListener('change',change);root.addEventListener('click',click);for(const [event,handler,target] of events)target.addEventListener(event,handler);paint();const ready=refresh();
- return {ready,updateContext(){if(current()){contextRevision++;paint();readFantasyStats()}},setMode:changeMode,refresh:()=>refresh({force:true}),selectGame,pause:suspend,resume,stop(){stopped=true;gameSwipe?.stop();suspend();cancelUiMotion(root);snapshots.clear();readings.clear();modalObserver.disconnect();scrollTarget.removeEventListener('scroll',queueReading);root.removeEventListener('change',change);root.removeEventListener('click',click);for(const [event,handler,target] of events)target.removeEventListener(event,handler)}};
+ return {ready,updateContext(){if(current()){contextRevision++;paint();readFantasyStats()}},setMode:changeMode,refresh:()=>refresh({force:true}),selectGame,pause:suspend,resume,stop(){stopped=true;rail?.stop();gameSwipe?.stop();suspend();cancelUiMotion(root);snapshots.clear();readings.clear();modalObserver.disconnect();scrollTarget.removeEventListener('scroll',queueReading);root.removeEventListener('change',change);root.removeEventListener('click',click);for(const [event,handler,target] of events)target.removeEventListener(event,handler)}};
 }

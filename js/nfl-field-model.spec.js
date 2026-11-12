@@ -69,3 +69,5 @@ it('does not label normal punts and kickoffs as turnovers when possession change
   expect(field({...p,isTurnover:true})).toMatchObject({turnover:true});
  }
 });
+
+it("does not plot status events even when the provider repeats field coordinates",()=>{for(const label of ["End of Game","End Period","END GAME","Timeout","Two-Minute Warning"]){expect(field({...plays.zero,type:{text:label},text:label})).toBe(null)}expect(field(plays.zero)).toMatchObject({yards:0,animate:false})});
