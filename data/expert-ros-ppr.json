@@ -7,7 +7,7 @@
   "season": 2026,
   "experts": 5,
   "updatedAt": 1794418287000,
-  "fetchedAt": 1794438454418,
+  "fetchedAt": 1794455622840,
   "players": [
     {
       "sourceId": 22968,
@@ -3808,7 +3808,7 @@
       "sourceId": 12127,
       "name": "Odell Beckham Jr.",
       "position": "WR",
-      "team": "FA",
+      "team": "MIN",
       "rank": 403,
       "positionRank": 131,
       "minRank": 350,
