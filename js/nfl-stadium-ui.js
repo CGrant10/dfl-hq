@@ -5,16 +5,18 @@ import {nflPlayColors,stadiumX} from './nfl-field-ui.js';
 // A perspective data plot. Only official start/end yard lines are plotted;
 // the lift illustrates a pass, never an invented player route or tracking feed.
 const topX=percent=>90+percent*4.2,bottomX=percent=>10+percent*5.8;
-export function nflStadiumMarkup(play,game,{uid,historical=false}={}){
+export function nflStadiumMarkup(play,game,{uid,historical=false,latest=play}={}){
  const field=play?.field,sides=game?.sides||[],offense=field?.start.team||play?.team||'';
  const current=!!field&&!historical&&!!field.end.down;
  const down=(current?field.end.down:field?.start.down)||'',spot=(current?field.end.label:field?.start.label)||'';
- const result=field?.voided?'No play':field?.touchdown?'Touchdown':field?.turnover?'Turnover':field?.yards!=null?`${field.yards>0?'+':''}${field.yards} yd`:play?.typeLabel||'';
- const phase=[play?.period?play.period>4?'OT':'Q'+play.period:'',play?.clock].filter(Boolean).join(' · ');
+ const snapshot=!historical&&latest?.id!==play?.id;
+ const result=snapshot?'':field?.voided?'No play':field?.touchdown?'Touchdown':field?.turnover?'Turnover':field?.yards!=null?`${field.yards>0?'+':''}${field.yards} yd`:play?.typeLabel||'';
+ const message=historical?play:latest||play;
+ const phase=[message?.period?message.period>4?'OT':'Q'+message.period:'',message?.clock].filter(Boolean).join(' · ');
  const description=field?[offense,field.start.down,field.start.label,'to',field.end.label,result].filter(Boolean).join(' · '):'Field position unavailable';
  return `<section class="nfl-field nfl-stadium" id="${uid}-field" tabindex="-1" aria-label="${historical?'Selected':'Latest'} play field view" data-nfl-field data-field-stadium data-field-play="${esc(play?.id||'')}"${field?` data-field-kind="${field.voided?'voided':field.touchdown?'touchdown':field.turnover?'turnover':'play'}"`:''} style="${nflPlayColors(offense)}">
   <header><div class="nfl-stadium-play"><b>${historical?'Selected play':game?.state==='in'?'Live':game?.state==='post'?'Final play':'Kickoff'}${offense?` · ${esc(offense)}`:''}</b><small>${esc(phase)}</small></div><div class="nfl-field-result"><b>${esc(result)}</b></div>${field?.animate?'<button type="button" data-nfl-field-replay>Replay</button>':''}${historical?'<button type="button" data-nfl-field-latest>Latest play</button>':''}</header>
-  <p class="nfl-stadium-description">${esc(play?.text|| (game?.state==='pre'?'Plays appear at kickoff.':'Waiting for the next play.'))}</p>
+  <p class="nfl-stadium-description">${esc(message?.text|| (game?.state==='pre'?'Plays appear at kickoff.':'Waiting for the next play.'))}</p>
   <div class="nfl-stadium-ground" ${field?'':'hidden'}><svg ${field?'':'hidden'} class="nfl-field-pitch" viewBox="0 0 600 180" role="img" aria-label="${esc(description)}">
    <polygon class="nfl-stadium-turf" points="90,16 510,16 590,148 10,148"/>
    ${Array.from({length:12},(_,i)=>`<polygon class="nfl-stadium-stripe" points="${topX(i/12*100)},16 ${topX((i+1)/12*100)},16 ${bottomX((i+1)/12*100)},148 ${bottomX(i/12*100)},148" opacity="${i%2?'.035':'.075'}"/>`).join('')}
@@ -24,7 +26,7 @@ export function nflStadiumMarkup(play,game,{uid,historical=false}={}){
    <g class="nfl-stadium-numbers">${[20,50,80].map((n,i)=>`<text x="${stadiumX(n)}" y="12">${[20,50,20][i]}</text>`).join('')}</g>
    ${field?`${field.touchdown?`<polygon class="nfl-field-arrival" points="${field.end.x>50?'475,16 510,16 590,148 542,148':'90,16 125,16 58,148 10,148'}"/>`:''}<path class="nfl-field-scrimmage" d="M${topX((field.start.x+10)/1.2)} 16L${bottomX((field.start.x+10)/1.2)} 148"/>${field.target!=null?`<path class="nfl-field-target" d="M${topX((field.target+10)/1.2)} 16L${bottomX((field.target+10)/1.2)} 148"/>`:''}<path class="nfl-field-bed" d="M${stadiumX(field.start.x)} 92H${stadiumX(field.end.x)}"/><path class="nfl-field-travel" pathLength="1" d="M${stadiumX(field.start.x)} 92Q${(stadiumX(field.start.x)+stadiumX(field.end.x))/2} ${/pass|kick|punt/i.test(play.typeLabel)?40:86} ${stadiumX(field.end.x)} 92"/><circle class="nfl-field-start" cx="${stadiumX(field.start.x)}" cy="92" r="4"/><circle class="nfl-field-land" cx="${stadiumX(field.end.x)}" cy="92" r="14"/><g class="nfl-field-shadow" style="transform:translate(${stadiumX(field.end.x)}px,100px)"><ellipse rx="12" ry="3"/></g><g class="nfl-field-ball" style="transform:translate(${stadiumX(field.end.x)}px,92px)"><g class="nfl-field-ball-body"><circle class="nfl-stadium-pin" cx="0" cy="-27" r="18"/><image href="${esc(teamLogoUrl(offense))}" x="-14" y="-41" width="28" height="28"/><path class="nfl-stadium-pin-stem" d="M0-9v9"/><ellipse rx="7" ry="4"/><path d="M-3 0h6M-1-2v4M1-2v4"/></g></g>`:''}
   </svg>
-  <div class="nfl-stadium-position"><b>${esc(down|| (game?.state==='pre'?'Kickoff pending':field?'Play complete':'Field position unavailable'))}</b>${spot?`<span>@ ${esc(spot)}</span>`:''}</div></div>
+  <div class="nfl-stadium-position"><b>${esc((snapshot?(game?.state==='post'?'Final spot':'Last spot'):down)|| (game?.state==='pre'?'Kickoff pending':field?'Play complete':'Field position unavailable'))}</b>${spot?`<span>@ ${esc(spot)}</span>`:''}</div></div>
   ${historical?`<footer><nav class="nfl-field-controls" aria-label="Selected play"><button type="button" data-nfl-field-return="${esc(play.id)}">Back to play</button></nav></footer>`:''}
  </section>`;
 }

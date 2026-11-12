@@ -1,3 +1,24 @@
+## 1.567.0 — NFL Game Center layout
+
+Reviewed the actual NFL Game Center in Medicine Wheel Light/Dark at 320, 390 and
+768px, including 200% text, Stats/Plays/Fantasy, selected NFL and box-score team,
+44px controls, shared navigation and Reduced Motion. Source/reference comparison,
+normal field/score/table screenshots and final large-text evidence are recorded
+in design-qa.md under /workspace/dfl-sleeper-1567/. The user explicitly chose DFL
+colors with Sleeper's layout. No theme entry, font, mascot or decorative asset
+was added. Shared surfaces/text/line/action/focus tokens are used; authentic NFL
+identity and semantic field colors remain. No retired crest accents. Portraits
+use authentic ESPN player imagery with NFL-logo fallback. Leader/team tables
+preserve zeros and unknown values; fantasy points retain DFL league scoring.
+The compact score header stacks whole names above scores at enlarged text rather
+than wrapping names into vertical columns. Automatic updates preserve the field,
+controls, reading position and native rail browsing. Unchanged data no longer
+sets a redundant attribute. Physical-device frame pacing and VoiceOver speech
+remain unmeasured. pnpm themes passes. Compiled real-data checks and screenshots in actual-verified/
+confirm Stats/Plays/Fantasy, actual quarter scores, final verified field spot,
+second-game selection, readable contrast, whole names and clear page edges in
+both themes.
+
 ## 1.556.0 — player-card hierarchy and stable game reading
 
 The player sheet uses the same compact Inter hierarchy, Medicine Wheel surfaces,

@@ -24,6 +24,8 @@ function spot(value,sides){
 
 // Coordinates represent official start/end spots, never a guessed player route.
 export function nflPlayField(play,sides=[]){
+ // Provider status rows may repeat the spot; they are not a new field play.
+ if([play?.type?.text,play?.text].some(value=>/^(?:end (?:of )?(?:game|quarter|period|half)\b|(?:official |team )?timeout\b|two[ -]minute warning\b)/i.test(text(value))))return null;
  const start=spot(play?.start,sides),end=spot(play?.end,sides);
  if(!start||!end)return null;
  const voided=/no play|overturned|reversed|nullified/i.test(play.text||'');

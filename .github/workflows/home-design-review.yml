@@ -177,6 +177,7 @@ on:
       - 'tools/capture-week-ahead-finish.py'
       - 'tools/capture-nfl-center-finish.py'
       - 'tools/capture-nfl-desk.py'
+      - 'tools/capture-nfl-gamecast.py'
       - 'tools/capture-clubhouse-points.py'
       - 'tools/capture-nfl-field.py'
       - 'tools/capture-nfl-game-swipe.py'
@@ -703,6 +704,7 @@ jobs:
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           python tools/capture-nfl-center-finish.py
           DFL_NFL_DESK_DIR=nfl-center-output/desk python tools/capture-nfl-desk.py
+          DFL_GAMECAST_REVIEW_DIR=nfl-center-output/gamecast python tools/capture-nfl-gamecast.py
       - name: Check visible-player return points and corrections
         env:
           DFL_POINTS_REVIEW_DIR: nfl-center-output/return-points
