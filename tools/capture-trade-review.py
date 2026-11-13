@@ -93,8 +93,17 @@ with sync_playwright() as p:
         page.evaluate("scrollTo({top:0,behavior:'instant'})")
         page.screenshot(path=str(output/f'trade-{width}-workbench.png'))
         # Price, actual roster fit and data risk remain separate on each offer.
-        assert 'Value balance' in page.locator('.tb-offer .tb-offer-balance').first.inner_text()
-        assert page.locator('.tb-offer .tb-offer-horizon').first.is_visible()
+        balance=page.locator('.tb-offer .tb-offer-verdict strong').first
+        assert balance.is_visible() and balance.inner_text().endswith('%')
+        assert 'value balance' in balance.get_attribute('aria-label')
+        assert not page.locator('.tb-offer .tb-offer-preview').first.evaluate('e=>e.open')
+        def offer_horizon():
+            details=page.locator('.tb-offer .tb-offer-preview').first
+            if not details.evaluate('e=>e.open'):click('.tb-offer .tb-offer-preview>summary')
+            horizon=details.locator('.tb-offer-horizon');assert horizon.is_visible()
+            return horizon.inner_text()
+        assert 'Rest of season' in offer_horizon()
+        click('.tb-offer .tb-offer-preview>summary')
         # Upcoming schedules fail honestly and retry without silently keeping
         # a Next 4 weeks label on rest-of-season numbers.
         select('[data-tb-horizon]','next4')
@@ -104,10 +113,10 @@ with sync_playwright() as p:
         click('[data-tb-retry-schedules]')
         page.wait_for_function("document.querySelector('[data-tb-horizon]')?.value==='next4'&&!document.querySelector('.tb-search-placeholder')")
         settled_counts()
-        assert 'Weeks 6–9' in page.locator('.tb-offer .tb-offer-horizon').first.inner_text()
+        assert 'Weeks 6–9' in offer_horizon()
         page.screenshot(path=str(output/f'trade-{width}-next-four-weeks.png'))
         select('[data-tb-horizon]','season');settled_counts()
-        assert 'Rest of season' in page.locator('.tb-offer .tb-offer-horizon').first.inner_text()
+        assert 'Rest of season' in offer_horizon()
         if page.locator('[data-tb-shop-need]').count():
             need=page.locator('[data-tb-shop-need]').get_attribute('data-tb-shop-need')
             click('[data-tb-shop-need]');settled_counts()
@@ -312,7 +321,7 @@ with sync_playwright() as p:
         click('[data-tb-intent="fair"]')
         page.locator('[data-tb-tier="fair"] .tb-offer').first.wait_for()
         assert page.locator('[data-tb-tier="fair"] .tb-offer').count()>0
-        assert page.locator('[data-tb-tier="fair"] .tb-offer > header > b').evaluate_all("es=>es.every(e=>e.textContent.trim()==='Estimated balance')")
+        assert page.locator('[data-tb-tier="fair"] .tb-offer-verdict > span').evaluate_all("es=>es.length>0&&es.every(e=>e.textContent.trim()==='Estimated balance')")
         assert page.locator('[data-tb-tier="fair"] .tb-offer .tb-offer-risk').evaluate_all("es=>es.every(e=>e.textContent.includes('Rank disagreement'))")
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
         page.locator('[data-tb-tier="fair"]').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")
@@ -400,7 +409,9 @@ with sync_playwright() as p:
             assert page.locator('[data-receipt-team]').count()==count
             assert page.evaluate('window.reviewReceiptReads')==[receipt_id]
             assert page.locator('[data-td-mode]').count()==0
-            assert page.locator('[data-route-focus]').evaluate('e=>e.open&&e.getBoundingClientRect().top<180')
+            # The labeled return control can wrap onto a second header row.
+            # Keep the open receipt immediately below it and high on screen.
+            assert page.locator('[data-route-focus]').evaluate('e=>{const r=e.getBoundingClientRect(),h=document.querySelector(".td-receipt-page-head").getBoundingClientRect();return e.open&&r.top>=h.bottom-1&&r.top<=h.bottom+24&&r.top<innerHeight/3}')
             assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
             if receipt_id=='receipt-partial':assert 'Player-only estimate' in page.locator('.td-receipt-body').inner_text()
             if receipt_id=='receipt-invalid':assert page.locator('.td-receipt-score b').inner_text()=='—'
