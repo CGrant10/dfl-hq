@@ -1,3 +1,24 @@
+## 1.573.0 — player rows, live viewing and secondary desks
+
+Medicine Wheel Light/Dark keep shared tokens for player rows, aligned NFL fantasy
+scores, sheet controls, Replay selection, archive rows and Activity preferences.
+History/Activity tab rails and unread markers now use the common accent instead
+of the independent action-fill color. Replay's selected filter/Playing marker
+uses the theme accent with the theme background as its high-contrast foreground.
+NFL team colors/logos remain explicit team identity; no theme entries, fonts or
+new artwork introduced.
+
+Reviewed captures under /workspace/dfl-finish-1573/: actual-final/, large-final/,
+nfl-actual/, nfl-large/, scores/, clubhouse/, player/, sheets/, replay-final/,
+activity-final/, secondary/ and archive-verified/. Inspected Light/Dark mobile and enlarged-text
+screens, aligned stats, full names, selected tabs, device settings, trophies and
+connected viewer return. Real-data page/field contrast and horizontal bounds
+pass; 266 Scores checks, 337 Clubhouse checks, 43 player-finish checks, 37 motion
+checks, 88 Replay checks and relevant settings/archive suites pass. pnpm check
+passes 2,547 tests / 307 files; final theme/build checks pass after archive
+alignment. Provider mutations were blocked/mocked. Physical-device frame pacing
+and screen-reader speech remain unmeasured.
+
 ## 1.572.0 — daily desks and shared finish
 
 Medicine Wheel Light/Dark use existing shared tokens for secondary controls,

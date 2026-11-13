@@ -1,3 +1,56 @@
+# Player rows, live viewing and secondary desks — 1.573.0
+
+Clubhouse matchup rows/leaders, NFL fantasy rows, player-card actions and Replay
+controls now share compact Inter type, quiet metadata and consistent portrait
+frames. Leaders use a smaller score scale and lighter slot labels. Matchup stat
+lines retain their compact spacing, full names, full touch targets and thermal
+scores. NFL fantasy keeps the mirrored positional layout, stable player ordering
+and true league totals/projections; fixed score columns align the numbers across
+position groups and a short Pts / Proj key identifies their order. Unknown values
+remain unavailable rather than invented.
+
+NFL play-by-play keeps all source descriptions visible. Each player play carries
+its existing NFL team colors and a small authentic team-logo badge beside the
+portrait; the selected field play has a clear accent. This uses the same team
+images already present in the game rail, with no new data feed or polling.
+NFL remains inline in Clubhouse with the shared navigation accessible.
+
+Player-card/replay controls remove inherited display-font tracking, retain
+44px targets and use the common selected/pressed surfaces. Replay selection and
+Playing markers use the theme accent. Portrait-first opening/closing, fresh
+card scroll state, focus return, media identity through minimize/restore,
+reduced motion and teardown remain on the existing controllers.
+
+History's trophy list drops repeated Season/DFL/Trophy Case labels, uses flatter
+ruled rows, quieter Champion/Runner-up labels and more consistent year alignment.
+History and Activity tab rails/unread markers now use the shared accent. Device
+notification settings use compact Inter controls, flat checkbox rows, quieter
+secondary text and the same header/close treatment as other sheets. Permission,
+subscription, notification and player-data behavior is unchanged.
+
+Evidence: /workspace/dfl-finish-1573/ includes before/ and nfl-before/ captures;
+actual-final/ and large-final/ compiled public-league reads in Light/Dark at
+390px and 320px/200% text; nfl-actual/ and nfl-large/ inline NFL/navigation checks; archive-verified/ final
+alignment;
+clubhouse/ real controllers with isolated feeds; scores/ positional alignment,
+team badges and live field; player/ and sheets/ portrait motion; replay-final/;
+activity-final/ and secondary/. Screenshots inspected for hierarchy, edges,
+contrast, selection and full content. Provider writes were blocked/mocked;
+fixture media was used for playback tests, not presented as real NFL footage.
+
+Validation: pnpm check passes 2,547 tests in 307 files plus release, theme, type,
+name and build checks. Browser suites pass 337 Clubhouse checks, 266 mobile Scores
+checks, 43 player-finish checks, 37 player-motion checks and 88 Replay checks.
+Activity/settings pass six theme/width cases, including touch dismissal/focus
+and enlarged text. Secondary review passes 320/390/768px, four theme inputs and
+two text sizes. Compiled real-data checks preserve side-by-side rows, exact
+player-card return position, inline NFL controls and app navigation in both
+themes at normal/enlarged text. Final CSS/theme/build checks follow the last
+archive alignment refinement. The bundle retains 88 modules, three startup/four
+Home modules and one shared CSS request. No dependency, backend, new artwork or
+continuous animation added. Physical-device frame pacing and screen-reader speech
+remain unmeasured.
+
 # Daily desks and shared finish — 1.572.0
 
 Trade suggestions keep every player visible, show the numeric value balance in

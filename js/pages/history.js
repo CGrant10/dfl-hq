@@ -194,15 +194,15 @@ function fameView(data) {
   return `
     ${titled.length ? `
       <section class="archive-cabinet" aria-label="League champions">
-        <header class="archive-cabinet-head"><small>THE TROPHY CASE</small><h2>Champions</h2><span>${titled.length} seasons</span></header>
+        <header class="archive-cabinet-head"><h2>Champions</h2><span>${titled.length} seasons</span></header>
         <ol class="archive-seasons">
           ${titled.map((l, index) => {
             const champion = name(l.champion_user_id, l.season, l.champion_roster_id);
             const runner = l.runner_up_user_id || l.runner_up_roster_id ? name(l.runner_up_user_id, l.season, l.runner_up_roster_id) : null;
             return `<li class="archive-season${index === 0 ? " is-featured" : ""}">
-              <header class="archive-season-head"><span><strong>${esc(l.season)}</strong><small>SEASON</small></span><span class="archive-title-label">${icon("Champion")} DFL CHAMPION</span></header>
+              <header class="archive-season-head"><span><strong>${esc(l.season)}</strong></span><span class="archive-title-label">${icon("Champion")} Champion</span></header>
               <div class="archive-winner">${portrait(champion)}<div>${canEdit() ? editableName({text:champion.label,field:"champion",key:l.season,canEdit:true}) : nameCell(champion)}${l.champion_locked ? `<small class="archive-lock">Set by hand</small>` : ""}</div></div>
-              ${runner ? `<div class="archive-runner"><small>RUNNER-UP</small><div>${portrait(runner)}${nameCell(runner)}</div></div>` : `<div class="archive-runner"><small>RUNNER-UP</small><span>Not recorded</span></div>`}
+              ${runner ? `<div class="archive-runner"><small>Runner-up</small><div>${portrait(runner)}${nameCell(runner)}</div></div>` : `<div class="archive-runner"><small>Runner-up</small><span>Not recorded</span></div>`}
             </li>`;
           }).join("")}
         </ol>
