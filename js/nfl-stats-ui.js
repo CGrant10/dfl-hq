@@ -11,3 +11,11 @@ export function nflStatsMarkup(summary,sides,{uid,club=''}={}){
  <div class="nfl-box-team-tabs" role="group" aria-label="Box score team">${clubs.map(t=>`<button type="button" data-nfl-box-team="${esc(t.code)}" aria-pressed="${selected?.code===t.code}"><img src="${esc(teamLogoUrl(t.code))}" alt="" width="20" height="20">${esc(t.code)}</button>`).join('')}</div>
  <div data-nfl-box-tables>${selected?.groups.map(g=>`<section class="nfl-stat-group" aria-label="${esc(selected.code+' '+g.title)}"><h4>${g.title}</h4><div class="nfl-stat-table-scroll" data-no-game-swipe tabindex="0" role="region" aria-label="${esc(g.title)} stats"><table><thead><tr><th scope="col">Player</th>${g.columns.map(c=>`<th scope="col">${esc(c)}</th>`).join('')}</tr></thead><tbody>${g.rows.map(p=>`<tr id="${uid}-box-${esc(g.category)}-${esc(p.id)}"><th scope="row" title="${esc(p.name)}">${esc(nflShortName(p.name))}</th>${p.values.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`).join('')||'<p class="nfl-center-empty">No player stats yet.</p>'}</div></section>`;
 }
+
+export function nflQuarterMarkup(summary,sides){
+ const quarters=nflQuarterScores(summary,sides);
+ return `<div class="nfl-quarter-wrap" data-no-game-swipe><table class="nfl-quarter-table"><thead><tr><th scope="col">Team</th>${quarters.columns.map(c=>`<th scope="col">${c}</th>`).join('')}<th scope="col">TOT</th></tr></thead><tbody>${quarters.teams.map(t=>`<tr><th scope="row"><img src="${esc(teamLogoUrl(t.code))}" alt="" width="22" height="22"><span>${esc(t.code)}</span></th>${t.periods.map(n=>`<td>${value(n)}</td>`).join('')}<td><b>${value(t.score)}</b></td></tr>`).join('')}</tbody></table></div>`;
+}
+export function nflTeamBoxMarkup(summary,sides,club,{uid}){
+ const full=nflStatsMarkup(summary,sides,{uid,club});return full.slice(full.indexOf('<div data-nfl-box-tables>'),full.lastIndexOf('</section>'));
+}

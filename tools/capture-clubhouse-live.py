@@ -74,7 +74,7 @@ with sync_playwright() as p:
    page.evaluate('''async mode=>{
     (await import('/js/theme.js')).pinMode(mode);const m=await import('/js/members.js');m.selectMember(f.members[0]);
     const clips=await(await fetch('/tools/fixtures/home-highlight-clips.json')).json();f.clips=[{...clips[0],play_id:'401873011981'},clips[1],{...clips[0],id:'990001',game_id:'401900001',headline:'Jayden Daniels runs for a 30-yard touchdown',game_label:'WAS · NYG',source_url:'https://www.espn.com/video/clip/_/id/990001'}];
-    f.page=await import('/js/pages/clubhouse.js');document.getElementById('view').dataset.pulseSystem='1';document.getElementById('view').dataset.pageSystem='1';await f.page.render(document.getElementById('view'));f.stopPageSwipe=(await import('/js/ui-motion.js')).mountPageSwipeTabs(document.getElementById('view'));(await import('/js/player-card-actions.js')).mountPlayerCards();
+    const directory=await(await fetch('/tools/fixtures/nfl-game-center-directory.json')).json();for(const [id,p]of Object.entries(directory))if(!Object.values(f.catalog).some(q=>q.n===p.n&&q.t===p.t))f.catalog[id]=p;f.page=await import('/js/pages/clubhouse.js');document.getElementById('view').dataset.pulseSystem='1';document.getElementById('view').dataset.pageSystem='1';await f.page.render(document.getElementById('view'));f.stopPageSwipe=(await import('/js/ui-motion.js')).mountPageSwipeTabs(document.getElementById('view'));(await import('/js/player-card-actions.js')).mountPlayerCards();window.addEventListener('hashchange',()=>{const tab=new URLSearchParams(location.hash.split('?')[1]||'').get('tab');if(location.hash.startsWith('#/clubhouse')&&(tab==='nfl'||document.querySelector('[data-nfl-fullscreen]'))&&document.querySelector('#clubhouse-tab-'+tab)?.getAttribute('aria-selected')!=='true'){f.page.leave();void f.page.render(document.getElementById('view'))}});
    }''',mode)
    tag=f'{width}px {mode}';page.wait_for_selector('.gd-lineup-comparison',timeout=20000)
    # Recorded histories vary by matchup. Exercise a populated momentum chart
@@ -134,7 +134,7 @@ with sync_playwright() as p:
        const r=e.getBoundingClientRect(),buttons=[...e.querySelectorAll('button')],selected=e.querySelector('[aria-selected="true"]'),b=selected.getBoundingClientRect(),marker=e.querySelector('.clubhouse-tab-indicator');
        return {width:e.clientWidth,scroll:e.scrollWidth,height:e.clientHeight,allFit:buttons.every(n=>{const a=n.getBoundingClientRect();return a.left>=r.left-1&&a.right<=r.right+1&&a.top>=r.top-1&&a.bottom<=r.bottom+1&&n.scrollWidth<=n.clientWidth+1}),targets:buttons.every(n=>n.getBoundingClientRect().height>=43.5&&n.getBoundingClientRect().width>=43.5),marker:Math.abs(parseFloat(marker.style.top)-(b.bottom-r.top-2))<1&&Math.abs(parseFloat(marker.style.left)-(b.left-r.left))<1};
       }''')
-      bounds=page.locator('.clubhouse-command-center').evaluate('''e=>{const nodes=[e,...e.querySelectorAll('[role="tabpanel"],.clubhouse-section,.clubhouse-matchup-list,[data-clubhouse-matchup],.clubhouse-matchup-card,.clubhouse-game-teams,.clubhouse-game-side,.gd-compare-head,.gd-compare-row,.clubhouse-score-strip,.nfl-center-fantasy')].filter(n=>n.getClientRects().length);return nodes.every(n=>{const r=n.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1&&n.clientWidth<=innerWidth})}''')
+      bounds=page.locator('.clubhouse-command-center').evaluate('''e=>{const nodes=[e,...e.querySelectorAll('[role="tabpanel"],.clubhouse-section,.clubhouse-matchup-list,[data-clubhouse-matchup],.clubhouse-matchup-card,.clubhouse-game-teams,.clubhouse-game-side,.gd-compare-head,.gd-compare-row,.clubhouse-score-strip,.nfl-scores-fantasy')].filter(n=>n.getClientRects().length);return nodes.every(n=>{const r=n.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1&&n.clientWidth<=innerWidth})}''')
       rows=page.locator('.clubhouse-command-center').evaluate('''e=>{
        const separate=(a,b)=>a.right<=b.left+1||a.left>=b.right-1||a.bottom<=b.top+1||a.top>=b.bottom-1;
        const teams=[...e.querySelectorAll('.clubhouse-game-side')].filter(n=>n.getClientRects().length);
@@ -239,23 +239,23 @@ with sync_playwright() as p:
    check(tag+' NFL view removes unrelated league matchup chrome',page.locator('.clubhouse-duel-host').is_hidden() and page.locator('[data-clubhouse-scoreboard]').is_hidden())
    check(tag+' NFL game center shows the full play-by-play',page.locator('.nfl-center-plays li').count()>100)
    check(tag+' selected NFL game is fully readable',page.locator('[data-nfl-center-rail] [aria-pressed="true"]').evaluate('e=>e.scrollWidth<=e.clientWidth+1&&e.getBoundingClientRect().height>=44'))
-   page.locator('[data-nfl-center-filter]').select_option('big');check(tag+' big plays show full names and a compact emphasized result',page.locator('.nfl-center-plays [data-play-kind="big-play"]').count()>0 and page.locator('.nfl-center-plays [data-play-kind="big-play"] .nfl-play-result').evaluate_all('es=>es.every(e=>parseFloat(getComputedStyle(e).fontSize)===16)'))
-   play=page.locator('.nfl-center-plays [data-play-kind="big-play"]').first;check(tag+' full NFL descriptions are always visible',play.locator('.nfl-play-details>p').is_visible() and page.locator('.nfl-center-plays details,.nfl-center-plays summary').count()==0)
+   page.locator('[data-nfl-center-filter]').select_option('big');check(tag+' big plays show full names and a compact emphasized result',page.locator('.nfl-center-plays [data-play-kind="big-play"]').count()>0 and page.locator('.nfl-center-plays [data-play-kind="big-play"] .nfl-play-headline').evaluate_all('es=>es.length>0&&es.every(e=>parseFloat(getComputedStyle(e).fontSize)===15)'))
+   play=page.locator('.nfl-center-plays [data-play-kind="big-play"]').first;check(tag+' full NFL descriptions are always visible',play.locator('.nfl-play-details>p:not(.nfl-feed-people)').is_visible() and page.locator('.nfl-center-plays details,.nfl-center-plays summary').count()==0)
    page.screenshot(path=str(OUT/f'{width}-{mode}-nfl-big-plays.png'))
    page.locator('[data-nfl-center-filter]').select_option('scoring');check(tag+' NFL scoring filter is precise',page.locator('.nfl-center-plays li').count()>2 and page.locator('.nfl-center-plays li').count()<20)
-   page.locator('[data-clubhouse-nfl-open="fantasy"]').click();check(tag+' fantasy overview identifies your players and league scoring',page.locator('[data-nfl-your-player]').count()>0 and page.locator('[data-nfl-your-player] .nfl-fantasy-value small[title="DFL league scoring"]').count()>0)
+   page.locator('[data-nfl-center-mode="fantasy"]').click();check(tag+' fantasy overview identifies your players and league scoring',page.locator('[data-nfl-your-player]').count()>0 and page.locator('[data-nfl-your-player] [data-viewed-source="league"]').count()>0)
    page.wait_for_timeout(650)
-   check(tag+' stats shortcut brings its section below the game toolbar',page.locator('[data-nfl-section="fantasy"] h3').first.evaluate('e=>{const y=e.getBoundingClientRect().top,b=document.querySelector(".nfl-center-tools").getBoundingClientRect().bottom;return y>=b-2&&y<=b+72}'))
+   check(tag+' Stats starts below the compact toolbar without the Live hero',page.locator('.nfl-game-hero').count()==0 and page.locator('.nfl-quarter-wrap').bounding_box()['y']>=page.locator('.nfl-center-tools').bounding_box()['y'])
    check(tag+' fantasy is its own selected view',page.locator('#clubhouse-tab-nfl').get_attribute('aria-selected')=='true' and page.locator('.nfl-live-stats').is_visible() and page.locator('.nfl-live-plays').count()==0 and page.locator('[data-nfl-center-mode="fantasy"]').get_attribute('aria-pressed')=='true')
-   check(tag+' NFL teams and player stats sit side by side',page.locator('.nfl-fantasy-side').count()==2 and page.locator('.nfl-center-fantasy').evaluate('e=>getComputedStyle(e).gridTemplateColumns.split(" ").length===2') and page.locator('.nfl-fantasy-side').nth(0).bounding_box()['x']<page.locator('.nfl-fantasy-side').nth(1).bounding_box()['x'])
-   check(tag+' each stat column contains only its NFL team',page.locator('.nfl-fantasy-side').evaluate_all('es=>es.every(e=>[...e.querySelectorAll(".nfl-fantasy-value>small")].every(n=>n.textContent.includes(e.querySelector("h3").textContent)))'))
-   check(tag+' player names and scores fit their columns',page.locator('.nfl-fantasy-player').evaluate_all('es=>es.every(e=>e.scrollWidth<=e.clientWidth+1)'))
+   check(tag+' NFL teams and player stats sit side by side',page.locator('.nfl-position-pair').count()>0 and page.locator('.nfl-score-player.is-away').first.bounding_box()['x']<page.locator('.nfl-score-player.is-home').first.bounding_box()['x'])
+   check(tag+' each stat column contains only its NFL team',page.locator('.nfl-score-player').evaluate_all('es=>es.every(e=>e.querySelector(".nfl-score-position").textContent.includes(e.classList.contains("is-home")?"NO":"PIT"))'))
+   check(tag+' player names and scores fit their columns',page.locator('.nfl-score-player').evaluate_all('es=>es.every(e=>e.scrollWidth<=e.clientWidth+1)'))
    page.screenshot(path=str(OUT/f'{width}-{mode}-nfl-fantasy.png'))
    page.evaluate("document.documentElement.style.fontSize='32px'");page.wait_for_timeout(60)
-   check(tag+' NFL controls and side-by-side stats fit at 200% text',page.evaluate('document.documentElement.scrollWidth<=innerWidth') and page.locator('.nfl-fantasy-player').evaluate_all('es=>es.every(e=>e.scrollWidth<=e.clientWidth+1)'))
+   check(tag+' NFL controls and side-by-side stats fit at 200% text',page.evaluate('document.documentElement.scrollWidth<=innerWidth') and page.locator('.nfl-score-player').evaluate_all('es=>es.every(e=>e.scrollWidth<=e.clientWidth+1)'))
    page.screenshot(path=str(OUT/f'{width}-{mode}-nfl-large-text.png'));page.evaluate("document.documentElement.style.fontSize=''")
 
-   nfl_player=page.locator('.nfl-fantasy-player [data-player-card]').first;nfl_player.scroll_into_view_if_needed();nfl_id=nfl_player.get_attribute('data-player-card');nfl_player.click();page.wait_for_selector('.dfl-player-card .player-card-recent');page.wait_for_function('!document.querySelector("[data-player-card-stage],.dfl-connected-portrait")')
+   nfl_player=page.locator('.nfl-score-player[data-nfl-your-player] [data-player-card]').first;nfl_player.scroll_into_view_if_needed();nfl_id=nfl_player.get_attribute('data-player-card');nfl_player.click();page.wait_for_selector('.dfl-player-card .player-card-recent');page.wait_for_function('!document.querySelector("[data-player-card-stage],.dfl-connected-portrait")')
    check(tag+' NFL player cards open the week being viewed',page.locator('.dfl-player-card').get_attribute('data-player-season')=='2026' and page.locator('.dfl-player-card [data-player-game-week="7"]').get_attribute('aria-pressed')=='true')
    page.locator('[data-player-card-close]').click();page.wait_for_function('!document.querySelector(".dfl-player-card[open]")')
    check(tag+' player-card close returns to the same NFL stat row',nfl_player.evaluate('e=>e===document.activeElement'))
@@ -263,16 +263,16 @@ with sync_playwright() as p:
    check(tag+' NFL controls keep 44px touch targets',page.locator('[data-clubhouse-nfl-center] button,[data-clubhouse-nfl-center] select').evaluate_all('es=>es.filter(e=>e.getClientRects().length).every(e=>e.getBoundingClientRect().height>=44)'))
    nfl_contrast=page.locator('[data-clubhouse-nfl-center]').evaluate('''root=>{
     const ctx=document.createElement('canvas').getContext('2d'),rgb=c=>{ctx.clearRect(0,0,1,1);ctx.fillStyle=c;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data]},lum=c=>c.slice(0,3).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((n,v,i)=>n+v*[.2126,.7152,.0722][i],0);
-    return Math.min(...[...root.querySelectorAll('.nfl-center-fantasy small,.nfl-center-fantasy p,.nfl-center-fantasy b,.nfl-center-modes button,.nfl-center-status')].map(e=>{let p=e,bg;while(p){bg=rgb(getComputedStyle(p).backgroundColor);if(bg[3]===255)break;p=p.parentElement}const a=lum(rgb(getComputedStyle(e).color)),b=lum(bg||[255,255,255,255]);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)}));
+    return Math.min(...[...root.querySelectorAll('.nfl-scores-fantasy small,.nfl-scores-fantasy p,.nfl-scores-fantasy b,.nfl-center-modes button,.nfl-center-status')].map(e=>{let p=e,bg;while(p){bg=rgb(getComputedStyle(p).backgroundColor);if(bg[3]===255)break;p=p.parentElement}const a=lum(rgb(getComputedStyle(e).color)),b=lum(bg||[255,255,255,255]);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)}));
    }''')
    check(tag+' NFL stats, scoring and game controls meet 4.5:1 contrast',nfl_contrast>=4.5)
 
-   page.locator('[data-nfl-center-rail] [data-replay-game="401900001"]').click();page.wait_for_selector('.nfl-center-empty');check(tag+' switching NFL games never leaks the previous game’s stats',page.locator('.nfl-center-fantasy article').count()==0)
+   page.locator('[data-nfl-center-rail] [data-replay-game="401900001"]').click();page.wait_for_selector('.nfl-center-empty');check(tag+' switching NFL games never leaks the previous game’s stats',page.locator('.nfl-scores-fantasy article').count()==0)
    page.locator('[data-nfl-center-rail] [data-replay-game="401873011"]').click();page.locator('[data-nfl-center-mode="plays"]').click();page.wait_for_selector('.nfl-center-plays li[id]')
    check(tag+' returning to an NFL game restores its chosen filter',page.locator('[data-nfl-center-filter]').input_value()=='scoring')
    page.locator('[data-nfl-center-filter]').select_option('all')
    reading=page.locator('.nfl-center-plays li[id]').nth(12);reading.evaluate('e=>e.scrollIntoView({block:"center"})');reading_id=reading.get_attribute('id');reading_top=reading.bounding_box()['y']
-   page.locator('[data-nfl-center-mode="fantasy"]').click();page.wait_for_selector('.nfl-fantasy-player');page.locator('[data-nfl-center-mode="plays"]').click()
+   page.locator('[data-nfl-center-mode="fantasy"]').click();page.wait_for_selector('.nfl-score-player');page.locator('[data-nfl-center-mode="plays"]').click()
    check(tag+' separate views restore the exact play reading row',page.locator('#'+reading_id+' .nfl-play-details>p').is_visible() and page.locator('.nfl-live-stats').count()==0 and abs(page.locator('#'+reading_id).bounding_box()['y']-reading_top)<3)
    page.locator('[data-nfl-center-clip]').first.evaluate('e=>e.scrollIntoView({block:"center"})');page.wait_for_timeout(60)
    source=page.locator('[data-nfl-center-clip]').first;source.evaluate('e=>e.addEventListener("click",()=>f.clipSourceTop=e.getBoundingClientRect().top,{once:true,capture:true})');source.click();page.wait_for_function('document.querySelector(".home-reel-player")?.open')
@@ -282,8 +282,8 @@ with sync_playwright() as p:
    source.click();page.wait_for_function('document.querySelector(".home-reel-player")?.open')
    check(tag+' a play opens its exact video in the replay studio',page.locator('[data-reel-choose][aria-pressed="true"]').get_attribute('data-reel-choose')=='50276663')
    page.locator('[data-reel-layout="browse"]').click();page.locator('[data-reel-search]').fill('Metcalf');page.locator('[data-reel-mode="plays"]').click();page.wait_for_selector('.reel-game-browser .nfl-center-plays li');check(tag+' the video viewer includes the same NFL game center',page.locator('.reel-game-browser .nfl-center-plays li').count()>100)
-   page.evaluate('f.statsVideo=document.querySelector(".home-reel-player video")');page.locator('[data-reel-mode="stats"]').click();page.wait_for_selector('.reel-game-browser .nfl-fantasy-side')
-   check(tag+' replay uses the same two-column stats without replacing video',page.locator('.reel-game-browser .nfl-fantasy-side').count()==2 and page.evaluate('f.statsVideo===document.querySelector(".home-reel-player video")'));page.screenshot(path=str(OUT/f'{width}-{mode}-replay-stats.png'))
+   page.evaluate('f.statsVideo=document.querySelector(".home-reel-player video")');page.locator('[data-reel-mode="stats"]').click();page.wait_for_selector('.reel-game-browser .nfl-position-pair')
+   check(tag+' replay uses the same two-column stats without replacing video',page.locator('.reel-game-browser .nfl-position-pair').count()>0 and page.evaluate('f.statsVideo===document.querySelector(".home-reel-player video")'));page.screenshot(path=str(OUT/f'{width}-{mode}-replay-stats.png'))
    check(tag+' replay matchup rail uses the observed final score',page.locator('[data-replay-game-strip] .replay-game[aria-pressed="true"] .replay-game-sides b').all_text_contents()==['16','10'] and page.locator('[data-replay-game-strip] .replay-game[aria-pressed="true"]>small').inner_text()=='Final')
    page.evaluate("document.documentElement.style.fontSize='32px'");page.wait_for_timeout(60)
    check(tag+' replay remains usable at 200% text',page.locator('.home-reel-player').evaluate('e=>e.scrollWidth<=e.clientWidth') and page.locator('[data-reel-close]').evaluate('e=>{const a=e.getBoundingClientRect(),b=e.closest("dialog").getBoundingClientRect();return a.right<=b.right&&a.height>=44}'))
@@ -295,7 +295,7 @@ with sync_playwright() as p:
    page.locator('[data-reel-mode="plays"]').click();page.wait_for_timeout(360)
    check(tag+' returning restores the exact play and its keyboard focus',replay_play.evaluate('e=>e===document.activeElement') and abs(replay_play.bounding_box()['y']-replay_top)<3)
    page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open')
-   page.locator('#clubhouse-tab-leaders').click();page.wait_for_selector('.gd-league-board .gameday-player')
+   page.locator('[data-nfl-close]').click();page.wait_for_selector('#clubhouse-tab-matchups[aria-selected="true"]');page.locator('#clubhouse-tab-leaders').click();page.wait_for_selector('.gd-league-board .gameday-player')
    page.evaluate('f.leaderCanvas=document.querySelector("[data-clubhouse-leaders] .gd-vfx-canvas")')
    check(tag+' Leaders has its connected fire and ice surface',page.evaluate('!!f.leaderCanvas?.isConnected'))
    check(tag+' Leaders moved into Clubhouse with hot and cold filters',page.locator('[data-league-filter]').count()==3 and page.locator('[data-league-bench]').count()==1)
@@ -333,7 +333,7 @@ with sync_playwright() as p:
    page.evaluate('f.page.leave()')
    page.evaluate("async()=>{location.hash='#/clubhouse?season=2026&week=7&tab=highlights&matchup=1&moment=nfl:401873011:401873011981:1&nflGame=401873011&clip=999999';await f.page.render(document.getElementById('view'))}")
    page.wait_for_selector('#clubhouse-tab-nfl[aria-selected="true"]');page.wait_for_selector('.nfl-center-plays li')
-   check(tag+' missing video deep link falls back to the game’s play-by-play',page.locator('.home-reel-player[open]').count()==0 and 'no longer available' in page.locator('#clubhouse-panel-nfl').inner_text() and page.locator('#clubhouse-panel-nfl [data-nfl-selected-game]').get_attribute('data-nfl-selected-game')=='401873011')
+   check(tag+' missing video deep link falls back to the game’s play-by-play',page.locator('.home-reel-player[open]').count()==0 and 'no longer available' in page.locator('[data-nfl-fullscreen]').inner_text() and page.locator('[data-clubhouse-nfl-center][data-nfl-selected-game]').get_attribute('data-nfl-selected-game')=='401873011')
    page.evaluate('f.page.leave()')
    if width==390 and mode=='dark':
     page.evaluate("async()=>{location.hash='#/clubhouse?season=2026&week=7&tab=highlights&player=3&query=DK%20Metcalf';await f.page.render(document.getElementById('view'))}")

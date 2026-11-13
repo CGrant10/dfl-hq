@@ -37,10 +37,11 @@ export function wireMemberWeeklyAwards(root,memberId){
 }
 
 export function wireClubhouseTabs(root,initial='overview'){
- const tabs=[...root.querySelectorAll('[data-clubhouse-tab]')];
+ const tabs=[...root.querySelectorAll('[data-clubhouse-tab]')];let initializing=true;
  const activate=(name,focus=false)=>{
   const selected=tabs.find(tab=>tab.dataset.clubhouseTab===name)||tabs[0];
   const changed=selected.getAttribute('aria-selected')!=='true';
+  if(!initializing&&changed&&name==='nfl'){const params=new URLSearchParams(location.hash.split('?')[1]||'');params.set('tab','nfl');location.hash=location.hash.split('?')[0]+'?'+params;return;}
   for(const tab of tabs){const on=tab===selected;tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;tab.classList.toggle('on',on);root.querySelector('#'+tab.getAttribute('aria-controls')).hidden=!on}
   if(focus)selected.focus();
   const bar=selected.parentElement;if(bar.scrollWidth>bar.clientWidth)bar.scrollTo({left:Math.max(0,selected.offsetLeft-bar.clientWidth/2+selected.clientWidth/2),behavior:'instant'});
@@ -48,5 +49,5 @@ export function wireClubhouseTabs(root,initial='overview'){
   const params=new URLSearchParams(location.hash.split('?')[1]||'');params.set('tab',selected.dataset.clubhouseTab);history.replaceState(history.state,'',location.hash.split('?')[0]+'?'+params);
  };
  for(const tab of tabs){tab.addEventListener('click',()=>activate(tab.dataset.clubhouseTab));tab.addEventListener('keydown',event=>{const index=tabs.indexOf(tab);let next;if(event.key==='ArrowRight')next=(index+1)%tabs.length;else if(event.key==='ArrowLeft')next=(index+tabs.length-1)%tabs.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=tabs.length-1;else return;event.preventDefault();activate(tabs[next].dataset.clubhouseTab,true)})}
- activate(initial);
+ activate(initial);initializing=false;
 }

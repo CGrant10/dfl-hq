@@ -32,7 +32,8 @@ with sync_playwright() as p:
   const {mountNflGameCenter}=await import('/js/nfl-game-center.js');const {startUiMotion}=await import('/js/ui-motion.js');startUiMotion();
   const summary=await(await fetch('/tools/fixtures/nfl-game-center-summary.json')).json();
   const f=window.f={state:'in',summary,players:[{id:'1',name:'Tyler Shough',nflTeam:'NO',position:'QB',points:22,owner:'The Very Long Bayou Championship Bombers',isMine:true},{id:'3',name:'DK Metcalf',nflTeam:'PIT',position:'WR',points:30,owner:'Klutch Sports Group'}]};
-  f.statsReads=0;f.statsTimes=[];f.weekly=[];f.boardReads=0;f.summaryReads=0;f.boardGate=null;f.options={desk:true,getContext:()=>({season:2026,week:7,players:f.players}),loadStats:async()=>{f.statsReads++;f.statsTimes.push(Date.now());if(f.failStats)throw Error("Weekly stats temporarily unavailable");return {data:f.weekly}},loadBoard:async()=>{f.boardReads++;if(f.boardGate)await f.boardGate;return ({payload:{season:{year:2026,type:2},week:{number:7},events:[{id:'401873011',date:'2026-10-25T17:00:00Z',status:{type:{state:f.state,shortDetail:'Q3 8:20'}},competitions:[{competitors:[{team:{abbreviation:'NO'},homeAway:'home',score:'10'},{team:{abbreviation:'PIT'},homeAway:'away',score:'16'}]}]}]}})},loadSummary:async()=>{f.summaryReads++;const s=structuredClone(f.summary);s.header.competitions[0].status.type.state=f.state;s.header.competitions[0].status.type.shortDetail=f.state==='post'?'Final':f.state==='pre'?'Scheduled':'Q4 2:00';return {summary:s,fetchedAt:Date.now()}}};f.remount=()=>{f.center=mountNflGameCenter(document.querySelector('#feed'),f.options);return f.center.ready};await f.remount();await Promise.resolve();f.center.pause();
+  f.directory=await(await fetch('/tools/fixtures/nfl-game-center-directory.json')).json();
+  f.statsReads=0;f.statsTimes=[];f.weekly=[];f.boardReads=0;f.summaryReads=0;f.boardGate=null;f.options={desk:true,getContext:()=>({season:2026,week:7,players:f.players,playerDirectory:f.directory,scoringSettings:{pass_yd:.04,pass_td:4,pass_int:-2,rec:1,rec_yd:.1,rush_yd:.1}}),loadProjections:async()=>({data:[]}),loadStats:async()=>{f.statsReads++;f.statsTimes.push(Date.now());if(f.failStats)throw Error("Weekly stats temporarily unavailable");return {data:f.weekly}},loadBoard:async()=>{f.boardReads++;if(f.boardGate)await f.boardGate;return ({payload:{season:{year:2026,type:2},week:{number:7},events:[{id:'401873011',date:'2026-10-25T17:00:00Z',status:{type:{state:f.state,shortDetail:'Q3 8:20'}},competitions:[{competitors:[{team:{abbreviation:'NO'},homeAway:'home',score:'10'},{team:{abbreviation:'PIT'},homeAway:'away',score:'16'}]}]}]}})},loadSummary:async()=>{f.summaryReads++;const s=structuredClone(f.summary);s.header.competitions[0].status.type.state=f.state;s.header.competitions[0].status.type.shortDetail=f.state==='post'?'Final':f.state==='pre'?'Scheduled':'Q4 2:00';return {summary:s,fetchedAt:Date.now()}}};f.remount=()=>{f.center=mountNflGameCenter(document.querySelector('#feed'),f.options);return f.center.ready};await f.remount();await Promise.resolve();f.center.pause();
   window.setTheme=async mode=>(await import('/js/theme.js')).pinMode(mode);
   window.reviewContrast=(await import('/tools/home-review-contrast.js')).reviewTextContrast;
  }''');pg.evaluate('document.fonts.ready')
@@ -42,34 +43,34 @@ with sync_playwright() as p:
    for mode in ['plays','fantasy']:
     tag=f'{theme}/{width}/{mode}';pg.locator(f'[data-nfl-center-mode="{mode}"]').click();pg.wait_for_timeout(200);pg.evaluate('scrollTo(0,0)')
     check(tag+' mode is selected honestly',pg.locator(f'[data-nfl-center-mode="{mode}"]').get_attribute('aria-pressed')=='true')
-    check(tag+' one selected view and one NFL score',pg.locator('.nfl-live-plays').count()==(mode=='plays') and pg.locator('.nfl-live-stats').count()==(mode=='fantasy') and pg.locator('.nfl-center-score b').all_text_contents()==['16','10'])
+    check(tag+' one selected view and one NFL score',pg.locator('.nfl-live-plays').count()==(mode=='plays') and pg.locator('.nfl-live-stats').count()==(mode=='fantasy') and (pg.locator('.nfl-center-score b').all_text_contents()==['16','10'] if mode=='plays' else pg.locator('.nfl-quarter-table tbody td:last-child').all_text_contents()==['16','10']))
     check(tag+' no page overflow',pg.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
     check(tag+' 44px controls',pg.locator('#feed').evaluate('e=>[...e.querySelectorAll("button,select")].filter(e=>e.checkVisibility()).every(e=>e.getBoundingClientRect().height>=43.5)'))
     result=pg.locator('#feed').evaluate('e=>reviewContrast(e)');check(tag+' text contrast '+json.dumps(result['failures']),not result['failures'])
     if mode=='plays':
      check(tag+' full descriptions and quarter landmarks',pg.locator('.nfl-play-details>p').evaluate_all('es=>es.length>100&&es.every(e=>e.checkVisibility())') and pg.locator('.nfl-play-period:not([hidden])').count()>=4)
-     pg.locator('[data-nfl-center-filter]').scroll_into_view_if_needed();y=pg.locator('.nfl-section-head').bounding_box()['y'];pg.locator('[data-nfl-center-filter]').select_option('big')
-     check(tag+' filters keep their heading in place',abs(pg.locator('.nfl-section-head').bounding_box()['y']-y)<2)
+     pg.locator('[data-nfl-center-filter]').scroll_into_view_if_needed();y=pg.locator('.nfl-scores-feed-tools').bounding_box()['y'];pg.locator('[data-nfl-center-filter]').select_option('big')
+     check(tag+' filters keep their heading in place',abs(pg.locator('.nfl-scores-feed-tools').bounding_box()['y']-y)<2)
      pg.locator('[data-nfl-center-filter]').select_option('all')
     else:
-     check(tag+' all NFL players remain side by side',pg.locator('.nfl-fantasy-player').count()==20 and pg.locator('.nfl-fantasy-side').nth(0).bounding_box()['x']<pg.locator('.nfl-fantasy-side').nth(1).bounding_box()['x'])
-     check(tag+' exact league points and unknown PPR remain distinct','22.0' in pg.locator('[data-nfl-your-player]').inner_text() and '—' in pg.locator('.nfl-center-fantasy').inner_text())
+     check(tag+' all NFL players remain side by side',pg.locator('.nfl-score-player').count()==20 and pg.locator('.nfl-score-player.is-away').first.bounding_box()['x']<pg.locator('.nfl-score-player.is-home').first.bounding_box()['x'])
+     check(tag+' exact league points and unknown PPR remain distinct','22.00' in pg.locator('[data-nfl-your-player]').inner_text() and '—' in pg.locator('.nfl-scores-fantasy').inner_text())
     pg.evaluate('scrollTo(0,0)');pg.screenshot(path=str(OUT/f'{theme}-{width}-{mode}.png'))
    if width==320:
     pg.evaluate('document.documentElement.style.fontSize="32px";document.documentElement.dataset.readability="comfortable"');pg.wait_for_timeout(100)
-    check(theme+' Comfortable 200% text keeps full names inside columns',pg.evaluate('document.documentElement.scrollWidth<=innerWidth+1') and pg.locator('.nfl-fantasy-player').evaluate_all('es=>es.every(e=>e.scrollWidth<=e.clientWidth+1)'))
+    check(theme+' Comfortable 200% text keeps full names inside columns',pg.evaluate('document.documentElement.scrollWidth<=innerWidth+1') and pg.locator('.nfl-score-player').evaluate_all('es=>es.every(e=>e.scrollWidth<=e.clientWidth+1)'))
     pg.screenshot(path=str(OUT/f'{theme}-large.png'));pg.evaluate('document.documentElement.style.fontSize="";document.documentElement.dataset.readability="compact"')
  # Scores and ownership must not change the NFL box-score reading order.
  pg.locator('[data-nfl-center-mode="fantasy"]').click();pg.wait_for_timeout(180)
- pg.evaluate('f.rowOrder=[...document.querySelectorAll(".nfl-fantasy-player")].map(e=>e.id);f.savedPlayers=f.players;f.players=f.players.map(p=>({...p,points:p.position==="QB"?0:55,isMine:!p.isMine}));f.contextReads=f.summaryReads;f.center.updateContext()')
- check('Fantasy keeps fixed rows through score swings and ownership changes',pg.locator('.nfl-fantasy-player').evaluate_all('es=>JSON.stringify(es.map(e=>e.id))===JSON.stringify(f.rowOrder)') and pg.evaluate('f.summaryReads===f.contextReads'))
- check('recorded zero-point players remain visible',pg.locator('.nfl-fantasy-player').filter(has_text='Tyler Shough').locator('.nfl-fantasy-value b').inner_text()=='0.0')
+ pg.evaluate('f.rowOrder=[...document.querySelectorAll(".nfl-score-player")].map(e=>e.id);f.savedPlayers=f.players;f.players=f.players.map(p=>({...p,points:p.position==="QB"?0:55,isMine:!p.isMine}));f.contextReads=f.summaryReads;f.center.updateContext()')
+ check('Fantasy keeps fixed rows through score swings and ownership changes',pg.locator('.nfl-score-player').evaluate_all('es=>JSON.stringify(es.map(e=>e.id))===JSON.stringify(f.rowOrder)') and pg.evaluate('f.summaryReads===f.contextReads'))
+ check('recorded zero-point players remain visible',pg.locator('.nfl-score-player').filter(has=pg.locator('[title="Tyler Shough"]')).locator('.nfl-score-totals b').inner_text()=='0.00')
  pg.evaluate('f.players=f.savedPlayers;f.center.updateContext()')
- photo=pg.locator('.nfl-fantasy-photo img').first;photo.dispatch_event('error')
- pg.wait_for_function('(()=>{const p=document.querySelector(".nfl-fantasy-photo img");return p?.src.includes("/teamlogos/nfl/")&&p.parentElement.classList.contains("has-photo")})()')
- pg.evaluate('f.fallbackSrc=document.querySelector(".nfl-fantasy-photo img").src;f.originalPoints=f.players[0].points;f.players[0].points=0;f.center.updateContext()')
- check('an unavailable headshot keeps its loaded NFL fallback through score updates',photo.evaluate('e=>e.src===f.fallbackSrc&&e.parentElement.classList.contains("has-photo")'))
- pg.evaluate('f.players[0].points=f.originalPoints;f.center.updateContext()')
+ pg.locator('[data-nfl-center-mode="plays"]').click();pg.wait_for_timeout(180)
+ photo=pg.locator('.nfl-feed-portrait[src*="headshots"]').first;photo.evaluate('e=>f.fallbackImg=e');photo.dispatch_event('error');pg.wait_for_timeout(100)
+ check('an unavailable feed headshot falls back to its NFL logo',pg.evaluate('f.fallbackImg.src.includes("/teamlogos/nfl/")'))
+ pg.evaluate('f.fallbackSrc=f.fallbackImg.src;f.center.updateContext()')
+ check('the loaded fallback survives a live patch',pg.evaluate('f.fallbackImg.isConnected&&f.fallbackImg.src===f.fallbackSrc'))
  # A mode change is navigation, so it returns to each view's saved reading row.
  pg.locator('[data-nfl-center-mode="plays"]').click();pg.wait_for_timeout(200);row=pg.locator('.nfl-center-plays li[id]').nth(12);row.scroll_into_view_if_needed();rid=row.get_attribute('id');y=row.bounding_box()['y']
  pg.locator('[data-nfl-center-mode="fantasy"]').click();pg.wait_for_timeout(200)
@@ -79,8 +80,8 @@ with sync_playwright() as p:
  check('play-by-play does not fetch weekly fantasy stats',pg.evaluate('f.statsReads')==before)
  pg.locator('[data-nfl-center-mode="fantasy"]').click();pg.clock.run_for(200);pg.clock.run_for(25020)
  check('fantasy reads remain bounded between game polls',pg.evaluate('f.statsTimes.every((t,i)=>!i||t-f.statsTimes[i-1]>=19990)'))
- pg.evaluate('f.weekly=[{season:2026,week:7,season_type:"regular",team:"PIT",player:{full_name:"Aaron Rodgers",position:"QB"},stats:{pts_ppr:17.4}}]');pg.clock.run_for(25020)
- check('live PPR updates in the separate fantasy view',pg.locator('.nfl-fantasy-player').filter(has_text='Aaron Rodgers').locator('.nfl-fantasy-value b').inner_text()=='17.4')
+ pg.evaluate('f.weekly=[{season:2026,week:7,season_type:"regular",team:"PIT",player:{full_name:"Aaron Rodgers",position:"QB"},stats:{pass_yd:435,pts_ppr:17.4}}]');pg.clock.run_for(25020)
+ check('live PPR updates in the separate fantasy view',pg.locator('.nfl-score-player').filter(has=pg.locator('[title="Aaron Rodgers"]')).locator('.nfl-score-totals b').inner_text()=='17.40')
  pg.locator('[data-nfl-center-mode="plays"]').click();pg.clock.run_for(200)
  row=pg.locator('.nfl-center-plays li[id]').nth(12);row.scroll_into_view_if_needed();rid=row.get_attribute('id');y=row.bounding_box()['y']
  pg.evaluate('f.summary.drives.current={plays:[{id:"999999999999",sequenceNumber:"999999999999",text:"A.Rodgers pass to D.Metcalf for 30 yards. TOUCHDOWN.",scoringPlay:true,statYardage:30,type:{id:"67",text:"Passing Touchdown"},awayScore:22,homeScore:10,period:{number:4},clock:{displayValue:"1:00"}}]}');pg.clock.run_for(5020)

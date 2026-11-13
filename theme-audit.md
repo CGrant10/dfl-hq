@@ -1,3 +1,23 @@
+## 1.568.0 — native mobile Scores layout
+
+The supplied native screenshots replace the older public Game Center reference.
+Reviewed component/controller renders at 320/390/430/768px in Medicine Wheel
+Light/Dark, normal and 200% text: /workspace/dfl-scores-1568/scores-verified/.
+The two Live/Stats tabs, short game capsules, filled selection, mirrored position
+rows, two-decimal actual/projection stacks, current owner names, NFL portraits,
+quarter table and team/Fantasy selector use shared tokens and authentic identity
+colors. No extra theme entries, old crest blues, mascot or decorative asset.
+Contrast tests include the production page-system rules; an inherited muted
+Final label on the selected pill was corrected. Full-screen is a route-owned
+viewer portaled under the view root, with safe-area padding and inert covered
+navigation restored on leave. Field motion is finite and respects app/system
+motion preferences. Native game-rail browsing never selects a game. The whole
+player row is tappable; a horizontal drag cannot open a card. Underlying Clubhouse
+and navigation return after Back. Actual compiled real-data checks and inspected screenshots in
+/workspace/dfl-scores-1568/actual-final/ confirm clear edges, readable contrast,
+DFL Fantasy totals/projections, game selection and restored Clubhouse navigation.
+No physical-device frame pacing or screen-reader speech claim. See design-qa.md.
+
 ## 1.567.0 — NFL Game Center layout
 
 Reviewed the actual NFL Game Center in Medicine Wheel Light/Dark at 320, 390 and
