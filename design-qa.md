@@ -1,3 +1,51 @@
+# Thermal score finish — 1.574.0
+
+Hot/cold digits keep their recorded DOM text and existing fonts. The shared GPU
+shader now leaves glyph interiors clear, with thinner contours, softer rising
+fire, three sparse embers, a restrained frost bevel, two small ice particles and
+a drifting wisp. Existing warm/cold inks keep Light/Dark readable. Matching
+inset portrait rims identify hot/cold players in rows and player-card heroes.
+Rims preserve the current photo geometry and react briefly to live changes.
+
+Actual numeric refreshes get a 300ms clipped decorative score roll and a 700ms
+outer-effect flare. The real number and GPU glyph anchor stay fixed. The roll is
+hidden from assistive technology; real values/temperature labels stay available.
+Repeated updates replace the old reaction, context/week changes cancel it, and
+sub-cent changes that render the same value stay static. Missing baselines,
+initial card loads and stale catch-up snapshots do not invent a scoring moment.
+Player delta feedback now occupies the existing phase slot below the number,
+with compact positive/correction ink and transparent background instead of the
+bordered badge. Shared motion preferences, Reduced Motion and hidden/closed
+surfaces stop the appropriate motion; WebGL-unavailable users keep real text and
+static portrait cues. Context recovery redraws current scores.
+
+The player >15 hot / <10 after-halftime-or-final cold rules are unchanged, as are
+defense exclusion and team thresholds. One shared canvas per surface, 30fps
+ambient cadence, pixel budget, texture reuse, clipping and offscreen/visibility
+pauses remain. Particle counts/shader work are reduced; no new polling, data feed,
+image asset, font or dependency. Source scope is score presentation only.
+
+Evidence under /workspace/dfl-thermal-1574/: before/ previous compiled Clubhouse;
+thermal-final/ isolated real WebGL scores/portraits/reactions; scroll-final/ GPU
+clipping and sticky transitions; player/ and clubhouse/ actual controllers with
+isolated data; actual/ and large/ compiled public-league reads in Light/Dark at
+390px and 320px/200% text. Screenshots inspected. Provider mutations were blocked
+or mocked; fixture portraits are test imagery rather than player identity claims.
+
+Validation: pnpm check passes 2,547 tests / 307 files, release/theme/type/name and
+build checks. The new 91-check browser review verifies clear glyph cores by
+reading rendered GPU pixels, visible edge effects, portrait state, fixed score
+geometry, real-score roll/flare settling, rapid interruption, stale syncs,
+rounding, context changes, motion-off/reduced motion, lost/restored/unavailable
+WebGL and cleanup. The 81-check score-scroll review retains texture reuse, live
+scroll/compact alignment, header clipping, hidden-score clearing and teardown.
+337 Clubhouse, 43 player-finish and 37 player-motion checks pass. Compiled actual
+Home/Clubhouse/leaders and player-card return checks pass in both themes at normal
+and enlarged text. The new review runs beside the existing score-scroll CI step.
+Final theme/build checks follow the transparent delta styling. The build retains
+88 modules, three startup/four Home modules and one shared CSS request. Physical
+phone frame pacing, battery consumption and screen-reader speech remain unmeasured.
+
 # Player rows, live viewing and secondary desks — 1.573.0
 
 Clubhouse matchup rows/leaders, NFL fantasy rows, player-card actions and Replay
