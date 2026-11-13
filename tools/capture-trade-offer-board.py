@@ -29,7 +29,10 @@ with sync_playwright() as p:
    page.wait_for_function('document.querySelectorAll(".tb-offer").length>=3');page.wait_for_timeout(300)
    tag=f'{width}px {theme}';cards=page.locator('.tb-offer');first=cards.first
    check(tag+' default actions stay compact without hiding players',first.locator('[data-tb-save]').is_visible() and first.locator('[data-tob-compare]').is_hidden() and first.locator('[data-td-load-offer]').is_visible())
-   menu=first.locator('.tb-offer-more');menu.locator(':scope > summary').click();check(tag+' More actions fit inside the phone viewport',menu.locator('.tb-offer-more-actions').evaluate('e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight}'))
+   menu=first.locator('.tb-offer-more');menu.locator(':scope > summary').click()
+   # Native details delivers toggle asynchronously; verify the positioned menu.
+   page.wait_for_function('e=>{const r=e.getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight}',arg=menu.locator('.tb-offer-more-actions').element_handle(),timeout=2000)
+   check(tag+' More actions fit inside the phone viewport',menu.locator('.tb-offer-more-actions').evaluate('e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight}'))
    menu.locator(':scope > summary').press('Escape');check(tag+' Escape closes More and returns focus',menu.get_attribute('open') is None and menu.locator('summary').first.evaluate('e=>e===document.activeElement'))
    first.scroll_into_view_if_needed();first.screenshot(path=str(OUT/f'first-{width}-{theme}.png'));check(tag+' full packages stay visible',first.locator('.tb-package .tb-player').count()==sum(int(s.strip().split(' · ')[-1]) for s in first.locator('.tb-package>small').all_text_contents()))
    check(tag+' compact first offer',first.bounding_box()['height']<280)
