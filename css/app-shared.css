@@ -10454,7 +10454,7 @@ body .dfl-player-card[data-motion=off] .player-game-group i { transition:none; }
 }
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-masthead { align-items:flex-start; padding:0 0 8px; }
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-tabs>button:is([aria-selected="true"],.is-active) { color:var(--text); }
-#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap :is(.sb-tabs,.page-activity-tabs)>.dfl-selection-rail { background:var(--action-fill)!important; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap :is(.sb-tabs,.page-activity-tabs)>.dfl-selection-rail { background:var(--accent)!important; }
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-fantasy-slate .sb-line-columns { display:none; }
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-fantasy-slate .sb-board-head { padding-bottom:10px; border-bottom:1px solid var(--line-soft); }
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap [data-fantasy-market] { container-type:inline-size; padding-block:12px; }
@@ -10708,7 +10708,7 @@ html[data-ui-motion="off"] .archive-match-tail>.ico-sm { transition:none; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-gamecast-clock { border:0; display:grid; gap:2px; justify-items:center; color:var(--body-text); font:550 .625rem/1.3 var(--font-ui); text-align:center; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-gamecast-clock .nfl-gamecast-time { font:700 .6875rem/1.3 var(--font-ui); }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-modes { width:100%; max-width:none; display:flex; border-bottom:1px solid var(--line-soft); }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-modes>i { width:33.333333%; background:var(--action-fill); }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-modes>i { width:33.333333%; background:var(--accent); }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-modes>button { flex:1; min-height:44px; padding:8px 4px; font:650 .8125rem/1.4 var(--font-ui); color:var(--body-text); }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-modes>button[aria-pressed="true"] { color:var(--text); }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-filter select { min-height:44px; padding:4px 24px 4px 6px; font:500 .8125rem/1.4 var(--font-ui); }
@@ -10942,3 +10942,91 @@ html[data-ui-motion="off"] .nfl-scores-segments::before { transition:none; }
 #view [data-nfl-clubhouse] { min-width:0; padding-bottom:16px; }
 #view [data-nfl-clubhouse] .nfl-center-tools { position:sticky; top:calc(var(--dfl-scroll-top,var(--topbar-h,44px)) + var(--nfl-section-tabs-height,45px)); z-index:7; }
 #view [data-nfl-clubhouse] .nfl-center-modes { top:calc(var(--dfl-scroll-top,var(--topbar-h,44px)) + var(--nfl-section-tabs-height,45px) + var(--nfl-tools-height,48px)); z-index:6; }
+
+
+/* Source: css/premium-finish.css */
+/* A shared finish for the existing daily desks. */
+#view.view[data-page-system][data-route] :is(.btn.ghost,.ph-edit,.sleeper-action.btn):not(.td-external-tools *) { min-height:44px; padding:8px 12px; border:1px solid var(--line-soft); border-radius:6px; background:transparent; color:var(--text); box-shadow:none; font:600 .8125rem/1.35 var(--font-ui); letter-spacing:0; }
+#view.view[data-page-system][data-route] :is(.btn.ghost,.ph-edit):hover { background:var(--bg-2); }
+#view.view[data-page-system][data-route] :is(.btn.ghost,.ph-edit):focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+#view.view[data-page-system][data-route] [data-ui-pressed="true"]:not([role="tab"]) { background-color:var(--bg-2); }
+#view.view[data-route="trade"] :is(.tb-offers-card,.tb-tier,.tb-tier>div,.tb-offer) { overflow:visible; }
+#view.view[data-route="trade"] .tb-offer>header .tb-offer-verdict { display:flex; align-items:center; justify-content:flex-end; gap:8px; max-width:10rem; }
+.tb-offer-verdict>span { color:var(--body-text); font:500 .625rem/1.3 var(--font-ui); text-align:right; }
+.tb-offer-verdict>strong { color:var(--text); font:750 1rem/1.2 var(--font-ui); font-variant-numeric:tabular-nums; }
+#view.view[data-route="trade"] .tb-offer .tb-player-link { min-height:44px; }
+#view.view[data-route="trade"] .tb-offer .tb-offer-footer { position:relative; display:grid; grid-template-columns:minmax(80px,1fr) auto auto; align-items:center; gap:4px 12px; padding-block:2px; }
+#view.view[data-route="trade"] .tb-offer .tb-card-actions { display:contents; }
+#view.view[data-route="trade"] .tb-offer .tb-offer-analyze { width:auto; min-height:44px; justify-content:flex-start; color:var(--accent); font-size:.75rem; }
+#view.view[data-route="trade"] .tb-offer .tb-card-actions>button { font-size:.75rem; }
+#view.view[data-route="trade"] .tb-offer-inspect>.tb-offer-preview>summary { padding-right:0; }
+.tb-offer-more>summary { display:flex; align-items:center; justify-content:center; gap:5px; min-width:54px; min-height:44px; list-style:none; cursor:pointer; color:var(--body-text); font:600 .75rem/1.35 var(--font-ui); }
+.tb-offer-more>summary::-webkit-details-marker { display:none; }
+#view.view[data-route="trade"] .tb-offer-more-actions { position:absolute; right:0; top:calc(100% + 4px); z-index:12; box-sizing:border-box; width:min(100%,18rem); max-height:var(--offer-menu-height,240px); overflow:auto; padding:6px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:2px 6px; border:1px solid var(--line); border-radius:8px; background:var(--bg-2); box-shadow:0 6px 20px color-mix(in srgb,var(--text) 9%,transparent); }
+#view.view[data-route="trade"] .tb-offer-more[data-menu-up]>.tb-offer-more-actions { top:auto; bottom:calc(100% + 4px); }
+#view.view[data-route="trade"] .tb-offer-more-actions :is(button,summary) { display:flex; align-items:center; min-height:44px; padding:8px; margin:0; text-align:left; color:var(--text); background:transparent; border:0; border-radius:4px; font:500 .75rem/1.35 var(--font-ui); }
+#view.view[data-route="trade"] .tb-offer-more-actions>details { grid-column:1/-1; }
+#view.view[data-route="trade"] .tb-offer-more-actions :is(button,summary):hover { background:var(--bg); }
+#view.view[data-route="trade"] .tb-offer-more-actions .tb-offer-pin>div { position:static; display:flex; flex-wrap:wrap; max-height:none; border:0; padding:0; box-shadow:none; background:transparent; }
+#view.view[data-route="trade"] .tb-search-placeholder { display:grid; gap:14px; padding:0; }
+.tb-loading-offer { border-block:1px solid var(--line-soft); padding:12px 0; }
+#view.view[data-route="trade"] .tb-loading-offer i { background:var(--bg-2); border-radius:3px; }
+#view.view[data-route="trade"] .tb-loading-owner { width:45%; height:14px; margin-bottom:10px; }
+.tb-loading-packages { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+.tb-loading-packages>div>span { display:grid; grid-template-columns:24px minmax(0,1fr); gap:8px; align-items:center; min-height:44px; }
+#view.view[data-route="trade"] .tb-loading-packages i:first-child { width:24px; height:28px; }
+#view.view[data-route="trade"] .tb-loading-packages i:last-child { width:80%; height:12px; }
+#view.view[data-route="trade"] .tb-loading-footer { width:60%; height:10px; margin-top:12px; }
+#view.view[data-route="sportsbook"] .sb-brand>span { display:none; }
+#view.view[data-route="sportsbook"] .sb-tabs { margin-bottom:4px; }
+.sb-market-context { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:48px; padding:0; border-bottom:1px solid var(--line-soft); }
+.sb-market-context>label { min-width:0; max-width:65%; }
+.sb-market-context>span { color:var(--body-text); text-align:right; font:500 .6875rem/1.35 var(--font-ui); }
+#view.view[data-page-system][data-route="sportsbook"] #sb-market-type { min-height:44px; max-width:100%; padding:4px 24px 4px 0; border:0; border-radius:0; background:transparent; font:600 1rem/1.35 var(--font-ui); }
+#view.view[data-page-system][data-route="sportsbook"] .sb-fantasy-slate[data-fantasy-period="current"]>.sb-board-head { min-height:0; margin:0; padding:6px 0; border:0; justify-content:flex-end; }
+#view.view[data-route="sportsbook"] .sb-fantasy-slate[data-fantasy-period="current"]>.sb-board-head>div { display:none; }
+#view.view[data-route="profile"] .career-outcomes { justify-content:flex-end; }
+#view.view[data-route="profile"] .cabinet { padding:8px 0; border-block:1px solid var(--line-soft); }
+body .dfl-mobile-sheet :is([data-player-card-close],[data-reel-close],[data-sheet-close],[data-slip-close]) { min-width:44px; min-height:44px; border-radius:6px; font-family:var(--font-ui); }
+/* News, metrics and results each retain a distinct editorial composition. */
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-news { justify-content:flex-start; gap:10px; }
+#home-wrap .bx-brief-news>.bx-head { margin-top:auto; font-size:1.5rem; line-height:1.12; }
+#home-wrap .bx-brief-news>.bx-brief-body { margin-bottom:auto; font-size:.8125rem; }
+#home-wrap .bx-brief-news>.bx-brief-action { margin-top:auto; border-top:1px solid var(--line-soft); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-metric { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,35%); grid-template-rows:auto 1fr auto auto; gap:6px 12px; align-items:center; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-metric>.bx-kicker { grid-column:1/-1; grid-row:1; width:100%; max-width:100%; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-metric>.bx-head { grid-column:1; grid-row:2; width:100%; max-width:100%; margin:0; padding:0; border:0; font-size:1.375rem; line-height:1.15; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-metric>.bx-brief-body { grid-column:1; grid-row:3; width:100%; max-width:100%; margin:0; padding:0; border:0; font-size:.75rem; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-metric>.bx-brief-value { position:static; grid-column:2; grid-row:2/4; width:100%; max-width:100%; margin:0; padding:0 0 0 8px; translate:none; text-align:right; border-left:1px solid var(--line-soft); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-metric .bx-brief-value strong { font-size:clamp(1.25rem,calc(9rem / var(--bx-digits,4)),2.25rem); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-metric>.bx-brief-action { grid-column:1/-1; grid-row:4; width:100%; max-width:100%; border-top:1px solid var(--line-soft); }
+#home-wrap .bx-brief-result .bx-brief-scores>div.is-winner { border-top:2px solid var(--accent); padding-top:5px; }
+#home-wrap .bx-brief-series::after { content:'Series'; display:block; margin-top:6px; color:var(--body-text); font:500 .625rem/1.3 var(--font-ui); }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-metric { display:flex; flex-direction:column; align-items:stretch; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-metric>.bx-brief-value { width:100%; border:0; text-align:left; }
+@media(max-width:360px) { #home-wrap .bx-brief-news>.bx-head { font-size:1.25rem; } }
+@media(prefers-reduced-motion:reduce) { .tb-offer-more-actions { scroll-behavior:auto; } }
+
+#view.view[data-route="profile"] .career-outcomes.is-playoffs { display:flex; justify-content:flex-end; }
+#view.view[data-route="profile"] .career-outcomes.is-playoffs>div { min-width:64px; text-align:right; }
+@media(max-width:360px) { .sb-market-context { gap:8px; } }
+
+#home-wrap .bx-stage[data-bx-format="wide"][data-bx-large-text] .bx-brief-metric { display:flex; }
+#home-wrap .bx-stage[data-bx-format="wide"][data-bx-large-text] .bx-brief-metric>:is(.bx-head,.bx-brief-body,.bx-brief-value,.bx-brief-action) { width:100%; max-width:100%; margin-left:0; padding-left:0; border-left:0; }
+.sb-market-context { flex-wrap:wrap; }
+.sb-market-context>label { max-width:100%; }
+.sb-market-context>span { margin-left:auto; }
+#view.view[data-route="trade"] .tb-offer-more-actions button { min-width:0; max-width:100%; overflow-wrap:break-word; }
+#view.view[data-route="trade"] .tb-offer-more-actions .tb-offer-pin button { display:block; white-space:normal; }
+/* Larger reading sizes get room for full names instead of a squeezed ticket. */
+#view.view[data-route="trade"] .tb-offer { container:offer-finish / inline-size; }
+@container offer-finish (max-width:15rem) {
+ #view.view[data-page-system][data-route="trade"] .tb-offer:not(.tb-multi-offer)>header,
+ #view.view[data-page-system][data-route="trade"] .tb-offer.tb-multi-offer>header { grid-template-columns:minmax(0,1fr); }
+ #view.view[data-route="trade"] .tb-offer>header .tb-offer-verdict { justify-content:flex-start; max-width:100%; }
+ #view.view[data-route="trade"] .tb-offer-verdict>span { text-align:left; }
+ #view.view[data-route="trade"] .tb-offer :is(.tb-offer-flow,.tb-multi-flow) { grid-template-columns:minmax(0,1fr); }
+ #view.view[data-route="trade"] .tb-package+.tb-package { border-left:0; padding-left:0; padding-top:8px; border-top:1px solid var(--line-soft); }
+ #view.view[data-route="trade"] .tb-offer .tb-offer-footer { grid-template-columns:minmax(0,1fr) auto; }
+ #view.view[data-route="trade"] .tb-offer .tb-offer-analyze { grid-column:1/-1; }
+}

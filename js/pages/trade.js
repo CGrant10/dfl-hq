@@ -1,3 +1,4 @@
+import {mountTradeOfferMenus} from '../trade-offer-menus.js';
 import {mountTradeOfferBoard} from '../trade-offer-board.js';
 import {patchGameDay} from '../game-day-dom.js';
 import {animateUi} from '../ui-motion.js';
@@ -85,25 +86,26 @@ function offerPackage(ids,pool,label,routing=null){
 
 function offerSummary(offer,pool){
  const p=tradePerspective(offer),a=tradeAssessment(p),deltas=offer.windowDeltas||offer.weeklyDeltas||[a.weeklyA,a.weeklyB];
- return `<div class="tb-offer-summary" aria-label="Trade balance, lineup impact and risk"><dl><div><dt>Value balance</dt><dd>${Math.round(a.fairness)}%</dd></div><div><dt>You · pts/wk</dt><dd class="${deltas[0]<0?'is-down':'is-up'}">${signed(deltas[0])}</dd></div><div><dt>${offer.parties?'Group balance':'Them · pts/wk'}</dt><dd>${offer.parties?offer.fairness+'%':signed(deltas[1])}</dd></div></dl>${a.flags.length?`<span class="tb-offer-risk">${esc(a.flags.join(' · '))}</span>`:''}${p.requiredDropsA?.length?`<span class="tb-offer-risk">Drop: ${esc(p.requiredDropsA.map(id=>pool.get(String(id))?.name||id).join(', '))}</span>`:''}${offer.managerFit?.notes?.length?`<div class="tb-manager-fit">${offer.managerFit.notes.map(note=>`<span>${esc(note)}</span>`).join('')}</div>`:''}${p.openSlotsA?`<span class="tb-offer-risk">${p.openSlotsA} open roster spot${p.openSlotsA===1?'':'s'}</span>`:''}</div>`;
+ return `<div class="tb-offer-summary" aria-label="Trade balance, lineup impact and risk"><small class="tb-offer-horizon">${offer.windowWeeks?.length?`Weeks ${offer.windowWeeks[0]}–${offer.windowWeeks.at(-1)}`:'Rest of season'}</small><dl><div><dt>Value balance</dt><dd>${Math.round(a.fairness)}%</dd></div><div><dt>You · pts/wk</dt><dd class="${deltas[0]<0?'is-down':'is-up'}">${signed(deltas[0])}</dd></div><div><dt>${offer.parties?'Group balance':'Them · pts/wk'}</dt><dd>${offer.parties?offer.fairness+'%':signed(deltas[1])}</dd></div></dl>${a.flags.length?`<span class="tb-offer-risk">${esc(a.flags.join(' · '))}</span>`:''}${p.requiredDropsA?.length?`<span class="tb-offer-risk">Drop: ${esc(p.requiredDropsA.map(id=>pool.get(String(id))?.name||id).join(', '))}</span>`:''}${offer.managerFit?.notes?.length?`<div class="tb-manager-fit">${offer.managerFit.notes.map(note=>`<span>${esc(note)}</span>`).join('')}</div>`:''}${p.openSlotsA?`<span class="tb-offer-risk">${p.openSlotsA} open roster spot${p.openSlotsA===1?'':'s'}</span>`:''}</div>`;
 }
 
 function offerControls(offer,pool){
  const pins=offer.parties?'':`<details class="tb-offer-pin"><summary aria-label="Keep a player in the search">Keep</summary><div>${[['send',offer.sendA],['receive',offer.sendB]].flatMap(([side,ids])=>ids.map(id=>`<button type="button" data-tb-pin="${esc(id)}" data-pin-side="${side}">Keep ${esc(pool.get(String(id))?.name||id)}</button>`)).join('')}</div></details>`;
- return `<div class="tb-card-actions"><button type="button" data-tb-pass>Pass</button><button type="button" data-tb-save>Save</button><button type="button" data-tob-compare aria-pressed="false">Compare</button>${pins}</div>`;
+ return `<div class="tb-card-actions"><button type="button" data-tb-save>Save</button><details class="tb-offer-more"><summary aria-label="More offer actions">More <span aria-hidden="true">⌄</span></summary><div class="tb-offer-more-actions"><button type="button" data-tb-pass>Pass offer</button><button type="button" data-tob-compare aria-pressed="false">Compare</button><button type="button" data-tob-edit>Edit offer</button>${pins}</div></details></div>`;
 }
 function offerBalance(offer){
- const p=tradePerspective(offer),a=tradeAssessment(p),drops=offer.parties?(offer.requiredDrops||[]).map(ids=>ids.length):[p.requiredDropsA?.length||0,p.requiredDropsB?.length||0],window=offer.windowWeeks?.length?`Weeks ${offer.windowWeeks[0]}–${offer.windowWeeks.at(-1)}`:'Rest of season';
- return `<div class="tb-offer-balance"><span>Value balance <b>${Math.round(a.fairness)}%</b></span><span class="tb-offer-horizon">${esc(window)}</span>${a.flags.length||drops.some(Boolean)?`<span class="tb-offer-caution">${drops.some(Boolean)?offer.parties?`Roster drops: ${drops.join(' / ')}`:`Drops: you ${drops[0]} · them ${drops[1]}`:'Estimate · check risk'}</span>`:''}</div>`;
+ const p=tradePerspective(offer),drops=offer.parties?(offer.requiredDrops||[]).map(ids=>ids.length):[p.requiredDropsA?.length||0,p.requiredDropsB?.length||0];
+ return drops.some(Boolean)?`<div class="tb-offer-balance"><span class="tb-offer-caution">${offer.parties?`Roster drops: ${drops.join(' / ')}`:`Drops: you ${drops[0]} · them ${drops[1]}`}</span></div>`:'';
 }
-const offerPreview=(offer,pool)=>`<div class="tb-offer-inspect"><details class="tb-offer-preview"><summary><span>Lineup & risk<small>${esc(tradeLineupFitLabel(offer.windowDeltas||offer.weeklyDeltas||[offer.weeklyDeltaA,offer.weeklyDeltaB]))}</small></span><i aria-hidden="true"></i></summary>${offerSummary(offer,pool)}<div data-offer-lineup></div></details><button type="button" data-tob-edit>Edit</button></div>`;
+
+const offerPreview=(offer,pool)=>`<div class="tb-offer-inspect"><details class="tb-offer-preview"><summary><span>Lineup & risk<small>${esc(tradeLineupFitLabel(offer.windowDeltas||offer.weeklyDeltas||[offer.weeklyDeltaA,offer.weeklyDeltaB]))}</small></span><i aria-hidden="true"></i></summary>${offerSummary(offer,pool)}<div data-offer-lineup></div></details></div>`;
 
 function offerMarkup(offer, pool) {
   if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerBalance(offer)}${offerPreview(offer,pool)}<footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-ui-action="primary" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer></article>`;
   const assessment=tradeAssessment(offer);
   const call = (assessment.needsReview&&assessment.price.headline==='Balanced'?'Estimated balance':assessment.price.headline);
   return `<article class="tb-offer" data-offer-key="${esc(offerKey(offer))}">
-    <header><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<strong>${esc(teamName(offer.other))}</strong></small><b>${call}</b></header>
+    <header><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<strong>${esc(teamName(offer.other))}</strong></small><b class="tb-offer-verdict"><span>${esc(call)}</span><strong aria-label="${Math.round(assessment.fairness)} percent value balance">${Math.round(assessment.fairness)}%</strong></b></header>
     <div class="tb-offer-flow">${offerPackage(offer.sendA,pool,'You send')}${offerPackage(offer.sendB,pool,'You get')}</div>
     ${offerBalance(offer)}${offerPreview(offer,pool)}
     <footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-ui-action="primary" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(','))}" data-send-b="${esc(offer.sendB.join(','))}" data-weekly-delta="${Number(offer.weeklyDeltaA)||0}">Analyze <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer>
@@ -245,9 +247,9 @@ function tradeLab(team, teams, pool, shop) {
     <div class="tb-intent" aria-label="Offer type"><span>SHOW ME</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "Fair"], ["aggressive", "Aggressive"], ["steal", "Steal"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" aria-pressed="${intent === value}" aria-label="${esc(intentLabel(value,label))}" class="${intent === value ? "is-active" : ""}"><span>${label}</span><span class="tb-intent-count" data-tb-intent-count>(${intentCount(value)})</span></button>`).join("")}</div></div>
     <div data-tb-board-tools hidden></div>
     <section class="tb-layout-section" data-tb-offers tabindex="-1">
-      <h2 class="section-title" data-ui-section-head>Generated offers<span class="count">${searching?'Finding offers…':failed?'Try again':closestOffers.length?`${closestOffers.length} alternatives`:`Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}`}</span></h2>
+      <h2 class="section-title" data-ui-section-head>Generated offers<span class="count">${searching?'':failed?'Try again':closestOffers.length?`${closestOffers.length} alternatives`:`Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}`}</span></h2>
       ${tradeOpportunitiesMarkup(opportunities,{loading:searching,open:shop.scoutOpen})}<div class="tb-offers-card" aria-busy="${searching}">${shop.lastPassed?'<div class="tb-pass-status" role="status">Offer passed <button type="button" class="linkbtn" data-tb-undo-pass>Undo</button></div>':''}
-        ${searching?'<p class="tb-search-status" role="status">Finding offers…</p><div class="tb-search-placeholder" aria-hidden="true"><i></i><i></i><i></i></div>':failed?'<p class="tb-search-status" role="status">Couldn’t find offers.</p><button type="button" class="btn ghost small" data-tb-retry>Try again</button>':`
+        ${searching?'<p class="tb-search-status" role="status">Finding offers…</p><div class="tb-search-placeholder" aria-hidden="true"><div class="tb-loading-offer"><i class="tb-loading-owner"></i><div class="tb-loading-packages"><div><span><i></i><i></i></span><span><i></i><i></i></span></div><div><span><i></i><i></i></span><span><i></i><i></i></span></div></div><i class="tb-loading-footer"></i></div><div class="tb-loading-offer"><i class="tb-loading-owner"></i><div class="tb-loading-packages"><div><span><i></i><i></i></span><span><i></i><i></i></span></div><div><span><i></i><i></i></span><span><i></i><i></i></span></div></div><i class="tb-loading-footer"></i></div></div>':failed?'<p class="tb-search-status" role="status">Couldn’t find offers.</p><button type="button" class="btn ghost small" data-tb-retry>Try again</button>':`
         ${tierOffers.length || !closestOffers.length ? `<div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, true, tierOffers.length)}</div>` : ""}
         ${tierOffers.length ? "" : `<div class="ta-empty" role="status">${esc(receivePositions.length?tradeOfferEmptyCopy(intent, shop.receiveAnchors.map(id=>pool.get(String(id))?.position),allOffers):'Select a position to find offers.')}${tradeSearchRestricted(shop)?`<button type="button" class="btn ghost small" data-tb-reset-search>Reset search · all teams</button>`:""}</div>`}
         ${closestOffers.length ? `<div data-tb-closest><p class="tb-search-status">Closest available</p><div class="tb-tiers">${tierMarkup(closestTier,closestOffers,pool,true)}</div><button type="button" class="btn ghost small" data-tb-intent="${closestTier}">See all ${tierCopy[closestTier].title} offers</button></div>` : ""}
@@ -312,10 +314,10 @@ function page(data, tradeAlerts = []) {
       stopOffers?.();
       const body = view.querySelector("[data-td-body]");
       let catalog,activeOfferKey=null,offerReturn=null,pendingReturn=null,stopDesk=()=>{},stopPickers=()=>{};
-      const connection=createTradeConnection(),openPreviews=new Set();
+      const connection=createTradeConnection(),openPreviews=new Set(),offerMenus=mountTradeOfferMenus(body);
       let stopped=false;
       const current=()=>!stopped&&view.isConnected;
-      stopOffers=()=>{stopped=true;shop.intentStamp=(shop.intentStamp||0)+1;offerBoard.stop();connection.stop();stopDesk();stopPickers();catalog.stop();negotiation.stop();intentions.stop();};
+      stopOffers=()=>{stopped=true;shop.intentStamp=(shop.intentStamp||0)+1;offerBoard.stop();offerMenus.stop();connection.stop();stopDesk();stopPickers();catalog.stop();negotiation.stop();intentions.stop();};
       const intentions=createTradeIntentions({member:me,getData:()=>data,
         onChange:context=>{if(!current())return;shop.intentions=context;shop.intentionsStamp=(shop.intentionsStamp||0)+1;shop.visibleCount=OFFER_BATCH_SIZE;if(catalog)paintOffers();},
         onTarget:id=>{const mine=data.teams.find(t=>String(t.sleeper_user_id)===String(me?.sleeper_user_id));if(mine)selectedId=mine.id;shop.partnerId=id;shop.anchorPartnerId='';shop.receiveAnchors=[];shop.sendAnchors=[];shop.memberIds=[];shop.mode='offers';draw();body.querySelector('[data-tb-offers]')?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}});
@@ -384,7 +386,7 @@ function page(data, tradeAlerts = []) {
           button.setAttribute('aria-label',next.getAttribute('aria-label'));
         });
         const scoutButton=body.querySelector('[data-tb-scout]');if(scoutButton)scoutButton.textContent=shop.scoutCount==null?'Scout':`Scout (${shop.scoutCount})`;
-        if(countsOnly){offerBoard.sync();return;}
+        if(countsOnly){offerBoard.sync();offerMenus.layout();return;}
         const next=template.content.querySelector('[data-tb-offers]');
         if(preservePrevious&&next.querySelector('.tb-offers-card[aria-busy="true"]')&&old.querySelector('.tb-offer')){
           old.setAttribute('aria-busy','true');
@@ -397,7 +399,7 @@ function page(data, tradeAlerts = []) {
           const retained=previousCards.get(fresh.dataset.offerKey);
           if(retained){patchGameDay(retained,fresh.innerHTML);fresh.replaceWith(retained)}else entering.push(fresh);
         }
-        old.replaceWith(next);wireOfferTiers(next);offerBoard.sync();
+        old.replaceWith(next);wireOfferTiers(next);offerBoard.sync();offerMenus.layout();
         // Retained offers stay fully painted. Only visible new cards enter.
         for(const card of entering){const r=card.getBoundingClientRect();if(r.bottom>80&&r.top<innerHeight-60)animateUi(card,[{opacity:.65,transform:'translateY(4px)'},{opacity:1,transform:'none'}],{duration:180})}
         if(!restoreOfferPosition()){
@@ -470,7 +472,7 @@ function page(data, tradeAlerts = []) {
           shop.customOpen = open;
           saveDraft?.();
         });
-        wireOfferTiers(body);offerBoard.sync();
+        wireOfferTiers(body);offerBoard.sync();offerMenus.layout();
         if (shop.justRefreshed) {
           const stamp = shop.refreshStamp;
           setTimeout(() => {

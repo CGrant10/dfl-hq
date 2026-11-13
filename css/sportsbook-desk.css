@@ -5,7 +5,7 @@
 }
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-masthead { align-items:flex-start; padding:0 0 8px; }
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-tabs>button:is([aria-selected="true"],.is-active) { color:var(--text); }
-#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap :is(.sb-tabs,.page-activity-tabs)>.dfl-selection-rail { background:var(--action-fill)!important; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap :is(.sb-tabs,.page-activity-tabs)>.dfl-selection-rail { background:var(--accent)!important; }
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-fantasy-slate .sb-line-columns { display:none; }
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap .sb-fantasy-slate .sb-board-head { padding-bottom:10px; border-bottom:1px solid var(--line-soft); }
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap [data-fantasy-market] { container-type:inline-size; padding-block:12px; }

@@ -11,6 +11,7 @@ const receiptFixtures=[makeReceipt(receiptTx),makeReceipt({...receiptTx,transact
 const source=readFileSync(new URL('../js/pages/trade.js',import.meta.url),'utf8');
 const production=source.slice(source.indexOf('const teamName'),source.indexOf('export async function render('));
 const imports=`
+import {mountTradeOfferMenus} from "/js/trade-offer-menus.js";
 import {mountTradeOfferBoard} from "/js/trade-offer-board.js";
 import {patchGameDay} from "/js/game-day-dom.js";
 import {animateUi} from "/js/ui-motion.js";

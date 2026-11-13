@@ -144,7 +144,7 @@ export async function render(view) {
       <div data-dfl-host></div>
       ${member.notes ? `<div class="card"><h3 class="card-heading">Notes</h3>
                           <div class="card-body">${esc(member.notes)}</div></div>` : ""}
-      ${careerCard(careerStats, seasons.length)}
+      ${careerCard(careerStats, seasons.length, !!dfl)}
       ${dfl ? cabinetCard(dfl) : ""}
       ${dfl && loreName ? extremesCard(dfl, loreName, currentTeam) : ""}
       ${othersCard(members, member)}
@@ -280,7 +280,7 @@ function careerTotals(seasons, leagues, userId) {
 
 /* One answer first: the all-time record. The rest are supporting facts, not
    six equal boxes competing for the same glance. */
-function careerCard(c, seasonCount) {
+function careerCard(c, seasonCount, awardsInCabinet=false) {
   if (!seasonCount) {
     return `<div class="card"><div class="card-title">Career</div>${empty(
       "No Sleeper history linked.")}</div>`;
@@ -297,9 +297,8 @@ function careerCard(c, seasonCount) {
           <strong>${c.wins}<i>–</i>${c.losses}${c.ties ? `<i>–</i>${c.ties}` : ""}</strong>
           <small>${seasonCount} season${seasonCount === 1 ? "" : "s"} · ${(c.winPct * 100).toFixed(1)}% win rate</small>
         </div>
-        <div class="career-outcomes" aria-label="Career accomplishments">
-          <div><strong>${c.titles}</strong><span>Titles</span></div>
-          <div><strong>${c.runnerUps}</strong><span>Runner-up</span></div>
+        <div class="career-outcomes${awardsInCabinet?' is-playoffs':''}" aria-label="Career accomplishments">
+          ${awardsInCabinet?'':`<div><strong>${c.titles}</strong><span>Titles</span></div><div><strong>${c.runnerUps}</strong><span>Runner-up</span></div>`}
           <div><strong>${c.playoffs}</strong><span>Playoffs</span></div>
         </div>
       </div>
@@ -625,7 +624,7 @@ function sameName(a, b) {
 function cabinetCard(c) {
   if (!c.titles.length && !c.seconds.length) return "";
   return `
-    <section class="cabinet">
+    <section class="cabinet" aria-label="Trophy cabinet">
       ${c.titles.length ? `
         <div class="cab-row">
           <svg class="ico-sm" aria-hidden="true"><use href="#i-trophy"></use></svg>

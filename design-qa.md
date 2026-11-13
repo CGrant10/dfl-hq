@@ -1,3 +1,49 @@
+# Daily desks and shared finish — 1.572.0
+
+Trade suggestions keep every player visible, show the numeric value balance in
+one header and give Analyze the primary action. Save remains directly available;
+Pass, Compare, Edit and Keep live in a native More disclosure. Existing grading,
+required roster drops, lineup/risk details and three-team destinations are
+preserved. The menu measures available header/nav space on opening and resize,
+supports outside dismissal and Escape/focus return, and removes its listeners
+when leaving. Larger text stacks the owner/verdict and player packages instead
+of squeezing full names into narrow columns. Search uses static offer-shaped
+placeholders and a single honest status, with no simulated stats or extra reads.
+
+Sportsbook keeps Board/My bets/Pick’em; its second three-tab row becomes a labeled
+native market selector with actual week/season beside it. Current lines stay
+prominent and early lines remain collapsed. Profile shows title/runner-up history
+once in the trophy cabinet, retaining Career's fallback counts when lore is
+unavailable. Shared secondary buttons/close controls use the current type, 44px
+targets, Medicine Wheel tokens and a consistent focus/pressed treatment. Book and
+NFL selected-tab rails use the common accent. NFL remains inside Clubhouse with
+the shared bottom navigation available.
+
+Broadcast news, metrics, rivalry series and results have distinct compositions:
+full-width news, true split metric/value columns, visible Series context and a
+quiet winner accent. Existing daily/champion/Chip Eater imagery, destinations,
+swipes and autoplay stay intact. Daily league-wide banter includes three refreshed
+DFL-specific sayings. Standard sheets use a shorter travel with a 240ms entrance,
+200ms exit and 180ms snap-back; connected player portrait choreography and reduced
+motion remain intact. No font, artwork, dependencies or backend changes added.
+
+Evidence under /workspace/dfl-premium-1572/: actual-last/ compiled public-league
+reads in both themes at 390px; large-last/ at 320px/200% text; board-last/ offer
+cards/menus/editor/compare/three-team routing; connected-final/ Pass/Undo/Keep/Save;
+book/ claim/slip/market controls; sheets/ drag/keyboard/motion; home/ broadcast and
+nfl/ inline navigation. Screenshots inspected. Provider mutations were blocked or
+mocked, including the Sportsbook review wallet. No league/account writes.
+
+Validation: pnpm check passes 2,547 tests in 307 files, release/theme/type/name
+checks and the application build. The 124-check offer-board and 116-check connected suites pass. Relevant browser
+suites cover offer actions,
+player swaps, destinations, focus return, enlarged text, phone edges, contrast,
+rapid interactions, cleanup and motion-off. Broadcast passes 90 standard and 56
+enlarged-text layouts, one-pass autoplay and manual replay. Final theme/build
+checks pass after the enlarged-text refinement. The 88-module bundle retains
+three startup/four Home modules and one shared stylesheet request. Physical-device
+frame pacing and screen-reader speech remain unmeasured.
+
 # NFL Live with app navigation — 1.571.0
 
 The current user preference supersedes the earlier full-screen presentation. NFL
