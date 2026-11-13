@@ -1,3 +1,37 @@
+# NFL Live with app navigation — 1.571.0
+
+The current user preference supersedes the earlier full-screen presentation. NFL
+Live is now an inline Clubhouse section: the shared top bar, bottom navigation
+and Clubhouse section tabs stay available. No portal, background inerting or body
+scroll lock is used. The dedicated full-screen exit is absent from this surface.
+
+Matchups, Clips and NFL Live switch in place and retain the Clubhouse controller.
+Entering NFL aligns its section navigation; leaving a scrolled NFL feed starts the
+next section at the top. Week selection, direct NFL/play/video links, game swipes,
+Live/Stats, player cards and scoring data remain on the existing controllers.
+
+The Clubhouse section tabs, NFL game rail and Live/Stats pin below the shared
+header in a measured stack. The generic compact context dock yields to NFL's
+controls, avoiding an extra header. The redundant NFL heading is screen-reader
+only; the league recap action stays on the other Clubhouse sections. All control
+surfaces use the current Medicine Wheel tokens and existing Inter/NFL imagery.
+
+Evidence: /workspace/dfl-scores-1571/actual-verified/, large-verified/ and landscape/.
+Compiled real-data checks pass in Light/Dark at 390×844, 320×844 with 200% text,
+and 844×390. They verify usable Home navigation from a scrolled feed, inline slot
+ownership, same-node section switching, nonoverlapping pinned controls, contrast,
+no horizontal overflow and fresh direct NFL entry. Screenshots were inspected.
+The 353-check Clubhouse and 242-check standalone desk suites pass. pnpm check
+passes 2,547 tests / 307 files plus release/theme/type/name/build checks. The final
+section-scroll adjustment and compiled build pass the actual-final/ real-data
+checks in both themes, including starting the next section at scroll position 0.
+Final compiled screenshots were inspected before merging.
+
+The 88-module build retains three startup/four Home modules and one shared CSS
+request. Lazy NFL data, paused hidden-tab polling, projection caches and finite
+field motion remain. Physical-device frame pacing and screen-reader speech
+remain unmeasured.
+
 # Full-screen NFL return — 1.570.0
 
 The full-screen Live/Stats view stays intact. Its previously icon-only Back control

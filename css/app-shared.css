@@ -10933,3 +10933,12 @@ html[data-ui-motion="off"] .nfl-scores-segments::before { transition:none; }
  :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-scores-back { margin-right:0; }
  :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-game-rail { flex-basis:100%; }
 }
+
+/* NFL is a Clubhouse section; the app header and bottom navigation stay usable. */
+#view[data-route="clubhouse"] .clubhouse-page:has(#clubhouse-panel-nfl:not([hidden])) .clubhouse-tab-shell { position:sticky; top:var(--dfl-scroll-top,var(--topbar-h,44px)); z-index:8; background:var(--bg); }
+#view[data-route="clubhouse"] .clubhouse-page:has(#clubhouse-panel-nfl:not([hidden])) .clubhouse-tabs { margin-bottom:0; }
+#view[data-route="clubhouse"] .clubhouse-page:has(#clubhouse-panel-nfl:not([hidden])) [data-clubhouse-share] { display:none; }
+#view[data-route="clubhouse"] #clubhouse-panel-nfl>.clubhouse-section { overflow:visible; }
+#view [data-nfl-clubhouse] { min-width:0; padding-bottom:16px; }
+#view [data-nfl-clubhouse] .nfl-center-tools { position:sticky; top:calc(var(--dfl-scroll-top,var(--topbar-h,44px)) + var(--nfl-section-tabs-height,45px)); z-index:7; }
+#view [data-nfl-clubhouse] .nfl-center-modes { top:calc(var(--dfl-scroll-top,var(--topbar-h,44px)) + var(--nfl-section-tabs-height,45px) + var(--nfl-tools-height,48px)); z-index:6; }

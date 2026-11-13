@@ -74,7 +74,7 @@ with sync_playwright() as p:
    page.evaluate('''async mode=>{
     (await import('/js/theme.js')).pinMode(mode);const m=await import('/js/members.js');m.selectMember(f.members[0]);
     const clips=await(await fetch('/tools/fixtures/home-highlight-clips.json')).json();f.clips=[{...clips[0],play_id:'401873011981'},clips[1],{...clips[0],id:'990001',game_id:'401900001',headline:'Jayden Daniels runs for a 30-yard touchdown',game_label:'WAS · NYG',source_url:'https://www.espn.com/video/clip/_/id/990001'}];
-    const directory=await(await fetch('/tools/fixtures/nfl-game-center-directory.json')).json();for(const [id,p]of Object.entries(directory))if(!Object.values(f.catalog).some(q=>q.n===p.n&&q.t===p.t))f.catalog[id]=p;f.page=await import('/js/pages/clubhouse.js');document.getElementById('view').dataset.pulseSystem='1';document.getElementById('view').dataset.pageSystem='1';await f.page.render(document.getElementById('view'));f.stopPageSwipe=(await import('/js/ui-motion.js')).mountPageSwipeTabs(document.getElementById('view'));(await import('/js/player-card-actions.js')).mountPlayerCards();window.addEventListener('hashchange',()=>{const tab=new URLSearchParams(location.hash.split('?')[1]||'').get('tab');if(location.hash.startsWith('#/clubhouse')&&(tab==='nfl'||document.querySelector('[data-nfl-fullscreen]'))&&document.querySelector('#clubhouse-tab-'+tab)?.getAttribute('aria-selected')!=='true'){f.page.leave();void f.page.render(document.getElementById('view'))}});
+    const directory=await(await fetch('/tools/fixtures/nfl-game-center-directory.json')).json();for(const [id,p]of Object.entries(directory))if(!Object.values(f.catalog).some(q=>q.n===p.n&&q.t===p.t))f.catalog[id]=p;f.page=await import('/js/pages/clubhouse.js');document.getElementById('view').dataset.pulseSystem='1';document.getElementById('view').dataset.pageSystem='1';await f.page.render(document.getElementById('view'));f.stopPageSwipe=(await import('/js/ui-motion.js')).mountPageSwipeTabs(document.getElementById('view'));(await import('/js/player-card-actions.js')).mountPlayerCards();window.addEventListener('hashchange',()=>{const tab=new URLSearchParams(location.hash.split('?')[1]||'').get('tab');if(location.hash.startsWith('#/clubhouse')&&tab==='nfl'&&document.querySelector('#clubhouse-tab-'+tab)?.getAttribute('aria-selected')!=='true'){f.page.leave();void f.page.render(document.getElementById('view'))}});
    }''',mode)
    tag=f'{width}px {mode}';page.wait_for_selector('.gd-lineup-comparison',timeout=20000)
    # Recorded histories vary by matchup. Exercise a populated momentum chart
@@ -237,6 +237,7 @@ with sync_playwright() as p:
    page.locator('[data-home-reel-game]').select_option('');page.locator('[data-home-reel-search]').fill('Metcalf');check(tag+' grid search finds the requested player',page.locator('[data-home-reel-clip]').count()==1);page.locator('[data-home-reel-search]').fill('')
    page.locator('[data-clubhouse-nfl-open="plays"]').click();page.wait_for_selector('[data-nfl-center-rail] [data-replay-game="401873011"]',state='attached');page.wait_for_selector('.nfl-center-plays li',timeout=15000)
    check(tag+' NFL view removes unrelated league matchup chrome',page.locator('.clubhouse-duel-host').is_hidden() and page.locator('[data-clubhouse-scoreboard]').is_hidden())
+   check(tag+' NFL stays inside Clubhouse with usable section navigation',page.locator('#clubhouse-panel-nfl [data-clubhouse-nfl-center]').count()==1 and page.locator('[data-nfl-fullscreen],[data-nfl-close]').count()==0 and not page.locator('.clubhouse-page').evaluate('e=>e.inert') and page.locator('#clubhouse-tab-matchups').is_visible())
    check(tag+' NFL game center shows the full play-by-play',page.locator('.nfl-center-plays li').count()>100)
    check(tag+' selected NFL game is fully readable',page.locator('[data-nfl-center-rail] [aria-pressed="true"]').evaluate('e=>e.scrollWidth<=e.clientWidth+1&&e.getBoundingClientRect().height>=44'))
    page.locator('[data-nfl-center-filter]').select_option('big');check(tag+' big plays show full names and a compact emphasized result',page.locator('.nfl-center-plays [data-play-kind="big-play"]').count()>0 and page.locator('.nfl-center-plays [data-play-kind="big-play"] .nfl-play-headline').evaluate_all('es=>es.length>0&&es.every(e=>parseFloat(getComputedStyle(e).fontSize)===14)'))
@@ -295,7 +296,7 @@ with sync_playwright() as p:
    page.locator('[data-reel-mode="plays"]').click();page.wait_for_timeout(360)
    check(tag+' returning restores the exact play and its keyboard focus',replay_play.evaluate('e=>e===document.activeElement') and abs(replay_play.bounding_box()['y']-replay_top)<3)
    page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open')
-   page.locator('[data-nfl-close]').click();page.wait_for_selector('#clubhouse-tab-matchups[aria-selected="true"]');page.locator('#clubhouse-tab-leaders').click();page.wait_for_selector('.gd-league-board .gameday-player')
+   page.locator('#clubhouse-tab-matchups').click();page.wait_for_selector('#clubhouse-tab-matchups[aria-selected="true"]');page.locator('#clubhouse-tab-leaders').click();page.wait_for_selector('.gd-league-board .gameday-player')
    page.evaluate('f.leaderCanvas=document.querySelector("[data-clubhouse-leaders] .gd-vfx-canvas")')
    check(tag+' Leaders has its connected fire and ice surface',page.evaluate('!!f.leaderCanvas?.isConnected'))
    check(tag+' Leaders moved into Clubhouse with hot and cold filters',page.locator('[data-league-filter]').count()==3 and page.locator('[data-league-bench]').count()==1)
@@ -333,7 +334,7 @@ with sync_playwright() as p:
    page.evaluate('f.page.leave()')
    page.evaluate("async()=>{location.hash='#/clubhouse?season=2026&week=7&tab=highlights&matchup=1&moment=nfl:401873011:401873011981:1&nflGame=401873011&clip=999999';await f.page.render(document.getElementById('view'))}")
    page.wait_for_selector('#clubhouse-tab-nfl[aria-selected="true"]');page.wait_for_selector('.nfl-center-plays li')
-   check(tag+' missing video deep link falls back to the game’s play-by-play',page.locator('.home-reel-player[open]').count()==0 and 'no longer available' in page.locator('[data-nfl-fullscreen]').inner_text() and page.locator('[data-clubhouse-nfl-center][data-nfl-selected-game]').get_attribute('data-nfl-selected-game')=='401873011')
+   check(tag+' missing video deep link falls back to the game’s play-by-play',page.locator('.home-reel-player[open]').count()==0 and 'no longer available' in page.locator('[data-clubhouse-nfl-center]').inner_text() and page.locator('[data-clubhouse-nfl-center][data-nfl-selected-game]').get_attribute('data-nfl-selected-game')=='401873011')
    page.evaluate('f.page.leave()')
    if width==390 and mode=='dark':
     page.evaluate("async()=>{location.hash='#/clubhouse?season=2026&week=7&tab=highlights&player=3&query=DK%20Metcalf';await f.page.render(document.getElementById('view'))}")
