@@ -32,6 +32,7 @@ with sync_playwright() as p:
    c.route('**/*',lambda r:r.continue_()if r.request.url.startswith(url) else r.fulfill(status=200,content_type='image/png',body=(ROOT/'tools/fixtures/player-portrait.png').read_bytes())if'sleepercdn.com'in r.request.url or'a.espncdn.com'in r.request.url else r.abort())
    pg.goto(url+'activity-review.html#/notifications');pg.wait_for_function('window.ready===true');pg.evaluate('mode=>setTheme(mode)',mode);pg.evaluate('document.fonts.ready');pg.wait_for_timeout(100)
    assert pg.locator('.activity-item').count()==6
+   assert pg.locator('.activity-filters>.dfl-selection-rail').evaluate('e=>{const probe=document.createElement("span");probe.style.color="var(--accent)";e.parentElement.append(probe);const accent=getComputedStyle(probe).color;probe.remove();return getComputedStyle(e).backgroundColor===accent}'),'Activity selection uses the shared theme accent'
    pg.wait_for_timeout(150)
    assert pg.locator('.activity-card').evaluate_all('rows=>rows.every(e=>[...e.querySelectorAll(".dfl-player-portrait img")].every(img=>{const a=img.getBoundingClientRect(),b=img.parentElement.getBoundingClientRect();return a.width<=b.width+1&&a.height<=b.height+1&&a.left>=b.left-1&&a.right<=b.right+1}))'),'Portrait escaped its frame'
    assert not pg.evaluate('document.documentElement.scrollWidth>innerWidth+1')
@@ -49,6 +50,8 @@ with sync_playwright() as p:
    assert '0 SIN' in pg.locator('[data-activity-id="5"]').inner_text()
    pg.locator('[data-activity-settings]').click();sheet=pg.locator('.notification-settings-sheet');sheet.wait_for(state='visible');pg.wait_for_timeout(250)
    assert pg.locator('.notify-categories input:checked').count()==2
+   assert pg.locator('.notify-categories label').evaluate_all('es=>es.length>0&&es.every(e=>e.getBoundingClientRect().height>=44&&e.scrollWidth<=e.clientWidth+1)'),'Device preference rows fit with full touch targets'
+   assert sheet.locator('[data-settings-close]').evaluate('e=>e.getBoundingClientRect().height>=44'),'Settings close keeps its full touch target'
    bounds=sheet.bounding_box();assert bounds['x']>=-1 and bounds['x']+bounds['width']<=width+1 and bounds['y']>=0 and bounds['y']+bounds['height']<=845,bounds
    if width==390:pg.screenshot(path=str(OUT/f'{mode}-settings.png'))
    # Escape is one press, also after rapid close/reopen and with text inputs.

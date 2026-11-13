@@ -53,4 +53,4 @@ html[data-ui-motion="off"] .archive-match-tail>.ico-sm { transition:none; }
 @media(min-width:700px) { .archive-week-desk { max-width:760px; } }
 
 #view.view[data-page-system][data-route="history"] #hist-tabs .dfl-selection-rail,
-#view.view[data-page-system][data-route="history"] .archive-week-strip .dfl-selection-rail { background:var(--action-fill)!important; }
+#view.view[data-page-system][data-route="history"] .archive-week-strip .dfl-selection-rail { background:var(--accent)!important; }
