@@ -1,3 +1,20 @@
+## 1.575.0 — returning player score pop
+
+Positive points gained since last viewing a player trigger one 560ms grow and
+settle of decorative score digits. The recorded number and GPU thermal anchor
+stay fixed; the separate delta uses the existing phase/projection slot so it
+cannot overlap weekly stats in narrow matchup rows. Corrections remain subdued.
+Existing positive/correction/thermal colors and Medicine Wheel Light/Dark tokens
+are unchanged. No palette, scoring rules, image assets or background polling.
+
+Reviewed 320/390px Light/Dark actual Clubhouse screenshots under
+/workspace/dfl-grow-1575/clubhouse-final/ and isolated return/NFL score captures
+in points-verified/. Checks cover first visits, stale responses, scoped history,
+settling, refreshed totals during the pop, teardown, motion off and Reduced
+Motion. Real thermal and scrolling checks are under thermal-verified/ and scroll/.
+Physical-device pacing, battery measurements and screen-reader speech are not
+verified. Browser provider writes are blocked/mocked.
+
 ## 1.574.0 — crisp fire/ice scores and portrait accents
 
 Existing warm/cold inks remain semantic status colors in Medicine Wheel
