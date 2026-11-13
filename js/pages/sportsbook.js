@@ -205,7 +205,7 @@ export async function render(view){
   const refreshSlip=wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
   rememberView(view,me.id);
   wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
-  wireMarketActivities(view);wirePageDisclosures(view);wireBookTabs(view,me.id);wireClaim(view,active);wireTicketActions(view,marketMap,outcomeMap,me,()=>view._refreshFantasy?.({paint:false}));wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);revealSportsbookTicket(view);
+  wireMarketActivities(view,leagueWeek);wirePageDisclosures(view);wireBookTabs(view,me.id);wireClaim(view,active);wireTicketActions(view,marketMap,outcomeMap,me,()=>view._refreshFantasy?.({paint:false}));wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);revealSportsbookTicket(view);
   if(canBook)wireCommissioner(view);
   const noticeSettlements=createSettlementTracker(bets,globalThis.localStorage,me.id),recentSettled=new Set();
   wallet ||= {balance:0};
@@ -299,18 +299,18 @@ export async function render(view){
   }});
 }
 
-function wireMarketActivities(view){
+function wireMarketActivities(view,leagueWeek={}){
  const host=view.querySelector('#sb-markets');if(!host)return;
  const sections=[...host.children].filter(el=>!el.matches('.sb-empty'));
  const groups=[['fantasy','Matchups'],['props','Player props'],['other','NFL lines']];
- const nav=document.createElement('div');nav.className='page-activity-tabs';nav.setAttribute('role','tablist');nav.setAttribute('aria-label','Market type');
- nav.innerHTML=groups.map(([key,label])=>`<button type="button" role="tab" id="sb-market-tab-${key}" aria-controls="sb-market-panel-${key}" data-market-activity="${key}">${label}</button>`).join('');host.prepend(nav);
- const panels=new Map(groups.map(([key])=>{const panel=document.createElement('div');panel.id=`sb-market-panel-${key}`;panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',`sb-market-tab-${key}`);host.append(panel);return[key,panel]}));
+ const nav=document.createElement('div');nav.className='sb-market-context';
+ nav.innerHTML=`<label for="sb-market-type"><span class="sr-only">Market type</span><select id="sb-market-type" aria-controls="${groups.map(([key])=>'sb-market-panel-'+key).join(' ')}">${groups.map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select></label><span>${esc(leagueWeek.week&&leagueWeek.season?`Week ${leagueWeek.week} · ${leagueWeek.season}`:sportsbookWeekCaption(leagueWeek))}</span>`;host.prepend(nav);
+ const panels=new Map(groups.map(([key,label])=>{const panel=document.createElement('div');panel.id=`sb-market-panel-${key}`;panel.setAttribute('role','region');panel.setAttribute('aria-label',label);host.append(panel);return[key,panel]}));
  for(const section of sections){const heading=section.querySelector('h2')?.textContent?.toLowerCase()||section.querySelector('summary')?.textContent?.toLowerCase()||'';const key=section.matches('.sb-props')?'props':section.matches('.sb-fantasy-slate')||heading.includes('fantasy')||heading.includes('early lines')?'fantasy':'other';panels.get(key).append(section)}
  for(const [key,panel]of panels)if(!panel.children.length)panel.innerHTML=`<p class="sb-empty">No ${key==='fantasy'?'fantasy matchups':key==='props'?'player props':'additional lines'} available right now.</p>`;
- const tabs=[...nav.querySelectorAll('button')];
- const activate=(key,focus=false)=>{for(const tab of tabs){const on=tab.dataset.marketActivity===key;tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;panels.get(tab.dataset.marketActivity).hidden=!on}if(focus)tabs.find(t=>t.dataset.marketActivity===key).focus();savePageChoice('sportsbook-markets',key)};
- for(const [i,tab]of tabs.entries()){tab.addEventListener('click',()=>activate(tab.dataset.marketActivity));tab.addEventListener('keydown',event=>{let next;if(event.key==='Home')next=0;else if(event.key==='End')next=tabs.length-1;else if(event.key==='ArrowRight')next=(i+1)%tabs.length;else if(event.key==='ArrowLeft')next=(i+tabs.length-1)%tabs.length;else return;event.preventDefault();activate(tabs[next].dataset.marketActivity,true)})}
+ const select=nav.querySelector('select');
+ const activate=key=>{select.value=key;for(const [name,panel]of panels)panel.hidden=name!==key;savePageChoice('sportsbook-markets',key)};
+ select.addEventListener('change',()=>activate(select.value));
  const player=new URLSearchParams(location.hash.split('?')[1]||'').get('player');activate(player?'props':readPageChoice('sportsbook-markets',groups.map(g=>g[0]),'fantasy'));
  for(const [i,section]of [...view.querySelectorAll('.sb-secondary,details.card')].entries())section.dataset.pageDetail=`sportsbook-${section.querySelector('summary')?.textContent.trim().toLowerCase().replace(/[^a-z]+/g,'-')||i}`;
 }

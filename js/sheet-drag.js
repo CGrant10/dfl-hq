@@ -4,7 +4,7 @@ export function sheetShouldClose({distance=0,velocity=0,height=0,cancelled=false
   return !cancelled && (distance>=Math.max(60,Math.min(120,height*.2)) || distance>=36&&velocity>=.65);
 }
 export function enterSheet(dialog,{motion=true}={}) {
-  return animateUi(dialog,[{opacity:0,transform:`translateY(${innerWidth<=600?24:10}px)`},{opacity:1,transform:'none'}],{duration:220,motion});
+  return animateUi(dialog,[{opacity:0,transform:`translateY(${innerWidth<=600?16:8}px)`},{opacity:1,transform:'none'}],{duration:240,easing:'cubic-bezier(.16,1,.3,1)',motion});
 }
 export function exitSheet(dialog,complete,{connected=false,...options}={}) {
   const viewport=window.visualViewport;
@@ -16,7 +16,7 @@ export function exitSheet(dialog,complete,{connected=false,...options}={}) {
   connected=connected&&!dialog.dataset.sheetMoving;
   if(connected)dialog.dataset.sheetConnectedClose='true';else delete dialog.dataset.sheetConnectedClose;
   const transform=connected?`translateY(${offset}px)`:innerWidth<=600?`translateY(${Math.max(24,edge-dialog.getBoundingClientRect().top+offset+24)}px)`:'translateY(12px)';
-  exitUi(dialog,complete,{...options,transform,duration:connected?280:220});
+  exitUi(dialog,complete,{...options,transform,duration:connected?280:200});
 }
 
 // Only the fixed header owns the gesture; the body and form stay native.
@@ -47,7 +47,7 @@ export function mountSheetDrag(dialog,{handle,canDismiss=()=>true,dismiss,onStar
     if(canDismiss()&&sheetShouldClose({distance,velocity,height:current.height,cancelled})) {dismiss();return;}
     const transform=getComputedStyle(dialog).transform,dim=getComputedStyle(dialog).getPropertyValue('--sheet-dim').trim()||'1';
     dialog.style.transform='none';dialog.style.setProperty('--sheet-dim','1');
-    const animation=animateUi(dialog,[{transform,'--sheet-dim':dim},{transform:'none','--sheet-dim':'1'}],{duration:200});
+    const animation=animateUi(dialog,[{transform,'--sheet-dim':dim},{transform:'none','--sheet-dim':'1'}],{duration:180});
     if(!animation){clean();return;}
     returning=animation;
     const done=()=>{if(returning===animation){returning=null;clean();}};

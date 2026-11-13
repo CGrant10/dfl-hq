@@ -68,8 +68,8 @@ with sync_playwright() as p:
  page.locator('[data-sb-view="tickets"]').click();assert page.locator('#sb-tickets').is_visible() and not page.locator('#sb-markets').is_visible()
  page.keyboard.press('ArrowRight');assert page.locator('#sb-pickem-panel').is_visible() and not page.locator('.sb-book-extras').is_visible()
  page.keyboard.press('Home');assert page.locator('#sb-markets').is_visible() and not page.locator('#sb-pickem-panel').is_visible()
- page.locator('[data-market-activity="props"]').click();assert page.locator('#sb-market-panel-props').is_visible()
- page.locator('[data-market-activity="fantasy"]').click()
+ page.locator('#sb-market-type').select_option('props');assert page.locator('#sb-market-panel-props').is_visible()
+ page.locator('#sb-market-type').select_option('fantasy')
  assert page.locator('#sb-claim').is_visible() and page.locator('.sb-wallet-options,.sb-wallet-actions').count()==0
  page.locator('[data-bet-outcome]').first.click();page.locator('[data-slip-open]').click();page.wait_for_selector('.sb-slip[open]');assert page.locator('.sb-slip-pick').count()==1
  page.locator('.sb-slip [data-close]').click();page.wait_for_function('!document.querySelector(".sb-slip[open]")')
@@ -77,7 +77,7 @@ with sync_playwright() as p:
  for mode in ['light','dark']:
   page.evaluate("async mode=>(await import('/js/theme.js')).pinMode(mode)",mode)
   for width in [320,390,430]:
-   page.set_viewport_size({'width':width,'height':844});page.locator('[data-sb-view="markets"]').click();page.locator('[data-market-activity="props"]').click()
+   page.set_viewport_size({'width':width,'height':844});page.locator('[data-sb-view="markets"]').click();page.locator('#sb-market-type').select_option('props')
    group=page.locator('[data-prop-game]').first
    if not group.evaluate('e=>e.open'):group.locator('summary').click()
    page.wait_for_selector('.sb-player-props');page.wait_for_timeout(300)
@@ -99,7 +99,7 @@ with sync_playwright() as p:
    page.locator('[data-pickem-team]').first.click();assert page.locator('[data-pickem-team]').first.get_attribute('aria-pressed')=='true'
    assert page.locator('.sb-pickem-sides button').evaluate_all('es=>es.every(e=>{const r=e.getBoundingClientRect();return r.width>=44&&r.height>=44&&r.left>=0&&r.right<=innerWidth&&e.scrollWidth<=e.clientWidth+1})'),(mode,width,'Pick’em geometry')
    page.screenshot(path=str(OUT/f'{mode}-{width}-pickem.png'))
-   page.locator('[data-sb-view="markets"]').click();page.locator('[data-market-activity="fantasy"]').click();page.wait_for_timeout(300)
+   page.locator('[data-sb-view="markets"]').click();page.locator('#sb-market-type').select_option('fantasy');page.wait_for_timeout(300)
    page.screenshot(path=str(OUT/f'{mode}-{width}-board-finish.png'))
    prices=page.locator('.sb-desk-outcomes').evaluate_all('es=>es.map(e=>{const choices=[...e.querySelectorAll(".sb-outcome")],a=choices[0].querySelector(".sb-price").getBoundingClientRect(),b=choices[1].querySelector(".sb-price").getBoundingClientRect();return {aligned:Math.abs(a.top-b.top)<1,equal:Math.abs(a.width-b.width)<1,targets:choices.every(c=>{const p=c.querySelector(".sb-price").getBoundingClientRect(),r=c.getBoundingClientRect();return p.width>=44&&p.height>=44&&Math.abs(p.left-r.left)<1&&Math.abs(p.right-r.right)<1}),names:choices.every(c=>c.querySelector(".sb-outcome-name").scrollWidth<=c.querySelector(".sb-outcome-name").clientWidth+1)}})')
    assert prices and all(p['aligned'] and p['equal'] and p['targets'] and p['names'] for p in prices),(mode,width,'paired board alignment and complete names',prices)

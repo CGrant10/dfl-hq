@@ -78,10 +78,7 @@ function recordStrip(m) {
   const cells = [];
   const debut = m.joined_year || m.first_season;
   if (debut) cells.push(`<div><b>${esc(debut)}</b><small>Debut</small></div>`);
-  if (Number(m.championships) > 0) {
-    cells.push(`<div class="is-gold"><b>${icon("trophy", { size: 15 })}${esc(m.championships)}</b>
-      <small>Championship${Number(m.championships) === 1 ? "" : "s"}</small></div>`);
-  }
+
   return `<div class="ph-record">${cells.join("")}<div data-chip-slot></div></div>`;
 }
 

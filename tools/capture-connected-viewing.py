@@ -25,6 +25,10 @@ class Handler(SimpleHTTPRequestHandler):
 server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start();base=f'http://127.0.0.1:{server.server_port}';checks=[]
 def check(name,ok):
  checks.append({'check':name,'pass':bool(ok)});(OUT/'checks.json').write_text(json.dumps(checks,indent=2));assert ok,name;print('PASS '+name,flush=True)
+def click_offer_action(locator):
+ menu=locator.locator('xpath=ancestor::details[contains(@class,"tb-offer-more")]')
+ if menu.count() and menu.get_attribute('open') is None:menu.locator(':scope > summary').click()
+ locator.click()
 with sync_playwright() as p:
  browser=p.chromium.launch(executable_path=os.environ.get('DFL_REVIEW_CHROMIUM','/usr/bin/chromium'),headless=True,args=['--no-sandbox','--disable-dev-shm-usage'])
  for width in [320,390,768]:
@@ -73,11 +77,11 @@ with sync_playwright() as p:
    pg.screenshot(path=str(OUT/f'{width}-{theme}-postgame.png'));pg.evaluate('f.recap.stop()')
    pg.goto(base+'/trade-review/index.html#/trade');pg.wait_for_function('window.reviewReady===true');pg.evaluate('''async theme=>{(await import('/js/theme.js')).pinMode(theme)}''',theme)
    pg.evaluate("history.replaceState({dflRouteVisit:{id:'trade-visit',index:0}},'');reviewLeave();renderReview()");pg.wait_for_selector('.tb-offer');pg.wait_for_function('document.querySelector(".tb-intent-options [data-tb-intent-count]").textContent!=="(…)"')
-   first=pg.locator('.tb-offer').first;key=first.get_attribute('data-offer-key');pg.evaluate('(key)=>window.passedKey=key',key);first.locator('[data-tb-pass]').click()
+   first=pg.locator('.tb-offer').first;key=first.get_attribute('data-offer-key');pg.evaluate('(key)=>window.passedKey=key',key);click_offer_action(first.locator('[data-tb-pass]'))
    check(tag+' Pass removes that exact package from this search',pg.locator('.tb-offer').evaluate_all('es=>es.every(e=>e.dataset.offerKey!==window.passedKey)'))
    pg.locator('[data-tb-undo-pass]').click();check(tag+' Undo restores the exact package',pg.locator('.tb-offer').evaluate_all('es=>es.some(e=>e.dataset.offerKey===window.passedKey)'))
    pg.locator('.tb-offer [data-tb-save]').first.click();check(tag+' saves without opening a giant trade ticket',pg.locator('[data-td-load-proposal]').count()==1 and pg.locator('.td-custom').evaluate('e=>!e.open'))
-   first=pg.locator('.tb-offer:not(.tb-multi-offer)').first;first.locator('.tb-offer-pin summary').click();pin=first.locator('[data-tb-pin]').last;pid=pin.get_attribute('data-tb-pin');side=pin.get_attribute('data-pin-side');pg.evaluate('([id,side])=>{window.pinnedId=id;window.pinSide=side}',[pid,side]);pin.click();pg.wait_for_function('document.querySelector(".tb-offers-card")?.getAttribute("aria-busy")==="false"')
+   first=pg.locator('.tb-offer:not(.tb-multi-offer)').first;click_offer_action(first.locator('.tb-offer-pin summary'));pin=first.locator('[data-tb-pin]').last;pid=pin.get_attribute('data-tb-pin');side=pin.get_attribute('data-pin-side');pg.evaluate('([id,side])=>{window.pinnedId=id;window.pinSide=side}',[pid,side]);pin.click();pg.wait_for_function('document.querySelector(".tb-offers-card")?.getAttribute("aria-busy")==="false"')
    check(tag+' build-around retains the chosen player on the correct side',pg.locator('.tb-offer [data-td-load-offer]').evaluate_all('es=>es.every(e=>(e.dataset[window.pinSide==="send"?"sendA":"sendB"]||"").split(",").includes(window.pinnedId))'))
    pg.locator('[data-tb-intent="aggressive"]').click();pg.wait_for_function('document.querySelector(".tb-offers-card")?.getAttribute("aria-busy")==="false"');pg.evaluate('scrollTo(0,0)')
    pg.locator('.tb-offer').first.scroll_into_view_if_needed();pg.wait_for_timeout(200);pg.screenshot(path=str(OUT/f'{width}-{theme}-offers.png'))

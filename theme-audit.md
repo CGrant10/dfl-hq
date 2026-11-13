@@ -1,3 +1,22 @@
+## 1.572.0 — daily desks and shared finish
+
+Medicine Wheel Light/Dark use existing shared tokens for secondary controls,
+selected-tab rails, offer balance, market selector, trophy cabinet and broadcast
+compositions. No palette/theme/font/artwork introduced. Native market selection
+remains keyboard accessible; More retains native disclosure semantics and Escape
+focus return. Shared secondary and sheet-close controls retain 44px targets.
+
+Inspected compiled mobile Home/Trade/Analyzer/Sportsbook/Profile captures in
+/workspace/dfl-premium-1572/actual-last/, including full player packages and
+the quiet trophy cabinet. Enlarged text at 320px is checked in large-last/;
+trade packages/header stack to preserve full names. Light/Dark offer interactions,
+slips/claims, sheet movement/keyboard, broadcast layouts and inline NFL navigation
+also pass their targeted suites. Actual rendered contrast and horizontal page
+bounds checked; claimed wallet amounts were mocked, with provider writes blocked.
+pnpm themes and the full 2,547-test check pass. Final theme/build checks follow
+the last enlarged-text CSS change. Physical-device frame pacing and screen-reader
+speech remain unmeasured.
+
 ## 1.571.0 — inline NFL Live and persistent navigation
 
 NFL Live uses the regular Clubhouse/app shell in Medicine Wheel Light/Dark, with
