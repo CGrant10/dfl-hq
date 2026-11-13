@@ -29,7 +29,7 @@ with sync_playwright() as p:
    assert page.locator('.tb-setup [data-tb-receive-position]').first.is_visible()
    editor.locator(':scope>summary').click();page.wait_for_function('!document.querySelector(".tb-setup").open')
    tag=f'{width}px {theme}';card=page.locator('.tb-offer').first;summary=card.locator('.tb-offer-preview>summary');details=card.locator('.tb-offer-preview')
-   check(tag+' compact balance stays visible and deeper metrics start folded',card.locator('.tb-offer-balance').is_visible() and not card.locator('.tb-offer-summary').is_visible())
+   check(tag+' compact balance stays visible and deeper metrics start folded',card.locator('.tb-offer-verdict strong').is_visible() and card.locator('.tb-offer-verdict strong').inner_text().endswith('%') and not card.locator('.tb-offer-summary').is_visible())
    check(tag+' starter previews are lazy',page.locator('[data-offer-lineup]>div').count()==0)
    card.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-90,behavior:"instant"})');page.screenshot(path=str(OUT/f'offers-{width}-{theme}.png'))
    check(tag+' collapsed offer remains compact '+str(card.evaluate('e=>e.getBoundingClientRect().height')),card.evaluate('e=>e.getBoundingClientRect().height<280'))
@@ -66,6 +66,7 @@ with sync_playwright() as p:
    check(tag+' larger text stays inside the screen',page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
    page.evaluate("document.documentElement.style.fontSize=''")
    card=page.locator('.tb-offer').first
+   card.locator('.tb-offer-more>summary').click()
    card.locator('.tb-offer-pin>summary').click()
    check(tag+' keep-player controls remain in the card',card.locator('.tb-offer-pin button').evaluate_all('es=>es.every(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.height>=44})'))
    if width==390:
