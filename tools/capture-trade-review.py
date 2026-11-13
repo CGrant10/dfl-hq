@@ -409,7 +409,9 @@ with sync_playwright() as p:
             assert page.locator('[data-receipt-team]').count()==count
             assert page.evaluate('window.reviewReceiptReads')==[receipt_id]
             assert page.locator('[data-td-mode]').count()==0
-            assert page.locator('[data-route-focus]').evaluate('e=>e.open&&e.getBoundingClientRect().top<180')
+            # The labeled return control can wrap onto a second header row.
+            # Keep the open receipt immediately below it and high on screen.
+            assert page.locator('[data-route-focus]').evaluate('e=>{const r=e.getBoundingClientRect(),h=document.querySelector(".td-receipt-page-head").getBoundingClientRect();return e.open&&r.top>=h.bottom-1&&r.top<=h.bottom+24&&r.top<innerHeight/3}')
             assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
             if receipt_id=='receipt-partial':assert 'Player-only estimate' in page.locator('.td-receipt-body').inner_text()
             if receipt_id=='receipt-invalid':assert page.locator('.td-receipt-score b').inner_text()=='—'
