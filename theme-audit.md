@@ -1,3 +1,19 @@
+## 1.569.0 — NFL Scores visual refinement
+
+Current-run before captures compare NFL Scores with Clubhouse in Medicine Wheel
+Light/Dark: /workspace/dfl-scores-1569/before/. Final controller captures at
+320/390/430/768px, normal and 200% text: mobile-verified/ under that scratch root.
+Refined game capsules, full-width Live/Stats underline, inset stats selector,
+aligned Fantasy row grid, quiet feed rules and one framed field use shared tokens.
+NFL identity imagery remains authentic. No new theme entries or crest accents.
+The selector uses transform-only finite movement with Reduced/app-off overrides;
+phone controls keep 44px touch targets. Enlarged text uses readable NFL codes and
+quarter scores stay visible without sideways scrolling. Compiled real-data Light/Dark checks and inspected screenshots in actual-verified/
+confirm readable scores, controls, feed and restored Clubhouse navigation. The 226
+mobile, 127 desk, 88 clip and six motion checks pass, plus pnpm check (2,547 tests,
+themes, types, names, release and build). Physical-device frame pacing and
+screen-reader speech unmeasured.
+
 ## 1.568.0 — native mobile Scores layout
 
 The supplied native screenshots replace the older public Game Center reference.

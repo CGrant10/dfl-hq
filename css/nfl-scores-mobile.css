@@ -1,50 +1,51 @@
 /* Supplied native Scores references, adapted to DFL's shared palette. */
 html[data-nfl-immersive="true"],html[data-nfl-immersive="true"] body { overflow:hidden; }
-#view [data-nfl-fullscreen] { position:fixed; inset:0; z-index:300; margin:0; padding:env(safe-area-inset-top) max(10px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left)); overflow:auto; overscroll-behavior:contain; background:var(--bg); color:var(--text); font-family:var(--font-ui); --topbar-h:0px; --dfl-scroll-top:0px; --dfl-scroll-height:0px; }
+#view [data-nfl-fullscreen] { position:fixed; inset:0; z-index:300; margin:0; padding:env(safe-area-inset-top) max(14px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left)); overflow:auto; overscroll-behavior:contain; background:var(--bg); color:var(--text); font-family:var(--font-ui); letter-spacing:0; --topbar-h:0px; --dfl-scroll-top:0px; --dfl-scroll-height:0px; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-tools { top:0; min-height:44px; border:0; padding-block:2px; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-scores-back { flex:none; display:grid; place-items:center; width:44px; min-height:44px; border:0; padding:0; border-radius:50%; background:transparent; color:var(--text); }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-scores-back { flex:none; display:grid; place-items:center; width:44px; min-height:44px; border:0; padding:0; border-radius:6px; background:transparent; color:var(--text); }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-scores-back svg { width:20px; height:20px; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-game-rail { --replay-game-width:max(130px,8.125rem); grid-template-columns:28px minmax(0,1fr) 28px; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-game-rail>button { min-height:44px; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-game-rail .replay-game { min-height:34px; margin:5px 3px; padding:3px 5px; background:var(--bg-2); border-color:var(--line-soft); }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-game-rail .replay-game[aria-pressed="true"] { background:var(--text); color:var(--bg); border-color:var(--text); }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .replay-game-sides>small { font-size:.625rem; max-width:3.4rem; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-modes { top:var(--nfl-tools-height,48px); justify-content:center; gap:0; border:0; padding:0; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-modes>button { flex:0 1 100px; min-height:44px; padding:10px 12px; font:700 .875rem/1.35 var(--font-ui); }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-modes>button[aria-pressed="true"] { color:var(--accent); }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-modes>i { width:min(100px,50%); left:max(0px,calc((100% - 200px)/2)); height:3px; border-radius:4px 4px 0 0; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-modes { top:var(--nfl-tools-height,48px); justify-content:center; gap:0; border:0; border-bottom:1px solid var(--line-soft); padding:0; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-modes>button { flex:1; min-height:44px; padding:10px 12px; font:600 .8125rem/1.35 var(--font-ui); }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-modes>button[aria-pressed="true"] { color:var(--text); }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-modes>i { width:50%; left:0; height:2px; border-radius:0; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-status.is-quiet { display:none; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-live-grid { display:block; gap:0; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-gamecast-score { min-height:88px; padding:12px 4px; border:0; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-gamecast-side>b { font-size:2.125rem; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-gamecast-clock { font-size:.6875rem; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-stadium { padding:0; border:0; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-gamecast-score { min-height:104px; padding:16px 0; border:0; gap:8px; grid-template-columns:minmax(0,1fr) minmax(70px,88px) minmax(0,1fr); }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-gamecast-side>b { font-size:2rem; font-weight:750; letter-spacing:-.035em; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-gamecast-clock { gap:4px; font-size:.6875rem; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-stadium { padding:10px 10px 0; border:1px solid var(--line-soft); border-radius:8px; background:var(--bg-2); margin-bottom:12px; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-stadium .nfl-field-pitch { max-height:140px; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-stadium-description { margin:4px 0 8px; font-size:.75rem; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-stadium-description { margin:4px 0 8px; font-size:.75rem; line-height:1.45; }
 .nfl-stadium-goals { stroke:var(--accent-2-fill,var(--accent)); stroke-width:3px; opacity:.85; }
-.nfl-drive-caption { margin:3px 0 12px; color:var(--body-text); font:400 .6875rem/1.45 var(--font-ui); text-align:center; }
+.nfl-drive-caption { margin:5px 0 10px; color:var(--body-text); font:400 .6875rem/1.45 var(--font-ui); text-align:center; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-live-stats { padding:0; border:0; background:transparent; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-quarter-wrap { border:0; border-radius:0; margin:0 -2px 18px; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-quarter-table :is(th,td) { padding:7px 5px; border:0; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-quarter-table { font-size:.8125rem; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-quarter-wrap { border:0; border-radius:0; margin:8px 0 12px; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-quarter-table :is(th,td) { padding:8px 5px; border:0; border-bottom:1px solid var(--line-soft); }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-quarter-table { font-size:.75rem; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-quarter-table thead th { font-size:.6875rem; }
-.nfl-scores-segments { display:flex; gap:2px; padding:3px; margin:0 4px 12px; border-radius:30px; background:var(--bg-2); }
-.nfl-scores-segments button { flex:1; display:flex; align-items:center; justify-content:center; gap:4px; min-width:0; min-height:44px; padding:5px; border:0; border-radius:26px; color:var(--body-text); background:transparent; font:650 .6875rem/1.35 var(--font-ui); text-transform:uppercase; }
+.nfl-scores-segments { position:relative; isolation:isolate; display:flex; gap:2px; padding:3px; margin:0 0 12px; border:1px solid var(--line-soft); border-radius:8px; background:var(--bg-2); }
+.nfl-scores-segments button { flex:1; display:flex; align-items:center; justify-content:center; gap:4px; min-width:0; min-height:44px; padding:5px; border:0; border-radius:5px; color:var(--body-text); background:transparent; font:600 .6875rem/1.35 var(--font-ui); text-transform:none; }
 .nfl-scores-segments button span { min-width:0; overflow-wrap:break-word; }
-.nfl-scores-segments button[aria-pressed="true"] { color:var(--bg); background:var(--text); }
+.nfl-scores-segments button[aria-pressed="true"] { color:var(--text); background:transparent; font-weight:700; }
 .nfl-scores-fantasy { min-width:0; }
-.nfl-fantasy-league { display:flex; justify-content:space-between; gap:10px; padding:4px 5px; margin:0 0 8px; color:var(--body-text); font:500 .6875rem/1.4 var(--font-ui); }
+.nfl-fantasy-league { display:flex; justify-content:space-between; align-items:baseline; gap:10px; padding:4px 0 8px; margin:0; color:var(--body-text); font:500 .6875rem/1.4 var(--font-ui); }
 .nfl-fantasy-league strong { color:var(--text); font-weight:650; }
-.nfl-position-group { margin:0; padding:0 0 14px; }
-.nfl-position-group>h3 { display:flex; gap:9px; align-items:center; justify-content:center; margin:12px 0 6px; font:700 .6875rem/1.3 var(--font-ui); }
-.nfl-position-group>h3::before,.nfl-position-group>h3::after { content:''; flex:1; border-top:1px dotted var(--line); }
-.nfl-position-group>h3>span { padding:4px 8px; border:1px solid var(--line-soft); border-radius:6px; color:var(--accent); background:var(--bg-2); }
-.nfl-position-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; }
+.nfl-position-group { margin:0; padding:0 0 6px; }
+.nfl-position-group>h3 { display:flex; gap:9px; align-items:center; justify-content:center; margin:12px 0 8px; font:700 .6875rem/1.3 var(--font-ui); }
+.nfl-position-group>h3::before,.nfl-position-group>h3::after { content:''; flex:1; border-top:1px solid var(--line-soft); }
+.nfl-position-group>h3>span { padding:3px 7px; border:0; border-radius:3px; color:var(--accent); background:var(--bg-2); }
+.nfl-position-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 20px; padding:6px 0; border-bottom:1px solid var(--line-soft); }
+.nfl-position-pair:last-child { border-bottom:0; }
 .nfl-score-player { min-width:0; margin:0; padding:0; }
-.nfl-score-player-content { box-sizing:border-box; width:100%; min-height:72px; height:100%; display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-rows:auto auto auto 1fr; column-gap:5px; align-content:start; margin:0; padding:5px 2px 8px; border:0; border-radius:0; background:transparent; color:var(--text); text-align:left; font-family:var(--font-ui); }
+.nfl-score-player-content { box-sizing:border-box; width:100%; min-height:72px; height:100%; display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-rows:auto auto auto 1fr; column-gap:5px; align-content:start; margin:0; padding:3px 0 5px; border:0; border-radius:0; background:transparent; color:var(--text); text-align:left; font-family:var(--font-ui); }
 .nfl-score-owner { grid-column:1/-1; grid-row:1; min-height:12px; color:var(--body-text); font:400 .625rem/1.2 var(--font-ui); overflow-wrap:break-word; }
 .nfl-score-owner>span { color:var(--accent); }
-.nfl-score-name { grid-column:1; grid-row:2; min-width:0; font:650 .8125rem/1.3 var(--font-ui); overflow-wrap:break-word; }
+.nfl-score-name { grid-column:1; grid-row:2; min-width:0; font:650 .8125rem/1.35 var(--font-ui); overflow-wrap:break-word; }
 .nfl-score-totals { grid-column:2; grid-row:2 / span 2; display:grid; align-content:start; justify-items:end; font-variant-numeric:tabular-nums; }
 .nfl-score-totals>b { font:700 .875rem/1.25 var(--font-ui); }
 .nfl-score-totals>small { margin-top:1px; color:var(--body-text); font:400 .75rem/1.25 var(--font-ui); }
@@ -53,16 +54,16 @@ html[data-nfl-immersive="true"],html[data-nfl-immersive="true"] body { overflow:
 .nfl-score-player.is-home .nfl-score-player-content { grid-template-columns:auto minmax(0,1fr); text-align:right; }
 .nfl-score-player.is-home :is(.nfl-score-name,.nfl-score-position) { grid-column:2; }
 .nfl-score-player.is-home .nfl-score-totals { grid-column:1; justify-items:start; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-scores-feed-tools { display:flex; justify-content:space-between; padding:4px 0; }
-.nfl-scores-feed-tools select,.nfl-scores-feed-tools>button { min-height:44px; border:0; background:transparent; color:var(--body-text); font:500 .6875rem/1.4 var(--font-ui); }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-scores-feed-tools { display:flex; justify-content:space-between; padding:6px 0; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-scores-feed-tools select,:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-scores-feed-tools>button { min-height:44px; border:0; background:transparent; color:var(--body-text); font:500 .75rem/1.4 var(--font-ui); }
 .nfl-scores-feed-tools svg { width:15px; height:15px; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-plays .nfl-score-play { grid-template-columns:36px minmax(0,1fr); gap:8px; margin:0; padding:12px 0 16px; border:0; background:transparent; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-plays .nfl-score-play { grid-template-columns:36px minmax(0,1fr); gap:10px; margin:0; padding:12px 0; border:0; border-bottom:1px solid var(--line-soft); background:transparent; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-score-play>.nfl-play-content { padding:0; border:0; }
 .nfl-feed-portrait { display:block; width:34px; height:34px; object-fit:cover; border-radius:50%; background:var(--bg-2); }
 .nfl-feed-time { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin:0 0 2px; color:var(--body-text); font:400 .6875rem/1.35 var(--font-ui); }
 .nfl-feed-time small { font:inherit; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-score-play .nfl-play-select { min-height:44px; padding:0; margin:0; color:var(--text); }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-score-play .nfl-play-headline { font:650 .9375rem/1.35 var(--font-ui); }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-score-play .nfl-play-headline { font:650 .875rem/1.35 var(--font-ui); }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-score-play .nfl-play-details>p { margin:3px 0 0; color:var(--body-text); font:400 .75rem/1.45 var(--font-ui); }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-score-play .nfl-play-details>p.nfl-feed-people { font-size:.6875rem; }
 .nfl-feed-people span { color:var(--accent); font-weight:600; }
@@ -87,17 +88,75 @@ html[data-nfl-immersive="true"],html[data-nfl-immersive="true"] body { overflow:
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-game-rail>button:first-child:disabled { visibility:hidden; width:0; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .replay-game-sides>small { flex:1; max-width:4rem; white-space:normal; overflow-wrap:normal; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-game-rail .replay-game { position:relative; isolation:isolate; min-height:44px; margin:0 3px; border:0; background:transparent; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-game-rail .replay-game::before { content:''; position:absolute; inset:6px 0; z-index:-1; background:var(--bg-2); border:1px solid var(--line-soft); border-radius:30px; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-game-rail .replay-game::before { content:''; position:absolute; inset:6px 0; z-index:-1; background:var(--bg-2); border:1px solid var(--line-soft); border-radius:6px; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-game-rail .replay-game[aria-pressed="true"] { background:transparent; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-game-rail .replay-game[aria-pressed="true"]::before { background:var(--text); border-color:var(--text); }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-score-play>.nfl-play-content::before { display:none; }
 .nfl-field-player-label { fill:#fff; stroke:#202d31; stroke-width:4px; paint-order:stroke; text-anchor:middle; font:650 17px var(--font-ui); }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-quarter-table th:first-child { width:46%; }
 .nfl-stadium .nfl-field-lines.nfl-stadium-goals { stroke:var(--accent-2-fill,var(--accent)); opacity:.9; }
-:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .replay-game[aria-pressed="true"] .replay-game-sides { background:var(--text); border-radius:20px; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .replay-game[aria-pressed="true"] .replay-game-sides { background:var(--text); border-radius:3px; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .replay-game[aria-pressed="true"] .replay-game-sides :is(b,small) { color:inherit; }
 :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-plays .nfl-feed-event { display:block; padding:12px 0; text-align:center; border-block:1px solid var(--line-soft); }
 .nfl-feed-event .nfl-play-details>h4 { color:var(--body-text); font:500 .6875rem/1.3 var(--font-ui); }
 #view [data-nfl-fullscreen] .nfl-center-tools { top:env(safe-area-inset-top); }
 #view [data-nfl-fullscreen] .nfl-center-modes { top:calc(env(safe-area-inset-top) + var(--nfl-tools-height,48px)); }
 .nfl-score-player-content:active { background:color-mix(in srgb,var(--accent) 4%,transparent); }
+
+/* The same flat score hierarchy and precise rules as the Clubhouse. */
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-gamecast-score>.nfl-gamecast-side,
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-gamecast-score>.nfl-gamecast-side.is-home { flex-direction:column-reverse; justify-content:center; gap:8px; text-align:center; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-gamecast-side>strong { display:flex; align-items:center; justify-content:center; gap:5px; font:600 .75rem/1.3 var(--font-ui); overflow-wrap:normal; }
+.nfl-gamecast-side>strong img { width:20px; height:20px; object-fit:contain; flex:none; }
+.nfl-gamecast-phase { color:var(--text); font-weight:650; }
+.nfl-gamecast-phase>span { display:block; }
+.nfl-gamecast-channel { max-width:100%; font-size:.625rem; line-height:1.3; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-quarter-table thead th { padding-top:4px; font-weight:500; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-quarter-table :is(th,td):last-child { background:var(--bg-2); font-weight:700; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-quarter-table th:first-child { width:40%; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-score-play .nfl-play-select { display:flex; align-items:center; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-score-play .nfl-play-headline { letter-spacing:0; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-center-plays .nfl-play-period { padding:2px 0 8px; border:0; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-play-period h4 { font-size:.625rem; letter-spacing:.07em; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-feed-time { line-height:1.4; }
+.nfl-feed-foot:empty { display:none; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) :is(.nfl-score-player-content,.nfl-scores-segments button,.nfl-scores-back):focus-visible { outline:2px solid var(--accent); outline-offset:-2px; border-radius:5px; }
+.nfl-score-player-content,.nfl-scores-segments button,.nfl-scores-back { transition:background-color 160ms ease,color 160ms ease; }
+@supports (grid-template-rows:subgrid) {
+ .nfl-position-pair { grid-template-rows:auto auto auto 1fr; }
+ .nfl-score-player { display:grid; grid-template-rows:subgrid; grid-row:span 4; }
+ .nfl-score-player-content { grid-template-rows:subgrid; grid-row:span 4; }
+ @container nfl-game-view (max-width:15rem) {
+  .nfl-position-pair { grid-template-rows:repeat(4,auto) 1fr; }
+  .nfl-score-player,.nfl-score-player-content { grid-row:span 5; }
+ }
+}
+@media(prefers-reduced-motion:reduce) { .nfl-score-player-content,.nfl-scores-segments button,.nfl-scores-back { transition:none; } }
+html[data-ui-motion="off"] :is(.nfl-score-player-content,.nfl-scores-segments button,.nfl-scores-back) { transition:none; }
+
+.nfl-scores-segments::before { content:''; position:absolute; z-index:-1; inset:3px auto 3px 3px; width:calc((100% - 10px)/3); border:1px solid var(--line-soft); border-radius:5px; background:var(--bg); transform:translateX(calc(var(--nfl-stats-index,1)*(100% + 2px))); transition:transform 240ms cubic-bezier(.22,.75,.25,1); pointer-events:none; }
+/* Keep the replay action in the header's layout at narrow widths. */
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-stadium>header { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:4px 8px; padding:0; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-stadium>header>[data-nfl-field-replay] { position:static; min-width:44px; min-height:44px; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-stadium-play { display:flex; flex-wrap:wrap; gap:2px 6px; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-field-result b { font-size:.875rem; }
+:is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-stadium>header>[data-nfl-field-latest] { grid-column:1/-1; justify-self:end; }
+@media(prefers-reduced-motion:reduce) { .nfl-scores-segments::before { transition:none; } }
+html[data-ui-motion="off"] .nfl-scores-segments::before { transition:none; }
+
+.nfl-scores-segments abbr { display:none; text-decoration:none; }
+#view.view[data-page-system][data-route] [data-nfl-layout="desk"] .nfl-scores-feed-tools select { border:0; border-radius:0; padding:6px 26px 6px 0; background:transparent; }
+@container nfl-game-view (max-width:15rem) {
+ .nfl-scores-segments .nfl-scores-team-name { display:none; }
+ .nfl-scores-segments abbr { display:inline; }
+}
+
+.nfl-gamecast-side>strong abbr { display:none; text-decoration:none; }
+@container nfl-game-view (max-width:17rem) {
+ .nfl-gamecast-side>strong>span { display:none; }
+ .nfl-gamecast-side>strong abbr { display:inline; }
+}
+@container nfl-game-view (max-width:15rem) {
+ :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-quarter-table th:first-child { width:auto; }
+ :is(#view [data-nfl-layout="desk"],[data-nfl-layout="desk"]) .nfl-quarter-table :is(th,td) { padding-inline:3px; }
+}
