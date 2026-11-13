@@ -157,6 +157,9 @@ on:
       - 'css/player-card-reading.css'
       - 'js/player-card-summary.js'
       - 'tools/capture-score-scroll-review.py'
+      - 'tools/capture-thermal-finish.py'
+      - 'js/score-roll.js'
+      - 'css/score-thermal-finish.css'
       - 'css/player-compare-reading.css'
       - 'js/player-compare*'
       - 'js/moment-recap*'
@@ -341,7 +344,10 @@ jobs:
       - name: Check score effects while scrolling
         env:
           DFL_SCORE_SCROLL_REVIEW_DIR: ${{ github.workspace }}/home-review-output/score-scroll
-        run: python tools/capture-score-scroll-review.py
+          DFL_THERMAL_REVIEW_DIR: ${{ github.workspace }}/home-review-output/thermal
+        run: |
+          python tools/capture-score-scroll-review.py
+          python tools/capture-thermal-finish.py
       - name: Check interactive player games and performance sharing
         env:
           DFL_PLAYER_GAMES_REVIEW_DIR: ${{ github.workspace }}/home-review-output/player-games

@@ -11118,3 +11118,41 @@ body .notification-settings-sheet .notify-presets { gap:6px; padding-bottom:8px;
 body .notification-settings-sheet .notify-presets button { min-height:44px; border:1px solid var(--line-soft); border-radius:6px; color:var(--text); font:500 .75rem/1.4 var(--font-ui); letter-spacing:0; }
 @media(prefers-reduced-motion:reduce) { .notification-settings-sheet :is(button,label) { transition:none; } }
 html[data-ui-motion="off"] .notification-settings-sheet :is(button,label) { transition:none; }
+
+
+/* Source: css/score-thermal-finish.css */
+/* Recorded digits stay sharp. Heat and frost live outside their silhouette. */
+:root[data-mode] .gd-thermal-number[data-score-temperature="hot"],
+:root[data-mode] .gd-thermal-number[data-score-temperature="cold"] { text-shadow:none; }
+.gd-thermal-value { text-shadow:none; }
+.gd-score-roll { position:absolute; inset:0; z-index:3; display:block; overflow:hidden; pointer-events:none; }
+.gd-score-roll>span { position:absolute; inset:0; display:block; white-space:nowrap; text-align:right; font:inherit; letter-spacing:inherit; }
+.gd-thermal-number[data-score-rolling]>.gd-thermal-value { color:transparent; }
+.gameday-player-score>small { position:relative; }
+.gameday-player-score>small>.gd-score-delta { inset:0 auto auto 0; visibility:visible; padding:0; border:0; border-radius:0; background:transparent; color:var(--ok); font:600 .625rem/1.4 var(--font-ui); }
+.gameday-player-score>small>.gd-score-delta.is-negative { color:var(--danger-ink,var(--text)); }
+.gameday-player-score:has(.player-return-delta) .gd-score-delta { display:none; }
+
+/* Inset rims keep the existing portrait footprint and react briefly to live
+   changes, including the player-card hero. */
+.gameday-player:has([data-score-temperature="hot"]) .dfl-player-portrait,
+.dfl-player-card:has(.gameday-spotlight-score [data-score-temperature="hot"]) .player-card-hero .dfl-player-portrait { --thermal-rim:var(--gd-hot-ink); }
+.gameday-player:has([data-score-temperature="cold"]) .dfl-player-portrait,
+.dfl-player-card:has(.gameday-spotlight-score [data-score-temperature="cold"]) .player-card-hero .dfl-player-portrait { --thermal-rim:var(--gd-cold-ink); }
+.gameday-player:has([data-score-temperature="hot"],[data-score-temperature="cold"]) .dfl-player-portrait::after,
+.dfl-player-card:has(.gameday-spotlight-score :is([data-score-temperature="hot"],[data-score-temperature="cold"])) .player-card-hero .dfl-player-portrait::after {
+ content:''; position:absolute; inset:0; z-index:2; box-sizing:border-box; border:1px solid color-mix(in srgb,var(--thermal-rim) 72%,transparent); border-radius:inherit; box-shadow:inset 0 0 5px color-mix(in srgb,var(--thermal-rim) 18%,transparent); pointer-events:none;
+}
+.gameday-player:has([data-score-rolling]) .dfl-player-portrait::after,
+.dfl-player-card:has(.gameday-spotlight-score [data-score-rolling]) .player-card-hero .dfl-player-portrait::after { animation:thermal-rim-settle 300ms ease-out; }
+@keyframes thermal-rim-settle { 0% { opacity:.55; } 35% { opacity:1; box-shadow:inset 0 0 9px color-mix(in srgb,var(--thermal-rim) 35%,transparent); } 100% { opacity:1; } }
+html[data-ui-motion="off"] .gd-score-roll,[data-motion="off"] .gd-score-roll { display:none; }
+html[data-ui-motion="off"] .gd-thermal-number[data-score-rolling]>.gd-thermal-value,
+[data-motion="off"] .gd-thermal-number[data-score-rolling]>.gd-thermal-value { color:inherit; }
+html[data-ui-motion="off"] :is(.gameday-player,.dfl-player-card) .dfl-player-portrait::after,
+[data-motion="off"] :is(.gameday-player,.player-card-hero) .dfl-player-portrait::after { animation:none; }
+@media(prefers-reduced-motion:reduce) {
+ .gd-score-roll { display:none; }
+ .gd-thermal-number[data-score-rolling]>.gd-thermal-value { color:inherit; }
+ :is(.gameday-player,.dfl-player-card) .dfl-player-portrait::after { animation:none; }
+}
