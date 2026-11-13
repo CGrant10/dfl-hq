@@ -7,8 +7,9 @@ a drifting wisp. Existing warm/cold inks keep Light/Dark readable. Matching
 inset portrait rims identify hot/cold players in rows and player-card heroes.
 Rims preserve the current photo geometry and react briefly to live changes.
 
-Actual numeric refreshes get a 300ms clipped decorative score roll and a 700ms
-outer-effect flare. The real number and GPU glyph anchor stay fixed. The roll is
+Actual player-score refreshes get a 300ms clipped decorative score roll and a 700ms
+outer-effect flare. The real number and GPU glyph anchor stay fixed. Team totals retain their
+existing opacity settle and Home scoreboard handoff. The roll is
 hidden from assistive technology; real values/temperature labels stay available.
 Repeated updates replace the old reaction, context/week changes cancel it, and
 sub-cent changes that render the same value stay static. Missing baselines,
@@ -33,7 +34,7 @@ isolated data; actual/ and large/ compiled public-league reads in Light/Dark at
 or mocked; fixture portraits are test imagery rather than player identity claims.
 
 Validation: pnpm check passes 2,547 tests / 307 files, release/theme/type/name and
-build checks. The new 91-check browser review verifies clear glyph cores by
+build checks. The new 95-check browser review verifies clear glyph cores by
 reading rendered GPU pixels, visible edge effects, portrait state, fixed score
 geometry, real-score roll/flare settling, rapid interruption, stale syncs,
 rounding, context changes, motion-off/reduced motion, lost/restored/unavailable

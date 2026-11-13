@@ -28,6 +28,7 @@ f.root.innerHTML=players.map((p,i)=>'<article class="gameday-player" data-ui-pla
 f.fx=mountScoreVfx(f.root);f.value=f.root.querySelector('.gd-thermal-value');
 window.changeScore=(points,{feedback=true,age=1000}={})=>{f.stopChange?.();const previous={points:{'1:7564':f.points},checkedAt:Date.now()-age};const host=f.root.querySelector('.gameday-player-score');
  patchGameDay(host,thermalScore(points,playerScoreTemperature({...players[0],points}))+'<small>Live</small>');f.stopChange=animateScoreChanges(f.root,{previous,model:{games:[],completed:false,snapshot:{points:{'1:7564':points},checkedAt:Date.now()}},motion:true,feedback});f.points=points;f.fx.refresh();};
+window.totalScore=()=>{const host=document.createElement('span');host.dataset.gamedayTotalKey='3';host.innerHTML=thermalScore(126,'hot');f.root.append(host);const stop=animateScoreChanges(f.root,{previous:{points:{},totals:{3:125}},model:{games:[],snapshot:{points:{},totals:{3:126}}},motion:true});f.total=host;f.stopTotal=()=>{stop();host.remove()};};
 window.probePixels=()=>{f.pixelResults=[];f.probe=true};
 window.cardScore=(points,week=7)=>{const host=f.root.querySelector('.gameday-player-score');patchPlayerCardScore(host,{...players[0],points,week},{motion:true,feedback:true});f.fx.refresh()};
 window.ready=true;
@@ -76,6 +77,7 @@ with sync_playwright() as p:
     check('context loss preserves the recorded score',page.locator('.gd-thermal-value').first.inner_text()=='37.00' and page.locator('.gd-vfx-canvas').get_attribute('data-running')=='false')
     page.evaluate('f.contextExtension.restoreContext()');page.wait_for_function('f.root.querySelector("canvas").dataset.renderer==="webgl"&&f.root.querySelector("canvas").dataset.running==="true"')
     page.evaluate('probePixels()');page.wait_for_function('!f.probe');check('restored context still leaves digit cores clear',page.evaluate('f.pixelResults.every(r=>r.core>0&&r.paintedCore===0&&r.outer>0)'))
+   page.evaluate('totalScore()');check(tag+' team totals retain their existing settle without a player roll',page.evaluate('!f.total.querySelector(".gd-score-roll")&&f.total.querySelector(".gd-thermal-value").textContent==="126.00"'));page.evaluate('f.stopTotal()')
    check(tag+' no browser errors '+json.dumps(errors),not errors);page.evaluate('f.fx.stop()');c.close()
  c=b.new_context(viewport={'width':390,'height':844},service_workers='block');c.add_init_script('const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return type==="webgl"?null:original.call(this,type,...args)}')
  c.route('**/*',lambda r:r.continue_()if r.request.url.startswith(base)else r.fulfill(content_type='image/png',body=(ROOT/'tools/fixtures/player-portrait.png').read_bytes())if r.request.resource_type=='image'else r.abort())

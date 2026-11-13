@@ -27,7 +27,7 @@ export function animateScoreChanges(root,{previous,model,motion,gameId=null,feed
   const badge=document.createElement('span');badge.className=`gd-score-delta${change.delta<0?' is-negative':''}`;badge.textContent=change.label;badge.setAttribute('aria-hidden','true');const phase=host.matches('.gameday-player-score')?host.querySelector(':scope > small'):null;(phase||host).append(badge);host.classList.add('gd-score-updated');badges.push(badge);hosts.push(host);
   // Keep glyph geometry fixed so the GPU fire remains aligned with the number.
   const value=host.querySelector('.gd-thermal-value,[data-matchup-score-value]');
-  if(animated&&value?.animate){if(value.classList.contains('gd-thermal-value'))rolls.push(rollScore(host,{from:change.from,to:change.to,motion}));else animations.push(value.animate([{opacity:.55},{opacity:1}],{duration:450,easing:'ease-out'}))}
+  if(animated&&value?.animate){if(total==null&&value.classList.contains('gd-thermal-value'))rolls.push(rollScore(host,{from:change.from,to:change.to,motion}));else animations.push(value.animate([{opacity:.55},{opacity:1}],{duration:450,easing:'ease-out'}))}
   const remove=()=>{badge.remove();host.classList.remove('gd-score-updated')};
   if(animated&&badge.animate){const animation=badge.animate([{opacity:0,transform:'translateY(3px)',offset:0},{opacity:1,transform:'translateY(0)',offset:.12},{opacity:1,transform:'translateY(0)',offset:.75},{opacity:0,transform:phase?'translateY(0)':'translateY(-5px)',offset:1}],{duration:2600,easing:'ease-out'});animations.push(animation);animation.onfinish=remove}else if(feedback){timers.push(setTimeout(remove,2600))}else remove();
  }

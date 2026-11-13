@@ -9,7 +9,7 @@ phase slot. No palette entries, font, image assets or scoring-rule changes.
 Reviewed Light/Dark phone captures in /workspace/dfl-thermal-1574/thermal-final/,
 scroll-final/, actual/, large/, clubhouse/ and player/. Normal and 200% text keep
 full content/edges and actual card return positions; score geometry stays fixed
-during the roll. 91 thermal checks include pixel-level glyph clarity, preference
+during the roll. 95 thermal checks include pixel-level glyph clarity, preference
 interruptions, context recovery and fallback. 81 scroll checks, 337 Clubhouse,
 43 player-finish and 37 player-motion checks pass. pnpm check passes 2,547 tests /
 307 files plus theme/release/type/name/build checks; final theme/build checks
