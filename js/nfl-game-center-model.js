@@ -39,7 +39,7 @@ export function nflCenterPlays(summary,game=null){
  }
  const ordered=[...unique.values()].sort((a,b)=>Number(a.sequenceNumber||a.id)-Number(b.sequenceNumber||b.id));
  if(game?.lastPlay&&nflBoardAhead(summary,game))ordered.push({...game.lastPlay,early:true});
- return ordered.map(play=>({id:String(play.id),team:nflPlayTeam(play,sides)?.code||'',field:nflPlayField(play,sides),early:play.early===true,text:clean(play.text),typeId:String(play.type?.id||''),typeLabel:clean(play.type?.text),yards:typeof play.statYardage==='number'&&Number.isFinite(play.statYardage)?play.statYardage:null,period:Number(play.period?.number)||null,clock:clean(play.clock?.displayValue),score:play.scoringPlay===true,home:typeof play.homeScore==='number'?play.homeScore:null,away:typeof play.awayScore==='number'?play.awayScore:null,big:play.scoringPlay!==true&&candidatePlay(play),voided:/no play|overturned|reversed|nullified/i.test(play.text)}));
+ return ordered.map(play=>({id:String(play.id),team:nflPlayTeam(play,sides)?.code||'',field:nflPlayField(play,sides),early:play.early===true,text:clean(play.text),typeId:String(play.type?.id||''),typeLabel:clean(play.type?.text),yards:typeof play.statYardage==='number'&&Number.isFinite(play.statYardage)?play.statYardage:null,period:Number(play.period?.number)||null,clock:clean(play.clock?.displayValue),down:clean(play.start?.shortDownDistanceText),spot:clean(play.start?.possessionText),score:play.scoringPlay===true,home:typeof play.homeScore==='number'?play.homeScore:null,away:typeof play.awayScore==='number'?play.awayScore:null,big:play.scoringPlay!==true&&candidatePlay(play),voided:/no play|overturned|reversed|nullified/i.test(play.text)}));
 }
 // Keep official NFL stat lines alongside actual Sleeper points. No estimated
 // PPR totals: conversions and unusual scoring must survive intact.
@@ -56,13 +56,14 @@ function fantasyDirectory(directory){
 export function nflFantasyRows(summary,players=[],{weekly=[],season,week,directory=null}={}){
  const catalog=fantasyDirectory(directory),owners=fantasyIndex(players,p=>`${name(p.name)}:${footballTeam(p.nflTeam)}`);
  const recorded=fantasyIndex(weekly.filter(r=>Number(r.season)===Number(season)&&Number(r.week)===Number(week)&&r.season_type==='regular'),r=>`${name(r.player?.full_name||`${r.player?.first_name||''} ${r.player?.last_name||''}`)}:${footballTeam(r.team||r.player?.team)}`);
- const rows=new Map(),groups={passing:['passingYards','passingTouchdowns','interceptions'],rushing:['rushingYards','rushingTouchdowns'],receiving:['receptions','receivingYards','receivingTouchdowns'],fumbles:['fumblesLost'],kicking:['longFieldGoalMade']};
+ const rows=new Map(),groups={passing:['completions','passingAttempts','passingYards','passingTouchdowns','interceptions'],rushing:['rushingAttempts','rushingYards','rushingTouchdowns'],receiving:['receptions','receivingTargets','receivingYards','receivingTouchdowns'],fumbles:['fumblesLost'],kicking:['longFieldGoalMade']};
  for(const club of summary?.boxscore?.players||[])for(const group of club.statistics||[]){
   if(!groups[group.name])continue;
   for(const item of group.athletes||[]){
    const athlete=item.athlete,code=footballTeam(club.team?.abbreviation);if(!nflGameId(athlete?.id)||!clean(athlete.displayName)||!code)continue;
    const key=String(athlete.id),row=rows.get(key)||{id:key,name:clean(athlete.displayName),nflTeam:code,stats:{},position:clean(athlete.position?.abbreviation)|| (group.name==='passing'?'QB':group.name==='kicking'?'K':'')};
    for(const field of groups[group.name]){const i=(group.keys||[]).indexOf(field),raw=item.stats?.[i];if(i>=0&&raw!==''&&raw!=null&&Number.isFinite(Number(raw)))row.stats[field]=Number(raw)}
+   if(group.name==='passing'){const raw=item.stats?.[(group.keys||[]).indexOf('completions/passingAttempts')];if(/^\d+\/\d+$/.test(String(raw))){const [made,attempts]=String(raw).split('/').map(Number);row.stats.completions=made;row.stats.passingAttempts=attempts}}
    if(group.name==='kicking')for(const [field,key]of [['fieldGoalsMade/fieldGoalAttempts','fg'],['extraPointsMade/extraPointAttempts','xp']]){const raw=item.stats?.[(group.keys||[]).indexOf(field)];if(/^\d+\/\d+$/.test(String(raw)))row.stats[key]=String(raw)}
    rows.set(key,row);
   }

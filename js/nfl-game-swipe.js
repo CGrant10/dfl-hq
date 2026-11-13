@@ -39,7 +39,7 @@ export function mountNflGameSwipe(root,{active=()=>true,getGames,getSelected,pre
  };
  const swipe=mountHorizontalSwipe(root,{
   min:56,flickVelocity:.55,
-  exclude:'a,button:not(.nfl-play-select),input,select,textarea,summary,[contenteditable],[data-no-game-swipe]',
+  exclude:'a,button:not(.nfl-play-select):not(.nfl-score-player-content),input,select,textarea,summary,[contenteditable],[data-no-game-swipe]',
   accepts:target=>active()&&!!target.closest('.nfl-game-window')&&getGames().length>1,
   onStart(){
    cancelWarm();suppress=false;origin=scene?.stage.isConnected?new DOMMatrixReadOnly(getComputedStyle(scene.stage).transform).m41:0;
@@ -80,7 +80,7 @@ export function mountNflGameSwipe(root,{active=()=>true,getGames,getSelected,pre
   }
  });
  const interrupt=()=>{cancelWarm();swipe.cancel();finish()};
- const click=event=>{if(suppress&&event.target.closest('.nfl-play-select')){event.preventDefault();event.stopImmediatePropagation();suppress=false;return;}if(!committing&&scene&&event.target.closest('button,select'))interrupt()};
+ const click=event=>{if(suppress&&event.target.closest('.nfl-play-select,.nfl-score-player-content')){event.preventDefault();event.stopImmediatePropagation();suppress=false;return;}if(!committing&&scene&&event.target.closest('button,select'))interrupt()};
  const events=[['resize',window],['pagehide',window],['dfl:ui-motion-change',window],['visibilitychange',document]];
  root.addEventListener('click',click,true);for(const [event,target]of events)target.addEventListener(event,interrupt);reduced.addEventListener('change',interrupt);
  return {update,get busy(){return !!scene||swipe.tracking},cancel:interrupt,stop(){stopped=true;cancelWarm();swipe.stop();clean();previews.clear();root.removeEventListener('click',click,true);for(const [event,target]of events)target.removeEventListener(event,interrupt);reduced.removeEventListener('change',interrupt)}};

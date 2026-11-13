@@ -71,7 +71,7 @@ export async function render(view){
    section.scrollIntoView({block:'start',behavior:smooth?'smooth':'instant'});
    if(event.detail===0){section.tabIndex=-1;section.focus({preventScroll:true})}
   });
-  if(initialTab==='highlights'&&/^\d{1,24}$/.test(params.get('clip')||'')){void teamReel.openClip(params.get('clip')).then(opened=>{if(!active()||opened)return;const notice=document.createElement('p');notice.className='nfl-center-status';notice.setAttribute('role','status');notice.textContent='This video is no longer available. The game’s plays are still here.';view.querySelector('#clubhouse-panel-nfl .clubhouse-section').prepend(notice);view.querySelector('#clubhouse-tab-nfl').click()})}
+  if(initialTab==='highlights'&&/^\d{1,24}$/.test(params.get('clip')||'')){void teamReel.openClip(params.get('clip')).then(opened=>{if(!active()||opened)return;const next=new URLSearchParams(location.hash.split('?')[1]||'');next.set('tab','nfl');next.set('clipUnavailable','1');next.delete('clip');location.replace(location.hash.split('?')[0]+'?'+next)})}
   const remember=()=>writeViewMemory(currentMember()?.id,'clubhouse-choice',{season:selected.season,week:selected.week,tab:activeTab(view)});
   remember();view.addEventListener('click',event=>{if(event.target.closest('[data-clubhouse-tab]'))remember()});view.addEventListener('keydown',event=>{if(event.target.closest('[data-clubhouse-tab]'))queueMicrotask(remember)});
   view.querySelector('[data-open-matchups]')?.addEventListener('click',()=>view.querySelector('#clubhouse-tab-matchups').click());

@@ -1,123 +1,122 @@
-# NFL Game Center — 1.567.0
+# Supplied mobile Scores design — 1.568.0
 
-The user chose **DFL colors with Sleeper's layout**. This is a refinement of the
-existing production Clubhouse and Replay controller, not a new mock app.
+## Visual target and approved scope
 
-## Source, rendered evidence and normalization
+The four native Sleeper screenshots supplied in this conversation are the source:
+(1) scrolled Fantasy position groups, (2) quarter board/Fantasy selector/QB/RB,
+(3) scrolled player-led Live feed and (4) paired score plus perspective field.
+They replace the older 2023 public reference used for 1.567.0. Source images were
+inspected inline; no downloaded original raster is available in the workspace.
+The review compares their content regions/proportions at the 390px phone target;
+it does not claim a pixel-diff or a byte-for-byte source-image comparison.
 
-Visual truth: Sleeper's published native NFL Game Center image in
-https://sleeper.com/blog/sleepers-app-redesign-whats-new/ (2023), saved as
-`/workspace/dfl-sleeper-1567/sleeper-official-game-screen-2023.png` (383×820).
-The current public game page was also inspected at
-https://sleeper.com/nfl/scores/was-commanders-nyg-giants-2026-11-12;
-`sleeper-game-web.png`/HTML in that scratch root confirm category-organized NFL
-box scores. The historical native image is a layout reference, not a claim about
-the latest authenticated iOS build.
+The user selected DFL colors, full-screen viewing from Clubhouse, stable player
+order, and the core layout only. Probability chart, betting drawer, reactions and
+comments are deliberately omitted. Device status/navigation bars are not app UI.
+DFL uses its existing Inter font, Medicine Wheel surfaces and authentic NFL imagery.
 
-Rendered primary evidence: `gamecast-final/390-{light,dark}-stats.png` in the same
-scratch root. Chromium viewport 390×844 CSS px, deviceScaleFactor 1. The actual
-production modules run with a deterministic SF 7 / LAR 14, Q1 11:10 fixture matching
-the reference state. These synthetic reference stats are test-only. Real ESPN
-player photos and NFL logos were downloaded for visual review; no placeholder
-portraits were used in the comparisons. Persistent offline regression tests have
-explicit fixture-image fallbacks.
+## Rendered evidence
 
-`comparison-stats.png` puts the source and both rendered themes in one input.
-The source's native status/home bars are cropped (y49 through y815); the content
-is uniformly scaled from 383 to 390px wide. The implementation's unused fixture
-page offset is cropped at y60. No screenshot is stretched or used as app content.
-The combined image was opened and inspected. `comparison-leaders.png` and the
-individual 320/390/768px normal/large captures provide focused table/name/score
-review. Final 200% text evidence is `gamecast-large-final/320-{light,dark}-large.png`.
-Additional Plays and Fantasy captures are in those directories. Compiled real-data
-Clubhouse evidence is `actual-verified/`, with the same three views and a second NFL game.
+Scratch root: `/workspace/dfl-scores-1568/`. Actual controller captures:
+`scores-verified/{320,390,430,768}-{light,dark}-{live,stats,team,large}.png`.
+Chromium CSS viewport widths match those names, height 844px, density 1. The frozen
+WAS 3 / NYG 0 Q2 fixture uses the source players, displayed totals and projections;
+it is isolated test data, never production content. Authentic ESPN headshots and
+NFL logos are supplied to visual captures. Offline tests use explicit fixture
+fallback images. `actual-final/` contains compiled app renders using real public
+NFL data and the league's existing read APIs, all account/league writes blocked.
 
-## Comparison history and fixes
+The supplied images were checked against the normal and scrolled rendered states.
+Focused review covers the short game capsules, selected state, quarter table,
+mirrored QB/RB/WR/TE rows, actual/projection stacks, dotted position separators,
+player portraits, complete play text and field labels. Raw source pixels are not
+available for a combined raster board; the inspected source remains the inline
+reference in this conversation.
 
-- [P2, fixed] The initial field spot inherited a centering transform while its
-  left edge was overridden. It drifted outside the field, hiding the down label.
-  Evidence: `gamecast-first/failure.png`. The caption now uses one centered,
-  content-width position and the existing dark field label surface. Post-fix:
-  `gamecast-final/390-{light,dark}-stats.png` and the combined comparison.
-- [P2, fixed] A legacy live-state clock underline made the score header appear to
-  contain a second selected tab. The scoped score-clock rule removes it. The
-  latest-play row also keeps Replay's 44px target without expanding the whole
-  row. Post-fix: the same normal-size comparison.
-- [P2, fixed] At 200% text the paired score names wrapped into narrow vertical
-  columns (`gamecast-final/320-dark-large.png`). The compact container now stacks
-  each team name above its score. Post-fix: `gamecast-large-final/320-dark-large.png`,
-  opened and checked; names remain whole and the middle clock stays separate.
-- [P2, fixed] An unconditional selected-game data attribute produced mutations on
-  unchanged automatic updates. It is written only when selection changes. The
-  existing live-refresh suite now passes its no-mutation assertion.
+## Findings and iterations
 
-- [P2, fixed] Compiled real-data captures (`actual/`) exposed quarter cells with
-  only `displayValue` and End of Game rows carrying repeated coordinates. Quarter
-  decoding now accepts the provider's display string while keeping zero/unknown
-  distinct. Administrative rows remain in the play feed but do not become new
-  field plays. Post-fix compiled screenshots are in `actual-verified/`; the model
-  tests and the terminal-event browser fixture cover both provider shapes.
+- P1 fixed: the real app's Clubhouse entrance transform constrained a fixed child
+  to a 358×154px containing block. The viewer is now portaled directly under the
+  route root. Compiled checks verify a 390×844px viewport, safe Back navigation,
+  restored Clubhouse state and inert covered navigation. Evidence: `actual-debug/`
+  versus `actual-final/`. This was not observable in the isolated component alone.
+- P2 fixed: the filled game capsule inherited a low-contrast muted status label
+  from the page's generic small-text rule. Explicit inherited foreground on the
+  capsule's actual content surface fixes Light/Dark contrast. Primary fixtures
+  now include the production page-system attributes as well.
+- P2 fixed: the old two-layer game board/dropdown and three workspace tabs did not
+  match the source. There is now one compact browsable rail, a paired score above
+  the field in Live, and two pinned Live/Stats tabs. Stats begins with the quarter
+  board and away/Fantasy/home control; it does not repeat the Live hero.
+- P2 fixed: player rows previously carried pictures, redundant team headers and
+  unsegmented positions. The mirrored position groups now use abbreviated names,
+  current owner lines, aligned two-decimal actuals/projections and compact stat
+  lines. Empty opposing slots preserve alignment. Zero-only stat noise is omitted
+  without hiding genuine recorded 0.00 scores. Names reflow at enlarged text.
+- P2 fixed: full-screen routing could discard the unavailable-video message.
+  Missing clips now replace the dead-link entry with the exact NFL game and a
+  persistent, scoped notice. Moment links retain their exact focused play.
 
 ## Required fidelity surfaces
 
-**Typography:** existing locally hosted Inter, compact 13px play descriptions,
-14px play headlines, 12px leader names, tabular 30px NFL scores, smaller secondary
-stats. Full play descriptions remain visible. The reference's rounded native
-font is intentionally adapted to the approved DFL font. No added font request,
-vertical names at enlarged text, display uppercase leakage or clipped stat cells.
+Typography: local Inter, 13px player names, 14px actuals, 12px projections,
+10–11px owner/position/stat metadata, 15px Live headlines and 12px full descriptions.
+Full surname remains in the title/accessibility label; text never collapses to
+single-letter columns. Scores use tabular figures. Native font/color differences
+are deliberate adaptations to the approved DFL visual system.
 
-**Spacing/layout:** native horizontal NFL chips, latest-play strip, perspective
-field, paired scores/clock, separate Stats/Plays/Fantasy, quarter board and paired
-PASS/RUSH/REC leaders follow the source order. Full team box scores follow the
-leaders. One game rail replaces the duplicate board/dropdown. The source's
-Feed/Chat tabs are intentionally omitted. Existing 44px touch targets add some
-height compared with the source. Tables scroll within their own regions and
-cannot trigger a game swipe. Fantasy retains its established aligned two-column
-position order and full names.
+Spacing/layout: compact visual capsules retain 44px control heights. Stats uses
+mirror columns with inner points, position dividers and shared row heights; no
+large gray player boxes. The player row is the tap target. Live uses portraits,
+down/distance, spot and clock, an identifiable outcome and the complete official
+description. The hero scrolls away while rail/tabs remain pinned. Full-screen
+safe-area padding excludes the underlying app header/navigation.
 
-**Colors/tokens:** Medicine Wheel Light/Dark surfaces, text, rules, focus and
-crimson selection use shared tokens. Authentic NFL logos/colors and semantic
-field lines retain their identity. No borrowed Sleeper blue/pink palette or new
-theme entries. Normal Stats contrast is measured in all six viewport/theme
-contexts; original feed/Fantasy and Clubhouse suites also check contrast.
+Colors/tokens: shared background/text/body/line/action/accent tokens in Medicine
+Wheel Light/Dark. Filled selected capsules and segmented controls have explicit
+contrasting text. NFL identity colors and semantic field markings stay intact.
+No new theme option or retired crest palette. Actual rendered contrast is checked.
 
-**Imagery/assets:** authentic ESPN headshots and NFL logos have correct subjects,
-contained crops and no distortion. Leader photos fall back to the authentic NFL
-team logo. Existing functional SVG field data plot is retained: its route lift
-illustrates verified start/end yard lines, not tracking telemetry. No generated
-mascot, decorative drawing, rasterized UI, extra shield or fabricated logo.
-Refresh uses the unmodified Bootstrap arrow-clockwise icon under the existing MIT
-license; original chevrons and shared motion controllers remain.
+Image quality: authentic NFL logos and ESPN player headshots, with an NFL fallback
+that survives live patches. Fantasy rows intentionally omit portraits, matching
+the source. Live and field endpoints show the identified athlete. The field is
+an existing functional SVG data plot with goalposts, a finite travel path and
+verified endpoint/yardage labels; no generated art or fictional tracking routes.
+Existing licensed chevrons/refresh icons are reused.
 
-**Copy/content:** labels are Stats, Plays, Fantasy, Scoreboard, Game leaders and
-Passing/Rushing/Receiving/Kicking. The raw NFL box score preserves provider order,
-stat strings, real zeros and unknown values. Leaders require recorded activity;
-ties are marked. Future quarters remain unknown; totals use observed NFL scores.
-Fantasy points use league data and are not substituted with NFL scoring. A final
-non-coordinate event keeps the last verified field spot and latest description,
-explicitly labeled Final spot, rather than inventing a new play.
+Content/data: one DFL Fantasy context rather than an inert league dropdown. Actual
+owned points stay authoritative; unowned weekly stats and projections use DFL's
+real scoring settings, not a PPR preset relabeled as DFL. Unknowns remain em dashes,
+real zero/negative totals survive, pregame actuals are unknown, and projected
+players can appear before recording a stat. Stable ordering survives score swings.
+No forecast invented from averages or from game-clock extrapolation.
 
-## Verification and remaining limits
+## Interaction, performance and verification
 
-`pnpm check` passes 2,537 tests / 306 files, release/theme/type/name checks and build.
-Eleven new model tests cover provider order, zeros/unknowns, independent and tied
-leaders, negative yards, pregame data, overtime, provider display-value quarters, administrative events
-and safe names/content. Build:
-88 app modules, three startup/four Home modules, one shared stylesheet request.
-No new provider, polling cadence, timer loop or weekly PPR read for raw Stats.
+`pnpm check`: 2,547 tests / 307 files, plus release, theme, type, name and build
+checks. Ten new model cases cover source totals/projections, pregame players,
+unknown/zero/negative values, custom scoring, scope/ambiguity, stable order,
+mirrored markup, athlete resolution and nullified plays. Existing tests remain.
 
-Browser verification uses actual controllers with blocked account/league writes:
-new Game Center suite 108 checks, existing game swipes 60, Replay window 88,
-live refresh 72, plus existing NFL desk/finish and full Clubhouse journeys.
-Coverage includes real touch rail browsing without selection, explicit taps,
-reverse swipes/late responses, unchanged DOM, reading restoration, video identity,
-200% text, 44px controls, contrast, Reduced Motion/app-off and teardown. The new
-persistent suite is wired into the existing NFL-center CI job.
+Browser suites: mobile Scores 202, full Clubhouse 333, NFL desk 127, game swipes
+60, live refresh 72 and clip viewer 88. The new suite replaces the obsolete public
+Gamecast visual target in the existing NFL-center CI job; the former command is a
+compatibility entry point. Coverage includes real touch rail browsing without
+selection, row swipes without accidental cards, reverse/late-response handling,
+view/filter reading restoration, player-card focus return, exact clip/play return,
+missing-video fallback, 200% text, Reduced/app-off motion and teardown.
 
-Compiled actual-data checks passed in both themes across Stats/Plays/Fantasy,
-explicit selection of a second game, actual quarter values and the final verified
-field spot. All visible descriptions, game controls, page edges and selected
-states were inspected. No actionable P0/P1/P2 finding remains. Physical iOS frame pacing,
-VoiceOver speech and the latest authenticated native Sleeper build are not measured.
+The 88-module build retains three startup/four Home modules and one shared CSS
+request. Projection reads start in Fantasy, share the existing week cache and
+refresh at most every 30 minutes. Weekly actuals keep the existing bounded refresh.
+Large immutable catalog/projection indexes are reused during live paints. Field
+movement is finite, unchanged/scroll updates do not restart it, and background or
+covered views pause. No chart, social backend, migration or paid provider added.
+
+Final compiled real-data verification passes in Light/Dark: full-screen bounds,
+actual quarter scores, DFL Fantasy totals/projections, second-game selection,
+contrast, inert covered navigation and exact Clubhouse Back restoration. Final
+screenshots in `actual-final/` were inspected before merging. Physical iOS/Android frame pacing,
+VoiceOver/TalkBack speech and byte-level source screenshot fidelity are unmeasured.
 
 final result: passed
