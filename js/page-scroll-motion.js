@@ -140,6 +140,12 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
       for(const node of rising)cancel?.(node);rising.clear();
       shown=false;dock.hidden=true;dock.inert=true;return;
     }
+    // NFL already has pinned section/game controls; a second context dock
+    // would duplicate them and shrink the reading area.
+    if(root.dataset.route==='clubhouse'&&root.querySelector('#clubhouse-panel-nfl:not([hidden])')){
+      compact=false;cancel?.(dock);shown=false;dock.hidden=true;dock.inert=true;dock.setAttribute('aria-hidden','true');restoreHeading();
+      setStyle(root,'--dfl-scroll-top',`${scrollChromeBottom()}px`);setStyle(root,'--dfl-scroll-height','0px');return;
+    }
     if(dirty)scan();
     if(root.classList.contains('has-home-score-dock')){show(false);return;}
     if(!displayed(hero)){compact=false;show(false);return;}

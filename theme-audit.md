@@ -1,3 +1,15 @@
+## 1.571.0 — inline NFL Live and persistent navigation
+
+NFL Live uses the regular Clubhouse/app shell in Medicine Wheel Light/Dark, with
+usable bottom navigation and section tabs. Measured sticky controls sit below
+the shared header; the generic compact dock stays out of NFL's control stack.
+No new font, imagery, theme or palette. Actual compiled phone, 200% text and
+landscape captures in /workspace/dfl-scores-1571/ were inspected for edges, contrast,
+nav states and control overlap. Same-node section changes, direct entry and Home
+navigation pass; the final section-scroll adjustment and compiled build pass
+actual-final/ checks in both themes, including returning the next section to top. Physical-device
+frame pacing and screen-reader speech remain unmeasured.
+
 ## 1.570.0 — visible Clubhouse return
 
 The full-screen NFL viewer uses a labeled Clubhouse return control with a 44px
