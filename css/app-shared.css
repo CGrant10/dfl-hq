@@ -11132,6 +11132,19 @@ html[data-ui-motion="off"] .notification-settings-sheet :is(button,label) { tran
 .gameday-player-score>small>.gd-score-delta { inset:0 auto auto 0; visibility:visible; padding:0; border:0; border-radius:0; background:transparent; color:var(--ok); font:600 .625rem/1.4 var(--font-ui); }
 .gameday-player-score>small>.gd-score-delta.is-negative { color:var(--danger-ink,var(--text)); }
 .gameday-player-score:has(.player-return-delta) .gd-score-delta { display:none; }
+[data-viewed-player]:has(.player-return-delta)>small { position:relative; opacity:1; visibility:hidden; }
+[data-viewed-player]>small>.player-return-delta { inset:0 0 auto auto; padding:0; visibility:visible; background:transparent; line-height:inherit; }
+
+/* Return gains pop once without moving rows, the delta or GPU score anchors. */
+[data-return-growing] { -webkit-text-fill-color:transparent; }
+.player-return-score-copy { position:absolute; inset:0; z-index:3; display:block; font:inherit; letter-spacing:inherit; white-space:nowrap; text-align:inherit; transform-origin:center; pointer-events:none; -webkit-text-fill-color:currentColor; }
+[data-return-growing] .player-return-delta { -webkit-text-fill-color:currentColor; }
+html[data-ui-motion="off"] .player-return-score-copy,[data-motion="off"] .player-return-score-copy { display:none; }
+html[data-ui-motion="off"] [data-return-growing],[data-motion="off"] [data-return-growing] { -webkit-text-fill-color:currentColor; }
+@media(prefers-reduced-motion:reduce) {
+ .player-return-score-copy { display:none; }
+ [data-return-growing] { -webkit-text-fill-color:currentColor; }
+}
 
 /* Inset rims keep the existing portrait footprint and react briefly to live
    changes, including the player-card hero. */

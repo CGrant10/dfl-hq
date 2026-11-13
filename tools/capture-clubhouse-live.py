@@ -97,15 +97,18 @@ with sync_playwright() as p:
    check(tag+' starting players are visible on the first phone screen',page.locator('[data-clubhouse-matchup="1"] .gd-lineup-pairs .gd-compare-row').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-70'))
    check(tag+' matchup uses compact chips and a compact first player pair',page.locator('.clubhouse-matchup-strip').evaluate('e=>e.clientHeight<=56') and page.locator('[data-clubhouse-matchup="1"] .gd-compare-row').first.evaluate('e=>e.clientHeight<=100'))
    if os.environ.get('DFL_CLUBHOUSE_POINTS_ONLY'):
+    page.evaluate("f.growCapture=new MutationObserver(()=>{for(const e of document.querySelectorAll('.player-return-score-copy')){const a=e.getAnimations()[0];if(a&&a.playState!=='paused'){a.pause();a.currentTime=180}}});f.growCapture.observe(document.body,{childList:true,subtree:true})")
     page.evaluate('''async()=>{f.page.leave();localStorage.removeItem('dfl.player-points.v1');const {currentMember}=await import('/js/members.js');const {recordViewedPoints}=await import('/js/viewed-player-points.js');const scope=`${currentMember()?.id||'guest'}:2026:7:league`,at=Date.now()-60000;recordViewedPoints(localStorage,scope,'1',18.6,at);recordViewedPoints(localStorage,scope,'4',14.5,at);await f.page.render(document.getElementById('view'))}''')
     page.wait_for_selector('[data-gameday-player="1"]');page.locator('[data-clubhouse-matchup="1"] .gd-compare-row').first.scroll_into_view_if_needed()
     page.wait_for_selector('.player-return-delta')
+    page.wait_for_selector('.player-return-score-copy')
+    check(tag+' only the gained score grows above the return delta',page.locator('.player-return-score-copy').count()==1 and page.locator('.player-return-score-copy').get_attribute('aria-hidden')=='true')
     check(tag+' real Clubhouse return shows the gained and corrected player points',set(page.locator('.player-return-delta').all_text_contents())=={'+3.4','−2.5'})
     check(tag+' return changes sit alongside their actual player totals',page.locator('[data-viewed-player="1"]').filter(visible=True).inner_text().startswith('22.00') and page.locator('[data-viewed-player="4"]').filter(visible=True).inner_text().startswith('12.00'))
-    check(tag+' return changes align beneath the points without covering digits',page.locator('.player-return-delta').evaluate_all('es=>Math.abs(es[0].getBoundingClientRect().top-es[1].getBoundingClientRect().top)<1&&es.every(e=>e.getBoundingClientRect().top>=e.parentElement.getBoundingClientRect().bottom-1)'))
+    check(tag+' return changes use the phase slot without covering digits or stats',page.locator('.player-return-delta').evaluate_all('''es=>{const separate=(a,b)=>a.right<=b.left||a.left>=b.right||a.bottom<=b.top||a.top>=b.bottom;return es.every(e=>{const r=e.getBoundingClientRect(),score=e.closest('[data-viewed-player]'),stats=score.closest('.gd-compare-player').querySelector('.gd-player-stat-line');return e.parentElement.tagName==='SMALL'&&separate(r,score.querySelector('.gd-thermal-value').getBoundingClientRect())&&(!stats||separate(r,stats.getBoundingClientRect()))})}'''))
     page.screenshot(path=str(OUT/f'{width}-{mode}-clubhouse-return-points.png'))
     check(tag+' real return changes fit without page overflow',page.evaluate('document.documentElement.scrollWidth<=innerWidth') and not errors)
-    page.evaluate('f.page.leave()');check(tag+' leaving Clubhouse removes return effects',page.locator('.player-return-delta').count()==0);c.close();continue
+    page.evaluate('f.growCapture.disconnect();f.page.leave()');check(tag+' leaving Clubhouse removes return effects',page.locator('.player-return-delta,.player-return-score-copy,[data-return-growing]').count()==0);c.close();continue
    if os.environ.get('DFL_CLUBHOUSE_SWIPE_ONLY'):
     from clubhouse_swipe_review import review_matchup_swipes
     review_matchup_swipes(page,c,check,OUT,tag,width,mode)

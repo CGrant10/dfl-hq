@@ -1,3 +1,5 @@
+import {animateUi,cancelUiMotion} from './ui-motion.js';
+
 const KEY='dfl.player-points.v1',TTL=30*86400000;
 const points=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))?Math.round(Number(value)*100)/100:null;
 export function viewedPointChange(before,after){
@@ -34,17 +36,30 @@ export function mountViewedPlayerPoints(root,{getScope,active=()=>root.isConnect
   const b=node.getBoundingClientRect(),x=b.left+b.width/2,y=b.top+b.height/2;
   return b.width>0&&b.height>0&&x>0&&x<innerWidth&&y>0&&y<innerHeight&&node.contains(document.elementFromPoint(x,y));
  };
- const clearBadge=item=>{clearTimeout(item.fade);item.animation?.cancel();item.animation=null;item.badge?.remove();item.badge=null};
+ const clearGrowth=item=>{if(!item.growth)return;const {copy,number}=item.growth;item.growth=null;cancelUiMotion(copy);copy.remove();delete number.dataset.returnGrowing};
+ // Only the decorative digits grow. Keep the real score, thermal glyph anchor
+ // and the separate return delta in place, including while the page scrolls.
+ const grow=(node,item)=>{
+  const number=node.querySelector('.gd-thermal-number')||node.querySelector('b');if(!number||number.hasAttribute('data-score-rolling'))return;
+  const value=number.querySelector('.gd-thermal-value')||number;
+  const copy=document.createElement('span');copy.className='player-return-score-copy';copy.textContent=value.textContent;copy.setAttribute('aria-hidden','true');number.append(copy);
+  const animation=animateUi(copy,[{transform:'scale(1)',offset:0,easing:'cubic-bezier(.2,.75,.25,1)'},{transform:'scale(1.18)',offset:.32,easing:'cubic-bezier(.2,.75,.25,1)'},{transform:'scale(.99)',offset:.76},{transform:'scale(1)',offset:1}],{duration:560,easing:'linear'});
+  if(!animation){copy.remove();return}
+  number.dataset.returnGrowing='';const growth={copy,number};item.growth=growth;
+  void animation.finished.catch(()=>{}).then(()=>{if(item.growth===growth)clearGrowth(item)});
+ };
+ const clearBadge=item=>{clearGrowth(item);clearTimeout(item.fade);item.animation?.cancel();item.animation=null;item.badge?.remove();item.badge=null};
  const reset=item=>{clearTimeout(item.timer);item.timer=null;item.engaged=false;clearBadge(item)};
  const acknowledge=(node,item,show)=>{
   if(!visible(node))return;
   const s=sample(node),key=`${scope}:${s.source}:${s.id}:${s.value}:${s.at}`;if(key===item.sample)return;
-  item.sample=key;if(!deviceStorage())return;
+  clearGrowth(item);item.sample=key;if(!deviceStorage())return;
   const change=recordViewedPoints(batchedStorage,`${scope}:${s.source}`,s.id,s.value,s.at);if(!show||!change)return;
   clearBadge(item);
-  const badge=document.createElement('span');badge.className=`player-return-delta${change.delta<0?' is-negative':''}`;badge.textContent=change.label;
-  badge.setAttribute('role','img');badge.setAttribute('aria-label',`${change.delta>0?'Up':'Down'} ${Math.abs(change.delta)} fantasy points since you last viewed this player`);(node.querySelector('b')||node).append(badge);item.badge=badge;
   const motion=getMotion()&&!reduced.matches&&document.documentElement.dataset.uiMotion!=='off';
+  if(motion&&change.delta>0)grow(node,item);
+  const badge=document.createElement('span');badge.className=`player-return-delta${change.delta<0?' is-negative':''}`;badge.textContent=change.label;
+  badge.setAttribute('role','img');badge.setAttribute('aria-label',`${change.delta>0?'Up':'Down'} ${Math.abs(change.delta)} fantasy points since you last viewed this player`);(node.querySelector(':scope > small')||node.querySelector('b')||node).append(badge);item.badge=badge;
   if(motion&&badge.animate){item.animation=badge.animate([{opacity:0,transform:'translateY(2px)',offset:0},{opacity:1,transform:'none',offset:.08},{opacity:1,transform:'none',offset:.7},{opacity:0,transform:'translateY(-3px)',offset:1}],{duration:3600,easing:'ease-out',fill:'both'});item.animation.onfinish=()=>clearBadge(item)}
   item.fade=setTimeout(()=>clearBadge(item),3700);
  };
@@ -62,7 +77,7 @@ export function mountViewedPlayerPoints(root,{getScope,active=()=>root.isConnect
  };
  const schedule=()=>{if(!frame&&!stopped)frame=requestAnimationFrame(()=>{frame=0;refresh()})};
  const suspend=()=>{flush();for(const item of items.values())reset(item);if(!document.hidden)schedule()};
- const motion=()=>{if(stopped)return;if(reduced.matches||!getMotion()||document.documentElement.dataset.uiMotion==='off')for(const item of items.values()){item.animation?.cancel();item.animation=null}};
+ const motion=()=>{if(stopped)return;if(reduced.matches||!getMotion()||document.documentElement.dataset.uiMotion==='off')for(const item of items.values()){clearGrowth(item);item.animation?.cancel();item.animation=null}};
  const clickMotion=event=>{if(event.target.closest('[data-clubhouse-motion]'))queueMicrotask(motion)};
  const modal=new MutationObserver(schedule);modal.observe(document.body,{attributes:true,attributeFilter:['open'],subtree:true});
  root.addEventListener('click',clickMotion);root.addEventListener('dfl:clubhouse-context',schedule);root.addEventListener('dfl:clubhouse-tab',schedule);root.addEventListener('dfl:player-points-painted',schedule);document.addEventListener('visibilitychange',suspend);window.addEventListener('pageshow',schedule);window.addEventListener('pagehide',suspend);window.addEventListener('dfl:ui-motion-change',motion);reduced.addEventListener('change',motion);
