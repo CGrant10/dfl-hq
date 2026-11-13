@@ -1,3 +1,15 @@
+## 1.570.0 — visible Clubhouse return
+
+The full-screen NFL viewer uses a labeled Clubhouse return control with a 44px
+target, shared text/background/border tokens and the existing licensed chevron.
+The control stays pinned in short landscape screens; enlarged text gives the game
+rail its own row and the pinned tabs follow the toolbar's measured height.
+No theme, font or imagery added. Inspected compiled Light/Dark phone and short-landscape screenshots under
+/workspace/dfl-scores-1570/actual-verified/ and landscape/, including the pinned
+return control over scrolled content. Contrast, 242 mobile Scores checks, 349
+Clubhouse checks and pnpm check pass; enlarged text keeps the full label and
+updates the pinned-tab offset. Physical-device frame pacing/speech unmeasured.
+
 ## 1.569.0 — NFL Scores visual refinement
 
 Current-run before captures compare NFL Scores with Clubhouse in Medicine Wheel

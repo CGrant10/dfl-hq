@@ -1,3 +1,25 @@
+# Full-screen NFL return — 1.570.0
+
+The full-screen Live/Stats view stays intact. Its previously icon-only Back control
+is now a visible **Clubhouse** button. It replaces the viewer URL with the same
+season/week's Matchups view, including when opened from Home or a fresh direct
+NFL link. Generic history Back could previously return to Home instead.
+
+The return control stays pinned while scrolling, including short landscape screens.
+It keeps a 44px target, shared theme tokens and a readable label. Enlarged text
+moves game browsing to its own toolbar row; a cleaned-up ResizeObserver keeps the
+pinned tab offset synchronized without adding data reads. The observer disconnects
+when the viewer closes. Existing app chrome returns after route cleanup.
+
+Evidence: /workspace/dfl-scores-1570/. All 242 mobile Scores and 349 Clubhouse
+checks pass, plus pnpm check (2,547 tests / 307 files, release, theme, type, name
+and production-build checks). The build retains three startup/four Home modules.
+Compiled real-data checks pass in Light/Dark at 390×844 and 844×390: normal
+Clubhouse entry, scrolled Home-to-NFL entry and a fresh direct NFL URL all return
+to Matchups with the same season/week, restored navigation and no full-screen
+scroll lock. Screenshots in actual-verified/ and landscape/ were inspected before
+merging. Physical-device frame pacing and screen-reader speech remain unmeasured.
+
 # NFL Scores visual refinement — 1.569.0
 
 The approved full-screen Live/Stats structure from 1.568 remains. This pass applies
