@@ -17,7 +17,7 @@ with sync_playwright() as p:
  page.evaluate("window.reviewStage.suspend('next-action-review',true)")
  page.evaluate("""async()=>{
  const {buildWaiverPlan}=await import('./js/waiver-coach.js'),{DFL_SLOTS}=await import('./js/lineup-alert-model.js'),{buildWeeklyBriefing,applyWeeklyBriefing}=await import('./js/weekly-briefing.js');
- window.actionReviewRoot=document.querySelector('[data-home-report-slot]');
+ window.actionReviewRoot=document.querySelector('[data-home-report-slot]');window.actionReviewFocus=document.querySelector('[data-home-focus-slot]');window.updateDaily=(await import('./js/home-daily-desk.js')).updateHomeDailyDesk;
  window.drawActionReview=kind=>{
   const now=Date.parse('2026-10-20T16:00:00Z'),player=(id,position,points,extra={})=>({id,name:id,position,points,team:'CHI',hasGame:true,injuryStatus:null,isOut:false,...extra});
   const starters=DFL_SLOTS.map((slot,i)=>player('Starter '+i,slot==='FLEX'?'WR':slot,10)),pool=new Map(starters.map(p=>[p.id,p]));
@@ -32,9 +32,9 @@ with sync_playwright() as p:
   if(kind==='trade'){const target=player('Target WR','WR',20);pool.set(target.id,target);rosters[1].players=[target.id];move={mine:{id:'1'},need:{position:'WR',urgent:true},trade:{player:target,team:{id:'2'}},tradeGain:10};}
   const weekly=[{week:7,pool}],plan=buildWaiverPlan({rosters,rosterId:1,weekly,schedule,values,league,now});
   window.actionReviewCoach={plan,rosters,weekly,nfl:{teams:schedule},league,rescue,checkedAt:now};
-  const brief=buildWeeklyBriefing({coach:actionReviewCoach,outlook,move,meSleeperId:'u1',now:new Date(now)});applyWeeklyBriefing(actionReviewRoot,brief);window.actionReviewLast=brief;return {kind:brief.actionKind,text:brief.action,url:brief.actionUrl};
+  const brief=buildWeeklyBriefing({coach:actionReviewCoach,outlook,move,meSleeperId:'u1',now:new Date(now)});applyWeeklyBriefing(actionReviewRoot,brief);updateDaily(actionReviewFocus,{outlook,briefing:brief,now:new Date(now)});window.actionReviewLast=brief;return {kind:brief.actionKind,text:brief.action,url:brief.actionUrl};
  };
- window.failActionReview=()=>applyWeeklyBriefing(actionReviewRoot,{action:'Refresh your roster advice',actionUrl:'#/analyzer?owner=u1',checkedStatus:'Roster refresh unavailable'});
+ window.failActionReview=()=>{const next={actionKind:'refresh',action:'Refresh your roster advice',actionUrl:'#/analyzer?owner=u1',checkedStatus:'Roster refresh unavailable'};applyWeeklyBriefing(actionReviewRoot,next);updateDaily(actionReviewFocus,{outlook:{week:7},briefing:next})};
  document.querySelector('details[data-page-detail="home-week"]').open=true;
  }""")
  page.locator('[data-week-tab="brief"]').click()
@@ -45,7 +45,7 @@ with sync_playwright() as p:
    page.set_viewport_size({'width':width,'height':900})
    for case,kind in expected.items():
     value=page.evaluate('(kind)=>drawActionReview(kind)',case);assert value['kind']==kind,(case,value)
-    link=page.locator('[data-brief-action]');link.scroll_into_view_if_needed()
+    link=page.locator('[data-home-primary]');link.scroll_into_view_if_needed()
     assert 'drop Returning' not in link.inner_text()
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(theme,width,case)
     assert link.evaluate('e=>e.getBoundingClientRect().height>=44&&e.scrollWidth<=e.clientWidth'),(theme,width,case)
@@ -54,14 +54,14 @@ with sync_playwright() as p:
     if case in ['ir','waiver','gap','lineup']:assert link.get_attribute('target')=='_blank' and link.get_attribute('rel')=='noopener noreferrer'
     results.append({'theme':theme,'width':width,'case':case,**value})
     if width==390 and case in ['ir','waiver']:
-     page.locator('[data-brief-next-move]').screenshot(path=str(out/f'next-action-{case}-{theme}.png'))
- page.evaluate("drawActionReview('waiver');window.adviceLink=document.querySelector('[data-brief-action]');adviceLink.focus();drawActionReview('waiver')")
+     page.locator('.home-daily-focus').screenshot(path=str(out/f'next-action-{case}-{theme}.png'))
+ page.evaluate("drawActionReview('waiver');window.adviceLink=document.querySelector('[data-home-primary]');adviceLink.focus();drawActionReview('waiver')")
  assert page.evaluate('document.activeElement===adviceLink')
  page.evaluate('failActionReview()')
- assert page.locator('[data-brief-action]').inner_text()=='Refresh your roster advice'
- assert page.locator('[data-brief-action]').get_attribute('target')!='_blank'
- assert page.locator('[data-brief-action-kind]').inner_text()=='NEXT MOVE'
- assert page.locator('[data-brief-checked]').inner_text()=='Roster refresh unavailable'
+ assert page.locator('[data-home-primary]').inner_text()=='Review lineup'
+ assert page.locator('[data-home-primary]').get_attribute('target')!='_blank'
+ assert page.locator('[data-brief-action-kind]').text_content()=='NEXT MOVE'
+ assert page.locator('[data-brief-checked]').text_content()=='Roster refresh unavailable'
  assert not errors,errors
  browser.close()
 scope['server'].shutdown()

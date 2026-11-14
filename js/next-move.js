@@ -10,6 +10,7 @@
    ===================================================================== */
 import { ANALYZER_POSITIONS } from "./team-analyzer.js";
 import { esc } from "./ui.js";
+import {automaticTradePlayer} from './player-availability.js';
 
 const num = value => Number(value) || 0;
 const nameOf = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || team?.id || ""}`;
@@ -39,7 +40,7 @@ function tradeCandidate(analysis, mine, need, weekly) {
   for (const team of analysis.teams || []) {
     if (String(team.id) === String(mine.id)) continue;
     for (const player of team.lineup?.bench || []) {
-      if (player.position !== need.position) continue;
+      if (player.position !== need.position || !automaticTradePlayer(player) || player.isRisky || [...(team.reserve||[]),...(team.taxi||[])].map(String).includes(String(player.id))) continue;
       const current = weeklyPlayer(weekly, player.id);
       if (current?.isOut || current && !current.hasGame) continue;
       options.push({ player, team, week: projectedWeek(weekly, player) });

@@ -29,7 +29,7 @@ describe('a purposeful Home next move',()=>{
   expect(select({...coach,plan:{...base.plan,offers:[offer('Kicker','K',8,{drop:null,gains:[{week:7,gain:8,coverage:1}]})]}})).toMatchObject({kind:'waiver',text:'Add Kicker · +8.0 projected'});
  });
  it('recognizes a confirmed bye gap even when no injury alert is present',()=>{
-  const kicker=offer('Kicker','K',8,{drop:{name:'Bye Kicker'},targetWeek:8,gains:[{week:7,gain:8,coverage:1},{week:8,gain:10,coverage:0}]});
+  const kicker=offer('Kicker','K',8,{drop:{name:'Bye Kicker',position:'K'},targetWeek:8,gains:[{week:7,gain:8,coverage:1},{week:8,gain:10,coverage:0}]});
   expect(select({...base,plan:{...base.plan,offers:[kicker]}}).text).toBe('Add Kicker · drop Bye Kicker · +8.0 projected');
  });
  it('does not bench a questionable star as if he were ruled out',()=>{

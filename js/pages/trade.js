@@ -1,3 +1,4 @@
+import {readTradeWatch,writeTradeWatch,tradeWatchMarkup,tradeWatchSearch} from '../trade-watchlist.js';
 import {mountTradeOfferMenus} from '../trade-offer-menus.js';
 import {mountTradeOfferBoard} from '../trade-offer-board.js';
 import {patchGameDay} from '../game-day-dom.js';
@@ -91,7 +92,7 @@ function offerSummary(offer,pool){
 
 function offerControls(offer,pool){
  const pins=offer.parties?'':`<details class="tb-offer-pin"><summary aria-label="Keep a player in the search">Keep</summary><div>${[['send',offer.sendA],['receive',offer.sendB]].flatMap(([side,ids])=>ids.map(id=>`<button type="button" data-tb-pin="${esc(id)}" data-pin-side="${side}">Keep ${esc(pool.get(String(id))?.name||id)}</button>`)).join('')}</div></details>`;
- return `<div class="tb-card-actions"><button type="button" data-tb-save>Save</button><details class="tb-offer-more"><summary aria-label="More offer actions">More <span aria-hidden="true">⌄</span></summary><div class="tb-offer-more-actions"><button type="button" data-tb-pass>Pass offer</button><button type="button" data-tob-compare aria-pressed="false">Compare</button><button type="button" data-tob-edit>Edit offer</button>${pins}</div></details></div>`;
+ return `<div class="tb-card-actions"><button type="button" data-tb-save>Save</button><details class="tb-offer-more"><summary aria-label="More offer actions">More <span aria-hidden="true">⌄</span></summary><div class="tb-offer-more-actions"><button type="button" data-tb-pass>Pass offer</button><button type="button" data-tob-compare aria-pressed="false">Compare</button><button type="button" data-tob-edit>Edit offer</button>${pins}${(offer.sendB||[]).map(id=>`<button type="button" data-tw-add="${esc(id)}">Watch ${esc(pool.get(String(id))?.name||id)}</button>`).join('')}</div></details></div>`;
 }
 function offerBalance(offer){
  const p=tradePerspective(offer),drops=offer.parties?(offer.requiredDrops||[]).map(ids=>ids.length):[p.requiredDropsA?.length||0,p.requiredDropsB?.length||0];
@@ -142,7 +143,7 @@ function anchorOptions(players, selected, label) {
   the same page: propose above, judge below.
 */
 function tradeBoardHeader(mode='offers',leagueId=null,scoutCount=null){
- return `<div class="tb-head-row page-identity"><header class="tb-head"><h1>${mode==='room'?'Deal Room':mode==='manual'?'Check a trade':'Trades'}</h1></header><div class="td-external-tools">${sleeperAction(leagueId,'trades',{label:'Sleeper'})}<a class="btn ghost small" href="#/trade?receipts=1">Receipts</a><details class="td-intentions-tools"><summary>Intentions</summary><div data-ti-host></div></details></div></div><div class="td-entry-actions" aria-label="Trade tools"><button type="button" data-td-mode="offers" aria-pressed="${mode==='offers'}">Find offers</button><button type="button" data-tb-scout>Scout${scoutCount==null?'':' ('+scoutCount+')'}</button><button type="button" data-td-mode="manual" aria-pressed="${mode==='manual'}">Check a trade</button><button type="button" data-td-mode="room" aria-pressed="${mode==='room'}">Deal room</button><button type="button" data-td-compare aria-label="Compare saved deals">Saved deals</button></div>`;
+ return `<div class="tb-head-row page-identity"><header class="tb-head"><h1>${mode==='room'?'Deal Room':mode==='manual'?'Check a trade':'Trades'}</h1></header><div class="td-external-tools">${sleeperAction(leagueId,'trades',{label:'Sleeper'})}<a class="btn ghost small" href="#/trade?receipts=1">Receipts</a><details class="td-intentions-tools"><summary>Intentions</summary><div data-ti-host></div></details></div></div><div class="td-entry-actions" aria-label="Trade tools"><button type="button" data-td-mode="offers" aria-pressed="${mode==='offers'}">Find offers</button><button type="button" data-tb-scout>Scout${scoutCount==null?'':' ('+scoutCount+')'}</button><button type="button" data-td-mode="manual" aria-pressed="${mode==='manual'}">Check a trade</button><button type="button" data-td-mode="room" aria-pressed="${mode==='room'}">Deal room</button><button type="button" data-td-compare aria-label="Compare saved deals">Saved deals</button></div><div data-trade-watch-slot></div>`;
 }
 
 function tradeLab(team, teams, pool, shop) {
@@ -297,15 +298,16 @@ function page(data, tradeAlerts = []) {
   if (saved) { selectedId = saved.selectedId; Object.assign(trade, saved.trade); Object.assign(shop, saved.shop); }
   // A new visit shops the whole league. Keep the manual draft separately;
   // an explicit incoming target link can still narrow the search below.
-  if(!returning||!saved)resetTradeSearch(shop);
+  if(!returning||!saved){resetTradeSearch(shop);shop.receivePositions=readTradeWatch(me?.id,data.projectionSeason,selectedId).positions;}
   if(!returning&&params.get('room')==='1')shop.mode='room';
   const target = params.get('target'), partner = data.teams.find(t => String(t.id) === params.get('partner'));
   if (!returning && target && partner && String(partner.id) !== String(selectedId) && partner.playerIds.map(String).includes(target)) {
     shop.partnerId = partner.id; shop.memberIds = []; shop.anchorPartnerId = partner.id;
     shop.receiveAnchors = [target]; shop.sendAnchors = []; shop.sendCount = 'any'; shop.receiveCount = 'any';shop.mode='offers';shop.customOpen=false;shop.refineOpen=true;shop.setupOpen=true;
+    shop.receivePositions=normalizeReceivePositions([...shop.receivePositions,data.pool.get(target)?.position]);
   }
   shop.scoutBaseline=readScoutBaseline(me?.id,data.projectionSeason);
-  saveDraft = () => {const snapshot=tradeDraft({selectedId,trade,shop});writeViewMemory(me?.id,draftKey,snapshot);writeViewMemory(me?.id,visitDraft,snapshot)};
+  saveDraft = () => {const watch=readTradeWatch(me?.id,data.projectionSeason,selectedId);writeTradeWatch(me?.id,data.projectionSeason,selectedId,{...watch,positions:shop.receivePositions});const snapshot=tradeDraft({selectedId,trade,shop});writeViewMemory(me?.id,draftKey,snapshot);writeViewMemory(me?.id,visitDraft,snapshot)};
 
   return {
     markup: `<div class="ta-report td-page" data-td-body></div>${completedTradeMarkup(tradeAlerts, selectedTransactionId)}`,
@@ -415,6 +417,8 @@ function page(data, tradeAlerts = []) {
       shop.findOffers=(key,query)=>shop.offerState={key,...(shop.horizon==='next4'&&shop.scheduleLoading?{state:'loading',offers:[],counts:{}}:catalog.read(key,query))};
       /* Whatever the ticket is currently showing, so Share renders the same
          deal the reader is looking at rather than re-deriving one. */
+      let watchOpen=false;
+      const paintWatch=()=>{const slot=body.querySelector('[data-trade-watch-slot]');if(slot)slot.innerHTML=tradeWatchMarkup(readTradeWatch(me?.id,data.projectionSeason,selectedId),data.teams,data.pool,selectedId,{open:watchOpen})};
       let deal = null,proposals=readTradeProposals(me?.id,data.projectionSeason),proposalsOpen=false,transactionScrolled=false;
       body.addEventListener('toggle',event=>{
         if(event.target.matches('.tb-offer-preview')&&body.contains(event.target))fillOfferPreview(event.target);
@@ -434,6 +438,7 @@ function page(data, tradeAlerts = []) {
 
         const setup=body.querySelector(".tb-setup");if(setup)shop.setupOpen=setup.open;
         const refine=body.querySelector('.tb-refine'),comparison=body.querySelector('.td-proposals');
+        const watchPanel=body.querySelector('.trade-watch');if(watchPanel)watchOpen=watchPanel.open;
         if(refine)shop.refineOpen=refine.open;
         if(comparison)proposalsOpen=comparison.open;
         const team = data.teams.find(item => item.id === selectedId) || data.teams[0];
@@ -449,6 +454,7 @@ function page(data, tradeAlerts = []) {
           <div data-td-proposals-slot>${proposalsMarkup(proposals,data.teams,data.pool,proposalsOpen)}</div>${tradeDataContext(data,data.pool)}
           <div data-td-health>${tradeModelHealthMarkup({ ...tradeModelHealth(data.pool), accountability: recommendationOutcomes(data.pool, localStorage,
             shop.sharedAudit.filter(row => !row.season || Number(row.season) === Number(data.projectionSeason))) }, esc, true)}</div>`;
+        paintWatch();
         const share = body.querySelector("[data-td-share]");
         const send = body.querySelector('[data-td-negotiate]');
         negotiation.mount(body.querySelector('[data-tr-host]'));
@@ -523,6 +529,7 @@ function page(data, tradeAlerts = []) {
           selectedId = event.target.value;
           trade.memberIds = []; trade.sends = [new Set(), new Set()];trade.destinations={};trade.filters={};trade.rosterOpen={}; trade.editing = true;
           const mode=shop.mode;resetBlueprint();shop.mode=mode;shop.customOpen=mode==='manual';
+          shop.receivePositions=readTradeWatch(me?.id,data.projectionSeason,selectedId).positions;
           draw(); body.querySelector("[data-td-team]")?.focus({preventScroll:true}); return;
         }
         if (event.target.matches("[data-ta-shop-partner]")) {
@@ -584,7 +591,21 @@ function page(data, tradeAlerts = []) {
         const summary = body.querySelector("[data-tb-max-summary]");
         if (summary) summary.textContent = value;
       });
+      body.addEventListener('input',event=>{if(!event.target.matches('[data-tw-search]'))return;const rows=tradeWatchSearch(event.target.value,data.teams,data.pool,selectedId,readTradeWatch(me?.id,data.projectionSeason,selectedId).targets);const list=body.querySelector('[data-tw-results]');list.innerHTML=rows.map(p=>`<li><button type="button" data-tw-add="${esc(p.id)}">${esc(p.name)} <small>${esc(p.position)} · Watch</small></button></li>`).join('')||(event.target.value.trim().length>=2?'<li>No matching rostered players.</li>':'');body.querySelector('[data-tw-status]').textContent=event.target.value.trim().length>=2?`${rows.length} matching players`:'';});
+      body.addEventListener('toggle',event=>{if(event.target.matches('.trade-watch'))watchOpen=event.target.open;},true);
       body.addEventListener("click", async event => {
+        const watchButton=event.target.closest('[data-tw-add],[data-tw-remove],[data-tw-shop]');
+        if(watchButton){
+          const id=watchButton.dataset.twAdd||watchButton.dataset.twRemove||watchButton.dataset.twShop,watch=readTradeWatch(me?.id,data.projectionSeason,selectedId);
+          if(watchButton.hasAttribute('data-tw-shop')){const p=data.pool.get(id),owner=data.teams.find(t=>String(t.id)===watchButton.dataset.twOwner);if(!p||!owner?.playerIds.map(String).includes(id)){toast('That roster changed. Refresh targets.',true);return;}shop.partnerId=owner.id;shop.anchorPartnerId=String(owner.id);shop.memberIds=[];shop.sendAnchors=[];shop.receiveAnchors=[id];shop.mode='offers';shop.customOpen=false;shop.setupOpen=true;shop.receivePositions=normalizeReceivePositions([...shop.receivePositions,p.position]);refreshOffers();body.querySelector('[data-tb-offers]')?.scrollIntoView({block:'start',behavior:'instant'});return;}
+          const adding=watchButton.hasAttribute('data-tw-add');
+          if(adding&&watch.targets.includes(id)){toast('Already watching this player');return;}
+          if(adding&&watch.targets.length>=12){toast('12 targets saved. Remove one first.',true);return;}
+          const targets=adding?[...watch.targets,id]:watch.targets.filter(value=>value!==id);
+          if(!writeTradeWatch(me?.id,data.projectionSeason,selectedId,{...watch,targets})){toast('Could not save targets on this device.',true);return;}
+          watchOpen=true;paintWatch();body.querySelector('[data-tw-search]')?.focus({preventScroll:true});toast(adding?'Target saved on this device':'Target removed');return;
+        }
+
         const quickGoal=event.target.closest('[data-tb-quick-goal]');
         if(quickGoal){if(!quickGoal.disabled&&shop.goal!==quickGoal.dataset.tbQuickGoal){shop.goal=quickGoal.dataset.tbQuickGoal;refreshOffers();body.querySelector(`[data-tb-quick-goal="${shop.goal}"]`)?.focus({preventScroll:true});}return;}
         // Fill before the outer disclosure controller measures its destination.
@@ -603,7 +624,7 @@ function page(data, tradeAlerts = []) {
           if(offerAction.hasAttribute('data-tb-pin')){const anchors=tradeOfferAnchors(offer,offerAction.dataset.tbPin,offerAction.dataset.pinSide);if(anchors){shop.passedOffers=[...new Set([...(shop.passedOffers||[]),`${selectedId}:${offerKey(offer)}`])].slice(-300);Object.assign(shop,anchors);refreshOffers();saveDraft?.();body.querySelector('[data-tb-offers]')?.focus({preventScroll:true});}return;}
           const parties=offer.parties||[data.teams.find(t=>String(t.id)===String(selectedId)),offer.other],candidate=evaluateTradeDeal(parties,offer.sends||[offer.sendA,offer.sendB],data.pool,offer.destinations);
           if(!candidate){toast('Rosters changed. Refresh offers.',true);return;}
-          const row=savedTradeProposal(candidate),fingerprint=r=>JSON.stringify([r.teamIds,r.sends,r.destinations]);
+          const row=savedTradeProposal(candidate,{pool:data.pool}),fingerprint=r=>JSON.stringify([r.teamIds,r.sends,r.destinations]);
           if(proposals.some(r=>fingerprint(r)===fingerprint(row))){toast('Already in saved deals');return;}
           if(proposals.length>=3){toast('Three deals saved. Remove one from Saved deals first.',true);return;}
           const next=[...proposals,row];if(!writeTradeProposals(me?.id,data.projectionSeason,next)){toast('Could not save on this device. Try again.',true);return;}
@@ -654,16 +675,16 @@ function page(data, tradeAlerts = []) {
           else body.querySelector(shop.customOpen?'.td-working-as select':`[data-td-mode="${shop.mode}"]`)?.focus({preventScroll:true});
           return;
         }
-        if(event.target.closest('[data-td-compare]')){if(shop.mode==='room'){shop.mode='offers';draw();}proposalsOpen=true;const slot=body.querySelector('[data-td-proposals-slot]');slot.innerHTML=proposalsMarkup(proposals,data.teams,data.pool,true);slot.scrollIntoView({block:'start',behavior:'instant'});return;}
+        if(event.target.closest('[data-td-compare]')){if(shop.mode==='room'){shop.mode='offers';draw();}proposalsOpen=true;const slot=body.querySelector('[data-td-proposals-slot]');slot.innerHTML=proposalsMarkup(proposals,data.teams,data.pool,true);slot.scrollIntoView({block:'start',behavior:'instant'});slot.querySelector('summary')?.focus({preventScroll:true});return;}
         if(event.target.closest('[data-td-save-proposal]')){
-          if(!deal)return;const row=savedTradeProposal(deal),fingerprint=r=>JSON.stringify([r.teamIds,r.sends,r.destinations]),existing=proposals.findIndex(r=>fingerprint(r)===fingerprint(row));
+          if(!deal)return;const row=savedTradeProposal(deal,{pool:data.pool}),fingerprint=r=>JSON.stringify([r.teamIds,r.sends,r.destinations]),existing=proposals.findIndex(r=>fingerprint(r)===fingerprint(row));
           if(existing<0&&proposals.length>=3){toast('Three deals are saved. Remove one from Compare saved deals before saving another.',true);return;}
           const next=existing<0?[...proposals,row]:proposals.map((r,i)=>i===existing?{...row,id:r.id}:r);
           if(!writeTradeProposals(me?.id,data.projectionSeason,next)){toast('This browser could not save the proposal. Try again.',true);return;}
           proposals=next;proposalsOpen=true;body.querySelector('[data-td-proposals-slot]').innerHTML=proposalsMarkup(proposals,data.teams,data.pool,true);toast('Saved for comparison on this device');return;
         }
         const removeProposal=event.target.closest('[data-td-delete-proposal]');
-        if(removeProposal){const next=proposals.filter(r=>r.id!==removeProposal.dataset.tdDeleteProposal);if(writeTradeProposals(me?.id,data.projectionSeason,next)){proposals=next;body.querySelector('[data-td-proposals-slot]').innerHTML=proposalsMarkup(proposals,data.teams,data.pool,true);}else toast('Could not remove the saved proposal. Try again.',true);return;}
+        if(removeProposal){const next=proposals.filter(r=>r.id!==removeProposal.dataset.tdDeleteProposal);if(writeTradeProposals(me?.id,data.projectionSeason,next)){proposals=next;body.querySelector('[data-td-proposals-slot]').innerHTML=proposalsMarkup(proposals,data.teams,data.pool,true);const slot=body.querySelector('[data-td-proposals-slot]');(slot.querySelector('[data-td-delete-proposal]')||slot.querySelector('summary'))?.focus({preventScroll:true});}else toast('Could not remove the saved proposal. Try again.',true);return;}
         const loadProposal=event.target.closest('[data-td-load-proposal]');
         if(loadProposal){const restored=restoreTradeProposal(proposals.find(r=>r.id===loadProposal.dataset.tdLoadProposal),data.teams,data.pool);if(!restored){toast('Those rosters changed. Build a new proposal.',true);return;}selectedId=restored.parties[0].id;applyTradeDeal(trade,restored);shop.mode='manual';shop.customOpen=true;draw();body.querySelector('[data-td-verdict]')?.scrollIntoView({block:'start',behavior:'instant'});return;}
         if (event.target.closest("[data-tb-add-member]")) {

@@ -11169,3 +11169,48 @@ html[data-ui-motion="off"] :is(.gameday-player,.dfl-player-card) .dfl-player-por
  .gd-thermal-number[data-score-rolling]>.gd-thermal-value { color:inherit; }
  :is(.gameday-player,.dfl-player-card) .dfl-player-portrait::after { animation:none; }
 }
+
+
+/* Source: css/everyday-desk.css */
+/* Daily decisions share the compact, ruled sports desk used throughout DFL. */
+#view .home-daily-focus { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 12px; padding:12px 0; margin:0 0 12px; border:0; border-block:1px solid var(--line-soft); border-radius:0; background:transparent; box-shadow:none; container:daily-decision / inline-size; }
+#view .home-daily-focus>header { grid-column:1/-1; display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:0; margin:0; }
+#view .home-daily-focus h2 { margin:0; color:var(--text); font:700 .875rem/1.4 var(--font-ui); letter-spacing:0; text-transform:none; }
+#view .home-daily-focus>header>span { color:var(--body-text); font:500 .6875rem/1.4 var(--font-ui); }
+#view .home-daily-focus .home-lineup-primary { min-width:0; min-height:44px; margin:0; padding:8px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px; font:600 .8125rem/1.4 var(--font-ui); white-space:normal; }
+#view .home-daily-focus .home-lineup-primary>span { min-width:0; overflow-wrap:anywhere; }
+#view .home-daily-focus .home-clubhouse-link { min-height:44px; max-width:6rem; display:flex; align-items:center; margin:0; white-space:normal; font:600 .75rem/1.4 var(--font-ui); }
+#home-wrap:has(.home-daily-focus) [data-daily-owned] { display:none; }
+.trade-watch { min-width:0; margin:10px 0 14px; padding:0; border-block:1px solid var(--line-soft); background:transparent; }
+.trade-watch,.td-proposals { scroll-margin-top:80px; }
+.trade-watch>summary { display:flex; align-items:center; gap:8px; min-height:44px; cursor:pointer; color:var(--text); font:600 .8125rem/1.4 var(--font-ui); list-style:none; }
+.trade-watch>summary::-webkit-details-marker { display:none; }
+.trade-watch>summary::after { content:'+'; margin-left:auto; color:var(--body-text); }
+.trade-watch[open]>summary::after { content:'−'; }
+.trade-watch>summary>b { color:var(--body-text); font:500 .6875rem/1.4 var(--font-ui); font-variant-numeric:tabular-nums; }
+.trade-watch-body { min-width:0; padding:0 0 10px; }
+.trade-watch input { box-sizing:border-box; width:100%; min-height:44px; border:1px solid var(--line); border-radius:4px; background:var(--bg); color:var(--text); padding:8px 10px; font:400 1rem/1.4 var(--font-ui); }
+.trade-watch ul { list-style:none; padding:0; margin:0; }
+.trade-watch-list>li { display:flex; align-items:center; gap:8px; min-width:0; padding:8px 0; border-bottom:1px solid var(--line-soft); }
+.trade-watch-list>li>div { flex:1; min-width:0; display:grid; gap:2px; }
+.trade-watch strong { color:var(--text); font:600 .8125rem/1.4 var(--font-ui); overflow-wrap:anywhere; }
+.trade-watch small,.trade-watch-empty { color:var(--body-text); font:400 .6875rem/1.4 var(--font-ui); overflow-wrap:anywhere; }
+.trade-watch button { min-height:44px; min-width:44px; border:0; border-radius:4px; background:transparent; color:var(--accent); padding:6px; font:600 .75rem/1.4 var(--font-ui); cursor:pointer; }
+.trade-watch button:active { background:color-mix(in srgb,var(--accent) 10%,transparent); }
+.trade-watch [data-tw-remove] { font-size:1.125rem; color:var(--body-text); }
+[data-tw-results]>li { padding:3px 0; color:var(--body-text); font:400 .75rem/1.4 var(--font-ui); }
+[data-tw-results] button { width:100%; display:flex; align-items:center; justify-content:space-between; text-align:left; gap:12px; }
+.td-saved-changes { list-style:none; padding:0; margin:8px 0; color:var(--accent); font:600 .6875rem/1.5 var(--font-ui); }
+#view .state.is-error { padding:18px 14px; border:1px solid var(--line-soft); background:var(--bg); color:var(--text); border-radius:4px; }
+#view .state.is-error .state-title { font:700 .9375rem/1.4 var(--font-ui); }
+#view .state.is-error .tiny,#view .state.is-error p { font:400 .8125rem/1.5 var(--font-ui); color:var(--body-text); overflow-wrap:anywhere; }
+#view .state.is-error .row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+#view .state.is-error .btn { min-height:44px; font-size:.8125rem; }
+@container daily-decision (max-width:12rem) {
+ #view .home-daily-focus :is(.home-lineup-primary,.home-clubhouse-link) { grid-column:1/-1; }
+}
+@media(max-width:359px) {
+ .trade-watch-list>li { flex-wrap:wrap; }
+ .trade-watch-list>li>div { flex-basis:calc(100% - 56px); }
+ .trade-watch-list [data-tw-shop] { order:2; }
+}

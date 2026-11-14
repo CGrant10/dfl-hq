@@ -1,3 +1,4 @@
+import {homeDailyDeskMarkup} from '../js/home-daily-desk.js';
 import {homeHighlightMarkup} from '../js/home-highlight-ui.js';
 import {powerRankingsMarkup} from '../js/league-power-ui.js';
 // Browser review fixture: the production renderers with the selected mock's
@@ -74,7 +75,7 @@ const rankMarkup = homeSource.slice(homeSource.indexOf('function rankMove('), ho
 const weeklyMarkup = homeSource.slice(homeSource.indexOf('function outlookPlayerRow('), homeSource.indexOf('function wireHomeWeekHub(')).replaceAll('export ', '');
 const tradeMarkup = homeSource.slice(homeSource.indexOf('function tradePackageLine('), homeSource.indexOf('async function weekAheadSlide(')).replaceAll('export ', '');
 const feedMarkup = homeSource.slice(homeSource.indexOf('function snapshot('), homeSource.indexOf('function wireHomeLeagueFeed('));
-const renderHomeReview = Function('powerRankingsMarkup','startSitContent','startSitSummary', 'esc', 'money', 'fmtShort', 'teamPortrait', 'playerIdentity', 'playerLiveState', 'HOME_OUTLOOK_POSITIONS', 'activityLine', 'visible', 'hiddenClass', 'editControls', 'addControl', 'adminRow', `${rankMarkup}\n${weeklyMarkup}\n${tradeMarkup}\n${feedMarkup}\nreturn {homeRankingsCard,homeWeeklyDigest,homeWeeklyFocus,homeTradeWire,homeLeagueFeed,snapshot};`)(powerRankingsMarkup,startSitContent,startSitSummary, esc, money, fmtShort, teamPortrait, playerIdentity, playerLiveState, HOME_OUTLOOK_POSITIONS, activityLine, (_table, rows) => rows, () => '', () => '', () => '', () => '');
+const renderHomeReview = Function('homeDailyDeskMarkup','powerRankingsMarkup','startSitContent','startSitSummary', 'esc', 'money', 'fmtShort', 'teamPortrait', 'playerIdentity', 'playerLiveState', 'HOME_OUTLOOK_POSITIONS', 'activityLine', 'visible', 'hiddenClass', 'editControls', 'addControl', 'adminRow', `${rankMarkup}\n${weeklyMarkup}\n${tradeMarkup}\n${feedMarkup}\nreturn {homeRankingsCard,homeWeeklyDigest,homeWeeklyFocus,homeTradeWire,homeLeagueFeed,snapshot};`)(homeDailyDeskMarkup,powerRankingsMarkup,startSitContent,startSitSummary, esc, money, fmtShort, teamPortrait, playerIdentity, playerLiveState, HOME_OUTLOOK_POSITIONS, activityLine, (_table, rows) => rows, () => '', () => '', () => '', () => '');
 const pickemSource = readFileSync(new URL('../js/sportsbook-pickem.js', import.meta.url), 'utf8');
 const homePickem = Function('pickemState', 'fmt', `${pickemSource.slice(pickemSource.indexOf('export function homePickemMarkup(')).replace('export ', '')}\nreturn homePickemMarkup;`)(pickemState, value => new Date(value).toLocaleDateString('en-US'));
 const homeReviewWiring = homeSource.slice(homeSource.indexOf('function wireHomeRankings('), homeSource.indexOf('function outlookPlayerRow('))

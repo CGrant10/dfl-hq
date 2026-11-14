@@ -8,6 +8,8 @@ const copy={
  bench:['Hell of a fucking spectator.','Bench points. Zero fucking help.','Nice seat for a monster game.','Your bench wants a new manager.'],
  close:['Check the fucking decimals.','A loss that ruins your Tuesday.','That decimal is a personal attack.','One more catch. Tough shit.'],
  blowout:['A public ass-whipping.','Hope lasted until kickoff.','The scoreboard filed a complaint.','Absolutely fucking buried.'],
+ carry:['Carrying the whole fucking operation.','One man. A shitload of points.','Somebody came to fucking play.'],
+ liveclose:['Nobody breathe.','This shit is going to the wire.','Every fucking decimal counts.'],
 };
 const href=(season,week,id,owner)=>`#/clubhouse?season=${season}&week=${week}&tab=matchups${id&&id!=='undefined'?'&matchup='+encodeURIComponent(id):owner?'&owner='+encodeURIComponent(owner):''}`;
 
@@ -27,10 +29,21 @@ export function homeMomentStories({edition={},report=null,meSleeperId=null,now=n
   if(seen.has(id))return;seen.add(id);
   stories.push({id,key:id,source:'auto',generator:'leagueMoment',kind:'league-story',treatment:'stat',
    temporal:'final',priority:700,pinned:true,dwell:4200,storySignal:type,
-   kicker:`${year} · WEEK ${week} · ${type==='bench'?'BENCH RECEIPT':type==='close'?'CLOSE CALL':'BEATDOWN'}`,
+   kicker:`${year} · WEEK ${week} · ${{bench:'BENCH RECEIPT',close:'CLOSE CALL',blowout:'BEATDOWN',carry:'HEAVY LIFTING',liveclose:'STILL LIVE'}[type]}`,
    headline:copy[type][hash(id+date)%copy[type].length],...details});
  };
  const games=(model.games||[]).filter(g=>g.sides?.length===2);
+ if(started&&!model.completed){
+  for(const game of games){
+   for(const team of game.sides){
+    const p=(team.starters||team.lineup||[]).filter(p=>!p.empty&&offensive(p)&&['live','final'].includes(p.state)&&valid(p.points)&&Number(p.points)>=30&&p.name).sort((a,b)=>Number(b.points)-Number(a.points))[0];
+    if(p&&team.name)add('carry',`${team.uid||team.roster}:${p.id}`,{figure:Number(p.points).toFixed(2),figureLabel:p.state==='final'?'Final points':'Points · live',subtitle:`${p.name} · ${team.name}`,temporal:p.state==='final'?'final':'live',href:href(year,week,game.id)+'&player='+encodeURIComponent(p.id),actionLabel:'View player',momentPriority:3});
+   }
+   if(game.isMine||game.sides.some(t=>!valid(t.score))||!game.sides.some(t=>(t.starters||t.lineup||[]).some(p=>!p.empty&&p.state==='live')))continue;
+   const margin=Math.abs(Number(game.sides[0].score)-Number(game.sides[1].score));
+   if(margin<=3&&game.sides.reduce((sum,t)=>sum+Number(t.score),0)>=120)add('liveclose',String(game.id),{figure:margin.toFixed(2),figureLabel:'Points apart · live',subtitle:game.sides.map(t=>t.name).join(' vs '),temporal:'live',href:href(year,week,game.id),actionLabel:'Watch matchup',momentPriority:2});
+  }
+ }
  for(const game of games)for(const team of game.sides){
   const players=(team.bench||[]).filter(p=>!p.empty&&offensive(p)&&p.state==='final'&&valid(p.points)&&Number(p.points)>=25&&p.name&&team.name)
    .sort((a,b)=>Number(b.points)-Number(a.points));
