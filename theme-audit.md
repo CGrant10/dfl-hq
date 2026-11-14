@@ -1,3 +1,31 @@
+## 1.578.0 — Broadcast arrivals and compact offer tickets
+
+Secondary Home broadcast cards now use finite 275–330ms number, headline,
+artwork and sideline sequences. Finger gestures pause the exact painted frame;
+a committed incoming card stays static, while a canceled swipe resumes its
+unfinished entrance. Offscreen motion pauses. Completed fills are released,
+Reduced Motion/app motion off settle immediately, and route teardown cancels
+pending effects. Scores remain exact throughout; the opening Daily is retained.
+
+Trade suggestions use a thin ruled ticket frame, compact owner header, balance
+badge and separated send/get packages. Full player names, disclosure, Analyze,
+Save and overflow controls remain available. Existing shared Light/Dark line,
+background, text and action tokens supply every new color; no new palette,
+font, imagery, recurring timer or media request was added.
+
+Reviewed mobile Light/Dark broadcast result and offer screenshots at 320/390px,
+plus offer layouts at 768px and enlarged text. Evidence:
+/workspace/dfl-onair-1578/{motion-checked,trade-reading-third,actual,home}.
+All 60 new motion checks, 112 offer interaction/layout checks, 146 broadcast
+normal/enlarged-text layouts and 103 targeted broadcast/theme unit tests pass.
+The actual compiled Home, Trade, Clubhouse, Leaders and player-card return
+checks also pass in both themes, including text contrast and horizontal bounds. These cover real touch interruption/cancel,
+offscreen return, preference changes, rapid navigation, teardown, compact
+complete packages, stable controls and Reduced Motion. Theme, release,
+identifier, type and production-build checks pass. Physical iOS pacing,
+battery use and screen-reader speech remain unmeasured. Browser provider
+writes are blocked; data is read only.
+
 ## 1.577.0 — Home broadcast field graphics
 
 Secondary wide Home cards now use a shared football broadcast frame, yard-line
