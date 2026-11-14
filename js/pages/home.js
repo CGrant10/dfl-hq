@@ -2,6 +2,7 @@ import {replaceStableContent,updateStableContent} from '../stable-content.js';
 import {placeBreakingTradeCoverage} from '../breaking-trade.js';
 import {mountHomeRhythm} from '../home-rhythm.js';
 import {createHomeMomentEdition} from '../home-moment-stories.js';
+import {homeDailyDeskMarkup,updateHomeDailyDesk} from '../home-daily-desk.js';
 import {mountHomeHighlights} from '../home-highlights.js';
 import {powerRankingsMarkup,powerRankingsLoading,mountPowerRankings} from '../league-power-ui.js';
 import {homeWeekPlan,homeWeekReceipt,mountHomeWeekFlow} from '../home-week-flow.js';
@@ -176,7 +177,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
         <div class="home-brief-grid">
           <article><small>PLAYOFF PATH</small><strong>${esc(briefing?.playoff || "Model pending")}</strong><span>${esc(briefing?.playoffDetail || "Sync the league to build your path.")}</span></article>
           <article><small>LINEUP CALL</small><span data-brief-lineup>${esc(briefing?.lineup || "Checking your starters")}</span></article>
-          <article data-brief-next-move${briefing?.actionUrl&&briefing.actionUrl!=='#/analyzer'?'':' hidden'}><small data-brief-action-kind>${esc(briefing?.actionLabel||'NEXT MOVE')}</small><a href="${esc(briefing?.actionUrl||'#/analyzer')}"${briefing?.actionUrl?.startsWith('https://')?' target="_blank" rel="noopener noreferrer"':''} data-brief-action>${esc(briefing?.action || "Keep the roster ready")}</a><small data-brief-checked></small></article>
+          <article data-brief-next-move data-daily-owned${briefing?.actionUrl&&briefing.actionUrl!=='#/analyzer'?'':' hidden'}><small data-brief-action-kind>${esc(briefing?.actionLabel||'NEXT MOVE')}</small><a href="${esc(briefing?.actionUrl||'#/analyzer')}"${briefing?.actionUrl?.startsWith('https://')?' target="_blank" rel="noopener noreferrer"':''} data-brief-action>${esc(briefing?.action || "Keep the roster ready")}</a><small data-brief-checked></small></article>
         </div>
         <a class="home-text-action" href="#/stakes"><span>Playoff race</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>
         ${report ? `<aside class="home-tuesday-receipt"><div><small>LAST WEEK · FINAL</small><strong>${esc(report.title)}</strong><span>${esc(report.highlights?.[0]?.title || "League receipts ready")} · ${esc(report.highlights?.[0]?.detail || "")}</span></div><a class="btn small" href="#/clubhouse?season=${report.season}&amp;week=${report.week}">Open &amp; share recap</a></aside>` : ""}
@@ -198,8 +199,8 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
   </section>`;
 }
 
-export function homeWeeklyFocus(outlook,briefing=null,{loading=false}={}){
- return `<section class="home-week-focus" aria-label="Matchup action"><a class="home-lineup-primary" data-home-primary href="#/analyzer"><span>Review lineup</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a><a class="home-clubhouse-link" data-home-clubhouse-link href="#/clubhouse?tab=matchups">Clubhouse <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></section>`;
+export function homeWeeklyFocus(outlook,briefing=null,{edition={}}={}){
+ return homeDailyDeskMarkup({outlook,briefing,edition});
 }
 
 function wireHomeWeekHub(root) {
@@ -465,6 +466,7 @@ export async function render(view) {
     <div class="home-frontpage">
     <div class="home-personal-desk">
     <div data-home-gameday-slot data-home-personal-part="matchup"></div>
+    <div data-home-focus-slot data-home-personal-part="decisions">${homeWeeklyFocus(null,null,{loading:true})}</div>
     </div>
     </div>
     <div data-home-rhythm-flow>
@@ -474,7 +476,6 @@ export async function render(view) {
     <div data-home-rankings-slot data-content-state="loading" aria-busy="true">${powerRankingsLoading()}</div>
     <div data-home-highlights-slot data-home-rhythm-part="highlights"></div>
     <section class="home-week-desk" data-home-rhythm-part="week" aria-label="Your week">
-    <div data-home-focus-slot data-home-personal-part="decisions">${homeWeeklyFocus(null,null,{loading:true})}</div>
     <div data-home-week-flow>
     ${homeWeekPlan(`<div data-home-report-slot data-content-state="loading" aria-busy="true">${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`)}
     <div data-home-recap-slot data-home-week-part="recap" hidden></div>
@@ -766,7 +767,7 @@ export async function render(view) {
        dashboard's "Power Ranks" and "Report" tabs were removed: they drew
        the same two views from the same two objects, one scroll apart. */
     const focusSlot=view.querySelector("[data-home-focus-slot]");
-    if(focusSlot){replaceStableContent(focusSlot,homeWeeklyFocus(outlook,briefing));const owner=focusSlot.closest('#home-wrap');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown');}
+    if(focusSlot){updateStableContent(focusSlot,()=>updateHomeDailyDesk(focusSlot,{outlook,briefing,edition:homeEdition}));const owner=focusSlot.closest('#home-wrap');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown');}
     const homeRankingsSlot = view.querySelector("[data-home-rankings-slot]");
     const homeReportSlot = view.querySelector("[data-home-report-slot]");
     const homeTradeSlot = view.querySelector("[data-home-trade-slot]");
@@ -782,7 +783,8 @@ export async function render(view) {
       const briefTeam=analysis?.teams?.find(team=>String(team.sleeper_user_id)===String(myMember?.sleeper_user_id));
       if(briefTeam&&outlook?.week){
         const adviceUnavailable=message=>{
-          applyWeeklyBriefing(homeReportSlot,{action:'Refresh your roster advice',actionUrl:'#/analyzer?owner='+encodeURIComponent(myMember.sleeper_user_id),checkedStatus:message});
+          const next={actionKind:'refresh',action:'Refresh your roster advice',actionUrl:'#/analyzer?owner='+encodeURIComponent(myMember.sleeper_user_id),checkedStatus:message};
+          applyWeeklyBriefing(homeReportSlot,next);if(focusSlot){updateHomeDailyDesk(focusSlot,{outlook,briefing:next,edition:homeEdition});const owner=focusSlot.closest('#home-wrap');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown')};
         };
         const briefRefresh=mountLiveScoreRefresh({active:()=>mine===generation&&view.isConnected,
           refresh:async()=>{
@@ -790,6 +792,7 @@ export async function render(view) {
             if(mine!==generation||!view.isConnected)return;
             const next=buildWeeklyBriefing({outlook,stakes:pulse?.stakes,move,coach,meSleeperId:myMember.sleeper_user_id});
             updateStableContent(homeReportSlot,()=>applyWeeklyBriefing(homeReportSlot,next));
+            if(focusSlot)updateStableContent(focusSlot,()=>{updateHomeDailyDesk(focusSlot,{outlook,briefing:next,edition:homeEdition});const owner=focusSlot.closest('#home-wrap');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown')});
           },onError:()=>adviceUnavailable('Roster refresh unavailable'),
           onOffline:()=>adviceUnavailable('Offline · refresh before making a move'),
         });

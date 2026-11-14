@@ -1,3 +1,23 @@
+## 1.576.0 — everyday Home and trade desk
+
+The daily decision strip, persistent trade targets, saved-deal change flags and
+recoverable errors use existing Medicine Wheel Light/Dark surfaces, text,
+accent, line and action tokens. No new palette entries, fonts or image assets.
+Real NFL/player colors and heat/ice semantics remain intact.
+
+Reviewed Home, Trades, Clubhouse, Leaders and player-card return screenshots
+from the compiled app in /workspace/dfl-everyday-1576/actual/. Isolated production
+handlers in finished/ cover 320/390px Light/Dark, theme contrast, 44px targets,
+200% text reflow, correct target ownership, persistent position filters,
+changed saved deals, keyboard focus, recovery and reversible disclosure motion.
+64 checks pass. Existing next-action checks cover 36 states at 320/390/768px in
+both themes, including failed refresh clearing old advice. Trade position and
+connected portrait checks pass, including interrupted return and Reduced Motion.
+The full unit suite passes 2,560 tests; targeted additions and final theme,
+release, type, name and production-build checks pass. No extra polling or
+continuous animations were added. Physical-device frame pacing, battery use
+and screen-reader speech remain unmeasured. Provider writes blocked/mocked.
+
 ## 1.575.0 — returning player score pop
 
 Positive points gained since last viewing a player trigger one 560ms grow and

@@ -104,7 +104,7 @@ export function compactEmpty(title, message = '', action = '') {
  * nothing actually asked for.
  */
 export function loading(message = "Loading…") {
-  return `<div class="state is-loading">${esc(message)}</div>`;
+  return `<div class="state is-loading" role="status">${esc(message)}</div>`;
 }
 
 /** Friendly error box; logs the real error for you. */
@@ -118,6 +118,7 @@ export function errorBox(err) {
   return `<div class="state is-error" role="alert">
     <span class="state-title">Could not load</span>
     <span class="tiny">${esc(msg)}</span>
+    <div class="row"><button type="button" class="btn" data-retry-page>Retry</button><a class="btn ghost" href="#/home">Back to Home</a></div>
   </div>`;
 }
 
