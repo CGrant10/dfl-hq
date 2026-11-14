@@ -42,7 +42,7 @@ Deno.serve(async request=>{
   const feeds=await pool<any,any>(games,3,async game=>{
    const summary=await get(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${game.id}`);
    if(String(summary.header?.id)!==game.id||Number(summary.header?.season?.year||season)!==season)throw Error('NFL summary scope mismatch');
-   const raw=footballPlays(summary),candidates=raw.filter(play=>candidatePlay(play)&&Number.isFinite(Date.parse(play.wallclock))&&now-Date.parse(play.wallclock)>=0&&now-Date.parse(play.wallclock)<=LIVE_PLAY_AGE).slice(-12);
+   const raw=footballPlays(summary),summaryAt=Date.now(),candidates=raw.filter(play=>candidatePlay(play)&&Number.isFinite(Date.parse(play.wallclock))&&summaryAt-Date.parse(play.wallclock)>=0&&summaryAt-Date.parse(play.wallclock)<=LIVE_PLAY_AGE).slice(-12);
    const enriched=await pool<any,any>(candidates,3,async play=>{
     // Construct an allow-listed public URL; never follow provider $ref hosts.
     const detail=await get(`https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/${game.id}/competitions/${game.id}/plays/${play.id}?lang=en&region=us`);
@@ -61,9 +61,12 @@ Deno.serve(async request=>{
    const capture=await admin.rpc('capture_nfl_live_game',{p_game:game,p_plays:plays,p_seen:raw.map(play=>String(play.id))});if(capture.error)throw capture.error;return capture.data;
   });
   if(!feeds.length)throw Error('All live game providers unavailable');
-  const drafts=footballNotificationDrafts({season,week,feeds,rows,rosters,members:members.data||[],optedMemberIds:(opted.data||[]).map(row=>Number(row.member_id)),clips:videoClips,now});
+  // RPC capture timestamps are later than the request's starting clock. Use
+  // the clock after capture or every fresh feed is rejected as "from the future".
+  const deliveryNow=Date.now();
+  const drafts=footballNotificationDrafts({season,week,feeds,rows,rosters,members:members.data||[],optedMemberIds:(opted.data||[]).map(row=>Number(row.member_id)),clips:videoClips,now:deliveryNow});
   if(dryRun)return Response.json({ok:true,dryRun,season,week,games:feeds.map(feed=>({id:feed.game_id,redZone:feed.snapshot.redZone,plays:feed.plays.length,verified:feed.plays.filter((p:any)=>p.kind).length})),drafts:[],wouldCapture:feeds.length});
-  const moments=footballMomentRows({leagueId:String(league.league_id),season,week,feeds,rows,rosters,now});
+  const moments=footballMomentRows({leagueId:String(league.league_id),season,week,feeds,rows,rosters,now:deliveryNow});
   if(moments.length){const saved=await admin.from('gameday_moments').upsert(moments,{onConflict:'league_id,season,week,event_key',ignoreDuplicates:true});if(saved.error)throw saved.error}
   let created=0,duplicates=0;
   for(const draft of drafts){const response=await fetch(`${url}/functions/v1/send-notification`,{method:'POST',headers:{'Content-Type':'application/json','x-dfl-cron-token':token},body:JSON.stringify(draft),signal:AbortSignal.timeout(10000)});const result=await response.json();if(!response.ok||!result.ok)throw Error(`Live notification delivery ${response.status}`);if(result.duplicate)duplicates++;else if(!result.skipped)created++}
