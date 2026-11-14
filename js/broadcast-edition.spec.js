@@ -37,9 +37,50 @@ describe('full Home broadcast editions',()=>{
   expect(broadcastEdition([pinned,featured],date)).toEqual([pinned,featured]);
   expect(broadcastEdition([],date)).toEqual([]);expect(broadcastEdition([{kind:'identity'}],date)).toEqual([]);
  });
- it('ages automatic announcements out after three days while keeping explicit editorial pins',()=>{
+ it('honors a commissioner feature applied to an automatic generator',()=>{
+  const featured={id:'featured',kind:'news',source:'auto',featured:true,publishedAt:'2026-10-20T12:00:00Z'};
+  const trade={id:'trade',kind:'trade',source:'auto',pinned:true,occurredAt:date+'T10:00:00Z'};
+  expect(broadcastEdition([trade,featured],date)).toEqual([featured,trade]);
+ });
+ it('ages automatic announcements out while keeping explicit editorial pins',()=>{
   const old={id:'old',kind:'news',publishedAt:'2026-10-20T12:00:00Z'},fresh={id:'fresh',kind:'news',publishedAt:'2026-10-27T10:00:00Z'};
   expect(broadcastEdition([old,fresh],date)).toEqual([fresh]);expect(broadcastEdition([{...old,pinned:true}],date)).toHaveLength(1);
+ });
+ it('gives automatic receipts and news exactly two days, even when their generator pins them',()=>{
+  const now=Date.parse(date+'T12:00:00Z'),age=48*60*60*1000;
+  for(const kind of ['trade','news']){
+   const story={id:kind,kind,source:'auto',pinned:true,occurredAt:now-age};
+   expect(broadcastEdition([story],date,{now})).toEqual([story]);
+   expect(broadcastEdition([story],date,{now:now+1})).toEqual([]);
+   expect(broadcastEdition([{...story,source:'manual'}],date,{now:now+1})).toHaveLength(1);
+  }
+ });
+ it('leads with fresh league business ahead of routine generated pins and open polls',()=>{
+  const routine={id:'odds',kind:'league',generator:'playoffPicture',source:'auto',pinned:true};
+  const poll={id:'poll',kind:'poll',temporal:'live'};
+  const result={id:'result',kind:'league-story',temporal:'final',source:'auto',pinned:true};
+  const trade={id:'trade',kind:'trade',source:'auto',pinned:true,occurredAt:date+'T10:00:00Z'};
+  const news={id:'news',kind:'news',occurredAt:date+'T11:00:00Z'};
+  expect(broadcastEdition([routine,poll,result,trade,news],date)).toEqual([news,trade,result,routine,poll]);
+ });
+ it('lets a completed result lead yesterday\'s news without losing actual live play or authored pins',()=>{
+  const result={id:'result',kind:'league-story',temporal:'final'};
+  const news={id:'news',kind:'news',occurredAt:'2026-10-26T10:00:00Z'};
+  const pin={id:'pin',kind:'news',source:'manual',featured:true};
+  const live={id:'live',kind:'fantasy',temporal:'live'};
+  expect(broadcastEdition([news,pin,result,live],date)).toEqual([pin,live,result,news]);
+ });
+ it('waits for an automatic publication time and prefers confirmed news to undated copies',()=>{
+  const unknown={id:'unknown',kind:'news'},fresh={id:'fresh',kind:'news',publishedAt:date+'T10:00:00Z'};
+  const future={id:'future',kind:'news',publishedAt:date+'T13:00:00Z'};
+  expect(broadcastEdition([unknown,fresh,future],date)).toEqual([fresh]);
+  expect(broadcastEdition([future],date)).toEqual([]);
+  expect(broadcastEdition([{...future,source:'manual',pinned:true}],date)).toHaveLength(1);
+ });
+ it('preserves the same edition across repeated background refreshes inside a freshness band',()=>{
+  const stories=[{id:'odds',source:'auto',pinned:true,kind:'league'},{id:'trade',source:'auto',pinned:true,kind:'trade',occurredAt:date+'T10:00:00Z'},{id:'champ',kind:'champion'},{id:'record',kind:'record'},{id:'chip',kind:'chip'}];
+  const edition=broadcastEdition(stories,date),now=Date.parse(date+'T12:05:00Z');
+  expect(broadcastEdition(edition,date,{now})).toEqual(edition);
  });
  it('expires stale automatic trades even when generated as pinned, without expiring commissioner stories',()=>{
   const old={id:'old-trade',kind:'trade',source:'auto',pinned:true,occurredAt:Date.parse('2026-10-20T12:00:00Z')};

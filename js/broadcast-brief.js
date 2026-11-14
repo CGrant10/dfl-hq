@@ -20,9 +20,10 @@ function tradePreview(story){
 }
 export function renderBroadcastBrief(item){
  if(!item)return '';
- let kind='news',heading=item.headline||'',body='',media='',detail='',tradeSummary='',tradeReading='',action=item.actionLabel||'Read story',href=item.href||'',tag=href?'a':'section';
+ let kind='news',heading=item.headline||'',body='',media='',detail='',decoration='',tradeSummary='',tradeReading='',action=item.actionLabel||'Read story',href=item.href||'',tag=href?'a':'section';
  if(item.treatment==='champion'){
   kind='award';const chip=item.variant==='chip';media=art(`assets/dfl-daily-${chip?'chip-eater':'champion'}.webp`);
+  decoration=`<span class="bx-brief-poster" aria-hidden="true">${chip?'CHIP EATER':'CHAMPION'}</span>`;
   action=chip?'Wall of shame':'Title ledger';href=href||'#/history';tag='a';
  }else if(item.kind==='trade'&&item.tradeStory?.packages?.length){
   kind='trade';heading=item.tradeStory.outcome?.displayGrade||item.tradeStory.outcome?.grade||'Trade receipt';action='Receipt';
@@ -64,5 +65,5 @@ export function renderBroadcastBrief(item){
  const title=`<h2 class="bx-head">${esc(heading)}</h2>`,content=body?`<div class="bx-brief-body">${body}</div>`:'';
  const category=item.kicker||{injury:'Player availability',season:'DFL archive',news:'League wire',metric:item.kind==='record'?'Record book':'By the numbers',scout:'Auto Scout',rivalry:'The ledger',trade:'Trade receipt',award:item.variant==='chip'?'Chip Eater':'League champion',result:'Around the league'}[kind];
  const label=kind==='trade'?heading+'. '+item.tradeStory.packages.map(p=>p.teamName+' sends '+(p.players||[]).map(player=>player.name).join(', ')).join('. ')+tradeReading+(tradeSummary?'. '+String(item.figure)+(typeof item.figure==='number'?'%':'')+' '+(item.tradeStory.balanceLabel||'value balance'):''):'';
- return `<${tag} data-bx-temporal="${esc(item.temporal||'none')}" class="bx-slide bx-brief bx-brief-${kind}${kind==='award'&&item.variant==='chip'?' bx-brief-chip':''}${kind==='award'&&heading.length>38?' bx-brief-award-long':''}${tradeSummary?' bx-brief-rated-trade':''}${media?' bx-brief-with-art':''}"${href?` href="${esc(href)}"`:''}${kind==='scout'&&item.scoutAction==='player'&&item.scoutPlayer?.id?` data-player-card="${esc(item.scoutPlayer.id)}"`:''}${label?` aria-label="${esc(label)}"`:''}><span class="bx-kicker">${mark(kind)}${esc(category)}${phase?` <span class="bx-brief-phase">· ${esc(phase)}</span>`:''}</span>${kind==='result'?content+title:title+content}${media}${tradeSummary}${kind==='injury'?`<button type="button" class="bx-brief-action" data-open-injury-report>${esc(action)} ${arrow}</button>`:href?footer(action,detail):''}</${tag}>`;
+ return `<${tag} data-bx-temporal="${esc(item.temporal||'none')}" class="bx-slide bx-brief bx-brief-${kind}${kind==='award'&&item.variant==='chip'?' bx-brief-chip':''}${kind==='award'&&heading.length>38?' bx-brief-award-long':''}${tradeSummary?' bx-brief-rated-trade':''}${media?' bx-brief-with-art':''}"${href?` href="${esc(href)}"`:''}${kind==='scout'&&item.scoutAction==='player'&&item.scoutPlayer?.id?` data-player-card="${esc(item.scoutPlayer.id)}"`:''}${label?` aria-label="${esc(label)}"`:''}><span class="bx-kicker">${mark(kind)}${esc(category)}${phase?` <span class="bx-brief-phase">· ${esc(phase)}</span>`:''}</span>${kind==='result'?content+title:title+content}${decoration}${media}${tradeSummary}${kind==='injury'?`<button type="button" class="bx-brief-action" data-open-injury-report>${esc(action)} ${arrow}</button>`:href?footer(action,detail):''}</${tag}>`;
 }

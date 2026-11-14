@@ -1,3 +1,31 @@
+## 1.579.0 — Story-specific broadcast graphics
+
+Secondary wide Home stories now have distinct compositions: mirrored result
+scores with a winning-side rule; opposing rivalry names with a centered series;
+full house award illustrations in a soft poster treatment; receiving-team trade
+rows with the sourced balance rail; and a ruled news headline/read action with
+separate optional artwork. The first Daily card, shared transport and existing
+finite swipe/arrival motion remain intact. No new font, image, logo, theme entry,
+request, recurring timer or animation loop. All new surfaces, rules, ink and
+washes use shared Medicine Wheel Light/Dark tokens.
+
+Reviewed 320/390/768px Light/Dark screenshots, normal and enlarged text up to
+200%, plus actual compiled Home, Clubhouse, Leaders and player-card return.
+Rivalry checks now require useful name widths and a series beneath the pair;
+this caught old padding/position rules that passed a simple overflow test.
+Trade destinations retain exact transaction URLs and routed incoming packages;
+all source names remain accessible. Award art uses contain and keeps the full
+arm; decorative poster type is hidden from assistive technology. Soft-glow edge,
+text contrast, 44px transport and stable-height checks remain enabled.
+
+Evidence: /workspace/dfl-story-1579/{before,checked,motion,actual}.
+All 96 normal and 60 enlarged-text broadcast layouts pass, including direct
+source destinations and the optional news portrait. The 60 interruption/offscreen/
+preference/teardown motion checks and full 2,568-test suite / 308 files pass,
+alongside theme, release, type/name and production-build checks.
+Provider writes are blocked throughout browser review. Physical-device pacing,
+battery consumption and screen-reader speech remain unmeasured.
+
 ## 1.578.0 — Broadcast arrivals and compact offer tickets
 
 Secondary Home broadcast cards now use finite 275–330ms number, headline,
