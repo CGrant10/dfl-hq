@@ -29,6 +29,7 @@ with sync_playwright() as p:
   const trade={id:'review-deal',key:'review-deal',kind:'trade',treatment:'stat',kicker:'BREAKING TRADE · WEEK 6',figure:78,href:'#/trade?tx=review',tradeStory:{packages,receivedPackages,outcome:{displayGrade:'Value edge'},balanceLabel:'group balance'}};
   window.artDeck=[{...champ,key:'champ',headline:'The Bayou Bombers',image:'https://example.invalid/member-profile.jpg'},{...chip,key:'chip',headline:'Monday Night Mayhem'},injury,trade,{...trade,key:'two-team',tradeStory:{...trade.tradeStory,packages:packages.slice(0,2),receivedPackages:packages.slice(0,2).map((pkg,i)=>({...pkg,players:packages[1-i].players}))}},{key:'rivalry',kind:'fact',treatment:'announcement',storyKind:'rivalry',headline:'The rematch',kicker:'DFL RIVALRIES',figure:12,storyNames:['The Bayou Bombers','Klutch Sports Group'],storySeries:'7–5',href:'#/history'},{...spotlight,key:'spotlight'},{key:'percent',kind:'odds',treatment:'stat',kicker:'PLAYOFF PICTURE',figure:'72%',headline:'Still in the fucking fight.',subtitle:'The next matchup sets the tone.'}];
   artDeck.unshift(reviewDeck[0]);artDeck.push(reviewDeck.find(s=>s.id==='fixture:archive-record'),reviewDeck.find(s=>s.generator==='nextMove'),reviewDeck.find(s=>s.id==='fixture:golf'),{...champ,key:'long',headline:'The Bastards of the Very Long Championship Team Name'},{key:'news',kind:'news',treatment:'announcement',kicker:'LEAGUE NEWS',headline:'The league gets the last word.',body:'Weekly awards, matchup conversations and the stories everyone will be talking about.',href:'#/clubhouse'},{key:'season',kind:'season',figure:10,headline:'Seasons',subtitle:'2017 → 2026',href:'#/history'});
+  artDeck.push({key:'player-news',kind:'news',kicker:'LEAGUE WIRE',headline:'A statement week.',body:'One performance. A whole league talking.',image:'tools/fixtures/player-portrait.png',href:'#/clubhouse?season=2026&week=5&tab=leaders'});
   const view=document.querySelector('#view');view.innerHTML='<div id="home-wrap" data-home-layout="wire" data-home-edition="sports-desk"><div class="home-frontpage"><div class="home-broadcast"></div></div></div>';
   document.querySelector('.home-broadcast').innerHTML=renderStage(artDeck,{editorial:true,wide:true});
   window.artStage=startStage(document.querySelector('[data-bx-stage]'),artDeck);artStage.suspend('art-review',true);scrollTo(0,0);
@@ -48,6 +49,11 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/f'wide-{mode}-{width}-{i}.png'))
     assert metrics['within'] and metrics['separated'] and metrics['artContained'] and not metrics['overflow'],(mode,width,i,metrics)
     assert metrics['headFont']>=18,(mode,width,i,'headline too small',metrics)
+    expected=page.evaluate('i=>artDeck[i].href||null',i)
+    if expected:assert slide.get_attribute('href')==expected,(mode,width,i,'story destination changed')
+    if slide.locator('.bx-brief-rivals').count():
+     ledger=slide.evaluate('''e=>{const body=e.querySelector('.bx-brief-body').getBoundingClientRect(),pair=e.querySelector('.bx-brief-rivals').getBoundingClientRect(),names=[...e.querySelectorAll('.bx-brief-rivals strong')].map(n=>n.getBoundingClientRect()),series=e.querySelector('.bx-brief-series')?.getBoundingClientRect();return names.length===2&&names.every(n=>n.width>=body.width*.35)&&(!series||(series.top>=pair.bottom+4&&Math.abs((series.left+series.right)-(body.left+body.right))<3))}''')
+     assert ledger,(mode,width,i,'rival names squeezed or series not centered below the pair')
     if i in [4,5]:
      exchange=slide.evaluate('''e=>{
       const inside=(a,b)=>a.left>=b.left-1&&a.right<=b.right+1&&a.top>=b.top-1&&a.bottom<=b.bottom+1;

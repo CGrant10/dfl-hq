@@ -1,5 +1,13 @@
 /** A full Home edition: fresh stories, both league awards, varied archive picks. */
 export const BROADCAST_STORY_LIMIT=9; // The independent daily opener is the tenth slot.
+const FRESH_STORY_MS=24*60*60*1000;
+const STORY_SHELF_MS=2*FRESH_STORY_MS;
+const storyTime=story=>{
+ const stamp=story.publishedAt??story.occurredAt;
+ return typeof stamp==='number'?stamp:Date.parse(stamp);
+};
+// `featured` also comes from the commissioner's generator override panel.
+const authoredStory=story=>story.featured||story.source==='manual'||story.source!=='auto'&&story.pinned;
 const storyId=story=>story.id||story.key||JSON.stringify([story.kind,story.headline,story.href]);
 const dailyRank=(date,story)=>{let hash=2166136261;for(const char of date+'|'+storyId(story))hash=Math.imul(hash^char.charCodeAt(0),16777619);return hash>>>0};
 function archivePicks(stories,date,limit){
@@ -16,9 +24,10 @@ export function broadcastEdition(stories=[],date='',{now=Date.parse(date+'T12:00
  const archive=[],awards=new Map(),current=[],seen=new Set(),groups=new Map();
  for(const story of stories){
   const id=storyId(story);if(seen.has(id))continue;seen.add(id);
-  const authored=story.source==='manual'||story.source!=='auto'&&(story.pinned||story.featured);
-  const stamp=story.publishedAt??story.occurredAt,at=typeof stamp==='number'?stamp:Date.parse(stamp);
-  if(!authored&&['news','trade'].includes(story.kind)&&Number.isFinite(at)&&Number(now)-at>3*86400000)continue;
+  const authored=authoredStory(story),at=storyTime(story);
+  // Generator pins make a card eligible; they are not commissioner pins.
+  // A receipt or announcement earns two days, with its first day leading.
+  if(!authored&&['news','trade'].includes(story.kind)&&Number.isFinite(at)&&(at>Number(now)||Number(now)-at>STORY_SHELF_MS))continue;
   if(!authored&&(staticKinds.has(story.kind)||story.temporal==='historical')){
    if(['champion','chip'].includes(story.kind)){if(!awards.has(story.kind))awards.set(story.kind,story)}
    else if(story.kind!=='identity')archive.push(story);
@@ -26,19 +35,24 @@ export function broadcastEdition(stories=[],date='',{now=Date.parse(date+'T12:00
   }
   const group=authored?null:story.generator||story.kind;
   if(group&&groups.has(group)){
-   const index=groups.get(group),previous=current[index],oldStamp=previous.publishedAt??previous.occurredAt,oldAt=typeof oldStamp==='number'?oldStamp:Date.parse(oldStamp);
-   if(['news','trade'].includes(story.kind)&&Number.isFinite(at)&&Number.isFinite(oldAt)&&at>oldAt)current[index]=story;
+   const index=groups.get(group),oldAt=storyTime(current[index]);
+   if(['news','trade'].includes(story.kind)&&Number.isFinite(at)&&(!Number.isFinite(oldAt)||at>oldAt))current[index]=story;
    continue;
   }
   if(group)groups.set(group,current.length);current.push(story);
  }
- const pinned=current.filter(story=>story.pinned||story.featured),rest=current.filter(story=>!pinned.includes(story));
+ const pinned=current.filter(story=>authoredStory(story)&&(story.pinned||story.featured)),rest=current.filter(story=>!pinned.includes(story));
  const freshness=story=>{
-  if(story.temporal==='live')return 0;
-  const stamp=story.publishedAt??story.occurredAt,at=typeof stamp==='number'?stamp:Date.parse(stamp);
-  return ['news','trade'].includes(story.kind)&&Number.isFinite(at)&&at<=Number(now)?1:2;
+  if(story.temporal==='live'&&(['fantasy','golf','mine'].includes(story.kind)||story.treatment==='scoreboard'))return 0;
+  const at=storyTime(story),timely=['news','trade'].includes(story.kind)&&Number.isFinite(at)&&at<=Number(now);
+  if(timely&&Number(now)-at<=FRESH_STORY_MS)return 1;
+  if(story.temporal==='final'&&['league-story','fantasy','golf'].includes(story.kind))return 2;
+  return timely?3:4;
  };
- const ranked=rest.map((story,index)=>({story,index})).sort((a,b)=>freshness(a.story)-freshness(b.story)||a.index-b.index).map(item=>item.story);
+ const ranked=rest.map((story,index)=>({story,index})).sort((a,b)=>{
+  const rank=freshness(a.story),other=freshness(b.story);
+  return rank-other||([1,3].includes(rank)?storyTime(b.story)-storyTime(a.story):0)||a.index-b.index;
+ }).map(item=>item.story);
  const live=[...pinned,...ranked.slice(0,Math.max(0,6-pinned.length))];
  const picks=archivePicks(archive,date,Math.max(0,BROADCAST_STORY_LIMIT-live.length-awards.size));
  // Separate the two awards with another subject when one is available.
