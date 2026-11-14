@@ -75,15 +75,18 @@ with sync_playwright() as p:
      if i==9:
       value=slide.locator('.bx-brief-value strong');assert value.inner_text()=='0.04' and value.evaluate('e=>parseFloat(getComputedStyle(e).fontSize)>=32'),(mode,'rounded archive metric too small')
      if slide.evaluate("e=>e.matches('.bx-brief-award,.bx-brief-scout')"):
-      visibility=slide.evaluate("e=>[...e.children].map(n=>{const v=n.style.visibility;n.style.visibility='hidden';return v})")
-      raw=slide.screenshot(path=str(OUT/f'glow-{mode}-{i}.png'))
+      # Inspect the actual art glow independently of the deliberately ruled
+      # field/frame behind it. Hiding the art used to remove the effect itself.
+      glow=slide.locator(':scope>.bx-brief-art')
+      saved=glow.evaluate("e=>{const state={css:e.style.cssText,visibility:[...e.children].map(n=>n.style.visibility)};e.style.isolation='isolate';e.style.background='var(--bg)';for(const n of e.children)n.style.visibility='hidden';return state}")
+      raw=glow.screenshot(path=str(OUT/f'glow-{mode}-{i}.png'))
       sample=page.evaluate('''async encoded=>{
        const im=new Image();im.src='data:image/png;base64,'+encoded;await im.decode();const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const ctx=c.getContext('2d');ctx.drawImage(im,0,0);const d=ctx.getImageData(0,0,c.width,c.height).data;
        const at=(x,y)=>[...d.slice((y*c.width+x)*4,(y*c.width+x)*4+3)],base=at(3,Math.floor(c.height/2));let step=0,edge=0;
        for(const f of [.2,.4,.6,.8]){const y=Math.floor(c.height*f),x=Math.floor(c.width*f);for(let col=10;col<c.width-10;col++)step=Math.max(step,...at(col,y).map((v,k)=>Math.abs(v-at(col-1,y)[k])));for(const p of [at(3,y),at(c.width-4,y),at(x,3),at(x,c.height-4)])edge=Math.max(edge,...p.map((v,k)=>Math.abs(v-base[k])))}
        return {maxAdjacentChannelStep:step,maxEdgeChannelDifference:edge};
       }''',base64.b64encode(raw).decode())
-      slide.evaluate("(e,values)=>[...e.children].forEach((n,i)=>n.style.visibility=values[i])",visibility)
+      glow.evaluate("(e,state)=>{e.style.cssText=state.css;[...e.children].forEach((n,i)=>n.style.visibility=state.visibility[i])}",saved)
       assert sample['maxAdjacentChannelStep']<=2 and sample['maxEdgeChannelDifference']<=1,(mode,i,'hard glow edge',sample)
       glows.append({'mode':mode,'index':i,**sample})
     checks.append({'mode':mode,'width':width,'index':i,**metrics});(OUT/'wide-checks.json').write_text(json.dumps(checks,indent=2))

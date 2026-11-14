@@ -1,3 +1,24 @@
+## 1.577.0 — Home broadcast field graphics
+
+Secondary wide Home cards now use a shared football broadcast frame, yard-line
+texture, stronger type, result score panels and an on-air metric rail. Counter
+panels use existing action-fill/action-ink tokens; rules, washes and type use
+shared Medicine Wheel Light/Dark tokens. Award/scout art stays contained in a
+separate column, including the full champion arm. League news reuses the
+existing precached stadium image with soft masks. No new font or image assets.
+The opening Daily keeps its composition, illustration and typography.
+
+Reviewed actual compiled Home/Clubhouse/Leaders/player-return captures in
+/workspace/dfl-broadcast-1577/actual/ and before/final broadcast captures. The
+wide review passes 90 normal layouts at 320/390/768px across Light/Dark and 56
+enlarged-text layouts, including 200%. It checks full text, separated artwork,
+exact routing/figures, contrast, 44px transport controls, stable deck height,
+manual swipe/replay, offscreen pause and Reduced Motion. Glow sampling now
+isolates the actual art glow from the intentionally ruled graphic frame; the
+same pixel-step/edge tolerances pass. 58 broadcast unit checks and theme,
+release and production-build checks pass. Physical-device pacing/battery and
+screen-reader speech remain unmeasured. Browser provider writes blocked.
+
 ## 1.576.0 — everyday Home and trade desk
 
 The daily decision strip, persistent trade targets, saved-deal change flags and
