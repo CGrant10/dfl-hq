@@ -801,7 +801,10 @@ export function startStage(root, deck, { refresh } = {}) {
     slide?.removeAttribute('inert');
     slide?.removeAttribute('aria-hidden');
     if (outgoing && outgoing !== slide) {
-      outgoing.classList.remove("bx-in", "bx-enter");
+      // A caught entrance stays frozen under the finger until the outgoing
+      // card leaves. Removing its animation class here would snap its art.
+      if(!drag||!outgoing.matches('.bx-brief'))outgoing.classList.remove('bx-in');
+      outgoing.classList.remove('bx-enter');
       outgoing.classList.add("bx-leaving");outgoing.setAttribute("aria-hidden","true");outgoing.setAttribute("inert","");
       /* transitionend is the truth, but it never fires when the tab is
          hidden or the user asked for reduced motion - so a timer backs it
@@ -821,7 +824,7 @@ export function startStage(root, deck, { refresh } = {}) {
          getBoundingClientRect() report the wrong width. */
       fitHeadlines(slide);
       scheduleLayout();
-      slide.classList.add("bx-enter");
+      if(!wide||!reduced()&&document.documentElement.dataset.uiMotion!=='off')slide.classList.add('bx-enter');
       /* Commit the entrance state before anything can release it. .bx-enter
          carries transition:none, so this reflow makes opacity 0 and the 28px
          offset the element's actual current values rather than a target it is
@@ -841,14 +844,15 @@ export function startStage(root, deck, { refresh } = {}) {
       */
       let entered = false;
       const enter = () => {
-        if (entered || !slide.isConnected) return;
+        if (dead || entered || !slide.isConnected || slide.matches('.bx-leaving,.bx-preview')) return;
         entered = true;
         slide.classList.remove("bx-enter");
+        if(wide&&slide.matches('.bx-brief.bx-dragging'))return;
         /* bx-in drives the staggered entrance - kicker, then headline,
            then detail. Added AFTER the element is in the document so the
            animations actually run; added as a class rather than left on
            the markup so a repaint of the same slide replays it. */
-        slide.classList.add("bx-in");
+        if(!wide||!slide.matches('.bx-brief')||!reduced()&&document.documentElement.dataset.uiMotion!=='off')slide.classList.add('bx-in');
         depth.enter();
       };
       requestAnimationFrame(() => requestAnimationFrame(enter));
@@ -880,6 +884,26 @@ export function startStage(root, deck, { refresh } = {}) {
     paint(drag);
     arm();
   }
+
+  // Release completed fills so later live-data patches cannot replay an
+  // arrival. Paused offscreen/gesture sequences retain their exact frame.
+  const onStoryAnimation=event=>{
+    if(!/^bx-(?:onair-|story-)/.test(event.animationName))return;
+    const slide=event.target.closest?.('.bx-brief.bx-in');
+    if(!wide||!slide||slide.matches('.bx-dragging'))return;
+    const unfinished=slide.getAnimations({subtree:true}).some(a=>/^bx-(?:onair-|story-)/.test(a.animationName||'')&&['running','paused','pending'].includes(a.playState));
+    if(!unfinished)slide.classList.remove('bx-in');
+  };
+  layer?.addEventListener('animationend',onStoryAnimation);
+  layer?.addEventListener('animationcancel',onStoryAnimation);
+  const storyMedia=matchMedia('(prefers-reduced-motion: reduce)');
+  const settleStoryMotion=()=>{
+    if(!wide||!storyMedia.matches&&document.documentElement.dataset.uiMotion!=='off')return;
+    for(const slide of layer?.querySelectorAll('.bx-brief')||[])slide.classList.remove('bx-in','bx-enter');
+    if(storyMedia.matches)setPaused(true);
+  };
+  storyMedia.addEventListener('change',settleStoryMotion);
+  window.addEventListener('dfl:ui-motion-change',settleStoryMotion);
 
   /* Every place that can put a fresh button in the DOM calls this, so the
      glyph and the accessible name can never disagree with the state. The
@@ -1127,7 +1151,9 @@ export function startStage(root, deck, { refresh } = {}) {
         for(const stale of layer.querySelectorAll('.bx-leaving'))stale.remove();
         const current=layer.querySelector('.bx-slide');
         if(!current)return;
-        current.classList.remove('bx-enter','bx-in'); current.classList.add('bx-dragging');
+        current.classList.remove('bx-enter');
+        if(!wide||!current.matches('.bx-brief'))current.classList.remove('bx-in');
+        current.classList.add('bx-dragging');
         dragging={current,preview:null,direction:0,width:root.clientWidth,offset:0,origin:0};
       }
       const direction=dx<0?1:-1;
@@ -1278,6 +1304,11 @@ export function startStage(root, deck, { refresh } = {}) {
     stop() {
       dead = true;
       depth.stop(); swipe.stop(); restoreDrag(false); pendingDeck=null;
+      if(wide)for(const slide of layer?.querySelectorAll('.bx-brief')||[]){slide.classList.remove('bx-in','bx-enter');for(const animation of slide.getAnimations({subtree:true}))animation.cancel()}
+      layer?.removeEventListener('animationend',onStoryAnimation);
+      layer?.removeEventListener('animationcancel',onStoryAnimation);
+      storyMedia.removeEventListener('change',settleStoryMotion);
+      window.removeEventListener('dfl:ui-motion-change',settleStoryMotion);
       cancelAnimationFrame(layoutFrame);
       resize?.disconnect();
       intersection?.disconnect();

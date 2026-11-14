@@ -1,0 +1,47 @@
+/* Finite broadcast beats. Figures keep their real values throughout. */
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief:not(.bx-enter):not(.bx-leaving):not(.bx-dragging) { transform:none; }
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief.bx-in>:is(.bx-head,.bx-brief-body,.bx-brief-art,.bx-brief-value,.bx-brief-number) { animation:none; }
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief.bx-in>:is(.bx-brief-value,.bx-brief-number),
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief-result.bx-in .bx-brief-scores>div { animation:bx-onair-panel 300ms cubic-bezier(.16,1,.3,1) both; }
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief-result.bx-in .bx-brief-scores>div+div { animation-delay:30ms; }
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief.bx-in>.bx-head { animation:bx-onair-copy 220ms cubic-bezier(.16,1,.3,1) 55ms both; }
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] :is(.bx-brief-award,.bx-brief-scout).bx-in>.bx-brief-art { animation:bx-story-art 320ms cubic-bezier(.16,1,.3,1) both; }
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief::before { content:''; position:absolute; inset:0 auto auto 0; width:34%; height:3px; background:var(--action-ink); opacity:0; pointer-events:none; }
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief.bx-in::before { animation:bx-onair-sideline 300ms cubic-bezier(.2,.75,.25,1) both; }
+@keyframes bx-onair-panel { from { opacity:.55; transform:translate3d(10px,0,0); } to { opacity:1; transform:translate3d(0,0,0); } }
+@keyframes bx-onair-copy { from { opacity:.55; transform:translate3d(0,3px,0); } to { opacity:1; transform:translate3d(0,0,0); } }
+@keyframes bx-onair-sideline { 0% { opacity:0; transform:translateX(-105%); } 25% { opacity:.7; } 100% { opacity:0; transform:translateX(310%); } }
+/* Keep the exact painted frame while a finger owns the card. A canceled swipe
+   resumes that frame after its return settles; a committed preview is static. */
+#view.view #home-wrap[data-home-edition] .bx-stage:not([data-bx-visible]) .bx-brief.bx-in *,
+#view.view #home-wrap[data-home-edition] .bx-stage:not([data-bx-visible]) .bx-brief.bx-in::before,
+#view.view #home-wrap[data-home-edition] .bx-stage .bx-brief.bx-dragging *,
+#view.view #home-wrap[data-home-edition] .bx-stage .bx-brief.bx-dragging::before { animation-play-state:paused!important; }
+html[data-ui-motion="off"] #view .bx-brief.bx-in::before { animation:none!important; opacity:0; }
+@media(prefers-reduced-motion:reduce) {
+ #view .bx-brief.bx-in::before { animation:none!important; opacity:0; }
+}
+
+/* Offer tickets borrow the same restrained score/name framing. Menus remain
+   outside the border, and complete packages keep their two-column layout. */
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer {
+ border:1px solid var(--line-soft); border-top:2px solid var(--action-fill); border-radius:4px;
+ padding:4px 6px 0; background:var(--bg); box-shadow:none;
+}
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer:not(.tb-multi-offer)>header { align-items:center; gap:8px; padding:0 0 4px; margin:0 0 4px; border-bottom:1px solid var(--line-soft); }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer-owner { min-width:0; align-items:center; }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer-owner>strong { font:700 .8125rem/1.3 var(--font-ui); overflow-wrap:break-word; }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer>header .tb-offer-verdict { display:flex; align-items:center; gap:6px; }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer-verdict>strong { padding:6px 7px; border-radius:3px; background:var(--action-fill); color:var(--action-ink); font:800 1.0625rem/1.15 var(--font-ui); letter-spacing:-.035em; }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer-flow { gap:8px; }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-package { padding:4px 0; }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-package>small { display:block; margin-bottom:3px; color:var(--body-text); font:700 .625rem/1.4 var(--font-ui); letter-spacing:.035em; text-transform:uppercase; }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-package+.tb-package { padding-left:8px; border-left:1px solid var(--line-soft); }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-player-link strong { font-weight:650; }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-offer-footer { margin-top:2px; border-top:1px solid var(--line-soft); }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-offer-analyze { font-weight:700; }
+@container offer-finish (max-width:15rem) {
+ #view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-package+.tb-package { padding-left:0; border-left:0; padding-top:8px; }
+}
+
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer-verdict>span { min-width:0; max-width:5rem; }
