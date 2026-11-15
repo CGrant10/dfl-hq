@@ -31,7 +31,18 @@ export function reviewTextContrast(root=document.body) {
       return clipY&&(r.bottom<=b.top||r.top>=b.bottom)||clipX&&(r.right<=b.left||r.left>=b.right);
     })) continue;
     let bg = [255, 255, 255];
-    for (const a of ancestors.reverse()) bg = over(rgba(getComputedStyle(a).backgroundColor), bg);
+    for (const a of ancestors.reverse()) {
+      bg = over(rgba(getComputedStyle(a).backgroundColor), bg);
+      // The Scores selector paints its moving pill behind the button, on the
+      // parent's pseudo-element. Count that surface only where it covers ink.
+      if(a.matches('.nfl-scores-segments')&&e.closest('button[aria-pressed="true"]')){
+        const p=getComputedStyle(a,'::before'),b=a.getBoundingClientRect();
+        const matrix=new DOMMatrixReadOnly(p.transform==='none'?undefined:p.transform);
+        const x=b.left+parseFloat(p.left)+matrix.m41,y=b.top+parseFloat(p.top)+matrix.m42;
+        const cx=r.left+r.width/2,cy=r.top+r.height/2;
+        if(p.content!=='none'&&cx>=x&&cx<=x+parseFloat(p.width)&&cy>=y&&cy<=y+parseFloat(p.height))bg=over(rgba(p.backgroundColor),bg);
+      }
+    }
     const style = getComputedStyle(e), fg = over(rgba(style.color), bg);
     const l1 = luminance(fg), l2 = luminance(bg), ratio = (Math.max(l1, l2) + .05) / (Math.min(l1, l2) + .05);
     const large = parseFloat(style.fontSize) >= 24 || (parseFloat(style.fontSize) >= 18.66 && Number(style.fontWeight) >= 700);

@@ -1,3 +1,4 @@
+import {nflScoresIcon} from './nfl-scores-icons.js';
 import {esc} from './ui.js';
 import {nflQuarterMarkup,nflTeamBoxMarkup} from './nfl-stats-ui.js';
 import {nflScoresFantasyMarkup} from './nfl-scores-ui.js';
@@ -7,10 +8,10 @@ import {teamLogoUrl,team} from './nfl-teams.js';
 
 export function nflGameDeskMarkup({uid,mode,embedded=false,fullscreen=false,games,gameId,observed,selected,summary,checked,error,loading,online,filter,fantasy,teams,context,field,score,playRows,boxTeam}){
  const live=mode==='plays';
- const modes=selected?`<div class="nfl-center-modes" ${embedded?'hidden':''} role="group" aria-label="NFL game view" style="--nfl-mode:${live?0:1}"><i aria-hidden="true"></i><button type="button" data-nfl-center-mode="plays" aria-controls="${uid}-view" aria-pressed="${live}">Live</button><button type="button" data-nfl-center-mode="fantasy" aria-controls="${uid}-view" aria-pressed="${!live}">Stats</button></div>`:'';
+ const modes=selected?`<div class="nfl-center-modes" ${embedded?'hidden':''} role="group" aria-label="NFL game view" style="--nfl-mode:${live?0:1}"><i aria-hidden="true"></i><button type="button" data-nfl-center-mode="plays" aria-controls="${uid}-view" aria-pressed="${live}">${nflScoresIcon('activity')}Live</button><button type="button" data-nfl-center-mode="fantasy" aria-controls="${uid}-view" aria-pressed="${!live}">${nflScoresIcon('bar-chart-fill')}Stats</button></div>`:'';
  const status=!online?'Offline · reconnecting when available.':error?(summary?'Update unavailable · showing the last game.':'Game unavailable. Try again.'):!games.length?(loading?'Loading NFL games…':'No NFL games this week.'):loading&&!summary?'Loading game…':context?.clipUnavailableGame===gameId?'This video is no longer available. The game’s plays are here.':'';
  const section=mode==='fantasy'?'fantasy':teams.some(t=>t.code===boxTeam)?boxTeam:teams[0]?.code;
- return `<div class="nfl-center-tools"${embedded?' hidden':''}>${fullscreen?`<button type="button" class="nfl-scores-back" data-nfl-close aria-label="Back to Clubhouse">${replayIcon('chevron-left')}<span>Clubhouse</span></button>`:''}<div class="nfl-center-game-rail" id="${uid}-game-rail" data-nfl-center-rail>${replayGamesMarkup(games.map(g=>g.id===gameId?observed||g:g),gameId,{idPrefix:uid+'-pick',compact:true})}</div></div><p class="nfl-center-status${status?'':' is-quiet'}" role="status">${status}${error?'<button type="button" class="linkbtn" data-nfl-center-refresh>Try again</button>':''}</p>
+ return `<div class="nfl-center-tools"${embedded?' hidden':''}>${fullscreen?`<button type="button" class="nfl-scores-back" data-nfl-close aria-label="Back to Clubhouse">${replayIcon('chevron-left')}<span class="sr-only">Clubhouse</span></button>`:''}<div class="nfl-center-game-rail" id="${uid}-game-rail" data-nfl-center-rail>${replayGamesMarkup(games.map(g=>g.id===gameId?observed||g:g),gameId,{idPrefix:uid+'-pick',compact:true})}</div></div><p class="nfl-center-status${status?'':' is-quiet'}" role="status">${status}${error?'<button type="button" class="linkbtn" data-nfl-center-refresh>Try again</button>':''}</p>
  <div class="nfl-game-window"><div class="nfl-game-stage" data-nfl-game-stage>
  ${live?`<div class="nfl-game-hero">${score}${selected?field:''}</div>`:''}${modes}
  <div class="nfl-center-body" id="${uid}-view" data-nfl-center-body aria-busy="${loading&&!summary}"><div class="nfl-live-grid"${selected?'':' hidden'}>
