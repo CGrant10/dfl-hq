@@ -7,7 +7,7 @@ export function mountClubhouseNfl(root,{getModel,getDirectory=()=>null,active=()
  let stopped=false,center=null,clips=[],key='',board=null,preferred=['plays','stats','fantasy'].includes(params.get('nflView'))?params.get('nflView'):'plays';const summaries=new Map();
  const shell=root.querySelector('.clubhouse-tab-shell'),originalHeight=root.style.getPropertyValue('--nfl-section-tabs-height');
  slot.dataset.nflClubhouse='';
- const syncTabsHeight=()=>{const value=`${Math.ceil(shell?.getBoundingClientRect().height||44)}px`;if(root.style.getPropertyValue('--nfl-section-tabs-height')!==value)root.style.setProperty('--nfl-section-tabs-height',value)};
+ const syncTabsHeight=()=>{const value=`${Math.ceil(shell?.getBoundingClientRect().height||0)}px`;if(root.style.getPropertyValue('--nfl-section-tabs-height')!==value)root.style.setProperty('--nfl-section-tabs-height',value)};
  const tabsObserver=new ResizeObserver(syncTabsHeight);if(shell)tabsObserver.observe(shell);syncTabsHeight();
  const visible=()=>!stopped&&active()&&!root.querySelector('#clubhouse-panel-nfl')?.hidden;
  const getContext=()=>{const model=getModel();return {...model,clipUnavailableGame:params.get('clipUnavailable')==='1'?params.get('nflGame'):null,playerDirectory:getDirectory(),players:model?.games.flatMap(game=>game.sides.flatMap(side=>[...side.lineup,...side.bench].filter(p=>!p.empty).map(p=>({...p,owner:side.name,isMine:String(side.memberId)===String(currentMember()?.id),isOpponent:game.isMine&&String(side.memberId)!==String(currentMember()?.id)}))))||[]}};

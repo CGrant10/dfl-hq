@@ -37,10 +37,12 @@ if os.environ.get('DFL_CLUBHOUSE_SWIPE_ONLY'):
  f.week.games=Array.from({length:6},(_,i)=>({matchup_id:i+1,user1:String(i*2+1),user2:String(i*2+2),roster1:i*2+1,roster2:i*2+2,score1:101+i*2,score2:102+i*2}));
  '''
 def check(name,ok):
- checks.append({'check':name,'pass':bool(ok)});(OUT/'checks.json').write_text(json.dumps(checks,indent=2));assert ok,name;print('PASS '+name,flush=True)
+ checks.append({'check':name,'pass':bool(ok)});(OUT/'checks.json').write_text(json.dumps(checks,indent=2));
+ if not ok:page.screenshot(path=str(OUT/'failure.png'))
+ assert ok,name;print('PASS '+name,flush=True)
 with sync_playwright() as p:
  browser=p.chromium.launch(executable_path=os.environ.get('DFL_REVIEW_CHROMIUM'),headless=True,args=['--no-sandbox','--disable-dev-shm-usage'])
- for width in ([320,375,390,430,768] if os.environ.get('DFL_CLUBHOUSE_LAYOUT_ONLY') else [320,390]):
+ for width in ([int(w) for w in os.environ['DFL_CLUBHOUSE_LAYOUT_WIDTHS'].split(',')] if os.environ.get('DFL_CLUBHOUSE_LAYOUT_WIDTHS') else [320,375,390,430,768] if os.environ.get('DFL_CLUBHOUSE_LAYOUT_ONLY') else [320,390]):
   for mode in ['light','dark']:
    c=browser.new_context(viewport={'width':width,'height':844},has_touch=True,is_mobile=True,service_workers='block');c.add_init_script(fixture)
    def route(r):
@@ -96,6 +98,11 @@ with sync_playwright() as p:
    page.evaluate('scrollTo(0,0)');page.wait_for_timeout(700);page.screenshot(path=str(OUT/f'{width}-{mode}-clubhouse-default.png'));page.locator('.clubhouse-matchup-desk').screenshot(path=str(OUT/f'{width}-{mode}-matchup-content.png'))
    check(tag+' starting players are visible on the first phone screen',page.locator('[data-clubhouse-matchup="1"] .gd-lineup-pairs .gd-compare-row').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-70'))
    check(tag+' matchup uses compact chips and a compact first player pair',page.locator('.clubhouse-matchup-strip').evaluate('e=>e.clientHeight<=56') and page.locator('[data-clubhouse-matchup="1"] .gd-compare-row').first.evaluate('e=>e.clientHeight<=100'))
+   if os.environ.get('DFL_CLUBHOUSE_NFL_ONLY'):
+    from clubhouse_nfl_review import review_clubhouse_nfl
+    review_clubhouse_nfl(page,check,OUT,tag,width,mode)
+    check(tag+' NFL has no browser errors or league writes',not errors and page.evaluate('f.writes.every(name=>name.startsWith("app_client_issues:"))'))
+    page.evaluate('f.page.leave()');c.close();continue
    if os.environ.get('DFL_CLUBHOUSE_FINISH_ONLY'):
     from clubhouse_finish_review import review_clubhouse_finish
     review_clubhouse_finish(page,check,OUT,tag,width,mode)
@@ -138,6 +145,9 @@ with sync_playwright() as p:
      check(f'{tag}/{size}px/{reader} open week controls fit beside or below the heading',page.locator('.clubhouse-topline').evaluate('''e=>{const h=e.querySelector('.clubhouse-header').getBoundingClientRect(),s=e.querySelector('summary').getBoundingClientRect(),body=e.querySelector('.clubhouse-context-body').getBoundingClientRect();return s.height>=44&&s.left>=0&&s.right<=innerWidth&&(s.left>=h.right-1||s.top>=h.bottom-1)&&body.top>=Math.max(h.bottom,s.bottom)-1&&body.right<=innerWidth+1}'''))
      for tab in ['matchups','highlights','nfl','leaders','overview','recap']:
       page.locator(f'[data-clubhouse-tab="{tab}"]').evaluate('e=>e.click()');page.wait_for_timeout(90)
+      if tab=='nfl':
+       check(f'{tag}/{size}px/{reader} NFL replaces the page heading and tabs with an accessible return',page.locator('.clubhouse-topline').is_hidden() and page.locator('.clubhouse-tab-shell').is_hidden() and page.locator('[data-nfl-clubhouse-back]').is_visible() and page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
+       continue
       metrics=page.locator('.clubhouse-tabs').evaluate('''e=>{
        const r=e.getBoundingClientRect(),buttons=[...e.querySelectorAll('button')],selected=e.querySelector('[aria-selected="true"]'),b=selected.getBoundingClientRect(),marker=e.querySelector('.clubhouse-tab-indicator');
        return {width:e.clientWidth,scroll:e.scrollWidth,height:e.clientHeight,allFit:buttons.every(n=>{const a=n.getBoundingClientRect();return a.left>=r.left-1&&a.right<=r.right+1&&a.top>=r.top-1&&a.bottom<=r.bottom+1&&n.scrollWidth<=n.clientWidth+1}),targets:buttons.every(n=>n.getBoundingClientRect().height>=43.5&&n.getBoundingClientRect().width>=43.5),marker:Math.abs(parseFloat(marker.style.top)-(b.bottom-r.top-2))<1&&Math.abs(parseFloat(marker.style.left)-(b.left-r.left))<1};
@@ -245,10 +255,10 @@ with sync_playwright() as p:
    page.locator('[data-home-reel-game]').select_option('');page.locator('[data-home-reel-search]').fill('Metcalf');check(tag+' grid search finds the requested player',page.locator('[data-home-reel-clip]').count()==1);page.locator('[data-home-reel-search]').fill('')
    page.locator('[data-clubhouse-nfl-open="plays"]').click();page.wait_for_selector('[data-nfl-center-rail] [data-replay-game="401873011"]',state='attached');page.wait_for_selector('.nfl-center-plays li',timeout=15000)
    check(tag+' NFL view removes unrelated league matchup chrome',page.locator('.clubhouse-duel-host').is_hidden() and page.locator('[data-clubhouse-scoreboard]').is_hidden())
-   check(tag+' NFL stays inside Clubhouse with usable section navigation',page.locator('#clubhouse-panel-nfl [data-clubhouse-nfl-center]').count()==1 and page.locator('[data-nfl-fullscreen],[data-nfl-close]').count()==0 and not page.locator('.clubhouse-page').evaluate('e=>e.inert') and page.locator('#clubhouse-tab-matchups').is_visible())
+   check(tag+' NFL stays inside Clubhouse with usable section navigation',page.locator('#clubhouse-panel-nfl [data-clubhouse-nfl-center]').count()==1 and page.locator('[data-nfl-fullscreen],[data-nfl-close]').count()==0 and not page.locator('.clubhouse-page').evaluate('e=>e.inert') and page.locator('[data-nfl-clubhouse-back]').is_visible())
    check(tag+' NFL game center shows the full play-by-play',page.locator('.nfl-center-plays li').count()>100)
    check(tag+' selected NFL game is fully readable',page.locator('[data-nfl-center-rail] [aria-pressed="true"]').evaluate('e=>e.scrollWidth<=e.clientWidth+1&&e.getBoundingClientRect().height>=44'))
-   page.locator('[data-nfl-center-filter]').select_option('big');check(tag+' big plays show full names and a compact emphasized result',page.locator('.nfl-center-plays [data-play-kind="big-play"]').count()>0 and page.locator('.nfl-center-plays [data-play-kind="big-play"] .nfl-play-headline').evaluate_all('es=>es.length>0&&es.every(e=>parseFloat(getComputedStyle(e).fontSize)===14)'))
+   page.locator('[data-nfl-center-filter]').select_option('big');check(tag+' big plays show full names and a compact emphasized result',page.locator('.nfl-center-plays [data-play-kind="big-play"]').count()>0 and page.locator('.nfl-center-plays [data-play-kind="big-play"] .nfl-play-headline').evaluate_all('es=>es.length>0&&es.every(e=>parseFloat(getComputedStyle(e).fontSize)===16)'))
    play=page.locator('.nfl-center-plays [data-play-kind="big-play"]').first;check(tag+' full NFL descriptions are always visible',play.locator('.nfl-play-details>p:not(.nfl-feed-people)').is_visible() and page.locator('.nfl-center-plays details,.nfl-center-plays summary').count()==0)
    page.screenshot(path=str(OUT/f'{width}-{mode}-nfl-big-plays.png'))
    page.locator('[data-nfl-center-filter]').select_option('scoring');check(tag+' NFL scoring filter is precise',page.locator('.nfl-center-plays li').count()>2 and page.locator('.nfl-center-plays li').count()<20)

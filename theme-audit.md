@@ -1,3 +1,34 @@
+## 1.583.0 — Native Scores fidelity correction
+
+Audited the user's native WAS/NYG references against fresh deployed 1.582
+captures, then inspected the revised app and matching reference-data fixtures.
+NFL now removes duplicated Clubhouse chrome while retaining shared app bars and
+an explicit return. The game rail uses rounded chips; Live owns its filter caret
+rather than a separate toolbar. The reference's league row, quarter shading,
+selector proportions, player rails and circular feed portraits replace remaining
+card styling. Team-code watermarks are quiet UI text. Short stat lines preserve
+actual values without repeated categories or inactive receiving noise.
+
+Fantasy starts in official box-score order and holds that sequence through live
+refreshes. Normal source routes, player actions, raw play detail and league
+scoring are preserved. The back button restores the preceding section, focus,
+reading position and normal view memory; direct links fall back to Matchups.
+Clubhouse labels get intrinsic width and wrap instead of clipping at enlarged
+text. Bottom rows remain reachable above navigation. No new poll, font,
+dependency, permanent animation or fake engagement/probability data was added.
+
+Light/Dark mobile screenshots were manually inspected. The 857 browser checks
+cover 320/375/390/430/768px, 125/200% text, caret baselines, full names, phase/
+projection rails, source ordering, explicit selection versus rail browsing,
+scroll/focus restoration, finite/Reduced Motion, refresh budgets and teardown.
+Compiled real-data NFL Live/Fantasy, shared bars, Matchups return, Leaders and
+last-row reachability checks passed without provider writes. Unit suite passes
+2,587 tests in 310 files; release, theme, type, identifier and the 89-module build
+checks passed. The immutable 1.582.0 bundle is retained. Detailed comparison
+history and deliberate DFL palette/navigation differences are in design-qa.md;
+evidence is under /workspace/dfl-scores-1583/. Physical iOS/Android frame pacing,
+battery and spoken screen-reader output remain unmeasured.
+
 ## 1.582.0 — Native-style mobile NFL Scores
 
 NFL Live follows the user's supplied Sleeper mobile Scores references within

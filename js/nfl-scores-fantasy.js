@@ -36,18 +36,22 @@ export function nflScoresFantasyRows(summary,owned=[],{weekly=[],projections=[],
   const projectedPoints=compatible(projection)?scorePlayer(projection?.stats,scoringSettings):null;
   const s=p.stats||{},bits=[];
   if(s.completions!=null&&s.passingAttempts!=null)bits.push(`${s.completions}/${s.passingAttempts} CMP`);
-  if(s.passingYards!=null)bits.push(`${s.passingYards} PASS YD`);
-  if(s.passingTouchdowns)bits.push(`${s.passingTouchdowns} PASS TD`);
+  if(s.passingYards!=null)bits.push(`${s.passingYards} YD`);
+  if(s.passingTouchdowns)bits.push(`${s.passingTouchdowns} TD`);
   if(s.interceptions)bits.push(`${s.interceptions} INT`);
   if(s.rushingAttempts!=null)bits.push(`${s.rushingAttempts} CAR`);
-  if(s.rushingYards!=null)bits.push(`${s.rushingYards} RUSH YD`);
-  if(s.rushingTouchdowns)bits.push(`${s.rushingTouchdowns} RUSH TD`);
-  if(s.receptions!=null)bits.push(`${s.receptions}${s.receivingTargets!=null?'/'+s.receivingTargets:''} REC`);
-  if(s.receivingYards!=null)bits.push(`${s.receivingYards} REC YD`);
-  if(s.receivingTouchdowns)bits.push(`${s.receivingTouchdowns} REC TD`);
+  if(s.rushingYards!=null&&(s.rushingAttempts>0||s.rushingYards!==0))bits.push(`${s.rushingYards} YD`);
+  if(s.rushingTouchdowns)bits.push(`${s.rushingTouchdowns} TD`);
+  if(s.receptions!=null&&(s.receptions>0||s.receivingTargets>0))bits.push(`${s.receptions}${s.receivingTargets!=null?'/'+s.receivingTargets:''} REC`);
+  if(s.receivingYards!=null&&(s.receptions>0||s.receivingYards!==0))bits.push(`${s.receivingYards} YD`);
+  if(s.receivingTouchdowns)bits.push(`${s.receivingTouchdowns} TD`);
   if(s.fg)bits.push(`${s.fg} FG`);if(s.xp)bits.push(`${s.xp} XP`);if(s.fumblesLost)bits.push(`${s.fumblesLost} LOST`);
   return [{...p,position,playerId:playerId?String(playerId):null,rowKey:playerId?'sleeper-'+playerId:'espn-'+p.id,points,projectedPoints,league:true,owner:owner?.owner||'',isMine:owner?.isMine===true,line:Object.values(s).some(v=>typeof v==='number'&&v!==0||typeof v==='string'&&/^\d+\/\d+$/.test(v)&&v!=='0/0')?bits.join(', ')||p.line||'':''}];
  });
+ // Begin in the official box-score sequence, then keep that established
+ // sequence through live refreshes rather than re-ranking by points or name.
+ const sourceOrder=new Map();
+ for(const club of summary?.boxscore?.players||[])for(const group of club.statistics||[])for(const row of group.athletes||[]){const id=String(row.athlete?.id||'');if(id&&!sourceOrder.has(id))sourceOrder.set(id,sourceOrder.size)}
  const rank=new Map(order.map((id,i)=>[id,i]));
- return prepared.sort((a,b)=>positions.indexOf(a.position)-positions.indexOf(b.position)||(rank.get(a.rowKey)??Infinity)-(rank.get(b.rowKey)??Infinity)||a.name.localeCompare(b.name)||a.rowKey.localeCompare(b.rowKey));
+ return prepared.sort((a,b)=>positions.indexOf(a.position)-positions.indexOf(b.position)||(rank.get(a.rowKey)??Infinity)-(rank.get(b.rowKey)??Infinity)||(sourceOrder.get(a.id)??Infinity)-(sourceOrder.get(b.id)??Infinity)||a.name.localeCompare(b.name)||a.rowKey.localeCompare(b.rowKey));
 }
