@@ -1,3 +1,38 @@
+# NFL Scores outline and surface polish — 1.584.0
+
+final result: passed
+
+Visual target: the user's four native Sleeper Scores screenshots in this
+conversation, with DFL's Medicine Wheel palette and shared navigation retained.
+Fresh baseline screenshots of deployed 1.583 are under
+/workspace/dfl-scores-1584/before/. Final compiled real-data screenshots are
+under /workspace/dfl-scores-1584/actual/; responsive reference-data screenshots
+are under verified/. Light/Dark Live and Fantasy screenshots were manually
+inspected, including the 320px enlarged-text Fantasy state. This is a scoped
+surface refinement, not a claim of pixel identity across different data/palettes.
+
+Resolved findings:
+- Inactive game pills and position badges had competing outlines. Theme-derived
+  hairlines now separate them quietly while selected inverse pills stay clear.
+- The quarter table had an unfinished lower edge. A complete rounded frame and
+  restrained shared fill enclose the real quarter/total columns.
+- Administrative feed events repeated outlines. The feed now has one continuous
+  surface and a subtle top edge; individual plays remain unboxed.
+- Play-headline chevrons added visual noise. They are removed from the actual
+  headline pseudo-element while existing player/play actions remain available.
+- Player press feedback has a small rounded wash without persistent row boxes.
+
+Validation: 274 mobile Scores browser assertions and 127 NFL desk assertions
+passed, covering Light/Dark, 320/390/430/768px, 200% text, contrast, source order,
+real score/projection meaning, game activation versus rail browsing, refresh,
+finite/reduced motion and teardown. Compiled actual-data Live/Fantasy, return to
+Clubhouse, Leaders and last-row reachability passed in both themes without
+provider writes. All 2,587 unit tests in 310 files passed. Theme, type, identifier,
+release-version and 89-module build checks passed. No JavaScript behavior,
+provider reads, dependencies or continuous animations were added. The immutable
+1.583.0 bundle is retained. Physical device frame pacing/battery and spoken
+screen-reader output were not measured.
+
 # Native Scores fidelity correction — 1.583.0
 
 final result: passed

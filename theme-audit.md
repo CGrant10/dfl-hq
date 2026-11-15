@@ -1,3 +1,23 @@
+## 1.584.0 — NFL Scores outline and surface polish
+
+Reviewed fresh deployed before screenshots and compiled real-data NFL Live and
+Fantasy screenshots in Light/Dark at 390 × 844, plus narrow/enlarged fixture
+captures. Inactive game chips and position badges use quieter semantic hairlines;
+selected controls retain clear inverse foreground/background. Position separators
+are softer, the quarter table has a complete rounded frame, and the play feed
+uses one continuous surface instead of repeated administrative event outlines.
+Headline arrows are removed; player rows remain unboxed with a rounded press wash.
+All added fills/edges derive from shared theme tokens. NFL identity and semantic
+position ink remain meaningful; shared navigation and data behavior are unchanged.
+
+274 mobile Scores and 127 NFL desk browser checks passed, including Light/Dark,
+320/390/430/768px, 200% text, contrast, selection, refresh budgets, reduced motion
+and teardown. Compiled real-data navigation/Leaders and bottom-row reachability
+passed in both modes. All 2,587 unit tests (310 files), theme, type, identifier,
+release and 89-module build checks passed. Evidence: /workspace/dfl-scores-1584/;
+detailed findings: design-qa.md. Physical device frame pacing, battery and spoken
+screen-reader output remain unmeasured.
+
 ## 1.583.0 — Native Scores fidelity correction
 
 Audited the user's native WAS/NYG references against fresh deployed 1.582
