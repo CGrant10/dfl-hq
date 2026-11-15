@@ -85,6 +85,7 @@ html[data-ui-motion="off"] #more * { transition:none!important; }
    the same palette frame instead of inheriting a generic button color fade. */
 #view.view[data-route] > :is(.home-score-dock,.dfl-scroll-context) { transition:scale 150ms ease; }
 #view > .dfl-scroll-context.is-matchup { grid-template-columns:minmax(0,1fr) 20px; }
+.dfl-scroll-context.is-matchup .dfl-scroll-copy>strong { display:none; }
 .dfl-scroll-scores { grid-column:1 / -1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; border-top:1px solid var(--line-soft); padding-top:7px; }
 .dfl-scroll-scores > span { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:6px; min-width:0; }
 .wall-reaction-buttons [aria-hidden="true"] { display:inline-block; }

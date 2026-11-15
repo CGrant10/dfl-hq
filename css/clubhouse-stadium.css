@@ -107,8 +107,28 @@
 #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player:nth-child(3) .dfl-player>em { justify-self:end; }
 
 #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] :is(.gd-compare-head,.gd-compare-row) { grid-template-columns:minmax(0,1fr) 1.75rem minmax(0,1fr); }
-/* Reserve the identity column instead of sizing it from kickoff copy. */
-@container clubhouse-lineups (min-width:20.01rem) {
- #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player .gameday-player-score { width:2.5rem; min-width:min-content; }
- #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player .gameday-player-score>small { max-width:100%; }
+/* Opposing players share identity and score tracks. A long name or injury
+   label grows both sides together; live points never resize the name column. */
+@container clubhouse-lineups (max-width:40rem) {
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-row { grid-template-rows:auto auto auto; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player,
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player:nth-child(3) {
+  grid-column:1; grid-row:1 / span 2; grid-template-columns:minmax(0,1fr); grid-template-rows:subgrid; gap:0; padding:2px 0 0;
+ }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player:nth-child(3) { grid-column:3; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player .gameday-player-tap { grid-column:1; grid-row:1; align-self:start; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player .gameday-player-score {
+  grid-column:1; grid-row:2; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:baseline; gap:2px 6px; width:auto; min-width:0; padding:0;
+ }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player .gameday-player-score>b { grid-column:2; grid-row:1; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player .gameday-player-score>small { grid-column:1; grid-row:1; min-width:6ch; max-width:none; text-align:left; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player:nth-child(3) .gameday-player-score { grid-template-columns:auto minmax(0,1fr); }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player:nth-child(3) .gameday-player-score>b { grid-column:1; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player:nth-child(3) .gameday-player-score>small { grid-column:2; text-align:right; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .nfl-red-badge { grid-column:1/-1; margin:0; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-lineup-missing { grid-column:1; grid-row:1; min-height:44px; display:flex; align-items:center; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-lineup-missing-score { grid-column:1; grid-row:2; justify-self:end; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player:nth-child(3) .gd-lineup-missing-score { justify-self:start; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-player-stat-line { grid-row:3; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-slot { grid-column:2; grid-row:2; align-self:start; line-height:1.95; }
 }
