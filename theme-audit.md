@@ -1,3 +1,37 @@
+## 1.580.0 — Sports-wire Activity inbox
+
+Activity now uses a compact identity column, strong readable headlines, date
+breaks, short verified play facts and restrained clip/ticket/receipt previews.
+The unread accent is a small fading dot; rows keep their full text and names.
+Full-game play-history downloads were replaced by small exact-event lookups.
+Generic event marks use shared action ink and neutral surfaces. Player photos
+come from exact saved moments after the rolling feed expires; no mascot or
+shield artwork was introduced. Semantic win/loss colors remain unchanged.
+
+Reviewed Light/Dark at 320/390/768px and 200% text in
+/workspace/dfl-inbox-1580/{before,final}. Browser checks cover contrast, 44px
+controls, portraits in bounds, all filters, settings sheets/focus, late clips,
+expired clips, read-state transitions, source links, deferred responses,
+scroll anchoring, dismiss-vs-refresh races, Back-filter restore, fresh visits,
+Reduced Motion and listener/timer cleanup. Text renders before optional context;
+Back waits for that context so the route can restore the correct layout.
+
+A late video enriches the existing alert with the exact game/play link. It
+creates no message, push or read-state write. Visible pending clips get a
+bounded minute check for 20 minutes; hidden pages, filtered-out plays and
+completed clip matches stop it. New arrivals reuse the bell check and a
+same-app visible-window push signal. The signal cannot suppress the phone
+notification if a window is unavailable. Startup remains 3 modules / Home 4.
+
+All 2,585 tests / 310 files, targeted worker/signal tests and release/type/name/
+theme/build checks pass. All browser account/league mutations are fixtures or
+blocked. Personal inbox access still requires its registered device: private
+play/clip rows are verified in isolated fixtures; compiled public inbox and
+navigation are reviewed against actual data. Production records on Nov 15
+confirm a player alert and a successful push-service acceptance. Physical
+phone display, native frame pacing/battery and screen-reader speech remain
+unmeasured.
+
 ## 1.579.0 — Story-specific broadcast graphics
 
 Secondary wide Home stories now have distinct compositions: mirrored result

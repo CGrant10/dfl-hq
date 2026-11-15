@@ -1,12 +1,12 @@
 import {describe,it,expect,vi} from 'vitest';
-import {activityCard,activityTarget,filterActivity} from './activity-center-model.js';
+import {activityCard,activityTarget,filterActivity,pendingActivityClips} from './activity-center-model.js';
 import {activityListMarkup} from './activity-center-ui.js';
 import {sportsbookTicketRoute,revealSportsbookTicket} from './sportsbook-ticket-route.js';
 const now=Date.parse('2026-10-28T15:00:00Z');
 const trade={id:1,category:'trades',title:'Deal done',body:'A trade',target_url:'#/trade?tx=123',created_at:'2026-10-28T14:00:00Z',is_read:false};
 const receipt={sleeper_transaction_id:'123',teams:[{roster_id:1,team_name:'Alpha'},{roster_id:2,team_name:'Bravo'},{roster_id:3,team_name:'Charlie'}],packages:[{roster_id:1,sends:[{id:'wr',name:'Receiver',nfl_team:'BUF'}]},{roster_id:2,sends:[{id:'rb',name:'Runner'}]},{roster_id:3,sends:[{id:'te',name:'Tight end'}]}],result:{fairness:0}};
 const play={...trade,id:2,category:'matchup_moments',title:'Receiver · TOUCHDOWN',body:'▶ Video available · A big catch',target_url:'#/clubhouse?season=2026&week=8&tab=highlights&matchup=2&moment=nfl:100:200:3&nflGame=100&clip=7'};
-const clip={id:7,game_id:'100',play_id:'200',headline:'A touchdown catch',thumbnail_url:'https://a.espncdn.com/media/motion/2026/1028/example.jpg',game_label:'BUF vs MIA',expires_at:'2026-10-30T12:00:00Z'};
+const clip={id:7,game_id:'100',play_id:'200',headline:'A touchdown catch',thumbnail_url:'https://a.espncdn.com/media/motion/2026/1028/example.jpg',video_url:'https://espnmedia-cdn.akamaized.net/espn/media/2026/1028/clip.mp4',game_label:'BUF vs MIA',published_at:'2026-10-28T14:02:00Z',expires_at:'2026-10-30T12:00:00Z'};
 describe('activity previews keep the original source and permissions',()=>{
  it('shows routed two/three-team sends with actual balance, including zero, and an exact receipt link',()=>{
   const card=activityCard(trade,{trades:[receipt]});expect(card.href).toBe(trade.target_url);expect(card.preview.balance).toBe(0);expect(card.preview.packages).toHaveLength(3);
@@ -24,6 +24,25 @@ describe('activity previews keep the original source and permissions',()=>{
  });
  it('only renders trusted ESPN clip posters and never embeds or autoplays video',()=>{
   const html=activityListMarkup([play],{clips:[{...clip,thumbnail_url:'https://evil.test/track.jpg'}],now});expect(html).not.toContain('evil.test');expect(html).not.toContain('<video');expect(html).not.toContain('<iframe');
+ });
+ it('attaches a later verified clip to the same alert without losing its exact moment or read state',()=>{
+  const row={...play,is_read:true,target_url:'#/clubhouse?season=2026&week=8&tab=matchups&matchup=2&moment=nfl:100:200:3'};
+  const card=activityCard(row,{clips:[clip],now});
+  expect(card).toMatchObject({id:row.id,is_read:true,action:'Watch clip'});
+  const route=new URLSearchParams(card.href.split('?')[1]);expect(route.get('clip')).toBe('7');expect(route.get('nflGame')).toBe('100');expect(route.get('moment')).toBe('nfl:100:200:3');expect(route.get('matchup')).toBe('2');expect(row.target_url).not.toContain('clip=');
+  for(const bad of [{...clip,game_id:'999'},{...clip,play_id:'999'},{...clip,video_url:'https://evil.test/clip.mp4'}])expect(activityCard(row,{clips:[bad],now}).action).toBe('View play');
+ });
+ it('keeps player portraits and concise facts after the rolling feed has dropped a play',()=>{
+  const moment={event_key:'nfl:100:200:3',season:2026,week:8,matchup_id:2,roster_id:3,data:{players:[{id:'10',name:'An Unabridged Player Name',role:'receiver',bench:true}],play:{kind:'touchdown',yards:32,period:4,clock:'0:57'}}};
+  const context={moments:[moment],now};const card=activityCard(play,context);
+  expect(card.preview).toMatchObject({type:'play',players:[{id:'10',name:'An Unabridged Player Name'}]});expect(card.summary).toBe('Bench · 32-yard reception · Q4 · 0:57');expect(card.title).toBe('An Unabridged Player Name · TOUCHDOWN');
+  for(const patch of [{season:2025},{week:9},{matchup_id:3},{roster_id:1}])expect(activityCard(play,{...context,moments:[{...moment,...patch}]}).preview).toBeNull();
+ });
+ it('only waits for a late clip within its useful window and stops as soon as one is ready',()=>{
+  const row={...play,created_at:new Date(now-60000).toISOString(),target_url:'#/clubhouse?season=2026&week=8&tab=matchups&matchup=2&moment=nfl:100:200:3'};
+  expect(pendingActivityClips([row],{},now)).toBe(true);expect(pendingActivityClips([row],{clips:[clip]},now)).toBe(false);
+  for(const created_at of [new Date(now+1000).toISOString(),new Date(now-20*60000).toISOString()])expect(pendingActivityClips([{...row,created_at}],{},now)).toBe(false);
+  expect(pendingActivityClips([{...row,target_url:'#/clubhouse?tab=matchups'}],{},now)).toBe(false);
  });
  it('uses the authenticated account for ticket amounts and never substitutes potential payout for actual payout',()=>{
   const row={...trade,category:'sportsbook',target_url:'#/sportsbook?product=book&ticket=4'};
