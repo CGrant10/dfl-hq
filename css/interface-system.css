@@ -128,18 +128,12 @@ html[data-readability="comfortable"] #view.view[data-route="clubhouse"] .clubhou
 #view.view[data-route="clubhouse"] .clubhouse-context { container:clubhouse-pickers / inline-size; }
 #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-toolbar { container:clubhouse-tools / inline-size; flex-wrap:wrap; }
 #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-tabs {
- display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:0;
+ display:flex; flex-wrap:wrap; gap:0;
  width:100%; min-width:0; overflow:visible;
 }
 #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-tabs>button {
- min-width:0; min-height:44px; padding:10px 2px; white-space:normal;
+ flex:1 0 auto; min-width:44px; min-height:44px; padding:10px 2px; white-space:normal;
  letter-spacing:-.01em; overflow-wrap:normal;
-}
-@container clubhouse-tabs (max-width:21rem) {
- #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-tabs { grid-template-columns:repeat(3,minmax(0,1fr)); }
-}
-@container clubhouse-tabs (max-width:12rem) {
- #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-tabs { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @container clubhouse-pickers (max-width:17.5rem) {
  #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-week-picker { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -151,9 +145,7 @@ html[data-readability="comfortable"] #view.view[data-route="clubhouse"] .clubhou
 @container clubhouse-tools (max-width:17.5rem) {
  #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-toolbar [data-matchup-freshness] { flex-basis:100%; }
 }
-@media(max-width:600px) {
- html[data-readability="comfortable"] #view.view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-tabs { grid-template-columns:repeat(3,minmax(0,1fr)); }
-}
+
 
 /* Shared matchup reference: quiet state, team mark/name, exact tabular score.
    Home's scroll-flight geometry stays owned by its existing controller. */

@@ -1,3 +1,82 @@
+# Native Scores fidelity correction — 1.583.0
+
+final result: passed
+
+Primary visual truth: the four native Sleeper Scores screenshots supplied by the
+user in this conversation (WAS/NYG Live, feed and position-group Fantasy screens,
+591 × 1280 image pixels; approximately 394 × 853 CSS pixels at 1.5 density).
+This pass uses those native targets, not the older 2023 promotional screenshot or
+mobile web pages. DFL colors and shared application navigation remain intentional
+per the user's standing directions. Proprietary branding/engagement, betting
+controls and unavailable provider values are not invented to fill a screenshot.
+
+Fresh audit evidence: /workspace/dfl-scores-1583/before/ captures the deployed
+1.582 app in this run. Latest implementation: actual-reachable/ captures compiled
+1.583 with real read-only league/provider data in Light/Dark at 390 × 844 CSS
+pixels, density 1. The shared app bars occupy their existing space rather than
+recreating the source phone's operating-system chrome. Fixture captures under
+release-scores/ use the source WAS/NYG players, actuals/projections and plays, at
+320/390/430/768px and 200% text. No pixel-difference score is claimed across the
+source's phone chrome, palette and different runtime data.
+
+Full-view comparison evidence: comparison-fantasy.png and comparison-plays.png
+place accepted fresh before/after captures together. Focused evidence: the
+390-dark-stats.png and 390-dark-live.png captures in release-scores/ show the
+league/position hierarchy and live controls against the user's native targets.
+Source attachments were visually reviewed in conversation; local comparisons
+are explicitly labeled before/after, not substituted for those source images.
+
+Audit steps and resolved findings:
+1. Open NFL Live — P1: Clubhouse heading, archive tools and section tabs consumed
+   an extra layer above the game. The NFL surface now owns the frame with a small
+   back control, rounded game chips and shared top/bottom bars. Source proportions
+   are restored without making NFL an immersive fullscreen route.
+2. Read Fantasy — P1: the league row, quarter shading, selector proportions and
+   score typography still reflected DFL's previous card style. The row now reads
+   Fantasy Leagues on the left and the round DFL league identity on the right.
+   Quarter columns alternate quiet fills, the selector has a 32px visual pill in
+   a 44px target, and player score/projection rails match the reference hierarchy.
+3. Read the play feed — P1: the extra All plays toolbar displaced the first play.
+   Filtering now lives in the small caret beside Live; regular live updates are
+   automatic and failed updates retain their retry action. Portraits are truly
+   circular (the earlier inherited padding made them oval), with a separate NFL
+   badge. Play headlines, detail and metadata have distinct sizes; details stay
+   fully shown. Source-style large team abbreviations replace logo watermark art.
+4. Follow player rows — P1: initial rows were alphabetical. They now begin in
+   official box-score order, then retain established order through refreshes.
+   Compact stat lines omit repeated yardage categories and unused 0/0 receiving
+   noise. Recorded scoring, real zeroes and unknown totals/projections are intact.
+5. Return and enlarge text — P2: a compact NFL return needed scroll/focus/memory
+   restoration; this now uses the normal section activation path. Direct NFL
+   links return to Matchups. A verified 375px/125% Matchups-label clip was corrected
+   by giving tabs intrinsic space and allowing wrapping. Caret baseline, quarter
+   widths at 200%, last-row reachability above the real bottom bar and teardown
+   were checked after fixes.
+
+Required fidelity surfaces:
+- Typography: existing Inter; 14px player names, 16px actuals, 12px projections,
+  11px stat lines, 16px play headlines and subordinate detail/meta. Full accessible
+  names and actual/projected labels are retained; no vertical truncation tricks.
+- Layout: 136px game chips with rounded 32px surfaces/44px taps; compact return,
+  Live/Stats with a short underline and aligned Live caret, full-width quarter
+  surface, mirrored player pairs, dotted position dividers and circular feed art.
+- Palette: DFL Medicine Wheel defaults and semantic position/status tokens. No
+  new color theme or legacy crest-blue accents; native layout adapts to Light.
+- Assets: official existing NFL logos/headshots, existing round DFL league mark,
+  standard Bootstrap icons, and the existing data-driven field/replay animation.
+  Large abbreviations are real team-code UI text, not rasterized interface art.
+- Copy: native league-row hierarchy and short stat syntax; full factual plays,
+  real ownership, score/projection data and original player-card actions remain.
+
+Validation: 2,587 unit tests / 310 files, 857 browser assertions (274 mobile Scores,
+76 inline NFL return/accessibility, 380 Clubhouse layout, 127 NFL desk), release/
+theme/type/name/build checks and read-only compiled real-data navigation checks
+passed. Geometry covers both palettes, 320–768px, 125/200% text, carets and touch
+areas, filtering, source ordering, game activation versus browsing, scrolling,
+finite/Reduced Motion, refresh budgets and cleanup. Physical phone frame pacing,
+battery use and screen-reader speech remain unmeasured. No actionable P0/P1/P2
+findings remain for this DFL-color/navigation adaptation.
+
 # Mobile NFL Scores — 1.582.0
 
 final result: passed

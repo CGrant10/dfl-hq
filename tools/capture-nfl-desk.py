@@ -49,8 +49,8 @@ with sync_playwright() as p:
     result=pg.locator('#feed').evaluate('e=>reviewContrast(e)');check(tag+' text contrast '+json.dumps(result['failures']),not result['failures'])
     if mode=='plays':
      check(tag+' full descriptions and quarter landmarks',pg.locator('.nfl-play-details>p').evaluate_all('es=>es.length>100&&es.every(e=>e.checkVisibility())') and pg.locator('.nfl-play-period:not([hidden])').count()>=4)
-     pg.locator('[data-nfl-center-filter]').scroll_into_view_if_needed();y=pg.locator('.nfl-scores-feed-tools').bounding_box()['y'];pg.locator('[data-nfl-center-filter]').select_option('big')
-     check(tag+' filters keep their heading in place',abs(pg.locator('.nfl-scores-feed-tools').bounding_box()['y']-y)<2)
+     pg.locator('[data-nfl-center-filter]').scroll_into_view_if_needed();y=pg.locator('.nfl-center-modes').bounding_box()['y'];pg.locator('[data-nfl-center-filter]').select_option('big')
+     check(tag+' filters keep their heading in place',abs(pg.locator('.nfl-center-modes').bounding_box()['y']-y)<2)
      pg.locator('[data-nfl-center-filter]').select_option('all')
     else:
      check(tag+' all NFL players remain side by side',pg.locator('.nfl-score-player').count()==20 and pg.locator('.nfl-score-player.is-away').first.bounding_box()['x']<pg.locator('.nfl-score-player.is-home').first.bounding_box()['x'])

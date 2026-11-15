@@ -1,0 +1,28 @@
+"""Native NFL surface inside Clubhouse, with a real return path."""
+def review_clubhouse_nfl(page,check,out,tag,width,mode):
+ page.evaluate('scrollTo(0,160);f.nflReturnY=scrollY;document.querySelector("#clubhouse-tab-nfl").click()')
+ page.wait_for_selector('.nfl-center-plays li',timeout=30000)
+ check(tag+' NFL replaces duplicated Clubhouse chrome',page.locator('.clubhouse-topline').is_hidden() and page.locator('.clubhouse-tab-shell').is_hidden())
+ check(tag+' NFL stays inline with a 44px explicit return',page.locator('[data-nfl-fullscreen]').count()==0 and page.locator('[data-nfl-clubhouse-back]').evaluate('e=>e.checkVisibility()&&e.getBoundingClientRect().height>=44&&e.getAttribute("aria-label")==="Back to Clubhouse"'))
+ check(tag+' keyboard entry focuses the visible return rather than a hidden tab',page.locator('[data-nfl-clubhouse-back]').evaluate('e=>document.activeElement===e'))
+ metrics=page.locator('.nfl-score-play:not(.nfl-feed-event)').first.evaluate('e=>{const p=e.querySelector(".nfl-feed-portrait"),b=p.getBoundingClientRect();return {width:b.width,height:b.height,radius:getComputedStyle(p).borderRadius,font:parseFloat(getComputedStyle(e.querySelector(".nfl-play-headline")).fontSize)}}')
+ check(tag+' feed uses circular source portraits and readable headlines '+str(metrics),page.locator('.nfl-score-play:not(.nfl-feed-event)').first.evaluate('e=>{const p=e.querySelector(".nfl-feed-portrait"),b=p.getBoundingClientRect();return Math.abs(b.width-b.height)<1&&getComputedStyle(p).borderRadius==="50%"&&parseFloat(getComputedStyle(e.querySelector(".nfl-play-headline")).fontSize)===16}'))
+ page.evaluate('scrollTo(0,0)');page.screenshot(path=str(out/f'{width}-{mode}-native-live.png'))
+ page.locator('[data-nfl-center-mode="fantasy"]').click();page.wait_for_selector('.nfl-score-player',timeout=30000)
+ check(tag+' Fantasy keeps the native league label and league identity',page.locator('.nfl-fantasy-league>span').inner_text()=='Fantasy Leagues' and page.locator('.nfl-fantasy-league strong').inner_text()=='DFL Fantasy')
+ check(tag+' Fantasy retains side-by-side actual and projected rails',page.locator('.nfl-score-totals').evaluate_all('es=>es.length>2&&es.every(e=>e.querySelector("b")&&e.querySelector("small"))'))
+ check(tag+' Fantasy position and player columns fit',page.evaluate('document.documentElement.scrollWidth<=innerWidth+1') and page.locator('.nfl-score-player').evaluate_all('es=>es.every(e=>e.scrollWidth<=e.clientWidth+1)'))
+ page.evaluate('scrollTo(0,0)');page.screenshot(path=str(out/f'{width}-{mode}-native-fantasy.png'))
+ for size in [20,32]:
+  page.evaluate('size=>document.documentElement.style.fontSize=size+"px"',size)
+  check(tag+f' NFL {size}px controls remain inside the phone',page.evaluate('document.documentElement.scrollWidth<=innerWidth+1') and page.locator('[data-nfl-clubhouse-back]').evaluate('e=>e.getBoundingClientRect().right<=innerWidth'))
+ page.evaluate('document.documentElement.style.fontSize="16px";scrollTo(0,400)');page.wait_for_timeout(100)
+ check(tag+' scrolling keeps the game rail and mode switch together',page.locator('[data-clubhouse-nfl-center]').evaluate('e=>{const a=e.querySelector(".nfl-center-tools").getBoundingClientRect(),b=e.querySelector(".nfl-center-modes").getBoundingClientRect();return a.top>=-1&&Math.abs(a.bottom-b.top)<2}'))
+ page.locator('[data-nfl-clubhouse-back]').click()
+ check(tag+' return restores the preceding section and reading position',page.locator('#clubhouse-tab-matchups').get_attribute('aria-selected')=='true' and page.locator('.clubhouse-topline').is_visible() and abs(page.evaluate('scrollY-f.nflReturnY'))<2)
+ check(tag+' return restores keyboard focus to the preceding section',page.locator('#clubhouse-tab-matchups').evaluate('e=>document.activeElement===e'))
+ # The return also handles a fresh NFL deep link with no preceding section.
+ page.evaluate('f.page.leave();history.replaceState(null,"","#/clubhouse?tab=nfl&season=2026&week=7")')
+ page.evaluate('async()=>await f.page.render(document.querySelector("#view"))');page.wait_for_selector('[data-nfl-clubhouse-back]')
+ page.locator('[data-nfl-clubhouse-back]').click()
+ check(tag+' a direct NFL link returns to the default matchup',page.locator('#clubhouse-tab-matchups').get_attribute('aria-selected')=='true' and page.locator('.gd-lineup-comparison').first.is_visible())
