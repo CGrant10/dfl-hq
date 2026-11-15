@@ -276,7 +276,7 @@ export function mountNotificationBell() {
   }
   const countNode = button.querySelector("#notification-count");
   if (!button || !countNode) return;
-  let stopped = false;
+  let stopped = false,previousCount=null;
   const paint = async () => {
     try {
       const count = await unreadCount();
@@ -284,6 +284,8 @@ export function mountNotificationBell() {
       countNode.textContent = count > 99 ? "99+" : String(count);
       countNode.classList.toggle("hidden", count === 0);
       button.setAttribute("aria-label", count ? `Notifications, ${count} unread` : "Notifications");
+      const changed=previousCount!==null&&previousCount!==count;previousCount=count;
+      if(changed)window.dispatchEvent(new CustomEvent('dfl:inbox-update'));
     } catch {
       countNode.classList.add("hidden");
     }
@@ -291,9 +293,11 @@ export function mountNotificationBell() {
   button.addEventListener("click", () => { location.hash = "#/notifications"; });
   window.addEventListener(BADGE_EVENT, paint);
   window.addEventListener("focus", paint);
+  const incoming=event=>{if(event.data?.type!=='DFL_NOTIFICATION_AVAILABLE')return;window.dispatchEvent(new CustomEvent('dfl:inbox-update'));if(document.visibilityState!=='hidden')void paint()};
+  navigator.serviceWorker?.addEventListener('message',incoming);
   const timer = setInterval(paint, 60000);
   /* Repair an expired endpoint when the app opens, after permission was
      already granted. No notification permission prompt is shown here. */
   void pushPreferences().catch(() => {}).finally(paint);
-  return () => { stopped = true; clearInterval(timer); window.removeEventListener(BADGE_EVENT, paint); window.removeEventListener("focus", paint); };
+  return () => { stopped = true; clearInterval(timer); window.removeEventListener(BADGE_EVENT, paint); window.removeEventListener("focus", paint);navigator.serviceWorker?.removeEventListener('message',incoming); };
 }
