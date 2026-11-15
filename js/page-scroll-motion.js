@@ -54,6 +54,11 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
   dock.innerHTML='<span class="dfl-scroll-copy"><strong></strong><small></small></span><span class="dfl-scroll-value" hidden></span><span class="dfl-scroll-scores" hidden></span><svg class="dfl-scroll-up" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 14l6-6 6 6M12 8v12"/></svg><i class="dfl-scroll-read" aria-hidden="true"></i>';
   const copy=dock.querySelector('.dfl-scroll-copy'),title=copy.querySelector('strong'),section=copy.querySelector('small');
   const value=dock.querySelector('.dfl-scroll-value'),scores=dock.querySelector('.dfl-scroll-scores'),progress=dock.querySelector('.dfl-scroll-read');
+  // Keep the compact scoreboard mounted across refreshes and matchup changes.
+  const scoreSides=Array.from({length:2},()=>{
+    const side=document.createElement('span'),name=document.createElement('small'),points=document.createElement('b');
+    side.append(name,points);scores.append(side);return {name,points};
+  });
   const originalTop=root.style.getPropertyValue('--dfl-scroll-top'),originalHeight=root.style.getPropertyValue('--dfl-scroll-height');
   let stopped=false,frame=0,dirty=true,hero=null,heading=null,headings=[],sectionPositions=[],activeSection=null,compact=false,shown=false,lastScroll=window.scrollY,paintedScroll=window.scrollY,scrolledAt=-Infinity,scoreAnchor=null,scoreKey='',scrollDirection=0,scrollSpeed=0;let scrollAt=performance.now();
   const seen=new WeakSet(),observed=new Set(),layoutNodes=new Set(),labels=new WeakMap(),rising=new Set(),focusRestores=new Map();
@@ -188,8 +193,8 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
     setHidden(value,!bank);if(bank)setText(value,`${bank} SIN`);
     const key=JSON.stringify([scoreData,phase]),scoreChanged=key!==scoreKey;
     if(scoreChanged){
-      scoreKey=key;scores.replaceChildren();
-      for(const team of scoreData){const side=document.createElement('span'),name=document.createElement('small'),points=document.createElement('b');name.textContent=team.name;points.textContent=team.points;side.append(name,points);scores.append(side);}
+      scoreKey=key;
+      scoreData.forEach((team,index)=>{setText(scoreSides[index].name,team.name);setText(scoreSides[index].points,team.points)});
     }
     setHidden(scores,scoreData.length!==2);dock.classList.toggle('is-matchup',!scores.hidden);scoreAnchor=!scores.hidden?header:null;
     const action=scoreAnchor?'Back to the selected matchup scoreboard':`Back to the ${nextTitle} header`;

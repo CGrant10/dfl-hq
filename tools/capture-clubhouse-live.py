@@ -96,6 +96,11 @@ with sync_playwright() as p:
    page.evaluate('scrollTo(0,0)');page.wait_for_timeout(700);page.screenshot(path=str(OUT/f'{width}-{mode}-clubhouse-default.png'));page.locator('.clubhouse-matchup-desk').screenshot(path=str(OUT/f'{width}-{mode}-matchup-content.png'))
    check(tag+' starting players are visible on the first phone screen',page.locator('[data-clubhouse-matchup="1"] .gd-lineup-pairs .gd-compare-row').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-70'))
    check(tag+' matchup uses compact chips and a compact first player pair',page.locator('.clubhouse-matchup-strip').evaluate('e=>e.clientHeight<=56') and page.locator('[data-clubhouse-matchup="1"] .gd-compare-row').first.evaluate('e=>e.clientHeight<=100'))
+   if os.environ.get('DFL_CLUBHOUSE_FINISH_ONLY'):
+    from clubhouse_finish_review import review_clubhouse_finish
+    review_clubhouse_finish(page,check,OUT,tag,width,mode)
+    check(tag+' finish has no browser errors or league writes',not errors and page.evaluate('f.writes.every(name=>name.startsWith("app_client_issues:"))'))
+    page.evaluate('f.page.leave()');c.close();continue
    if os.environ.get('DFL_CLUBHOUSE_POINTS_ONLY'):
     page.evaluate("f.growCapture=new MutationObserver(()=>{for(const e of document.querySelectorAll('.player-return-score-copy')){const a=e.getAnimations()[0];if(a&&a.playState!=='paused'){a.pause();a.currentTime=180}}});f.growCapture.observe(document.body,{childList:true,subtree:true})")
     page.evaluate('''async()=>{f.page.leave();localStorage.removeItem('dfl.player-points.v1');const {currentMember}=await import('/js/members.js');const {recordViewedPoints}=await import('/js/viewed-player-points.js');const scope=`${currentMember()?.id||'guest'}:2026:7:league`,at=Date.now()-60000;recordViewedPoints(localStorage,scope,'1',18.6,at);recordViewedPoints(localStorage,scope,'4',14.5,at);await f.page.render(document.getElementById('view'))}''')

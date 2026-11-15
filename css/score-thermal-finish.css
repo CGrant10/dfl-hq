@@ -6,6 +6,7 @@
 .gd-score-roll>span { position:absolute; inset:0; display:block; white-space:nowrap; text-align:right; font:inherit; letter-spacing:inherit; }
 .gd-thermal-number[data-score-rolling]>.gd-thermal-value { color:transparent; }
 .gameday-player-score>small { position:relative; }
+.gameday-player-score.gd-score-updated>small:has(.gd-score-delta) { visibility:hidden; }
 .gameday-player-score>small>.gd-score-delta { inset:0 auto auto 0; visibility:visible; padding:0; border:0; border-radius:0; background:transparent; color:var(--ok); font:600 .625rem/1.4 var(--font-ui); }
 .gameday-player-score>small>.gd-score-delta.is-negative { color:var(--danger-ink,var(--text)); }
 .gameday-player-score:has(.player-return-delta) .gd-score-delta { display:none; }

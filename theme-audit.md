@@ -1,3 +1,44 @@
+## 1.581.0 — Clubhouse live matchup finish
+
+Clubhouse gives each opposing player the full width of their half for identity,
+then shares the score baseline between the two sides. Long names and injury
+labels expand both sides together. Slot labels sit between the actual totals;
+weekly stat lines and real season PPR averages retain separate reading tracks.
+Red-zone labels occupy their own line. The brief live points delta replaces phase
+ink rather than drawing over it, without changing row height. Existing player
+portraits, hot/cold glyph effects and since-last-viewed growth remain intact.
+
+The compact scrolling reference keeps both full team names and exact totals,
+omits its duplicate Clubhouse title and patches mounted text nodes when scores
+or matchups change. Scrolling retains the existing frame scheduling, hysteresis
+and motion preferences; no extra live fetch, timer or permanent GPU layer was
+added. Shared GameDay row markup and NFL Live navigation are unchanged.
+
+Reviewed mobile Light/Dark screenshots before and after, including the compiled
+app against read-only real league data: Home, Clubhouse matchup entry/scrolled
+rosters, compact score reference, Leaders and player-card open/close. An isolated
+nine-slot lineup additionally exercises long names, an injury badge, live and
+unknown phases, upcoming kickoff, missing totals and red-zone labels. Browser
+checks cover equal opposing score baselines, full text fit, 44px player targets,
+20/32px text, stable nodes and row heights during gains/corrections, motion off,
+Reduce Motion and cancellation cleanup. The return-points browser checks cover
+real Clubhouse accumulated gains/corrections without overlap. The GPU review
+covers hot/cold effects through nested/document scrolling and clipping.
+
+The mobile layout, lineup/refresh, return-points and GPU checks passed 613
+browser assertions across Light and Dark (320–768px layout widths). Release,
+theme, type and identifier checks and the 89-module production build passed.
+All 2,585 unit tests in 310 files passed on the final two-worker run. An initial
+trade-availability timeout during parallel browser work passed in isolation and
+in that clean full-suite rerun.
+
+All palette values use existing shared semantic tokens. No theme options,
+identity palettes, thermal thresholds, scoring rules or notification delivery
+behavior changed. This review uses Chromium mobile emulation; physical iOS/
+Android frame pacing, device battery use and screen-reader speech were not
+measured. Real-data reads are public/profile fixtures, not authenticated private
+push-inbox delivery tests.
+
 ## 1.580.0 — Sports-wire Activity inbox
 
 Activity now uses a compact identity column, strong readable headlines, date
