@@ -1,3 +1,83 @@
+# Mobile NFL Scores — 1.582.0
+
+final result: passed
+
+Source visual truth: the user's four supplied Sleeper native Scores images in
+this conversation (591 × 1280 pixels, approximately 394 × 853 CSS pixels at
+1.5 density), including the Live field/feed and mirrored Fantasy position groups.
+Secondary local source: /workspace/dfl-sleeper-reference/official-nfl-field-2023.png
+(383 × 820), an older official native screen; its ordering and extra tabs are
+not treated as newer requested product requirements. The saved mobile web pages
+are secondary references and do not replace the user's native-app target.
+
+Implementation: /workspace/dfl-scores-1582/verified/390-dark-live.png and
+390-dark-stats.png, plus Light, 320/430/768px and 200% text captures in that folder.
+These use the actual browser-rendered NFL controller with deterministic WAS/NYG
+plays, names, actual totals and projections. Density is 1. The historical local
+reference is normalized to 390px width for the combined comparison, not used for
+pixel-difference claims. Real-data compiled captures are in actual-verified/;
+Clubhouse keeps its application header, section tabs and bottom navigation.
+
+Full-view evidence: /workspace/dfl-scores-1582/comparison-native.png. The local
+older reference and current implementation are placed together, with their
+intentional chronology/content differences identified. Position-group evidence:
+/workspace/dfl-scores-1582/comparison-stats.png; compare the mirrored score rails,
+paired name baselines, section separators and density to the user's supplied
+native Fantasy screenshots. Source and output game contents differ where real
+provider data requires it. No claim of pixel-identical proprietary branding.
+
+Comparison history and resolved findings:
+- P1: narrow score rails squeezed J. McCarthy/D. Singletary and long team names.
+  Reduced the score rail from 3.25rem to 2.75rem, kept full accessible names and
+  mirrored order; abbreviations are used for narrow header/team controls.
+- P2: repetitive rules, a bordered field card and long tab underline made the
+  screen feel busy. Field and player rows are unboxed; dotted position breaks,
+  compact icon tabs and a short sliding underline now carry the hierarchy.
+- P1 found during implementation: older score-grid selectors put a name and its
+  number on the same track. Explicit identity/score tracks and scoped logo sizes
+  now separate them; post-fix 320/390px Live captures have no overlaps.
+- P2: generic form paint left a gray filter box. A scoped transparent feed action
+  now matches the flat presentation. Existing filters and full play details stay.
+- P2: initial automated contrast sampling ignored the moving selector's painted
+  pseudo-element. The contrast tool now includes that actual surface only when
+  its transformed bounds cover the selected text; screenshot review confirms the
+  inverse selected pill. Other text still uses the normal contrast calculation.
+
+Required fidelity surfaces:
+- Typography: existing bundled Inter, compact 14px player names, tabular score
+  rails, subordinate projections and stat lines. All source player rows, zero
+  values and unknown dashes remain; ordering never changes with points/ownership.
+- Layout: narrow horizontal game chips with explicit side arrows, Live/Stats,
+  full-width score/field composition, quarter table, team/Fantasy/team selector,
+  mirrored QB/RB/WR/TE groups and full-detail feed. Persistent DFL navigation is
+  intentional per prior user direction. At enlarged text, controls/rails reflow.
+- Tokens: DFL Medicine Wheel Light/Dark are intentional. Shared foreground,
+  background, border and semantic position inks; official NFL identity colors
+  remain. The selected pill uses inverse shared tokens with verified contrast.
+- Imagery: existing official NFL logos/headshots, cached real team-logo watermark
+  and the existing data-driven field. Standard icons are unmodified MIT Bootstrap
+  Icons; no decorative generated imagery, fake player portraits or placeholder
+  engagement counts. Logos reuse existing URLs and disappear on image failure.
+- Copy: compact Live/Stats labels, factual original play details, real league
+  ownership and actual/projected totals. No invented probabilities, wagers,
+  reactions, betting footer, community comments or explanatory UI copy.
+
+Interaction verification: game rail browsing does not select a game, explicit
+activation and keyboard/arrows do, Stats persists across games, player actions
+remain tappable, full descriptions/filters stay usable, pinned controls respect
+resizing, return-to-reading positions survive refreshes, and Reduced Motion,
+finite replay effects, refresh budgets and teardown retain their existing behavior.
+Both themes pass contrast/bounds checks. Chromium mobile emulation is used;
+physical phone frame pacing, battery and screen-reader speech are unmeasured.
+
+Release verification: all 2,585 unit tests / 310 files, 393 browser assertions,
+release/theme/type/name checks and the 89-module production build passed.
+
+No remaining actionable P0/P1/P2 findings for the DFL adaptation. Follow-up P3:
+compare on the user's physical phone against a fresh native Sleeper capture if
+they want closer font-rendering tuning. This is a production DFL change, not a
+separate Sites prototype; publishing follows the user's standing merge direction.
+
 # Thermal score finish — 1.574.0
 
 Hot/cold digits keep their recorded DOM text and existing fonts. The shared GPU

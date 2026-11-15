@@ -96,21 +96,21 @@ body .dfl-mobile-sheet :is([data-player-card-close],[data-reel-close],[data-shee
 #view.view[data-route="clubhouse"] .clubhouse-command-center .gd-lineup-comparison :is(.gd-player-week-line,.gd-player-week-average) { font-size:.625rem; line-height:1.4; }
 .nfl-fantasy-league { flex-wrap:wrap; gap:4px 12px; }
 .nfl-fantasy-league>span { margin-left:auto; }
-.nfl-score-player-content { grid-template-columns:minmax(0,1fr) 3.25rem; column-gap:8px; letter-spacing:0; }
-.nfl-score-player.is-home .nfl-score-player-content { grid-template-columns:3.25rem minmax(0,1fr); }
-.nfl-score-name { font:600 .8125rem/1.4 var(--font-ui); letter-spacing:0; text-transform:none; }
+.nfl-score-player-content { grid-template-columns:minmax(0,1fr) 2.75rem; column-gap:6px; letter-spacing:0; }
+.nfl-score-player.is-home .nfl-score-player-content { grid-template-columns:2.75rem minmax(0,1fr); }
+.nfl-score-name { font:650 .875rem/1.3 var(--font-ui); letter-spacing:0; text-transform:none; }
 .nfl-score-totals { min-width:0; letter-spacing:0; }
 .nfl-score-totals>b { font:700 .9375rem/1.3 var(--font-ui); }
 .nfl-score-totals>small { font:400 .6875rem/1.4 var(--font-ui); }
 .nfl-score-owner,.nfl-score-position { letter-spacing:0; }
-.nfl-score-line { margin-top:4px; font:400 .6875rem/1.5 var(--font-ui); letter-spacing:0; }
+.nfl-score-line { margin-top:3px; font:400 .6875rem/1.4 var(--font-ui); letter-spacing:0; }
 /* Existing enlarged-text stacking takes precedence over the fixed score rails. */
 @container nfl-game-view (max-width:15rem) {
  .nfl-score-player-content,.nfl-score-player.is-home .nfl-score-player-content { grid-template-columns:minmax(0,1fr); }
 }
 
 /* The feed identifies the NFL team without turning every play into a card. */
-:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-center-plays .nfl-score-play { grid-template-columns:32px minmax(0,1fr); gap:10px; padding-block:12px; }
+:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-center-plays .nfl-score-play { grid-template-columns:32px minmax(0,1fr); gap:10px; padding-block:16px; border-bottom:0; }
 :is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-score-play>.nfl-play-meta { position:relative; width:32px; min-width:32px; height:36px; overflow:visible; border:0; border-radius:6px; background:transparent; }
 .nfl-score-play .nfl-feed-portrait { width:32px; height:36px; border-radius:6px; object-fit:cover; object-position:center top; }
 .nfl-feed-team { position:absolute; right:-4px; bottom:-4px; display:grid; place-items:center; width:20px; height:20px; border:1px solid var(--line-soft); border-radius:4px; background:var(--bg); }

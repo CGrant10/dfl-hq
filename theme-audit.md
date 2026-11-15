@@ -1,3 +1,49 @@
+## 1.582.0 — Native-style mobile NFL Scores
+
+NFL Live follows the user's supplied Sleeper mobile Scores references within
+Clubhouse, retaining DFL's Medicine Wheel palette and persistent app navigation.
+The game rail has a compact icon return in full-screen clip contexts, explicit
+side arrows and a narrow selected pill. Browsing the rail still only browses;
+activation changes games. Live/Stats get standard Bootstrap icons and a short
+sliding underline. The score header places team identity outside, totals inside,
+with soft real NFL-logo watermarks. The field is an unboxed continuation of that
+header, keeping actual positions and existing finite replay motion.
+
+Stats keeps the quarter scoreboard and team/Fantasy/team selector; its selected
+pill now uses inverse shared foreground/background tokens. Player pairs keep
+actual points above projections on fixed mirrored rails, with more room for
+names. Subordinate stat lines, semantic position labels and dotted position
+breaks replace repetitive row rules. Long names remain accessible; narrow team
+controls use official abbreviations. All players and zero/missing totals retain
+the existing source order and meaning. Play-by-play keeps full factual details,
+NFL identity, filters and clip/player actions without surrounding every play with
+a card. No fake probabilities, engagement, comments or betting UI were added.
+
+Before/after and post-fix browser evidence: /workspace/dfl-scores-1582/.
+Verified 266 mobile Scores assertions at 320/390/430/768px in Light/Dark, including
+200% text, mode/quarter/position layouts, full names, contrast, shared score rails,
+changing ownership/points, native browsing versus explicit selection, arrows,
+keyboard focus, pinned controls, full play details, refresh budgets, Reduced
+Motion, finite replays and teardown. The 127-check NFL desk review also passed.
+The contrast review now accounts for the actual moving selector pseudo-surface
+only where its transformed bounds cover selected ink, rather than sampling the
+uncovered parent. Both themes were manually inspected in screenshots.
+
+Compiled real league checks cover NFL Live and Fantasy, real team/player images,
+DFL header and bottom navigation, Matchups → NFL navigation, Leaders and no
+horizontal overflow/contrast errors in both themes. Read-only provider requests
+were used; no league writes or test notifications. Design comparison and the
+intentional DFL palette/navigation differences are recorded in design-qa.md.
+
+All 2,585 unit tests in 310 files pass on the final two-worker run.
+
+New tab icons are included in the raw offline shell; the offline import test
+caught the missing entry during development and passed after it was added.
+Release/theme/type/identifier and production build checks pass; the app remains
+89 compiled modules with three startup/four Home modules. The immutable 1.581.0
+bundle is retained. No new poll, font, dependency or endless animation was added.
+Physical phone frame pacing, battery and screen-reader speech remain unmeasured.
+
 ## 1.581.0 — Clubhouse live matchup finish
 
 Clubhouse gives each opposing player the full width of their half for identity,
