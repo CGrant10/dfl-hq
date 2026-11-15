@@ -1,3 +1,22 @@
+## 1.585.0 — Shared NFL field and centered play feed
+
+NFL Stats now retains the same score/field hero as Live. The existing field
+replay/update lifecycle supports either view without added polling. Source field
+availability is respected. Following the user's explicit clarification, feed
+headlines, metadata, participant/detail text, period/administrative events and
+score/clip actions are centered across each card. Symmetric headline spacing
+protects player portraits; portraits track the vertical center of wrapped titles.
+All existing shared surfaces, semantic ink and navigation tokens are retained.
+
+Light/Dark real-data Live/Fantasy mobile screenshots, 320px reference-data views
+and enlarged text were manually inspected. 298 mobile Scores, 127 NFL desk and
+168 full 320px Clubhouse browser assertions passed; 70 relevant unit tests in
+10 files and theme/type/identifier/release/build checks passed. Checks cover
+contrast, up to 200% text, selected states, field/replay in Stats, complete source
+detail, return/focus/reading restoration and final-row reachability. Evidence:
+/workspace/dfl-scores-1585/; detailed QA: design-qa.md. Physical device frame
+pacing/battery and spoken screen-reader output remain unmeasured.
+
 ## 1.584.0 — NFL Scores outline and surface polish
 
 Reviewed fresh deployed before screenshots and compiled real-data NFL Live and

@@ -11127,6 +11127,21 @@ body .dfl-mobile-sheet :is([data-player-card-close],[data-reel-close],[data-shee
 :is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-score-play .nfl-play-headline { font:650 1rem/1.3 var(--font-ui); letter-spacing:0; }
 :is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-score-play[data-nfl-field-selected] .nfl-play-select { color:var(--text); }
 
+/* Center the play copy across the feed, with room for its player portrait. */
+:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-center-plays .nfl-score-play:not(.nfl-feed-event) { grid-template-rows:repeat(6,auto); row-gap:0; }
+:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-score-play:not(.nfl-feed-event)>.nfl-play-period { grid-area:1 / 1 / 2 / -1; }
+:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-score-play:not(.nfl-feed-event)>.nfl-play-meta { grid-area:3 / 1; align-self:center; }
+:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-score-play:not(.nfl-feed-event) :is(.nfl-play-content,.nfl-play-details) { display:contents; }
+:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-score-play:not(.nfl-feed-event) .nfl-feed-time { grid-area:2 / 1 / 3 / -1; justify-content:center; text-align:center; }
+:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-score-play:not(.nfl-feed-event) .nfl-play-details>h4 { grid-area:3 / 1 / 4 / -1; display:flex; align-items:center; justify-content:center; box-sizing:border-box; min-height:44px; margin:0; padding-inline:46px; text-align:center; }
+:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-score-play:not(.nfl-feed-event) .nfl-play-select { justify-content:center; text-align:center; }
+:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-score-play:not(.nfl-feed-event) .nfl-play-details>p { grid-area:5 / 1 / 6 / -1; text-align:center; }
+:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-score-play:not(.nfl-feed-event) .nfl-play-details>p.nfl-feed-people { grid-area:4 / 1 / 5 / -1; }
+:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-score-play:not(.nfl-feed-event) .nfl-feed-foot { grid-area:6 / 1 / 7 / -1; justify-content:center; }
+:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-score-play .nfl-play-period { justify-content:center; text-align:center; }
+:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-feed-event>.nfl-play-details { display:flex; flex-direction:column; align-items:center; gap:2px; text-align:center; }
+:is(#view,.home-reel-player) [data-nfl-layout="desk"] .nfl-feed-event .nfl-play-details :is(h4,p) { margin:0; text-align:center; }
+
 /* Sheets and viewing controls use the same compact secondary-action finish. */
 body dialog.dfl-player-card :is(.linkbtn,[data-player-card-close],.player-card-more>summary),
 .home-reel-player[data-replay-window] :is(button,a) { letter-spacing:0; text-transform:none; }

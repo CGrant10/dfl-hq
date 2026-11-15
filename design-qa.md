@@ -1,3 +1,45 @@
+# Shared NFL field and centered play feed — 1.585.0
+
+final result: passed
+
+Scope: retain the score/field graphic when choosing Stats, and center all play
+copy across the card. The user's explicit follow-up clarified that centering all
+text was desired, rather than only centering portraits on headlines. The four
+native Sleeper references remain the layout baseline; DFL palette/navigation
+and this explicit centering preference take precedence over literal source text
+alignment. Existing official headshots/logos and live field art are retained.
+
+The score/field hero is now shared by Live, Fantasy and either team's box score.
+Field replay and observed play updates work in Stats without adding reads or an
+animation loop. The actual provider spot/availability is preserved: missing
+field data does not fabricate a location. Play metadata, headlines, participants,
+full descriptions, period headings, score/clip actions and administrative notices
+are centered across the feed. Symmetric headline space prevents portrait overlap;
+portraits remain centered vertically beside wrapped headlines. Full source detail
+and 44px headline controls remain available.
+
+Manually inspected compiled real-data Light/Dark Live and Fantasy at 390 × 844,
+narrow 320px reference fixtures and enlarged text. Evidence:
+/workspace/dfl-scores-1585/release-actual/ and final-scores/. The prior deployed
+1.584 captures remain under /workspace/dfl-scores-1584/public/ for comparison.
+Required fidelity surfaces: the existing font/type hierarchy, theme token colors,
+compact game rail, navigation, circular identities, position/quarter stats and
+finite field replay are preserved; only the shared header and requested feed
+alignment change. No new images, fonts, dependencies or continuous motion.
+
+Validation: 298 mobile Scores assertions, 127 NFL desk assertions and 168 full
+320px Clubhouse assertions passed in both themes. Checks cover 320/390/430/768px,
+200% text, centered copy/portrait rails, field retained in Stats, finite Stats
+Replay, contrast, source order/real totals, rail browsing versus explicit selection,
+reading restoration, refresh budgets and teardown. Real-data release captures
+also assert a field in both modes, centered regular/event copy, contrast, return
+to Clubhouse/Leaders and bottom-row reachability without provider writes. The
+70 relevant unit tests across 10 files, theme/type/identifier/release checks and
+89-module build passed. Existing tests expecting Stats to hide the field and
+using a fixed 300px scroll were updated for the requested shared hero. Immutable
+1.584.0 bundle retained. Physical device FPS/battery and spoken screen-reader
+output remain unmeasured.
+
 # NFL Scores outline and surface polish — 1.584.0
 
 final result: passed
