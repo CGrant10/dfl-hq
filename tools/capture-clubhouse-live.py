@@ -314,7 +314,7 @@ with sync_playwright() as p:
    page.locator('[data-reel-mode="plays"]').click();page.wait_for_timeout(360)
    check(tag+' returning restores the exact play and its keyboard focus',replay_play.evaluate('e=>e===document.activeElement') and abs(replay_play.bounding_box()['y']-replay_top)<3)
    page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".home-reel-player").open')
-   page.locator('#clubhouse-tab-matchups').click();page.wait_for_selector('#clubhouse-tab-matchups[aria-selected="true"]');page.locator('#clubhouse-tab-leaders').click();page.wait_for_selector('.gd-league-board .gameday-player')
+   page.locator('[data-nfl-clubhouse-back]').click();check(tag+' NFL return restores the preceding Clips section',page.locator('#clubhouse-tab-highlights').get_attribute('aria-selected')=='true');page.locator('#clubhouse-tab-matchups').click();page.wait_for_selector('#clubhouse-tab-matchups[aria-selected="true"]');page.locator('#clubhouse-tab-leaders').click();page.wait_for_selector('.gd-league-board .gameday-player')
    page.evaluate('f.leaderCanvas=document.querySelector("[data-clubhouse-leaders] .gd-vfx-canvas")')
    check(tag+' Leaders has its connected fire and ice surface',page.evaluate('!!f.leaderCanvas?.isConnected'))
    check(tag+' Leaders moved into Clubhouse with hot and cold filters',page.locator('[data-league-filter]').count()==3 and page.locator('[data-league-bench]').count()==1)
@@ -351,7 +351,7 @@ with sync_playwright() as p:
    page.wait_for_selector('.home-reel-player[open]');check(tag+' video notification deep link opens the exact clip automatically',page.locator('[data-reel-choose][aria-pressed="true"]').get_attribute('data-reel-choose')=='50276663')
    page.evaluate('f.page.leave()')
    page.evaluate("async()=>{location.hash='#/clubhouse?season=2026&week=7&tab=highlights&matchup=1&moment=nfl:401873011:401873011981:1&nflGame=401873011&clip=999999';await f.page.render(document.getElementById('view'))}")
-   page.wait_for_selector('#clubhouse-tab-nfl[aria-selected="true"]');page.wait_for_selector('.nfl-center-plays li')
+   page.wait_for_selector('#clubhouse-tab-nfl[aria-selected="true"]',state='attached');page.wait_for_selector('.nfl-center-plays li')
    check(tag+' missing video deep link falls back to the game’s play-by-play',page.locator('.home-reel-player[open]').count()==0 and 'no longer available' in page.locator('[data-clubhouse-nfl-center]').inner_text() and page.locator('[data-clubhouse-nfl-center][data-nfl-selected-game]').get_attribute('data-nfl-selected-game')=='401873011')
    page.evaluate('f.page.leave()')
    if width==390 and mode=='dark':
