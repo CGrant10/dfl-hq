@@ -3,8 +3,8 @@ import {animateUi,cancelUiMotion,exitUi} from './ui-motion.js';
 export function sheetShouldClose({distance=0,velocity=0,height=0,cancelled=false}) {
   return !cancelled && (distance>=Math.max(60,Math.min(120,height*.2)) || distance>=36&&velocity>=.65);
 }
-export function enterSheet(dialog,{motion=true}={}) {
-  return animateUi(dialog,[{opacity:0,transform:`translateY(${innerWidth<=600?16:8}px)`},{opacity:1,transform:'none'}],{duration:240,easing:'cubic-bezier(.16,1,.3,1)',motion});
+export function enterSheet(dialog,{motion=true,offset=innerWidth<=600?16:8}={}) {
+  return animateUi(dialog,[{opacity:0,transform:`translateY(${offset}px)`},{opacity:1,transform:'none'}],{duration:240,easing:'cubic-bezier(.16,1,.3,1)',motion});
 }
 export function exitSheet(dialog,complete,{connected=false,...options}={}) {
   const viewport=window.visualViewport;

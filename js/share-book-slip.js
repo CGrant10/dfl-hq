@@ -30,15 +30,15 @@ export function bookSlipCanvas(spec,{format='compact',seal=null,wrap}) {
  const rule=(y,dashed=false,color=INK)=>paint.push(()=>{ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.setLineDash(dashed?[8,8]:[]);ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();ctx.restore()});
  const fill=(x,y,w,h,color)=>paint.push(()=>{ctx.fillStyle=color;ctx.fillRect(x,y,w,h)});
  const stampColor=t.status==='won'?GREEN:t.status==='lost'?RED:MUTED;
- text('DFL BOOK',222,78,520,82,{weight:850});
+ text('DFL BOOK',222,78,520,76,{weight:800});
  if(t.id){text('TICKET',770,72,252,25,{family:MONO});text(String(t.id).slice(-10).toUpperCase(),770,111,252,26,{family:MONO});}
  else text('SPORTSBOOK',R,112,260,25,{weight:600,align:'right'});
  rule(220,false,RED);fill(L,217,I,8,RED);
- text(t.picks.length===1?'SINGLE':`${t.picks.length}-LEG PARLAY`,W/2,249,I,42,{weight:800,align:'center'});
+ text(t.picks.length===1?'SINGLE':`${t.picks.length}-LEG PARLAY`,W/2,249,I,38,{weight:750,align:'center'});
  const statusWidth=250,ownerWidth=I-statusWidth-30;
- const ownerH=text(t.who,L,315,ownerWidth,68,{weight:850,color:RED});
+ const ownerH=text(t.who,L,315,ownerWidth,60,{weight:800,color:RED});
  const statusY=315;paint.push(()=>{ctx.save();ctx.translate(R-statusWidth/2,statusY+36);ctx.rotate(-.055);ctx.strokeStyle=stampColor;ctx.lineWidth=4;ctx.strokeRect(-statusWidth/2,-39,statusWidth,78);ctx.restore()});
- text(view.status,R-statusWidth/2,statusY+7,statusWidth-24,view.status.length>9?24:46,{weight:850,color:stampColor,align:'center'});
+ text(view.status,R-statusWidth/2,statusY+7,statusWidth-24,view.status.length>9?26:44,{weight:800,color:stampColor,align:'center'});
  const date=new Date(t.placedAt||'');const metadata=[Number.isFinite(date.getTime())?date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):null,t.season].filter(Boolean).join(' · ');
  let y=315+Math.max(ownerH,90)+10;
  if(metadata)y+=text(metadata,L,y,I,26,{family:MONO})+16;
@@ -49,12 +49,12 @@ export function bookSlipCanvas(spec,{format='compact',seal=null,wrap}) {
   text(String(i+1).padStart(2,'0'),L,top+4,58,31,{family:MONO});
   if(icon)paint.push(()=>ctx.drawImage(icon,L+66,top+3,40,40));
   const x=L+125,width=I-125-158;
-  const nameH=text(pick.pick,x,top,width,50,{weight:800});
-  text(pick.odds,R,top,145,46,{weight:800,align:'right'});
+  const nameH=text(pick.pick,x,top,width,46,{weight:750});
+  text(pick.odds,R,top,145,42,{weight:750,align:'right'});
   const marketH=text(pick.market,x,top+nameH+6,I-125,31,{leading:39});
   const result=[pick.resultLabel,pick.result].filter(Boolean).join(' · ');
-  const resultH=text(result,x,top+nameH+marketH+18,I-125,25,{weight:600,color:labelColor,leading:33});
-  y=top+nameH+marketH+resultH+50;rule(y,true);y+=24;
+  const resultH=text(result,x,top+nameH+marketH+18,I-125,28,{weight:600,color:labelColor,leading:36});
+  y=top+nameH+marketH+resultH+42;rule(y,true);y+=24;
  });
  if(view.omitted)y+=text(`+ ${view.omitted} more picks · Full details includes all selections`,L,y,I,26,{color:MUTED})+26;
  const summary=[['Combined odds',t.odds],['Stake',`${Number(t.stake).toLocaleString('en-US')} SIN`],...(view.profit?[[view.profit.label,`${Number(view.profit.value).toLocaleString('en-US')} SIN`]]:[])];

@@ -26,11 +26,13 @@ with sync_playwright() as p:
     metrics=bar.evaluate('''e=>{const b=e.getBoundingClientRect(),go=e.querySelector('[data-slip-open]').getBoundingClientRect(),clear=e.querySelector('[data-slip-clear]').getBoundingClientRect(),nav=document.querySelector('#fixture-nav').getBoundingClientRect();return {box:b.toJSON(),nav:nav.toJSON(),inside:b.left>=11&&b.right<=innerWidth-11&&b.bottom<=nav.top-8,button:go.width>=44&&go.height>=44&&go.left>=b.left&&go.right<=b.right,clear:clear.width>=44&&clear.height>=44&&clear.right<=b.right&&clear.left>=go.right,overflow:document.documentElement.scrollWidth>innerWidth}}''')
     page.screenshot(path=str(OUT/f'slipbar-{mode}-{width}.png'))
     assert metrics['inside'] and metrics['button'] and metrics['clear'] and not metrics['overflow'],(mode,width,count,metrics)
+    board_y=page.evaluate('scrollY')
     button.click();page.wait_for_selector('.sb-slip[open]');page.wait_for_timeout(350)
     assert page.locator('.sb-slip-pick').count()==count,(mode,width,count,'review opened wrong picks')
     assert page.locator('[data-footer-return]').inner_text()==page.locator('[data-return]').inner_text()
     assert page.locator('.sb-slip-totals').evaluate('e=>{const r=e.getBoundingClientRect(),f=e.closest("footer").getBoundingClientRect();return r.top>=f.top&&r.bottom<=f.bottom&&r.bottom<=innerHeight}')
     assert page.locator('.sb-slip-picks').evaluate('e=>e.scrollHeight<=e.clientHeight+1'), 'Nested pick scrolling returned'
+    assert page.locator('.sb-slip-pick').evaluate_all('''es=>es.every(e=>{const a=e.querySelector('.sb-slip-pick-body').getBoundingClientRect(),b=e.querySelector('.sb-slip-pick-odds').getBoundingClientRect();return a.right<=b.left+1||a.bottom<=b.top+1})'''),'Pick names and odds overlap'
     if count==6:
      page.evaluate('window.firstSlipPick=document.querySelector(".sb-slip-pick")')
      page.locator('.sb-slip input[name="stake"]').fill('75')
@@ -54,6 +56,12 @@ with sync_playwright() as p:
      assert page.evaluate('rpcCalls')==0
     page.locator('.sb-slip [data-close]').click();page.wait_for_function('!document.querySelector("dialog[open]")')
     assert button.evaluate('e=>e===document.activeElement'),'Review did not restore focus'
+    assert abs(page.evaluate('scrollY')-board_y)<1,'Review changed the board reading position'
+    if count==6:
+     button.click();page.wait_for_selector('.sb-slip[open]');page.wait_for_timeout(280)
+     assert page.locator('.sb-slip input[name="stake"]').input_value()=='75','Reopening lost the typed stake'
+     assert page.locator('.sb-slip-pick').count()==6 and page.locator('.sb-slip-content').evaluate('e=>e.scrollTop===0'),'Reopening lost picks or resumed an old scroll position'
+     page.locator('.sb-slip [data-close]').click();page.wait_for_function('!document.querySelector("dialog[open]")')
     checks.append({'mode':mode,'width':width,'picks':count,**metrics,'reviewAndConfirm':True})
    page.evaluate('scrollTo(0,document.documentElement.scrollHeight)');page.wait_for_timeout(100)
    last=page.locator('#board-last').bounding_box();barbox=page.locator('.sb-slipbar').bounding_box()
@@ -62,7 +70,10 @@ with sync_playwright() as p:
    page.locator('[data-slip-clear]').click();assert page.locator('.sb-slipbar').count()==0
    page.locator('[data-bet-outcome="2"]').click();page.locator('[data-slip-open]').click();page.wait_for_selector('.sb-slip[open]')
    assert page.locator('.sb-slip-pick').count()==1,'Rebuilt review button lost its handler'
-   page.locator('.sb-slip [data-close]').click();page.wait_for_function('!document.querySelector("dialog[open]")')
+   page.locator('.sb-slip [data-close]').click()
+   page.evaluate('''()=>{const view=document.querySelector('#view');view.dataset.route='clubhouse';view.innerHTML='<h1>New destination</h1><div style="height:1400px"></div>';scrollTo(0,0)}''');page.wait_for_timeout(350)
+   assert page.evaluate('scrollY===0&&!document.querySelector(".sb-slipbar,dialog[open]")'),'Closing slip restored an old board over the next page'
+   page.evaluate('document.querySelector("#view").dataset.route="sportsbook"')
    page.evaluate('showReviewProps()');page.evaluate('document.fonts.ready')
    assert page.locator('.sb-player-props').count()==3
    assert page.locator('.sb-player-props h3 button').evaluate_all('es=>es.every(e=>getComputedStyle(e).fontFamily.includes("Inter")&&parseFloat(getComputedStyle(e).fontSize)===13&&e.getBoundingClientRect().height>=44&&e.scrollWidth<=e.clientWidth+1)')
