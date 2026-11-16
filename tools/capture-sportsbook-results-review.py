@@ -45,6 +45,7 @@ with sync_playwright() as p:
    if width==390:
     for style in ['clean','photo']:
      share=page.evaluate('async style=>reviewShare(5,style)',style);(EVIDENCE/f'share-{theme}-{style}.png').write_bytes(base64.b64decode(share['data'].split(',')[1]));check(tag+f' {style} share includes the losing sixth leg and pending grading',len(share['ticket']['picks'])==6 and share['ticket']['picks'][5]['status']=='lost' and 'official grading and payout pending' in share['text'] and share['ticket']['status']=='open')
+     facts=share['facts'];check(tag+f' {style} share text fits the image',bool(facts['text']) and all(t['x']>=0 and t['x']+t['width']<=facts['width'] and t['y']>=0 and t['y']+t['height']<=facts['height'] for t in facts['text']))
    page.evaluate('feedFails=true;reviewRefresh()');page.wait_for_selector('#sb-ticket-1 [data-leg-result="open"]')
    check(tag+' unavailable evidence clears provisional marks',page.locator('[data-fantasy-result]').count()==0 and page.locator('#sb-ticket-1 [data-leg-result="won"]').count()==0)
    page.evaluate('reviewOfficial()');page.wait_for_selector('#sb-ticket-1 [data-leg-result="won"]')

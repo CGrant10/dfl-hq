@@ -1,3 +1,64 @@
+# Sportsbook reading and slip polish — 1.587.0
+
+final result: passed
+
+Scope: the approved Sportsbook finishing pass. The user's selected Matchup Desk
+and printed shared-slip designs remain the visual targets within DFL's current
+Medicine Wheel Light/Dark direction. Existing round seal, paper artwork, fonts,
+accepted prices, SIN arithmetic, settlement and provisional result rules are
+preserved. No new service, font, raster asset, polling loop or betting control.
+Play-by-play and the previous Trades work are unchanged.
+
+Fresh screenshot audit and resolved findings:
+1. Board — the highlighted personal matchup used larger uppercase names and
+   42px marks, interrupting the other games' scale. Every matchup now uses 13px
+   normal-case names and 32px identities. The personal label/edge remains. The
+   existing current-week heading is visible; early lines remain collapsed.
+   Open prices retain 44px selection targets and a quiet shared surface. Locked,
+   final and void prices are visually quieter and keep factual result marks.
+   A legacy hover transform shifted a tapped price by one pixel; removing that
+   extra movement keeps paired odds aligned while shared press feedback remains.
+2. Slip — the title now uses the same compact Inter hierarchy. At sufficient
+   width, odds occupy a right-hand rail; narrow/200% layouts use the readable
+   stacked fallback. There is still one scrolling body and a persistent action
+   footer. A finite 32px entrance uses the existing shared motion utility with
+   other callers' default motion unchanged. Closing restores the originating
+   board position/focus only if that same board is still present. Typed stake
+   and picks persist; reopening starts the slip body at the top. A navigation
+   during dismissal cannot restore an old board over the new page.
+3. Tickets and export — slightly tighter ticket spacing keeps stake, return,
+   accepted lines and result states easy to scan. The printed export keeps its
+   seal, ink, paper, stamp, aligned odds and total band. Heading/selection type is
+   more restrained; result text increases from 25 to 28px with more balanced row
+   spacing. The image still grows for complete long tickets rather than hiding
+   accepted picks. Pending hits/misses remain estimates until official grading.
+
+Evidence captured during this run: /workspace/dfl-book-1587/before/,
+slip-before/ and results-before/evidence/ are the fresh baselines. Final board
+captures are in board-final/; slip/200% and general sheet captures in slip-after/;
+printed and photo exports in results-after/evidence/. Compiled real-market
+Light/Dark captures are in actual/ (wallet/live account isolated, no provider
+writes). Manually inspected both default themes, 320/390px, enlarged text,
+paired rows, full team names, six-pick slips and the final printed export.
+
+Validation:
+- 12 board/prop layouts at 320/390/430px, 12 enlarged claim-target checks,
+  selected-price contrast, aligned price baselines, current headings, account
+  retry/single-flight and navigation passed with mock writes isolated.
+- 24 slip/prop layouts passed: 1/2/6 picks, 44px targets, no nested pick scroll,
+  200% text, no name/odds overlap, stake/pick retention, default reopening position,
+  exact board/focus return, and dismissal interrupted by a route change.
+- 52 result/export assertions, 48 live-ticket assertions and 87 shared-sheet
+  assertions passed, including accepted versus changed lines, keyed live fills,
+  provisional versus official payout, all six shared picks, export text bounds,
+  keyboard/viewport/drag interruption and Reduced/app motion off.
+- 123 relevant unit tests in 19 files passed. The strengthened 15-test Sportsbook
+  page suite passed again after its locked-state assertion was added. Theme,
+  type, identifier, release and 89-module build checks passed; immutable 1.586.0
+  bundle is retained. Real-market pages passed Light/Dark contrast and bounds.
+- Physical iOS/Android frame pacing, battery and spoken screen-reader output
+  remain unmeasured. No real bet, claim or settlement was submitted.
+
 # Trade offer and receipt reading polish — 1.586.0
 
 final result: passed

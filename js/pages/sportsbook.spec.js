@@ -185,6 +185,7 @@ it('keeps locked fantasy winner picks visible and disabled',async()=>{
  const view=fakeView();await render(view);
  expect(view.innerHTML).toContain('Week 4 lines');
  expect(view.innerHTML).toContain('LOCKED');
+ expect(view.innerHTML).toContain('data-market-state="locked"');
  expect(view.innerHTML).toMatch(/data-bet-outcome="991"[^>]*disabled/);
  expect(view.innerHTML).toMatch(/data-bet-outcome="2"[^>]*aria-pressed="false"/);
  markets.pop();outcomes.pop();

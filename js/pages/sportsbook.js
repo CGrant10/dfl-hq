@@ -414,11 +414,12 @@ function outcomeButtons(m,outcomes,picked,held,members=[]){
 function houseControls(m,outcomes,canBook){return canBook?`<div class="sb-house">${outcomes.map(o=>`<button type="button" class="linkbtn" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)}</button>`).join(" · ")} · <button type="button" class="linkbtn" data-void-market="${m.id}">Void</button></div>`:""}
 function marketCard(m,outcomes,canBook,picked,held,members,meta=null,favorite=false){
   const key=matchupKey(m);
+  const state=m.status==='settled'?'final':m.status==='void'?'void':isOpen(m)?'open':'locked';
   const imported=String(m.provider_key||"").startsWith("sleeper-import:");
   const kicker=key?`Week ${key[2]} &middot; Matchup`:m.category==="Player Props"?`${imported?"SLEEPER":"CONSENSUS"} &middot; ${m.provider_updated_at?esc(fmtTime(m.provider_updated_at)):"REAL LINE"}`:esc(m.category||"DFL");
   const prop=m.category==="Player Props",info=meta||propMarketMeta(m,outcomes);
   const attrs=prop?` data-prop-card data-prop-key="${esc(info.key)}" data-prop-player="${esc(info.player)}" data-prop-stat="${esc(info.stat.toLowerCase())}" data-prop-position="${esc(info.position)}" data-prop-team="${esc(info.team)}" data-prop-game="${esc(info.matchup)}" data-prop-source="${esc(info.source)}" data-prop-updated="${info.updatedAt}" data-prop-price="${info.bestPrice}"`:"";
-  return `<article class="card sb-market"${key?' data-fantasy-market':''}${attrs}><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3>${prop?`<span class="sb-market-source">${esc(info.sourceLabel)} · <button type="button" class="player-card-trigger" data-player-card="" data-player-name="${esc(info.player)}" data-player-team="${esc(info.team)}">Player card</button></span>`:""}</div><div class="sb-market-status">${prop?`<button type="button" class="sb-prop-favorite${favorite?" is-favorite":""}" data-prop-favorite="${esc(info.key)}" aria-label="${favorite?"Remove from":"Add to"} favorite props" aria-pressed="${favorite}">★</button>`:""}<span class="sb-market-state ${isOpen(m)?"is-open":"is-locked"}">${m.status==='settled'?'FINAL':m.status==='void'?'VOID':isOpen(m)?"OPEN":"LOCKED"}</span>${m.closes_at?`<span class="sb-locks">${isOpen(m)?"Locks":"Locked"} ${esc(fmtTime(m.closes_at))}</span>`:""}</div></div>${outcomeButtons(m,outcomes,picked,held,members)}${houseControls(m,outcomes,canBook)}</article>`;
+  return `<article class="card sb-market" data-market-state="${state}"${key?' data-fantasy-market':''}${attrs}><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3>${prop?`<span class="sb-market-source">${esc(info.sourceLabel)} · <button type="button" class="player-card-trigger" data-player-card="" data-player-name="${esc(info.player)}" data-player-team="${esc(info.team)}">Player card</button></span>`:""}</div><div class="sb-market-status">${prop?`<button type="button" class="sb-prop-favorite${favorite?" is-favorite":""}" data-prop-favorite="${esc(info.key)}" aria-label="${favorite?"Remove from":"Add to"} favorite props" aria-pressed="${favorite}">★</button>`:""}<span class="sb-market-state ${isOpen(m)?"is-open":"is-locked"}">${m.status==='settled'?'FINAL':m.status==='void'?'VOID':isOpen(m)?"OPEN":"LOCKED"}</span>${m.closes_at?`<span class="sb-locks">${isOpen(m)?"Locks":"Locked"} ${esc(fmtTime(m.closes_at))}</span>`:""}</div></div>${outcomeButtons(m,outcomes,picked,held,members)}${houseControls(m,outcomes,canBook)}</article>`;
 }
 
 /*
@@ -905,6 +906,7 @@ function wireFeedRefresh(view){
   was on screen when they started.
 */
 function openSlip(view,outcomeMap,marketMap,wallet,refresh){
+  const board=view.querySelector('#sportsbook-wrap'),boardScroll={left:scrollX,top:scrollY};
   const previous=view.querySelector(".sb-slip");
   if(previous){stopSlipDrag?.();cancelUiExit(previous);cancelUiMotion(previous);previous.remove()}
   let picks=slip.map(id=>outcomeMap.get(String(id))).filter(Boolean);
@@ -937,7 +939,7 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
 
   /* Closing repaints the board rather than reloading it: dropping picks in
      here has to show up out there, and nothing in the database moved. */
-  const close=()=>{if(busy)return;slipStake=input.value;exitSheet(dialog,()=>{stopSlipDrag?.();stopSlipDrag=null;dialog.close();dialog.remove();if(view.isConnected){refresh();view.querySelector("[data-slip-open]")?.focus({preventScroll:true})}})};
+  const close=()=>{if(busy)return;slipStake=input.value;exitSheet(dialog,()=>{stopSlipDrag?.();stopSlipDrag=null;dialog.close();dialog.remove();if(view.isConnected&&view.dataset.route==='sportsbook'&&(!board||board.isConnected&&view.contains(board))){refresh();view.querySelector("[data-slip-open]")?.focus({preventScroll:true});window.scrollTo({...boardScroll,behavior:'instant'})}})};
   dialog.querySelector("[data-close]").addEventListener("click",close);
   dialog.addEventListener("cancel",event=>{event.preventDefault();close()});
 
@@ -977,7 +979,7 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
   const drag=mountSheetDrag(dialog,{handle:dialog.querySelector(".sb-slip-head"),canDismiss:()=>!busy,dismiss:close});
   stopSlipDrag=()=>drag.stop();
   dialog.showModal();
-  enterSheet(dialog);
+  enterSheet(dialog,{offset:32});
   fitDialogToViewport(dialog);
   dialog.querySelector("#sb-slip-title").focus({preventScroll:true});
 

@@ -46,6 +46,12 @@ with sync_playwright() as p:
    page.set_viewport_size({'width':width,'height':844});page.evaluate('scrollTo(0,0)');page.wait_for_timeout(120)
    assert page.locator('.sb-wallet strong').inner_text()=='420'
    assert page.locator('.sb-fantasy-slate .sb-market').count()==2
+   assert page.locator('.sb-market[data-market-state="open"]').count()>=2
+   assert page.locator('.sb-fantasy-slate[data-fantasy-period="current"] .sb-board-head h2').is_visible()
+   assert page.locator('.sb-desk-outcomes .sb-outcome-name').evaluate_all('es=>es.length===4&&es.every(e=>getComputedStyle(e).textTransform==="none"&&parseFloat(getComputedStyle(e).fontSize)===13)')
+   assert page.locator('.sb-desk-outcomes .sb-team-mark').evaluate_all('es=>es.every(e=>e.getBoundingClientRect().width===32)')
+   baselines=page.locator('.sb-desk-outcomes').evaluate_all('es=>es.map(e=>[...e.querySelectorAll(".sb-outcome")].map(n=>({price:n.querySelector(".sb-price").getBoundingClientRect().y,height:n.getBoundingClientRect().height,rows:getComputedStyle(n).gridTemplateRows,align:getComputedStyle(n).alignSelf})))')
+   assert all(len(rows)==2 and abs(rows[0]['price']-rows[1]['price'])<1 for rows in baselines),(mode,width,baselines)
    assert page.locator('#tabbar a,#tabbar button').count()==5
    assert page.locator('.sb-brand h1').evaluate('e=>getComputedStyle(e).fontFamily.includes("Inter")')
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(mode,width)

@@ -1,3 +1,25 @@
+## 1.587.0 — Sportsbook reading and slip polish
+
+Reviewed fresh Light/Dark board, slip, ticket and printed-export captures against
+the existing selected DFL designs. Personal matchups retain their highlight but
+share the other games' normal-case type/32px identities. Current-week headings
+are visible; early lines stay collapsed. Active prices use a soft token-derived
+surface; locked/final prices are quieter, with original factual result colors.
+Legacy price lift is removed to preserve paired baselines. Slip headings use
+Inter, wide layouts align odds on a dedicated rail, and enlarged text keeps its
+stacked fallback. The selected printed-paper design retains its fixed ink/paper
+palette; heading sizes are restrained and result text is larger/readable.
+
+Board/prop/claim and 24 slip layouts passed at 320/390/430px and 200% text.
+52 result/export, 48 live-ticket and 87 sheet assertions passed, including theme
+contrast, 44px targets, full names, official versus provisional results, exact
+position/focus return, route interruptions, Reduced Motion and text inside shared
+image bounds. 123 relevant unit tests, strengthened Sportsbook page tests and
+theme/type/identifier/release/build checks passed. Compiled real-market captures
+also passed Light/Dark bounds/contrast with account fixtures and provider writes
+blocked. Evidence: /workspace/dfl-book-1587/; full findings: design-qa.md.
+Physical device FPS/battery and spoken screen-reader output remain unmeasured.
+
 ## 1.586.0 — Compact offers and player-first receipts
 
 Fresh Light/Dark mobile captures were reviewed for the offer list, expanded
