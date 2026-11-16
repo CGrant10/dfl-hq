@@ -1,3 +1,58 @@
+# Trade offer and receipt reading polish — 1.586.0
+
+final result: passed
+
+Scope: the user's approved next step, starting with Trades. Play-by-play, trade
+valuation/search rules, default all-team search and existing shared cards remain
+unchanged. The visual target is the current DFL Home/Clubhouse direction: shared
+Medicine Wheel tokens, quiet dividers, compact Inter typography, real identities
+and full player packages. No new assets, fonts, database changes or polling.
+
+Fresh screenshot audit, captured in this run:
+1. Offer list — healthy complete two-column packages, but repeated red outlines
+   and filled 100% badges competed with names. One quiet divider and unfilled
+   score typography now frame each exchange. Package labels use normal case.
+   Both projected weekly lineup deltas remain visible without expanding a card;
+   unknown deltas show a dash, while multi-team fit labels retain their meaning.
+2. Expanded offer — existing lazy starter-change comparisons and risk/required
+   drops are retained. Reversible motion, rapid reversal, keyboard operation,
+   preserved player images, saved comparisons and action menus remain usable.
+3. Receipt — repeated team value rows pushed players far down the phone. Received
+   players now lead, with each team's own balance/net value beside its identity.
+   Sent-player folds retain explicit destinations; From/To details wrap instead
+   of clipping. A collapsed Value breakdown below the exchange keeps the full
+   sent/received values and ratios. Partial estimates and unknown grades remain
+   explicit. Receipt headings follow the same compact normal-case type scale.
+   Value, sent, notes and roster-impact folds use the shared finite disclosure
+   motion with native keyboard and Reduced Motion behavior.
+
+Baseline: /workspace/dfl-trade-1586/before/ (fresh production-handler fixtures).
+Final: after/01-offers-*.png, 03-impact-*.png, 04-*-*.png and reading-final/ show
+both defaults, 320px and expanded states. after/receipt-* additionally covers
+2/3-team, partial and invalid snapshots, enlarged text and the existing KC team
+preference. Manually inspected Light/Dark mobile screenshots, including whole
+names and full source-team details. Compiled read-only real league captures are
+under actual/ and real-receipts/; real member/player photographs were verified.
+This is a targeted refinement of existing DFL screens, not a literal Sleeper clone.
+
+Validation:
+- Complete production Trade handlers passed at 320/390/768px: intent counts,
+  anchored/excluded positions, compact offers, multi-team routing, stale-owner/
+  injury checks, sharing, exact receipt routes, per-team balances and 200% text.
+- 112 offer-reading assertions passed (Light/Dark, motion/reversal/keyboard,
+  lazy lineups, reused nodes/images, menus, 200% text and no overflow/errors).
+- 49 receipt navigation/motion assertions passed, including the new value fold,
+  keyboard close/focus, Home alert navigation, exact Back position, reduced/app
+  motion off, interruptions and unsupported View Transition fallback.
+- Full unit run: 2,586 passed; one existing search-filter case exceeded its 5s
+  limit under concurrent browser load. Its unchanged 8-test file then passed
+  alone in 4.97s. No test timeout was increased or assertion bypassed.
+- Theme/type/identifier/release checks and 89-module build passed. Immutable
+  1.585.0 bundle retained; latest automated FantasyPros data updates preserved.
+- Real-data Trade and receipt routes passed Light/Dark contrast/bounds checks
+  without provider writes. Physical device FPS/battery and spoken screen-reader
+  output remain unmeasured.
+
 # Shared NFL field and centered play feed — 1.585.0
 
 final result: passed

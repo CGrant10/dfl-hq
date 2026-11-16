@@ -175,7 +175,7 @@ export function mountPageMotion(root) {
   const states = new Map(), pending = new Map(), userDetails = new WeakSet();
   let stopped = false, frame = null, intent = null;
   const current = () => !stopped && root.isConnected;
-  const smoothDetails='.td-alert-receipt,.tb-offer-preview,.td-other-impact,.td-lineup-preview,.td-bench-preview,.tb-setup,.trade-watch,.td-proposals,.td-data-context,.clubhouse-context,.sb-early-lines';
+  const smoothDetails='.td-alert-receipt,.td-receipt-values,.td-receipt-sent,.td-receipt-impact-fold,.td-receipt-notes,.tb-offer-preview,.td-other-impact,.td-lineup-preview,.td-bench-preview,.tb-setup,.trade-watch,.td-proposals,.td-data-context,.clubhouse-context,.sb-early-lines';
   const receipts=mountDisclosureMotion(root,{selector:smoothDetails,getMotion:()=>readPageChoice('gameday-motion',['on','off'],'on')!=='off',active:current});
   const reveal = node => { if (visible(node) && !node.dataset.uiSwipeSettling) animateUi(node, [{ opacity: .45 }, { opacity: 1 }], { duration: 180 }); };
   const drain = () => {
