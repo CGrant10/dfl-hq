@@ -5065,6 +5065,33 @@ html[data-ui-motion="off"] .td-receipt-chevron { transition:none; }
 .td-receipt-balance-row > .td-receipt-balance-track { grid-column:1 / -1; height:3px; margin-top:3px; border-radius:2px; overflow:hidden; background:var(--line-soft); }
 .td-receipt-balance-track i { display:block; height:100%; background:var(--accent); }
 
+/* Players lead the receipt; value details expand after the full exchange. */
+#view.view[data-route="trade"] .td-receipt-page-head h1 { font:750 1.25rem/1.25 var(--font-ui); letter-spacing:-.02em; text-transform:none; }
+#view.view[data-route="trade"] .td-alert-receipt>.td-receipt-summary { padding:12px 0; }
+#view.view[data-route="trade"] .td-receipt-body .td-alert-packages>section { padding:14px 0; }
+.td-receipt-team-head { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:12px; margin-bottom:10px; }
+.td-receipt-team-head>.dfl-team { min-width:0; margin:0; }
+.td-receipt-team-head .dfl-team-copy { min-width:0; }
+.td-receipt-team-head .dfl-team-copy strong { white-space:normal; overflow-wrap:break-word; font:650 .8125rem/1.35 var(--font-ui); }
+.td-receipt-team-head .dfl-team-copy small { font:400 .6875rem/1.4 var(--font-ui); }
+.td-receipt-team-balance { display:grid; justify-items:end; gap:2px; font-variant-numeric:tabular-nums; }
+.td-receipt-team-balance>b { color:var(--text); font:750 .9375rem/1.2 var(--font-ui); }
+.td-receipt-team-balance>small { color:var(--body-text); font:400 .625rem/1.4 var(--font-ui); }
+.td-receipt-team-balance>.td-receipt-net { font:650 .75rem/1.4 var(--font-ui); }
+.td-receipt-team-balance>.is-up { color:var(--ok); }
+.td-receipt-team-balance>.is-down { color:var(--danger-ink); }
+#view.view[data-route="trade"] .td-receipt-player .dfl-player-copy :is(strong,small) { white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:break-word; }
+#view.view[data-route="trade"] .td-receipt-player .dfl-player-copy strong { font:650 .8125rem/1.35 var(--font-ui); }
+#view.view[data-route="trade"] .td-receipt-player .dfl-player-copy small { font:400 .6875rem/1.4 var(--font-ui); }
+#view.view[data-route="trade"] .td-receipt-footer { padding:0; }
+.td-receipt-values { border-block:1px solid var(--line-soft); }
+.td-receipt-values>summary { display:flex; justify-content:space-between; align-items:center; gap:12px; min-height:44px; color:var(--text); cursor:pointer; list-style:none; font:600 .75rem/1.4 var(--font-ui); }
+.td-receipt-values>summary::-webkit-details-marker { display:none; }
+.td-receipt-values>summary::after { content:''; width:6px; height:6px; flex:none; border-right:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(45deg); }
+.td-receipt-values[open]>summary::after { transform:rotate(225deg); }
+.td-receipt-values>summary:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.td-receipt-values .td-receipt-comparison { padding:0; border:0; }
+
 
 /* Source: css/page-system.css */
 /* The ordinary league pages use the compact rhythm of Home and Clubhouse.
@@ -11462,21 +11489,20 @@ html[data-ui-motion="off"] #view .bx-brief.bx-in::before { animation:none!import
  #view .bx-brief.bx-in::before { animation:none!important; opacity:0; }
 }
 
-/* Offer tickets borrow the same restrained score/name framing. Menus remain
-   outside the border, and complete packages keep their two-column layout. */
+/* Compact exchanges use one divider, a quiet verdict and complete packages. */
 #view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer {
- border:1px solid var(--line-soft); border-top:2px solid var(--action-fill); border-radius:4px;
- padding:4px 6px 0; background:var(--bg); box-shadow:none;
+ border:0; border-bottom:1px solid var(--line-soft); border-radius:0;
+ padding:6px 0 0; background:transparent; box-shadow:none;
 }
-#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer:not(.tb-multi-offer)>header { align-items:center; gap:8px; padding:0 0 4px; margin:0 0 4px; border-bottom:1px solid var(--line-soft); }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer:not(.tb-multi-offer)>header { align-items:center; gap:8px; padding:0 0 6px; margin:0 0 4px; border-bottom:0; }
 #view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer-owner { min-width:0; align-items:center; }
 #view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer-owner>strong { font:700 .8125rem/1.3 var(--font-ui); overflow-wrap:break-word; }
 #view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer>header .tb-offer-verdict { display:flex; align-items:center; gap:6px; }
-#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer-verdict>strong { padding:6px 7px; border-radius:3px; background:var(--action-fill); color:var(--action-ink); font:800 1.0625rem/1.15 var(--font-ui); letter-spacing:-.035em; }
-#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer-flow { gap:8px; }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer-verdict>strong { padding:0; border-radius:0; background:transparent; color:var(--text); font:750 1.0625rem/1.2 var(--font-ui); letter-spacing:-.015em; }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer-flow { gap:12px; }
 #view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-package { padding:4px 0; }
-#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-package>small { display:block; margin-bottom:3px; color:var(--body-text); font:700 .625rem/1.4 var(--font-ui); letter-spacing:.035em; text-transform:uppercase; }
-#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-package+.tb-package { padding-left:8px; border-left:1px solid var(--line-soft); }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-package>small { display:block; margin-bottom:3px; color:var(--body-text); font:500 .6875rem/1.4 var(--font-ui); letter-spacing:0; text-transform:none; }
+#view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-package+.tb-package { padding-left:12px; border-left:1px solid var(--line-soft); }
 #view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-player-link strong { font-weight:650; }
 #view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-offer-footer { margin-top:2px; border-top:1px solid var(--line-soft); }
 #view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer .tb-offer-analyze { font-weight:700; }

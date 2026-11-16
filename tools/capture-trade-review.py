@@ -421,6 +421,15 @@ with sync_playwright() as p:
                 assert page.locator('.td-alert-packages').evaluate("e=>getComputedStyle(e).backgroundColor==='rgba(0, 0, 0, 0)'")
                 assert page.locator('.td-alert-packages > section').first.evaluate("e=>getComputedStyle(e).backgroundColor==='rgba(0, 0, 0, 0)'")
                 assert page.locator('[data-balance-team]').count()==count
+                assert page.locator('.td-receipt-team-balance').count()==count
+                assert not page.locator('.td-receipt-values').evaluate('e=>e.open')
+                assert page.locator('.td-alert-packages').bounding_box()['y']<page.locator('.td-receipt-values').bounding_box()['y']
+                assert page.locator('.td-receipt-player').first.bounding_box()['y']<844
+                assert page.locator('[data-receipt-team]').evaluate_all("es=>es.every(e=>e.querySelector('.td-receipt-team-balance>b').textContent.trim()===document.querySelector('[data-balance-team=\"'+e.dataset.receiptTeam+'\"]>b').firstChild.textContent.trim())")
+                page.locator('.td-receipt-values>summary').evaluate('e=>e.click()')
+                assert page.locator('.td-receipt-balance-row').first.is_visible()
+                page.locator('.td-receipt-values>summary').evaluate('e=>e.click()')
+                page.evaluate('scrollTo(0,0)')
                 assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
                 page.screenshot(path=str(output/f'receipt-{width}-{receipt_id}-{theme.replace(":","-")}.png'))
                 page.evaluate("document.documentElement.style.fontSize='200%'")

@@ -1,3 +1,24 @@
+## 1.586.0 — Compact offers and player-first receipts
+
+Fresh Light/Dark mobile captures were reviewed for the offer list, expanded
+lineup/risk comparison and 2/3-team receipts. Offer cards now use one quiet
+separator and an unfilled balance figure, with normal-case package labels and
+both projected lineup changes visible in the existing summary. Receipt players
+lead; each team keeps its balance/net figures beside its identity, while full
+values expand below the exchange. Source/destination details wrap fully. All
+colors use existing semantic text, line, accent, positive and negative tokens;
+player/team image sources and preference handling are preserved.
+
+Complete Trade flows passed at 320/390/768px, plus 112 Light/Dark offer-reading
+and 49 receipt motion/navigation assertions. Checks include 200% text, compact
+cards, full names, partial/unknown grades, exact routing, native keyboard,
+Reduced Motion, focus/reading restoration and no horizontal overflow. Compiled
+real league offers/receipts passed both-theme contrast/bounds checks. Unit run
+passed 2,586 cases; one existing 5s filter-search timeout passed on its isolated
+8-test rerun without changing limits. Theme/type/identifier/release/build checks
+passed. Evidence: /workspace/dfl-trade-1586/; full findings: design-qa.md.
+Physical device FPS/battery and spoken screen-reader output remain unmeasured.
+
 ## 1.585.0 — Shared NFL field and centered play feed
 
 NFL Stats now retains the same score/field hero as Live. The existing field

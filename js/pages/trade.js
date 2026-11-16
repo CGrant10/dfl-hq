@@ -99,7 +99,12 @@ function offerBalance(offer){
  return drops.some(Boolean)?`<div class="tb-offer-balance"><span class="tb-offer-caution">${offer.parties?`Roster drops: ${drops.join(' / ')}`:`Drops: you ${drops[0]} · them ${drops[1]}`}</span></div>`:'';
 }
 
-const offerPreview=(offer,pool)=>`<div class="tb-offer-inspect"><details class="tb-offer-preview"><summary><span>Lineup & risk<small>${esc(tradeLineupFitLabel(offer.windowDeltas||offer.weeklyDeltas||[offer.weeklyDeltaA,offer.weeklyDeltaB]))}</small></span><i aria-hidden="true"></i></summary>${offerSummary(offer,pool)}<div data-offer-lineup></div></details></div>`;
+const offerPreview=(offer,pool)=>{
+ const deltas=offer.windowDeltas||offer.weeklyDeltas||[offer.weeklyDeltaA,offer.weeklyDeltaB];
+ const points=value=>value==null||!Number.isFinite(Number(value))?'—':signed(value);
+ const impact=offer.parties?tradeLineupFitLabel(deltas):`You ${points(deltas[0])} · Them ${points(deltas[1])} pts/wk`;
+ return `<div class="tb-offer-inspect"><details class="tb-offer-preview"><summary><span>Lineup & risk<small>${esc(impact)}</small></span><i aria-hidden="true"></i></summary>${offerSummary(offer,pool)}<div data-offer-lineup></div></details></div>`;
+};
 
 function offerMarkup(offer, pool) {
   if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerBalance(offer)}${offerPreview(offer,pool)}<footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-ui-action="primary" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer></article>`;
