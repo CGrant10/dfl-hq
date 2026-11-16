@@ -1,3 +1,58 @@
+# Home broadcast composition polish — 1.588.0
+
+final result: passed
+
+Scope: the approved Home broadcast finishing pass, using the current DFL wide
+sports-desk presentation as the visual target. The independent league-wide daily
+opener, its existing artwork/saying and five-second dwell remain intact. No new
+assets, fonts, service calls, fake stats, destination changes or page reordering.
+Existing award/Auto Scout imagery remains complete house/player artwork rather
+than a member profile photo. No shield or extra DFL logos were added.
+
+Fresh audit and resolved findings:
+1. Secondary story frame — repeated field grids made different stories feel
+   alike. Secondary slides now sit on the shared theme surface without the
+   universal yard-grid decoration. The compact wide frame, 3px identity edge,
+   category row, footer controls and exact story links remain consistent.
+2. Awards — the house illustrations receive slightly more of the composed art
+   area. A restrained existing stadium raster and theme-derived soft glow ground
+   the illustration. The faint poster label fits its column instead of clipping.
+   Entire illustrations remain contained and separated from full team names.
+3. Records/archive — the source figure now leads on the left, beside its context
+   and under a clear record heading. The solid colored number badge is removed.
+   Rivalry series similarly use clean score typography rather than another badge.
+   Values, full names, years, scores and original archive destinations are intact.
+4. Trades — quiet routed package rows and lead-player previews replace repeated
+   decorative stripes/grids. Actual received/sent routing, all accessible player
+   names, package counts, source balance and exact transaction links remain.
+5. Pacing/motion — automatic record/stat dwell is 3.2s and awards 3.4s; stored
+   commissioner timing remains authoritative. Headline entrances begin without
+   the old delay, with a smaller 2px move/softer fade, while art/panels settle in
+   260–280ms. Existing gesture ownership, first-visible reading gate, offscreen
+   pause, one-pass ending and Reduced/app motion off remain in force.
+
+Evidence: /workspace/dfl-broadcast-1588/before/wide-*.png is the fresh baseline
+using the production wide frame/data attributes. Legacy art-* tall fixture shots
+in that folder are not the visual target. before-actual/ captures the deployed
+1.587 Home. Final wide fixture captures are in after/; compiled real-data captures
+with sticky bars cleared from the clip are in actual-clear/, including the daily
+opener and secondary cards in Light/Dark. Manually inspected both modes, 320/
+390px, complete award art, decimal records, rivalry names and 200% text.
+
+Validation: 96 wide layouts and 60 enlarged layouts passed at 320/390/768px and
+125/200% text. Checks include text bounds/contrast, complete art, disjoint copy/
+art areas, decimal metric legibility, exact story destinations, glow edge sampling,
+stable stage height, repeated forward/back touch swipes, one-pass/manual replay
+and Reduced Motion. Eight full-Home polish cases passed, including keyboard,
+outgoing inert cleanup and gesture behavior. Separate Light/Dark reading-gate
+checks passed below-fold, resume, manual choice, short viewport, Reduced Motion
+and teardown. 156 relevant unit tests in 10 files passed, including explicit
+commissioner dwell and independent daily content. Theme/type/identifier/release
+and 89-module build checks passed. Real-data Home bounds/contrast checks passed
+without provider writes. Latest automated FantasyPros facts are preserved; the
+immutable 1.587.0 bundle remains. Physical iOS/Android frame pacing, battery and
+spoken screen-reader output remain unmeasured.
+
 # Sportsbook reading and slip polish — 1.587.0
 
 final result: passed
