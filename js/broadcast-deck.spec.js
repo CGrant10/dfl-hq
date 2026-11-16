@@ -1,8 +1,19 @@
 import {describe,expect,it,vi} from 'vitest';
 vi.mock('./supabase.js',()=>({db:()=>{throw Error('No database access in deck tests')},configured:false}));
 vi.mock('./members.js',()=>({memberImage:vi.fn(()=>'https://example.com/member-profile.jpg'),currentMember:()=>null,loadMemberDirectory:async()=>[]}));
-import {buildDeck,GENERATORS} from './broadcast-deck.js';
+import {buildDeck,GENERATORS,DWELL,dwellMs} from './broadcast-deck.js';
 import {memberImage} from './members.js';
+
+describe('broadcast reading time',()=>{
+ it('gives automatic awards and records time to read while honoring stored timing',()=>{
+  expect(DWELL.champion).toBe(3400);expect(DWELL.stat).toBe(3200);
+  for(const treatment of ['champion','stat','announcement']){
+   expect(dwellMs(3,treatment)).toBe(3000);
+   expect(dwellMs(8,treatment)).toBe(8000);
+   expect(dwellMs(null,treatment)).toBe(DWELL[treatment]);
+  }
+ });
+});
 
 describe('Arena broadcast removal',()=>{
  it('keeps completed Arena results out without blanking the deck',()=>{

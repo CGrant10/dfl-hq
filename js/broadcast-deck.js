@@ -93,10 +93,10 @@ import { FIRST_SEASON as FIRST_CHIP_SEASON } from "./chip-eaters.js";
    Explicit commissioner timing remains controlled by dwellMs(). */
 export const DWELL = {
   scoreboard: 3000,
-  champion:   3000,
+  champion:   3400,
   announcement: 3600,
   event:      2600,
-  stat:       2600,
+  stat:       3200,
   hero:       3000,
 };
 

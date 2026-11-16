@@ -1,3 +1,24 @@
+## 1.588.0 — Home broadcast composition polish
+
+Fresh wide-frame fixtures and deployed Home screenshots grounded this pass.
+Secondary slides now use the shared theme surface without a universal field-grid
+backdrop. Awards keep full house artwork, a restrained stadium raster/soft glow
+and a fitting faint poster label. Records lead with an unboxed source figure;
+rivalry series use clean score typography. Trade packages have quiet routed rows.
+The first league-wide daily card, saying, artwork and five-second dwell remain.
+New color treatments derive from shared surface, text and accent/warning tokens;
+no shield/logo repetition, asset replacement or new palette was introduced.
+
+Light/Dark mobile and enlarged screenshots were inspected. 96 wide and 60
+125/200%-text layouts, eight full-Home polish cases and both-theme visibility/
+reading-gate checks passed, including complete names/art, glow fades, contrast,
+exact destinations, stable height, forward/reverse swipes, one-pass/manual replay
+and Reduced Motion. 156 relevant unit tests plus theme/type/identifier/release/
+89-module build checks passed. Compiled real-data Home captured with sticky
+headers clear of each card passed bounds/contrast checks. Evidence:
+/workspace/dfl-broadcast-1588/; detailed findings: design-qa.md. Physical device
+FPS/battery and spoken screen-reader output remain unmeasured.
+
 ## 1.587.0 — Sportsbook reading and slip polish
 
 Reviewed fresh Light/Dark board, slip, ticket and printed-export captures against
