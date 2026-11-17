@@ -28,9 +28,11 @@ describe('settled matchup finishes',()=>{
   expect(finishSeenKey(original,'a')).not.toBe(finishSeenKey(original,'b'));
   for(const other of [matchupFinish({...model,week:7},game()),matchupFinish({...model,leagueId:'other'},game()),matchupFinish(model,game(110,100,'2'))])expect(other.key).not.toBe(original.key);
  });
- it('escapes team names and exposes replay, sharing and an accessible result without repeating the scoreboard',()=>{
+ it.each([false,true])('escapes team names and exposes replay, sharing and an accessible result without repeating the scoreboard (compact=%s)',compact=>{
   const result=matchupFinish(model,{...game(),sides:[{name:'<img src=x>',score:150},{name:'A & B',score:100}]});
-  const html=matchupFinishHtml(result);expect(html).toContain('A &amp; B');expect(html).not.toContain('<img');expect(html).toContain('data-finish-replay');expect(html).toContain('data-finish-share');expect(html).not.toContain('150.00');
+  const html=matchupFinishHtml(result,{compact});expect(html).toContain('A &amp; B');expect(html).not.toContain('<img');expect(html).toContain('data-finish-replay');expect(html).toContain('data-finish-share');expect(html).not.toContain('150.00');
+  expect(html).toContain('50.00');expect(html).toContain('data-finish-announcement');
+  if(compact)expect(html).not.toContain('Final whistle');
  });
  it('shares the selected matchup while preserving the existing personal-card default',()=>{
   const mine=game(),other={...game(80,120,'2'),isMine:false};const full={...model,games:[mine,other]};

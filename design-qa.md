@@ -1,3 +1,55 @@
+# Clubhouse matchup and lineup polish — 1.590.0
+
+final result: passed
+
+Scope: the approved Clubhouse matchup finishing pass in the current DFL sports-
+desk/Medicine Wheel direction. Fresh before/ compiled real-data captures showed
+Final, two Final score captions, a Final whistle masthead, a large verdict/margin
+and separate actions before the starting lineup. The first player pair began near
+690px on a 390px phone. Full team identities, source scores and banter were useful.
+
+Resolved findings:
+1. Matchup header — 44px team identities and tighter vertical spacing retain full
+   names, live player-status information and exact scores. The normal narrow-phone
+   layout keeps the logo/score alongside each other; enlarged text reflows to the
+   existing stacked layout. Completed matchups have one Final phase caption and
+   one winner underline, without repeated Final score captions or a second marker.
+2. Final result — the Stadium Clubhouse uses a compact verdict/margin/actions row
+   with the existing banter beneath it. Replay and Share remain 44px controls with
+   explicit accessible labels. Margins, ties, winner selection, announcement,
+   selected-matchup share payload and correction/seen-state rules are preserved.
+   Other shared finish surfaces retain their existing composition.
+3. Lineups — 28×32px portraits give long names more room. The portrait's minimum
+   width now matches its grid column, fixing an enlarged-text overflow caught in
+   the browser review. Opposing slots and scores retain shared baselines; full
+   names, injury signals, thermal scores, weekly stats and PPR averages remain.
+4. Motion and touch — the compact result's finite reveal finishes within 455ms,
+   with smaller travel and the actual scores present throughout. App motion off
+   and Reduced Motion suppress it; changing app motion cancels an active reveal.
+   Player/action presses have a quiet shared-token wash and visible keyboard
+   focus, without scaling the player-card source. Existing reversible bench
+   expansion, matchup swiping and compact scrolling score reference remain.
+
+Evidence: /workspace/dfl-clubhouse-1590/before/ and final/ are compiled real-data
+Light/Dark captures; the first player row now starts near 505px in the same 390px
+view, roughly 185px higher. Player-card close restores its exact pre-open scroll
+position in both modes. Provider writes were blocked; no league data was edited.
+Fresh result/, result-zoom/, finish/, swipe/ and layout/ fixtures were captured with
+production UI/controllers. Manually inspected final mobile, complete names,
+compact results, focus state, paired lineups and the 200% result reflow in both
+modes. The controller-* fixtures isolate receipt semantics; they are not the
+visual target for the production page.
+
+Validation: 104 unit tests in ten files passed. Browser suites passed 108 lineup/
+score-reference checks, 156 swipe checks, 152 tab/layout/reader checks and 80
+compact-result checks, covering 320/390px, Light/Dark, 125/200% text and comfortable
+reading. Both legacy and compact finish-controller regressions passed 21 checks
+apiece, including truthful digits, margin corrections, replay, selected-share
+payload, motion settings and late-share teardown. Theme/type/name/release and
+89-module build checks passed (startup 3; Home 4). No new polling, dependency or
+asset. Immutable 1.589.0 remains. Physical iOS/Android FPS, battery and spoken
+screen-reader output remain unmeasured.
+
 # Primary mobile flow polish — 1.589.0
 
 final result: passed
