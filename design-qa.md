@@ -1,3 +1,60 @@
+# Received-offer review and complete counters — 1.592.0
+
+final result: passed (release verification recorded separately)
+
+The user's received offers arrive in Sleeper. Its supported public API documents
+league transactions, without a supported private pending-offer inbox. The current
+DFL connection cannot automatically read those proposals. The implemented fallback
+is Check a trade → Paste a Sleeper offer: outgoing/incoming player names resolve
+against current roster ownership, then the existing evaluator grades that exact
+player package and starts a counter search. Ambiguous, unknown, duplicate and
+wrong-owner names stay in the editor; missing legs of multi-team proposals are
+not inferred. The routed builder remains available for those offers. No private
+Sleeper credential, inbox polling, database migration or provider write was added.
+
+Counter repairs now yield between bounded evaluation groups. Strict small repairs
+remain first; when they find no qualifying candidate, a bounded broader search may
+change a main player. Explicit player locks and position exclusions in both
+directions remain binding. Every package is regraded with current roster/value
+logic, valid recipients and the eight-player limit. Season-ending/ineligible
+automatic additions and missing projections are excluded. Fair labels retain the
+existing balance and roster-impact thresholds; weaker candidates say Closest fit
+and show their actual balance. Impossible/filtered cases give a specific next
+action rather than a fabricated package. Main-player changes are labeled.
+
+Fresh Light/Dark screenshots exposed an inherited high-specificity card treatment;
+the final counters use compact divider rows with two complete package columns,
+source portraits, one-line full-source labels, explicit multi-team destinations,
+weekly impact for both sides, and Use counter. The import dialog uses shared
+sheet motion, heading focus, Escape/backdrop dismissal, focus return, scrollable
+content and visual-viewport bounds. Editing clears stale parser errors.
+
+Validation:
+- 384 tests across 45 trade/availability suites passed, including unchanged
+  scoring/valuation/routing contracts, exact import ownership, explicit filters,
+  locks, no-alternative cases and cancellation during both search phases.
+- Production handler fixture: 72 browser checks passed across 320/390px Light/Dark,
+  including exact import, automatic grading/counters, full packages, labels,
+  44px player actions, apply/undo, stale-search cancellation, 200% text, focus,
+  Escape, motion-off, Reduced Motion and route cleanup. Provider writes blocked.
+- The compiled current-roster app passed Light/Dark import, exact player-ID,
+  counter, horizontal-boundary and contrast checks. Fresh screenshots are in
+  /workspace/dfl-offer-review-1592/browser-final/ and actual-local/.
+- Home score handoff (18 cases), scoreboard, power rankings, Clubhouse interface
+  and NFL Scores (298 checks) passed. Prior CI assertions requiring full visible
+  wrapping are updated to the user's one-line ellipsis policy; exact scores,
+  geometry, contrast and touch-target assertions remain. Arena truncation targets
+  the full-name child instead of the number/name wrapper. Its fixture resets the
+  shared clock after long visual checks and refreshes the commissioner revision
+  before Pause, avoiding a time-expired/stale-revision control assertion.
+- Release, type, name, theme, production build and bundle-budget checks passed.
+
+This does not provide automatic private Sleeper offer import or guarantee that
+every constrained roster has a fair counter. Shared clips/play-by-play designs,
+player-card portrait motion and existing value thresholds are unchanged. Physical
+device keyboard, frame pacing, battery and spoken screen-reader output were not
+measured. Public deployment is checked after the merge.
+
 # Player-card reading and single-line identities — 1.591.0
 
 final result: passed

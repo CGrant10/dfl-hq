@@ -42,6 +42,7 @@ on:
       - 'js/sportsbook-account-motion.js'
       - 'tools/capture-dfl-network.py'
       - 'tools/capture-trade-offer-reading.py'
+      - 'tools/capture-received-offers.py'
       - 'tools/capture-trade-offer-board.py'
       - 'js/trade-offer-board*'
       - 'css/trade-offer-board.css'
@@ -557,6 +558,7 @@ jobs:
           export DFL_REVIEW_CHROMIUM="$(command -v google-chrome)"
           node tools/render-trade-review.mjs
           python tools/capture-trade-offer-reading.py
+          python tools/capture-received-offers.py
           python tools/capture-trade-offer-board.py
           node tools/render-sheet-review.mjs
           python tools/capture-sportsbook-slip-review.py

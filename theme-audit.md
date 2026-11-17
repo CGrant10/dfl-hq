@@ -1,3 +1,23 @@
+## 1.592.0 — Received offers and compact counter packages
+
+Reviewed fresh 320/390px Light/Dark import dialogs and complete counter rows,
+normal and 200% text, shared navigation and current-roster compiled Trades. The
+final presentation removes the inherited tinted card boxes, aligns compact
+package columns and keeps identity labels on one line with full source text and
+action titles. Buttons, text, dividers, backgrounds, focus rings and error states
+use existing Medicine Wheel semantic tokens. NFL/player identity art and health
+status colors retain their meaning. No new theme entries or raw brand palette.
+
+The modal follows visible-viewport bounds, scrolls enlarged content, avoids
+opening the keyboard until a field is selected, restores focus and respects
+motion-off/Reduced Motion. Its invalid-name notice clears on edit. 72 production
+handler browser checks and 384 trade/availability tests passed. Real roster
+Light/Dark compiled Trades passed exact-ID import/counter, contrast and overflow
+checks. Home/dock, ranks, Clubhouse and NFL name-policy review retain numerical,
+geometry and contrast assertions while adopting the requested one-line labels.
+Evidence: /workspace/dfl-offer-review-1592/; details in design-qa.md. Physical-device
+keyboard, frame pacing, battery and spoken screen-reader behavior remain unverified.
+
 ## 1.591.0 — Player cards and one-line identity labels
 
 Reviewed fresh before/final compiled player cards in Light/Dark and current DFL

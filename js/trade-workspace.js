@@ -15,6 +15,12 @@ const score=result=>{
 };
 // Two-edit beam, including lower-value depth. Ownership, routes and locks survive.
 export function findTradeCounteroffers(deal,pool,{limit=3,lockedIds=[],intent='improve',receivePositions}={}){
+ const search=tradeCounterofferSearch(deal,pool,{limit,lockedIds,intent,receivePositions});
+ let step=search.next();while(!step.done)step=search.next();return step.value;
+}
+// The manual desk yields between bounded groups; synchronous callers retain
+// exactly the same candidate search and scoring through the wrapper above.
+export function* tradeCounterofferSearch(deal,pool,{limit=3,lockedIds=[],intent='improve',receivePositions}={}){
  if(!deal||limit<=0)return [];
  const locked=new Set(lockedIds.map(String));
  deal.sends.forEach(ids=>{const main=[...ids].sort((a,b)=>(Number(pool.get(b)?.tradeValue)||0)-(Number(pool.get(a)?.tradeValue)||0))[0];if(main)locked.add(main)});
@@ -31,7 +37,7 @@ export function findTradeCounteroffers(deal,pool,{limit=3,lockedIds=[],intent='i
   while(count<budget&&queues.some(q=>q.length))for(const queue of queues){
    if(count>=budget)break;const edit=queue.shift();if(!edit)continue;
    const fingerprint=key(edit);if(seen.has(fingerprint))continue;seen.add(fingerprint);
-   count++;const candidate=evaluateTradeDeal(deal.parties,edit.sends,pool,edit.destinations);if(!candidate)continue;
+   count++;if(count%8===0)yield;const candidate=evaluateTradeDeal(deal.parties,edit.sends,pool,edit.destinations);if(!candidate)continue;
    const row={...candidate,changes:edit.changes,change:edit.changes[0],score:score(candidate.result)};
    const p=tradePerspective(row.result),impacts=row.result.rosterImpacts||[p.rosterImpactA??p.weeklyDeltaA,p.rosterImpactB??p.weeklyDeltaB];
    next.push(row);

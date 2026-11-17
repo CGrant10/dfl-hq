@@ -308,13 +308,19 @@ with sync_playwright() as p:
   portrait.set_viewport_size({'width':review_width,'height':review_height});portrait.wait_for_timeout(100)
   portrait.locator('[data-expand]').click();portrait.wait_for_function('document.querySelector(".sr-stage").classList.contains("sr-expanded")||!!document.fullscreenElement')
   check(f'{review_width}x{review_height} expanded number key fits every 44px target',portrait.locator('[data-watch-racer]').evaluate_all('es=>es.length===12&&es.every(e=>{const r=e.getBoundingClientRect(),name=e.querySelector(".sr-watch-racer-name").getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+1&&r.width>=44&&r.height>=44&&name.left>=r.left&&name.right<=r.right&&name.bottom<=r.bottom})'))
-  if review_width==320:check('compact portrait full names use at most two lines',portrait.locator('.sr-watch-racer-full').evaluate_all('es=>es.every(e=>e.getClientRects().length<=2)'))
+  if review_width==320:check('compact portrait names use one line with complete source text',portrait.locator('.sr-watch-racer-full').evaluate_all('es=>es.every(e=>getComputedStyle(e).whiteSpace==="nowrap"&&e.textContent.trim()&&new Set([...(()=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects()})()].map(r=>Math.round(r.top))).size<=1)'))
   portrait.locator('[data-watch-racer="3"]').focus();before_focus=portrait.locator('[data-watch-racer="3"]').evaluate('e=>{window.qaFocusedWatchRacer=e;return e===document.activeElement}');portrait.evaluate('dispatchEvent(new Event("online"))');portrait.wait_for_timeout(450)
   check(f'{review_width}x{review_height} a live refresh preserves roster keyboard focus',before_focus and portrait.locator('[data-watch-racer="3"]').evaluate('e=>e===window.qaFocusedWatchRacer&&e===document.activeElement'))
   for theme in ['light','dark']:
    portrait.evaluate('window.qaTheme',theme);portrait.screenshot(path=str(out/f'number-key-{review_width}-{theme}.png'))
   portrait.locator('[data-expand]').click()
  portrait.evaluate('window.qaLeave()');portrait_c.close()
+ # Screenshot/rotation checks can outlast the fixture's one-minute race on CI.
+ # Resume the control scenario at a known running time before testing Pause.
+ set_elapsed(15000)
+ with admin.expect_response(lambda response:response.url.endswith('/qa/arena_stadium_snapshot')):
+  admin.evaluate('dispatchEvent(new Event("online"))')
+ admin.wait_for_timeout(100);admin.wait_for_selector('[data-command=pause]')
  admin.set_viewport_size({'width':844,'height':390})
  check('callout never covers the running field',admin.locator('.sr-stage').evaluate('e=>e.querySelector(".sr-moment").getBoundingClientRect().top>=e.querySelector("canvas").getBoundingClientRect().bottom-1'))
  check('rank order is live rather than future official order',watch.locator('.sr-position').evaluate_all('es=>es.map(e=>[e.dataset.racerId,e.querySelector(".sr-rank").textContent])')!=[[str(i+1),str(12-i)] for i in range(12)])
