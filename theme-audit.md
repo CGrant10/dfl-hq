@@ -1,3 +1,22 @@
+## 1.589.0 — Primary mobile flow and recovery
+
+Fresh Home/Clubhouse/Trades/Sportsbook pending and error captures were reviewed
+against their compact ready pages. The primary loaders now share current UI type,
+slim rails, paired rows and theme-derived surfaces/rules, with a wide Home frame
+and quiet title/account alignment. Recovery headings use normal-case text and
+existing Retry/Home controls; unexpected implementation messages stay in logs.
+Only shared background, text, muted and line tokens are used. Light/Dark remain
+the two Medicine Wheel defaults; no theme option or palette was added.
+
+Inspected Light/Dark mobile evidence and enlarged-text captures in
+/workspace/dfl-flow-1589/final-ui/, plus compiled real-data four-page screenshots
+in actual/. 320/390px and 200% text bounds/retry checks passed. The 37-check router
+suite covers fixed navigation, loading/ready handoff, recovery and motion settings;
+89 relevant unit tests, theme/type/name/release checks and the 89-module build
+passed. Real-data sessions checked page bounds/contrast and player-card return in
+both modes. Physical-device FPS/battery and spoken screen-reader output remain
+unmeasured. Detailed scope and evidence are in design-qa.md.
+
 ## 1.588.0 — Home broadcast composition polish
 
 Fresh wide-frame fixtures and deployed Home screenshots grounded this pass.
