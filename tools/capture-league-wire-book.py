@@ -135,7 +135,8 @@ with sync_playwright() as p:
  page.evaluate('''async()=>{const {routePlaceholder}=await import('/js/route-placeholder.js');document.getElementById('view').innerHTML=routePlaceholder('sportsbook')}''')
  for mode in ['light','dark']:
   page.evaluate("async mode=>(await import('/js/theme.js')).pinMode(mode)",mode);page.set_viewport_size({'width':320,'height':844});page.evaluate('scrollTo(0,0)')
-  assert page.locator('.loading-book-head .loading-wallet').count()==1 and page.locator('.loading-row').count()==4
+  assert page.locator('.loading-primary.is-sportsbook .loading-wallet-preview').count()==1 and page.locator('.loading-paired-row').count()==3
+  assert page.locator('.loading-paired-row').evaluate_all('es=>es.every(e=>e.querySelectorAll(".loading-row").length===2)')
   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
   page.screenshot(path=str(OUT/f'{mode}-loading.png'))
  assert not errors,errors;b.close()

@@ -55,8 +55,8 @@ with sync_playwright() as p:
    page.evaluate('y=>scrollTo(0,y+30)',limits['end']);page.wait_for_timeout(80)
    check(f'{theme} {width}: exact dock endpoint and source restored',page.evaluate('Number(getComputedStyle(document.querySelector(".home-score-dock")).opacity)>.999&&!document.querySelector(".home-score-dock").inert&&[...document.querySelectorAll(".home-score-moving")].every(e=>Number(getComputedStyle(e).opacity)<.001)&&[...document.querySelectorAll(".gameday-faceoff-mark,.home-projected-total")].every(e=>e.style.visibility!=="hidden")'))
    check(f'{theme} {width}: content position preserved',page.evaluate('b=>Math.abs(document.querySelector(".story").getBoundingClientRect().top+scrollY-b.row)<1&&document.documentElement.scrollHeight===b.height',before))
-   check(f'{theme} {width}: compact names are complete and visible',page.evaluate("[...document.querySelectorAll('[data-dock-name]')].every(e=>e.textContent&&e.scrollWidth<=e.clientWidth+1&&getComputedStyle(e).visibility==='visible')"))
-   check(f'{theme} {width}: scores stay aligned across wrapped names',page.evaluate("(()=>{const s=[...document.querySelectorAll('[data-dock-score]')].map(e=>e.getBoundingClientRect().top);return Math.abs(s[0]-s[1])<1})()"))
+   check(f'{theme} {width}: one-line compact names retain complete source text',page.evaluate("[...document.querySelectorAll('[data-dock-name]')].every(e=>e.textContent&&getComputedStyle(e).whiteSpace==='nowrap'&&e.scrollHeight<=e.clientHeight+1&&getComputedStyle(e).visibility==='visible')"))
+   check(f'{theme} {width}: scores stay aligned beside one-line names',page.evaluate("(()=>{const s=[...document.querySelectorAll('[data-dock-score]')].map(e=>e.getBoundingClientRect().top);return Math.abs(s[0]-s[1])<1})()"))
    page.screenshot(path=str(OUT/f'{theme}-{width}-named-dock.png'))
  # Home's compact scoreboard must not bypass the section entrance observer.
  page.evaluate('fixture("home")');page.wait_for_timeout(150)

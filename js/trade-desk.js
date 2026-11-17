@@ -33,7 +33,9 @@ import {analyzerPlayerSignal} from "./analyzer-player-form.js";
 // repaints the verdict alone.
 // =====================================================================
 
-import {evaluateTradeDeal,findTradeCounteroffers,applyTradeDeal} from './trade-workspace.js';
+import {evaluateTradeDeal,applyTradeDeal} from './trade-workspace.js';
+import {planTradeCounteroffers} from './trade-counter-plan.js';
+import {openTradeOfferImport} from './trade-offer-import-ui.js';
 import {reconcileTradeDestinations,tradePerspective,tradeRoutingIssue} from './trade-routing.js';
 import {lineupComparisonMarkup,counterofferMarkup} from './trade-workspace-ui.js';
 import {playerPortrait} from './player-presentation.js';
@@ -495,7 +497,7 @@ export function tradeDeskMarkup(team, teams, pool, state) {
   }).join("");
   const add = parties.length < Math.min(8,teams.length) ? `<button type="button" class="btn ghost small td-add-member" data-td-add-member>+ Add member</button>` : "";
   const multi = parties.length > 2;
-  return `<div class="td-edit-bar" data-td-edit-bar hidden><button type="button" class="td-edit-package" data-td-review aria-label="Review full trade"><span data-td-edit-send></span><span data-td-edit-receive></span></button><button type="button" class="linkbtn" data-td-undo hidden>Undo</button><p data-td-edit-status role="status"></p></div><details class="td-builder"${state.editing ? " open" : ""}>
+  return `<div class="td-offer-import"><button type="button" class="linkbtn" data-td-import>Paste a Sleeper offer</button></div><div class="td-edit-bar" data-td-edit-bar hidden><button type="button" class="td-edit-package" data-td-review aria-label="Review full trade"><span data-td-edit-send></span><span data-td-edit-receive></span></button><button type="button" class="linkbtn" data-td-undo hidden>Undo</button><p data-td-edit-status role="status"></p></div><details class="td-builder"${state.editing ? " open" : ""}>
       <summary><span>Build your trade</span><i aria-hidden="true"></i></summary>
       <div class="td-builder-body">
         <div class="td-party-controls">${selectors}${add}</div>
@@ -517,7 +519,7 @@ export function tradeDeskMarkup(team, teams, pool, state) {
 export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange, onDeal,lockedIds=[],receivePositions }) {
   if (!root) return;
   const verdictHost = root.querySelector("[data-td-verdict]"),connection=createTradeConnection();
-  let currentDeal=null,counters=[],revision=0,undo=null,stopped=false,stopReplacement=()=>{};
+  let currentDeal=null,counters=[],revision=0,undo=null,stopped=false,stopReplacement=()=>{},stopImport=()=>{};
   root.querySelector(".td-builder")?.addEventListener("toggle", event => {
     state.editing = event.currentTarget.open;syncEditBar();
   });
@@ -572,7 +574,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     const routingMessage=issue?.kind==='senders'?`Select players from ${missingNames}.`:issue?.kind==='recipients'?`Choose a recipient for ${issue.playerIds.length} player${issue.playerIds.length===1?'':'s'}.`:issue?.kind==='receivers'?`${missingNames} ${issue.teamIds.length===1?'needs':'need'} a player coming back.`:'Review the selected players and recipients.';
     verdictHost.innerHTML=(parties.length>2?multiTicketMarkup(result,parties,pool,sends):ticketMarkup(result,team,parties[1],pool,...sends))
       +(currentDeal?lineupComparisonMarkup(currentDeal,pool)+`<details class="td-data-context" data-td-weekly><summary>Next four weeks</summary><div data-td-weekly-body></div></details>`:sends.some(ids=>ids.length)?`<p class="td-projection-note" role="status" data-td-routing-status>${esc(routingMessage)}</p>`:'')
-      +`<div class="td-deal-tools"><button type="button" class="btn ghost small" data-td-undo hidden>Undo last change</button><button type="button" class="btn ghost small" data-td-find-counter ${currentDeal?'':'disabled'}>${currentDeal?.result.fairness>=90?'Find a counteroffer':'Make this fair'}</button><button type="button" class="btn ghost small" data-td-save-proposal ${currentDeal?'':'disabled'}>Save for comparison</button></div><div data-td-counter-results role="region" aria-label="Counteroffer suggestions" aria-live="polite"></div>`;
+      +`<div class="td-deal-tools"><button type="button" class="btn ghost small" data-td-undo hidden>Undo last change</button><button type="button" class="btn ghost small" data-td-find-counter ${currentDeal?'':'disabled'}>Find counters</button><button type="button" class="btn ghost small" data-td-save-proposal ${currentDeal?'':'disabled'}>Save for comparison</button></div><div data-td-counter-results role="region" aria-label="Counteroffer suggestions" aria-live="polite"></div>`;
     const impact=verdictHost.querySelector("[data-td-lineup-impact]"),decision=verdictHost.querySelector(".td-decision");
     if(impact&&decision)verdictHost.querySelector('.td-ticket').after(impact);
     verdictHost.querySelectorAll('details').forEach((node,i)=>{if(open.has(node.className+'|'+[...verdictHost.querySelectorAll('details')].filter(n=>n.className===node.className).indexOf(node)))node.open=true});
@@ -636,6 +638,8 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
   for(const section of root.querySelectorAll('[data-td-roster]')) section.addEventListener('toggle',event=>{state.rosterOpen||={};state.rosterOpen[event.currentTarget.dataset.tdRoster]=event.currentTarget.open;});
 
   root.addEventListener("click", async event => {
+    if(event.target.closest('[data-td-import]')){stopImport();stopImport=openTradeOfferImport({team,teams,pool,maxPlayers:MAX_TRADE_PLAYERS,onImport:deal=>{if(stopped)return;remember();applyTradeDeal(state,deal);state.editing=false;state.counterAfterImport=true;onPartnerChange?.({imported:true});}});return;}
+    if(event.target.closest('[data-td-counter-edit]')){const builder=root.querySelector('.td-builder');if(builder){builder.open=true;builder.querySelector('summary')?.focus({preventScroll:true});builder.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches||document.documentElement.dataset.uiMotion==='off'?'instant':'smooth'})}return;}
     if(event.target.closest('[data-td-review]')){const heading=verdictHost.querySelector('h2');verdictHost.scrollIntoView({block:'start',behavior:'instant'});if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}return;}
     if(event.target.closest('[data-td-undo]')){connection.cancel();if(restoreTradeEdit(partiesOf(),state,undo)){undo=null;syncSelectionUi();update();root.querySelector('.td-builder>summary')?.focus({preventScroll:true})}return;}
     const replace=event.target.closest('[data-td-replace-pick]');
@@ -648,8 +652,8 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
       }});return;
     }
     const counterButton=event.target.closest('[data-td-find-counter]');
-    if(counterButton&&currentDeal){if(counterButton.disabled)return;const at=revision,deal=currentDeal,intent=deal.result.fairness<90?'fair':'improve',label=counterButton.textContent;counterButton.disabled=true;counterButton.setAttribute('aria-busy','true');counterButton.textContent='Checking small changes…';await new Promise(resolve=>setTimeout(resolve,0));if(!root.isConnected||at!==revision)return;
-      try{counters=findTradeCounteroffers(deal,pool,{lockedIds,intent,receivePositions});root.querySelector('[data-td-counter-results]').innerHTML=counterofferMarkup(counters,pool,deal.parties,{intent});}
+    if(counterButton&&currentDeal){if(counterButton.disabled)return;const at=revision,deal=currentDeal,intent=deal.result.fairness<90?'fair':'improve',label=counterButton.textContent;counterButton.disabled=true;counterButton.setAttribute('aria-busy','true');counterButton.textContent='Finding counters…';await new Promise(resolve=>setTimeout(resolve,0));if(!root.isConnected||at!==revision)return;
+      try{const plan=await planTradeCounteroffers(deal,pool,{lockedIds,intent,receivePositions,active:()=>!stopped&&root.isConnected&&at===revision});if(plan.kind==='cancelled'||!root.isConnected||at!==revision)return;counters=plan.candidates;root.querySelector('[data-td-counter-results]').innerHTML=counterofferMarkup(counters,pool,deal.parties,{intent,plan});}
       catch{root.querySelector('[data-td-counter-results]').innerHTML='<p role="status">Counteroffers could not be checked. Try again.</p>'}
       finally{if(root.isConnected&&at===revision){counterButton.disabled=false;counterButton.removeAttribute('aria-busy');counterButton.textContent=label;}}return;}
     const useCounter=event.target.closest('[data-td-use-counter]');
@@ -696,5 +700,6 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
   syncSelectionUi();
   for(const input of root.querySelectorAll("[data-td-filter]")) input.dispatchEvent(new Event("input",{bubbles:true}));
   update();
-  return ()=>{stopped=true;stopReplacement();connection.stop();routingBoard.stop()};
+  if(state.counterAfterImport){delete state.counterAfterImport;queueMicrotask(()=>{if(!stopped&&root.isConnected){const heading=verdictHost.querySelector('h2');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}root.querySelector('[data-td-find-counter]')?.click()}});}
+  return ()=>{stopped=true;stopImport();stopReplacement();connection.stop();routingBoard.stop()};
 }

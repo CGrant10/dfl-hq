@@ -250,17 +250,29 @@ with sync_playwright() as p:
             click('.td-deal-evidence > summary')
             assert 'Expert ranks · FantasyPros · not connected' in page.locator('.td-deal-evidence').inner_text()
             assert not page.evaluate('document.documentElement.scrollWidth>innerWidth'),f'{width}: expanded evidence overflow'
-        # The old generic counter was still unfair. A fair repair must not
-        # relabel that improvement, and must preview before changing players.
-        click('[data-td-find-counter]');page.wait_for_function('document.querySelector("[data-td-counter-results]").textContent.includes("No small fair adjustment")')
-        assert page.locator('[data-td-use-counter]').count()==0
+        # Broader repairs may change a main piece. Every visible package must
+        # retain its real grade and preview before it changes the selected deal.
+        before_counter=page.locator('[data-td-pick]:checked').evaluate_all('es=>es.map(e=>e.value).sort()')
+        def check_counter_grades():
+            return page.locator('.td-counter-card').evaluate_all('''async es=>{
+                const {evaluateTradeDeal}=await import('/js/trade-workspace.js');
+                return es.length>0&&es.every(e=>{
+                    const sends=[...e.querySelectorAll('.td-counter-packages>section')].map(s=>[...s.querySelectorAll('[data-player-card]')].map(b=>b.dataset.playerCard)),
+                    destinations=Object.fromEntries([...e.querySelectorAll('[data-player-card]')].map(b=>[b.dataset.playerCard,b.dataset.counterTo])),
+                    deal=evaluateTradeDeal(reviewData.teams.slice(0,2),sends,reviewData.pool,destinations);
+                    return deal&&Math.round(deal.result.fairness)===parseFloat(e.querySelector('header>b').textContent)&&(e.dataset.counterKind!=='fair'||deal.result.fairness>=90);
+                });
+            }''')
+        click('[data-td-find-counter]');page.locator('[data-td-use-counter]').first.wait_for()
+        assert check_counter_grades()
+        assert page.locator('[data-td-pick]:checked').evaluate_all('es=>es.map(e=>e.value).sort()')==before_counter
         def clear_picks():
             for side in [0,1]:
                 for pid in page.locator(f'[data-td-remove-pick="{side}"]').evaluate_all('es=>es.map(e=>e.dataset.playerId)'):
                     click(f'[data-td-remove-pick="{side}"][data-player-id="{pid}"]')
         clear_picks();pick(0,'1-0');pick(1,'2-8')
         click('[data-td-find-counter]');page.locator('[data-td-use-counter]').first.wait_for()
-        assert page.locator('.td-counter-list article p').evaluate_all('es=>es.every(e=>parseFloat(e.textContent)>=90)')
+        assert check_counter_grades()
         click('[data-td-use-counter]');assert page.locator('[data-td-remove-pick="1"]').count()>=1
         click('[data-td-verdict] [data-td-undo]');assert page.locator('[data-td-pick]:checked').count()==2
         clear_picks();pick(0,'1-4');pick(1,'2-6')

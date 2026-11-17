@@ -20,7 +20,7 @@ body :is(
  .archive-week-highlights>button>span,.archive-entering>div>span,
  .breaking-trade-copy>strong>span,
  .archive-match-name,.record-identity strong,.ka-name,.ke-player-name,.wo-name,
- .runner-nameplate,.sr-racer-name,.sr-watch-racer-name,.order-name,
+ .runner-nameplate,.sr-racer-name,.sr-watch-racer-full,.order-name,
  .bc-lane-name,.bc-winner-name,.winner-name,.lane-name,.gteam-name,
  .gposter-name,.gname,.ta-name,.yb-name,.mq-side-name,.mq-team-name
 ) {

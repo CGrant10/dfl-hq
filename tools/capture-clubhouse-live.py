@@ -203,7 +203,7 @@ with sync_playwright() as p:
      title:getComputedStyle(e.querySelector('h1')).fontFamily,
      tab:getComputedStyle(e.querySelector('[data-clubhouse-tab]')).fontFamily,
      picker:getComputedStyle(e.querySelector('#clubhouse-week')).fontFamily,
-     names:[...e.querySelectorAll('.clubhouse-matchup-name strong')].filter(n=>n.getClientRects().length).every(n=>n.scrollWidth<=n.clientWidth+1),
+     names:[...e.querySelectorAll('.clubhouse-matchup-name strong')].filter(n=>n.getClientRects().length).every(n=>getComputedStyle(n).whiteSpace==="nowrap"&&n.scrollHeight<=n.clientHeight+1&&n.textContent.trim()),
      targets:[...e.querySelectorAll('[data-clubhouse-tab],.clubhouse-week-picker select,[data-clubhouse-nfl-open]')].filter(n=>n.getClientRects().length).every(n=>n.getBoundingClientRect().height>=44),
      overflow:document.documentElement.scrollWidth>innerWidth+1
     })''')

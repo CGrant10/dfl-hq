@@ -42,7 +42,7 @@ function sourceFiles(dir, out = []) {
 function namedExports(file) {
   const src = fs.readFileSync(file, "utf8");
   const names = new Set();
-  for (const m of src.matchAll(/^export\s+(?:async\s+)?function\s+([A-Za-z0-9_$]+)/gm)) names.add(m[1]);
+  for (const m of src.matchAll(/^export\s+(?:async\s+)?function(?:\s*\*\s*|\s+)([A-Za-z0-9_$]+)/gm)) names.add(m[1]);
   for (const m of src.matchAll(/^export\s+(?:const|let|var|class)\s+([A-Za-z0-9_$]+)/gm)) names.add(m[1]);
   /* `export { a, b as c }` - the exported name is whatever follows `as`. */
   for (const m of src.matchAll(/^export\s*\{([^}]*)\}/gm)) {
