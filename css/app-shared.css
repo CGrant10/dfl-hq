@@ -11583,3 +11583,79 @@ html[data-ui-motion="off"] #view .bx-brief.bx-in::before { animation:none!import
 }
 
 #view.view[data-page-system][data-route="trade"][data-daily-desk] .tb-offer-verdict>span { min-width:0; max-width:5rem; }
+
+
+/* Source: css/identity-names.css */
+/* Identity labels keep one line. Full text stays in the DOM and shared labels
+   include a native title; narration, injury details and stat labels still reflow. */
+body :is(
+ [data-ui-name],.dfl-player-copy>strong,.player-card-trigger,[data-player-card]:not(:has(*)),
+ .dfl-team-copy>strong,.dfl-team-copy>small,.clubhouse-matchup-name strong,
+ .home-team-name>strong,.home-score-moving-name,.matchup-view-context strong,
+ .dfl-scroll-scores small,[data-dock-name],.clubhouse-strip-team>strong,.clubhouse-mini-team>span:not(.dfl-team-mark),
+ .tb-offer-owner>strong,.tb-offer-owner>a,.tb-player-link>.dfl-player-copy>strong,
+ .td-selected-name,.td-selected-identity>strong,.td-member-control>strong,
+ .td-player-copy>b,.td-item-copy>button,.tob-name-text,.tob-players strong,.td-receipt-balance-row>strong,
+ .tb-preview-labels strong,.trade-picker-owner,.ti-player .player-card-trigger,
+ .trade-model-health>section>span>b,.trade-watch-list strong,.scout-card h3,.scout-package strong,
+ .sb-team-copy>strong,.sb-team-name,.sb-matchup-team strong,.sb-matchup-side strong,
+ .sb-prop-player strong,.sb-prop-player-name,
+ .nfl-score-name,.nfl-score-owner,.nfl-fantasy-owner,.nfl-fantasy-player-name,
+ .power-team>strong,.power-team-name,.power-team-copy>strong,.power-detail-identity strong,
+ .profile-name,.wall-name>strong,.wall-name>small,.activity-identity>strong,.name-pick,
+ .memberbtn-text>strong,.memberbtn-text>.muted,
+ .activity-trade b,.activity-trade small,.home-receipt-leader h3,
+ .archive-week-highlights>button>span,.archive-entering>div>span,
+ .breaking-trade-copy>strong>span,
+ .archive-match-name,.record-identity strong,.ka-name,.ke-player-name,.wo-name,
+ .runner-nameplate,.sr-racer-name,.sr-watch-racer-name,.order-name,
+ .bc-lane-name,.bc-winner-name,.winner-name,.lane-name,.gteam-name,
+ .gposter-name,.gname,.ta-name,.yb-name,.mq-side-name,.mq-team-name
+) {
+ display:block; min-width:0; max-width:100%;
+ white-space:nowrap!important; overflow:hidden!important; text-overflow:ellipsis;
+ overflow-wrap:normal!important; word-break:normal!important;
+}
+body :is(.dfl-player-copy,.dfl-player-title,.dfl-team-copy,.clubhouse-matchup-name,.sb-team-copy,.td-player-copy,.td-item-copy,.memberbtn-text) { min-width:0; }
+.memberlist { grid-template-columns:minmax(0,1fr); }
+.memberbtn { min-width:0; }
+.memberbtn-text { flex:1 1 0; overflow:hidden; }
+.matchup-view-context>div { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.matchup-view-context>div>span>strong { flex:1 1 auto; }
+.matchup-view-context>div>span>b { flex:none; }
+.dfl-scroll-scores>span { min-width:0; }
+:is(#view,dialog) :is(.clubhouse-status-table,.clubhouse-position-stats table) { width:100%; table-layout:fixed; }
+:is(#view,dialog) :is(.clubhouse-status-table,.clubhouse-position-stats table) thead th { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+:is(#view,dialog) .td-receipt-impact { width:100%; table-layout:fixed; }
+:is(#view,dialog) .td-receipt-impact th[scope="row"] { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+:is(#view,dialog) .golfname-form p>strong { display:inline-block; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; vertical-align:bottom; }
+:is(#view,dialog) .sb-outcome-name:has(>[data-sb-outcome-name]) { display:grid!important; grid-template-columns:max-content minmax(0,1fr); align-items:center; gap:3px 6px; min-width:0; }
+:is(#view,dialog) .sb-outcome-name>[data-sb-outcome-name] { grid-column:1/-1; grid-row:1; width:100%; }
+:is(#view,dialog) .sb-outcome-name>.sb-held { grid-column:1; grid-row:2; }
+:is(#view,dialog) .sb-outcome-name>.sb-fantasy-result { grid-column:2; grid-row:2; }
+:is(#view,dialog) .sb-outcome-name:not(:has(.sb-held))>.sb-fantasy-result { grid-column:1/-1; }
+
+/* The name owns a full row in a player card. The portrait flight lands on the
+   same geometry for pending and ready content; no text-fitting scroll work. */
+body dialog.dfl-player-card .player-card-hero { grid-template-columns:88px minmax(0,1fr); grid-template-rows:auto 1fr 1fr; gap:6px 12px; align-items:center; padding:4px 0 12px; }
+body dialog.dfl-player-card .player-card-hero .dfl-player-copy { display:contents; }
+body dialog.dfl-player-card .player-card-hero .dfl-player-copy>strong { grid-column:1/-1; grid-row:1; width:100%; margin:0; font:700 1.375rem/1.25 var(--font-ui); letter-spacing:-.025em; }
+body dialog.dfl-player-card .player-card-hero .dfl-player-copy>small { grid-column:2; grid-row:2; align-self:end; }
+body dialog.dfl-player-card .player-card-hero .dfl-player-portrait { grid-column:1; grid-row:2/4; width:88px; min-width:88px; height:104px; align-self:start; }
+body dialog.dfl-player-card .player-card-owner { grid-column:2; grid-row:3; align-self:start; min-width:0; }
+body dialog.dfl-player-card .player-card-hero[data-player-card-seed] .dfl-player-copy>:not(strong) { display:none; }
+body dialog.dfl-player-card .player-card-hero[data-player-card-seed] .dfl-player-copy>strong { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+body dialog.dfl-player-card .matchup-view-context { padding-block:6px; }
+body dialog.dfl-player-card .matchup-view-context strong { font-size:.6875rem; }
+body dialog.dfl-player-card .matchup-view-context b { font:700 .875rem/1.3 var(--font-ui); }
+body dialog.dfl-player-card .player-card-scoring { display:grid; grid-template-columns:minmax(0,1fr) minmax(5.5rem,auto); grid-template-rows:auto minmax(52px,auto); align-items:center; gap:0 12px; padding:10px 0; border-block:1px solid var(--line-soft); }
+body dialog.dfl-player-card .player-card-scoring>.gameday-spotlight-score,
+body dialog.dfl-player-card .player-card-scoring>.player-card-week-summary { display:contents; }
+body dialog.dfl-player-card .player-card-scoring .gameday-spotlight-score>span:first-child { grid-column:1; grid-row:1; }
+body dialog.dfl-player-card .player-card-scoring .gameday-spotlight-score>span:last-child { grid-column:2; grid-row:1; max-width:none; }
+body dialog.dfl-player-card .player-card-scoring [data-player-game-line] { grid-column:1; grid-row:2; margin:0; }
+body dialog.dfl-player-card .player-card-scoring .player-card-season-average { grid-column:2; grid-row:2; }
+body dialog.dfl-player-card .player-card-primary { border-top:0; }
+body dialog.dfl-player-card .gameday-stat-grid>div { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+body dialog.dfl-player-card .gameday-stat-grid dd { flex:none; margin:0; text-align:right; }
+body dialog.dfl-player-card .gameday-stat-grid dt { min-width:0; }

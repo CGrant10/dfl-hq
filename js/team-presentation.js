@@ -30,7 +30,7 @@ export function teamIdentity(team, { meta = "", record = "", movement = null, co
     : `<span class="dfl-team-move ${Number(movement) > 0 ? "is-up" : "is-down"}">${Number(movement) > 0 ? "▲" : "▼"}${Math.abs(Number(movement))}</span>`;
   return `<div class="dfl-team${compact ? " is-compact" : ""}" style="--team-accent:${esc(accentOf(team?.identity || team))}">
     ${teamPortrait(team)}
-    <span class="dfl-team-copy"><strong>${esc(teamLabel(team))}</strong>${detail ? `<small>${esc(detail)}</small>` : ""}</span>
+    <span class="dfl-team-copy"><strong data-ui-name title="${esc(teamLabel(team))}">${esc(teamLabel(team))}</strong>${detail ? `<small data-ui-name title="${esc(detail)}">${esc(detail)}</small>` : ""}</span>
     ${record ? `<span class="dfl-team-record">${esc(record)}</span>` : ""}${move}
   </div>`;
 }

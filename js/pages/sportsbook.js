@@ -285,7 +285,7 @@ export async function render(view){
       if(!presentOutcomes.has(String(quote.id)))market.status='locked';
       button.disabled=!present.has(String(market.id))||!isOpen(market);
       const price=button.querySelector('.sb-price');if(price)updateBookQuote(price,fmtOdds(quote.odds_american));
-      const name=button.querySelector('.sb-outcome-name');if(name?.firstChild?.nodeType===3)name.firstChild.textContent=quote.label;
+      const name=button.querySelector('.sb-outcome-name'),label=name?.querySelector('[data-sb-outcome-name]');if(label){label.textContent=quote.label;label.title=quote.label}else if(name?.firstChild?.nodeType===3)name.firstChild.textContent=quote.label;
       const line=button.closest('.sb-player-line');
       if(line){updateBookQuote(line.querySelector('.sb-player-stat strong'),propLine(market));const meta=propMarketMeta(market,[quote]);button.setAttribute('aria-label',`${meta.player}, ${meta.stat}, ${quote.label}, ${fmtOdds(quote.odds_american)}`);}
       const card=button.closest('.sb-market'),state=card?.querySelector('.sb-market-state');
@@ -407,7 +407,7 @@ function outcomeButtons(m,outcomes,picked,held,members=[]){
     return `
     <button class="sb-outcome${held?" is-mine":""}${inSlip?" is-picked":""}" data-bet-outcome="${o.id}" aria-pressed="${inSlip}"${!isOpen(m)?' disabled':''}>
       ${prop?`<span class="sb-prop-side" aria-hidden="true">${i===0?"O":"U"}</span>`:teamPortrait({team_name:o.label,identity:identities.get(identityKey(o.label))||null},{className:"sb-team-mark"})}
-      <span class="sb-outcome-label"><span class="sb-outcome-name" data-ui-row-title>${esc(o.label)}${held?`<span class="sb-held">Held</span>`:""}</span><small${!prop&&!projected[i]?' class="sr-only"':''}>${prop?propSource:projected[i]?`${esc(projected[i])} projected`:"Moneyline"}</small></span>
+      <span class="sb-outcome-label"><span class="sb-outcome-name" data-ui-row-title><span data-ui-name data-sb-outcome-name title="${esc(o.label)}">${esc(o.label)}</span>${held?`<span class="sb-held">Held</span>`:""}</span><small${!prop&&!projected[i]?' class="sr-only"':''}>${prop?propSource:projected[i]?`${esc(projected[i])} projected`:"Moneyline"}</small></span>
       <strong class="sb-price" data-ui-number>${fmtOdds(o.odds_american)}</strong>
     </button>`}).join("")}</div>`;
 }

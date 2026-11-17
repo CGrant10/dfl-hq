@@ -1,3 +1,60 @@
+# Player-card reading and single-line identities — 1.591.0
+
+final result: passed
+
+Scope: the approved shared player-card interior polish and the user's app-wide
+single-line name-label direction. Current Light/Dark compiled Clubhouse/player
+captures in before/ grounded this pass. The card's carried matchup names and
+identity/owner area could wrap, while names in several dense panels expanded
+rows. The existing portrait-first opening/close animation remains the target.
+
+Resolved findings:
+1. Player card — the name owns a complete row above the 88×104px portrait, NFL
+   identity and owner. The weekly score, state, stat line and reserved season-PPR
+   slot use shared grid tracks. Stat labels and tabular values align left/right
+   inside the existing two-column detail grid. Healthy rows stay omitted; actual
+   injury details, weeks, values and folded tools remain. No new information block.
+2. Name labels — shared player/team identities carry their complete escaped name
+   in text/title/action labels. A shared CSS policy keeps identity labels on one
+   line with ellipsis; it does not abbreviate source data or measure text during
+   scrolling. Coverage includes Home/scrolling scoreboards, Clubhouse, ranks,
+   injuries, trade packages/intentions/receipts, Sportsbook, profiles/picker, archive,
+   activity and Arena HTML nameplates. Table headers/receipt impact names retain
+   table semantics. Text inputs remain editable; narration/stat details reflow.
+3. Picker/Book — the member grid and shrinking text track now prevent inner
+   horizontal clipping, including enlarged text. The Book separates the label
+   from Held/result badges; compact status marks remain below the one-line label
+   without covering prices. Live quote refresh updates the correct text/title
+   node and preserves its sibling status marks. The grid treatment is guarded by
+   the new markup so an older retained bundle keeps its prior layout.
+4. Motion/loading — pending and ready portrait geometry stays matched. Average
+   arrival preserves control positions; score updates retain the numeric node,
+   portrait, controls, expanded sections and scroll position. Opening/closing,
+   warm reset, late photos/responses and app/Reduced Motion behavior were verified.
+
+Evidence: /workspace/dfl-player-names-1591/ contains before/, final/ compiled
+real-data four-page/player captures and the focused/fixture evidence. Manually
+inspected real player cards, 320px long-name cards, enlarged details, profile picker
+and Book badges in Light/Dark. The initial eight-page name scan is in names-final/;
+its receipt findings were corrected and rechecked in trade-names/. The reconciled
+names-verified.json contains 32 passing page/width/theme cases and 1,947 exercised
+labels; names-large/ adds 16 passing 200%-text cases. Focused-final/ verifies picker
+inner bounds and Book Held/Hit/price separation at 320/390px and enlarged text.
+Provider writes were blocked; no profile selection, bet or league change was made.
+Arena lobby HTML labels were available; live race/canvas labels and raster-export
+composition were not visually re-audited in this pass.
+
+Validation: 86 unit tests in 14 files passed. The production card fixture passed
+49 long-name/deferred-image/average checks; reading/refresh passed 67, portrait
+motion 37, paired lineup/compact score-reference 108 and trade preview/disclosure
+112 checks. Focused picker/Book checks passed 12 cases. Browser gates now recognize
+intentional one-line ellipsis while checking retained full identity, bounds,
+separate scores and 44px controls; the score-read gate targets the existing
+animated decorative copy rather than expecting the real digit node to animate.
+Theme/type/name/release and 89-module build checks passed (startup 3; Home 4).
+Immutable 1.590.0 remains. Physical iOS/Android FPS, battery and spoken screen-reader
+output remain unmeasured. Existing export designs and data/scoring logic remain.
+
 # Clubhouse matchup and lineup polish — 1.590.0
 
 final result: passed

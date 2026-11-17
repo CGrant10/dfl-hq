@@ -161,7 +161,7 @@ with sync_playwright() as p:
        const canvas=document.createElement('canvas').getContext('2d');
        const pickers=[...e.querySelectorAll('.clubhouse-week-picker select')];
        return teams.every(n=>{const score=n.querySelector('[data-matchup-score-value]')?.parentElement,logo=n.querySelector('.clubhouse-team-mark'),name=n.querySelector('.clubhouse-matchup-name');return (!score||score.scrollWidth<=score.clientWidth+1)&&(!name||name.scrollWidth<=name.clientWidth+1)&&(!score||!logo||separate(score.getBoundingClientRect(),logo.getBoundingClientRect()))})
-        &&strips.every(n=>{const name=n.querySelector('strong'),score=n.querySelector('b');return name.scrollWidth<=name.clientWidth+1&&separate(name.getBoundingClientRect(),score.getBoundingClientRect())})
+        &&strips.every(n=>{const name=n.querySelector('strong'),score=n.querySelector('b');return getComputedStyle(name).whiteSpace==='nowrap'&&score.getAttribute('aria-label').includes(name.textContent)&&separate(name.getBoundingClientRect(),score.getBoundingClientRect())})
         &&players.every(n=>{const tap=n.querySelector('.gameday-player-tap'),score=n.querySelector('[data-ui-player-score]'),name=n.querySelector('.dfl-player-copy');return (!name||name.scrollWidth<=name.clientWidth+1)&&(!tap||!score||separate(tap.getBoundingClientRect(),score.getBoundingClientRect()))})
         &&pickers.every(n=>{const s=getComputedStyle(n);canvas.font=s.font;return canvas.measureText(n.selectedOptions[0].text).width<=n.clientWidth-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight)+1});
       }''')

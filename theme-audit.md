@@ -1,3 +1,25 @@
+## 1.591.0 — Player cards and one-line identity labels
+
+Reviewed fresh before/final compiled player cards in Light/Dark and current DFL
+sports-desk direction. A full-row player name, contained portrait, aligned weekly
+score/stat/season-average tracks and left/right detail values replace competing
+alignments. Identity labels throughout the shared UI use one-line ellipsis with
+complete source text retained; titles/action labels preserve the shared full name.
+Picker track sizing avoids inner clipping. Sportsbook label/status tracks preserve
+Held/result marks and odds. All new presentation uses shared semantic tokens and
+existing UI fonts; no new palette, theme option, polling or scroll measurement.
+
+Checked 320/390/600px player sheets, delayed averages/photos, motion settings,
+opening/close/reset, normal and 200% text, focus/control sizes and real-data
+Home/Clubhouse/Trades/Book contrast/bounds. Eight-page long-name review passed
+32 normal-text cases (1,947 labels) plus 16 enlarged cases; targeted Book/picker
+verification passed 12. Card/reading/motion/lineup/trade browser checks and 86 unit
+tests passed, with theme/type/name/release/build checks. Fresh accepted evidence is
+in /workspace/dfl-player-names-1591/, with findings and coverage in design-qa.md.
+Arena lobby labels were checked; active canvas racers and exported raster layouts
+were not visually re-audited. Physical-device frame pacing, battery and spoken
+screen-reader output remain unmeasured.
+
 ## 1.590.0 — Clubhouse matchup and lineup polish
 
 Reviewed fresh before/ and final/ compiled Clubhouse screenshots in Light/Dark.

@@ -41,7 +41,7 @@ with sync_playwright() as p:
    check(tag+' reverse closes naturally',not details.evaluate('e=>e.open') and details.evaluate('e=>!e.style.height&&!e.getAnimations().length'))
    summary.focus();page.keyboard.press('Enter');page.wait_for_timeout(330)
    check(tag+' keyboard expansion preserves native details',details.evaluate('e=>e.open') and summary.evaluate('e=>e===document.activeElement'))
-   check(tag+' names and action targets fit',card.locator('.tb-preview-slot button').evaluate_all('es=>es.every(e=>e.offsetHeight>=44&&e.scrollWidth<=e.clientWidth+1)'))
+   check(tag+' names and action targets fit',card.locator('.tb-preview-slot button').evaluate_all('es=>es.every(e=>e.offsetHeight>=44&&(e.scrollWidth<=e.clientWidth+1||getComputedStyle(e).whiteSpace==="nowrap"&&e.hasAttribute("data-player-card")&&e.textContent.trim()))'))
    page.screenshot(path=str(OUT/f'lineups-{width}-{theme}.png'))
    key=card.get_attribute('data-offer-key');page.evaluate('window.setupBefore=document.querySelector(".tb-setup");window.offerBefore=document.querySelector(".tb-offer");window.portraitBefore=offerBefore.querySelector(".dfl-player-portrait")');page.locator('[data-tb-generate]').click();page.wait_for_timeout(200)
    card=page.locator('.tb-offer').filter(has=page.locator('.tb-offer-preview[open]')).first
