@@ -1,3 +1,24 @@
+## 1.590.0 — Clubhouse matchup and lineup polish
+
+Reviewed fresh before/ and final/ compiled Clubhouse screenshots in Light/Dark.
+The selected Stadium composition now has a tighter 44px-identity header, one Final
+caption, one winner underline and a compact result/margin/actions row. Banter,
+full names and source scores remain. Player portraits use a matching 28px grid/
+minimum width, resolving the enlarged-text overflow found during review. Press
+washes, focus, separators, text and result values use existing semantic tokens;
+Medicine Wheel defaults and team identity colors are unchanged.
+
+Mobile 320/390px, 125/200% text, comfortable reading, complete lineups, hot/cold
+scores, compact scrolling team names/totals, normal/selected/focus states, swipes,
+bench expansion and motion off/Reduced Motion were checked. The compact result
+reflows at large text and uses a finite reveal within 455ms. No new scrolling
+handler, timer loop, asset or polling. 104 unit tests; 108 lineup, 156 swipe, 152
+layout, 80 result and two 21-check shared-controller browser runs passed, along
+with theme/type/name/release/build checks. Real-data contrast, bounds and exact
+player-card return checks passed in both modes. Evidence:
+/workspace/dfl-clubhouse-1590/; details: design-qa.md. Physical-device frame pacing,
+battery and spoken screen-reader output remain unmeasured.
+
 ## 1.589.0 — Primary mobile flow and recovery
 
 Fresh Home/Clubhouse/Trades/Sportsbook pending and error captures were reviewed
