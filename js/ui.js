@@ -117,7 +117,7 @@ export function errorBox(err) {
   }
   return `<div class="state is-error" role="alert">
     <span class="state-title">Could not load</span>
-    <span class="tiny">${esc(msg)}</span>
+    <p>Try again in a moment.</p>
     <div class="row"><button type="button" class="btn" data-retry-page>Retry</button><a class="btn ghost" href="#/home">Back to Home</a></div>
   </div>`;
 }

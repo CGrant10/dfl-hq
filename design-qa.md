@@ -1,3 +1,43 @@
+# Primary mobile flow polish — 1.589.0
+
+final result: passed
+
+Scope: Home → Clubhouse → Trades → Sportsbook as one mobile session, within the
+current DFL sports-desk and Medicine Wheel visual direction. Fresh evidence in
+/workspace/dfl-flow-1589/before/ showed old oversized card skeletons, a duplicated
+fake masthead and the obsolete Trade Board label. Recovery headings used large
+uppercase error typography. Ready-page navigation did not reproduce a failure.
+
+Resolved: the four pending routes use one real page label, current UI typography,
+slim tab rails and compact separator-led rows. Home retains a wide broadcast
+placeholder; Clubhouse has paired lineup rows and a narrow matchup rail; Trades
+shows compact complete package pairs; Sportsbook keeps its account preview beside
+the title. Decorative placeholders remain hidden from assistive technology, with
+a loading status and no fake controls or stats. Long titles wrap at enlarged text; the Sportsbook account moves below its title
+when enlarged text needs the full row (book-text/ follow-up captures).
+Recovery uses normal-case reading typography, shared tokens and the existing Retry
+and Home actions. Unexpected error details stay in console diagnostics; users see
+a short retry message. Existing offline-specific guidance is preserved.
+
+Evidence: before/ and final-ui/ contain fresh pending/recovery screenshots at
+320/390px, Light/Dark, normal and 200% text. These screenshots and representative
+compiled real-data screenshots in actual/ were manually inspected. The actual/
+session covers all four pages in both themes, settled trade offers, targets,
+Sportsbook lines and player-card open/close. Provider writes were blocked; wallet
+state was isolated. Before/after route checks each passed all 37 assertions,
+including fixed shell, busy/inert loading, continuous handoff, fresh-navigation
+scroll top, exact Back restoration, intentional deep links, failed-load retry,
+interrupted navigation and Reduced/app motion off. Eight final pending/recovery
+cases cover 32 route layouts, accessible status, visible navigation, bounds and
+successful retry. 89 unit tests across nine files passed, including unexpected
+error diagnostics, live refresh, view history and themes. Theme/type/name/release
+checks and the 89-module build passed (startup 3 modules; Home 4).
+
+No new requests, polling, dependencies, animation loops or play-by-play edits.
+The latest automated FantasyPros facts and immutable 1.588.0 bundle are preserved.
+Physical iOS/Android frame pacing, battery usage and spoken screen-reader output
+remain unmeasured; this pass does not claim improved network response times.
+
 # Home broadcast composition polish — 1.588.0
 
 final result: passed

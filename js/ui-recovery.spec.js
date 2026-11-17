@@ -17,4 +17,15 @@ describe("connection failure recovery", () => {
     expect(markup).toContain("data-retry-page");
     expect(markup).not.toContain("private-path.js");
   });
+  it("keeps unexpected service errors in diagnostics rather than the page", () => {
+    vi.stubGlobal("navigator", { onLine: true });
+    const failure = new Error("database relation private_table does not exist");
+    const markup = errorBox(failure);
+    expect(markup).toContain("Try again in a moment.");
+    expect(markup).toContain("data-retry-page");
+    expect(markup).toContain('href="#/home"');
+    expect(markup).not.toContain("private_table");
+    expect(console.error).toHaveBeenCalledWith(failure);
+  });
+
 });

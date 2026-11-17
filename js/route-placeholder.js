@@ -2,7 +2,7 @@ import { loadingRows } from './loading-presentation.js';
 
 const pages = {
   home: ['The DFL Daily', 'home'], clubhouse: ['Clubhouse', 'clubhouse'],
-  sportsbook: ['Sportsbook', 'sportsbook'], trade: ['Trade Board', 'trade'], analyzer: ['Team Analyzer', 'analyzer'],
+  sportsbook: ['Sportsbook', 'sportsbook'], trade: ['Trades', 'trade'], analyzer: ['Team Analyzer', 'analyzer'],
   history: ['History', 'archive'], rules: ['League Rules', 'archive'], keepers: ['Keepers', 'archive'],
   finances: ['League Fees', 'archive'], facts: ['DFL Lore', 'story'], profile: ['Team Profile', 'story'],
   wall: ['League Wall', 'wall'], notifications: ['Notifications', 'inbox'], stakes: ['Playoff Race', 'matchup'],
@@ -14,11 +14,13 @@ const heading = '<div class="loading-masthead"><i></i><i></i></div>';
 const tabs = '<div class="loading-tabs"><i></i><i></i><i></i></div>';
 const panel = (content, className = '') => `<div class="loading-panel ${className}">${content}</div>`;
 const faceoff = '<div class="loading-faceoff"><div><i class="loading-avatar"></i><i></i><i></i></div><div><i class="loading-avatar"></i><i></i><i></i></div></div>';
+const pairedRows = Array.from({length:3}, () => `<div class="loading-paired-row">${loadingRows(1)}${loadingRows(1)}</div>`).join('');
+const offer = panel(`<div class="loading-packages">${loadingRows(1)}${loadingRows(1)}</div><div class="loading-offer-footer"><i></i><i></i></div>`, 'loading-offer');
 const layouts = {
-  home: `${heading}<div class="loading-home-front"><div>${panel(faceoff)}${panel('<i></i><i></i><i class="loading-action"></i>')}</div>${panel('<i></i><i></i><i></i>', 'loading-broadcast')}</div>${tabs}${panel(loadingRows(3))}`,
-  clubhouse: `${heading}${tabs}<div class="loading-mini-games">${Array.from({length:3}, () => panel('<i></i><i></i>')).join('')}</div>${panel(faceoff)}${panel(loadingRows(4))}`,
-  sportsbook: `<div class="loading-book-head">${heading}${panel('<i></i><i class="loading-action"></i>', 'loading-wallet')}</div>${tabs}${tabs}${panel(loadingRows(4))}`,
-  trade: `${heading}${tabs}${panel('<i></i><i class="loading-action"></i>', 'loading-setup')}<div class="loading-packages">${panel(loadingRows(3))}${panel(loadingRows(3))}</div>`,
+  home: `<div class="loading-home-front">${panel(faceoff,'loading-scoreboard')}${panel('<i></i><i></i><i></i>','loading-broadcast')}</div>${tabs}${panel(loadingRows(3),'loading-desk-rows')}`,
+  clubhouse: `${tabs}<div class="loading-matchup-rail"><i></i><i></i><i></i></div>${panel(faceoff,'loading-scoreboard')}${panel(pairedRows,'loading-lineups')}`,
+  sportsbook: `${tabs}${tabs}${panel(pairedRows,'loading-desk-rows')}`,
+  trade: `${tabs}${panel('<i></i><i class="loading-action"></i>','loading-setup')}${tabs}${offer}${offer}${offer}`,
   analyzer: `${heading}${panel('<i></i><i class="loading-action"></i>', 'loading-setup')}${panel(faceoff)}${panel(loadingRows(4))}`,
   wall: `${heading}${panel('<i></i><i></i><i class="loading-action"></i>', 'loading-composer')}${panel(loadingRows(1)+'<div class="loading-story"><i></i><i></i><i></i></div>')}${panel(loadingRows(1)+'<div class="loading-story"><i></i><i></i></div>')}`,
   inbox: `${heading}${tabs}${panel(loadingRows(6))}`,
@@ -29,7 +31,7 @@ const layouts = {
 export function routePlaceholder(name) {
   const [title, layout] = Object.hasOwn(pages, name) ? pages[name] : pages.home;
   return `<div class="route-placeholder" id="route-placeholder" role="status" aria-label="Loading ${title}">
-    <div class="route-placeholder-inner is-${layout}"><p class="route-placeholder-label">${title}</p>
+    <div class="route-placeholder-inner is-${layout}${['home','clubhouse','sportsbook','trade'].includes(layout)?' loading-primary':''}"><div class="loading-route-head"><p class="route-placeholder-label">${title}</p>${layout==='sportsbook'?'<div class="loading-wallet-preview" aria-hidden="true"><i></i><i></i></div>':''}</div>
       <div class="route-placeholder-art" aria-hidden="true">${layouts[layout]}</div><span class="sr-only">Loading league information.</span>
     </div></div>`;
 }

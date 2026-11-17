@@ -5829,15 +5829,43 @@ dialog.dfl-player-card { height:min(720px,calc(100dvh - 24px),var(--dialog-viewp
 .analyzer-recovery[hidden] { display:none; }
 .analyzer-recovery button { min-height:44px; }
 
-/* Sportsbook skeleton keeps the account beside its title, matching the board. */
-.is-sportsbook .loading-book-head { display:grid; grid-template-columns:minmax(0,1fr) 96px; align-items:center; gap:12px; min-height:96px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--line-soft); }
-.is-sportsbook .loading-book-head .loading-masthead { padding:0; margin:0; border:0; }
-.is-sportsbook .loading-book-head .loading-masthead i:first-child { width:85%; }
-.is-sportsbook .loading-book-head .loading-wallet { grid-template-columns:minmax(0,1fr); justify-items:end; gap:6px; padding:0; margin:0; border:0; border-radius:0; background:transparent; }
-.is-sportsbook .loading-book-head .loading-wallet>i:first-child { width:64px; height:24px; }
-.is-sportsbook .loading-book-head .loading-action { height:44px; margin:0; }
-.is-sportsbook .loading-tabs { padding:0 0 10px; margin-bottom:10px; border-bottom:1px solid var(--line-soft); }
-.is-sportsbook .route-placeholder-art>.loading-panel { padding:0; border:0; border-radius:0; background:transparent; }
+/* Primary routes load with the same quiet title, rails and compact rows as content. */
+.loading-primary { --font-body:var(--font-ui); }
+.loading-primary .route-placeholder-label { min-width:0; overflow-wrap:anywhere; margin:6px 0 16px; padding-bottom:16px; border-bottom:1px solid var(--line); color:var(--text); font:700 1.5rem/1.2 var(--font-body); letter-spacing:-.025em; text-transform:none; }
+.loading-primary .loading-tabs { gap:20px; padding:0 0 12px; margin-bottom:12px; border-bottom:1px solid var(--line-soft); }
+.loading-primary .loading-tabs i { flex:0 1 24%; height:10px; margin-block:12px; }
+.loading-primary .loading-panel { gap:12px; padding:12px 0; margin-bottom:12px; border:0; border-bottom:1px solid var(--line-soft); border-radius:0; background:transparent; }
+.loading-primary .loading-faceoff { min-height:96px; gap:20px; }
+.loading-primary .loading-faceoff > div { grid-template-columns:32px minmax(0,1fr); align-items:center; gap:8px 10px; }
+.loading-primary .loading-faceoff .loading-avatar { grid-row:span 2; }
+.loading-primary .loading-faceoff > div:last-child { direction:rtl; }
+.loading-primary .loading-faceoff i:last-child { width:50%; height:24px; }
+.loading-primary .loading-row { grid-template-columns:24px minmax(0,1fr) 32px; gap:8px; min-height:48px; }
+.loading-primary .loading-row .loading-avatar { width:24px; height:24px; }
+.loading-primary .loading-broadcast { min-height:0; max-height:300px; aspect-ratio:16/9; padding:18px; border:1px solid var(--line-soft); border-radius:8px; background:var(--bg-2); align-content:end; }
+.loading-primary .loading-broadcast > i:first-child { width:60%; height:24px; }
+.loading-primary .loading-home-front { display:block; }
+.loading-primary .loading-matchup-rail { display:flex; gap:12px; overflow:hidden; padding-bottom:12px; }
+.loading-primary .loading-matchup-rail > i { flex:0 0 37%; height:32px; }
+.loading-primary .loading-paired-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px; }
+.loading-primary .loading-paired-row + .loading-paired-row { border-top:1px solid var(--line-soft); padding-top:10px; }
+.loading-primary .loading-paired-row > .loading-row:last-child { direction:rtl; }
+.loading-primary :is(.loading-packages,.loading-paired-row) > .loading-row + .loading-row { border:0; padding:0; }
+.loading-primary .loading-packages { gap:24px; }
+.loading-primary .loading-packages .loading-row { grid-template-columns:24px minmax(0,1fr); }
+.loading-primary .loading-offer-footer { display:flex; justify-content:space-between; gap:20px; }
+.loading-primary .loading-offer-footer > i { width:25%; height:8px; }
+.is-sportsbook.loading-primary .loading-route-head { display:flex; flex-wrap:wrap; gap:0 12px; align-items:center; border-bottom:1px solid var(--line); margin-bottom:16px; }
+.is-sportsbook.loading-primary .route-placeholder-label { flex:1 1 12ch; border:0; margin-bottom:0; }
+.loading-wallet-preview { flex:0 0 72px; margin-left:auto; display:grid; justify-items:end; gap:8px; padding-bottom:12px; }
+.loading-wallet-preview i { display:block; width:56px; height:16px; border-radius:3px; background:color-mix(in srgb,var(--muted) 16%,var(--bg-2)); }
+.loading-wallet-preview i:last-child { width:72px; height:28px; }
+.loading-primary .loading-setup { padding:12px; border:1px solid var(--line-soft); border-radius:8px; }
+
+/* Recovery uses normal reading typography and the existing 44px actions. */
+#view.view:is([data-route="home"],[data-route="clubhouse"],[data-route="trade"],[data-route="sportsbook"]) .state.is-error { place-items:start; text-align:left; gap:12px; margin:0 0 16px; padding:18px 0; border:0; border-block:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view.view:is([data-route="home"],[data-route="clubhouse"],[data-route="trade"],[data-route="sportsbook"]) .state.is-error .state-title { color:var(--text); font:700 1rem/1.4 var(--font-body); text-transform:none; }
+#view.view:is([data-route="home"],[data-route="clubhouse"],[data-route="trade"],[data-route="sportsbook"]) .state.is-error p { margin:0; }
 
 
 /* Source: css/game-day-ready.css */
