@@ -27,6 +27,8 @@ with sync_playwright() as p:
    def incoming_ok(positions):return page.locator('.tb-offer-flow .tb-package [data-player-card]').evaluate_all('(es,positions)=>es.every(e=>positions.includes(window.reviewData.pool.get(e.dataset.playerCard).position))',positions)
    check(tag+' keeps full search editing behind Edit search',not page.locator('.tb-setup').evaluate('e=>e.open'))
    page.locator('.tb-setup>summary').click()
+   check(tag+' position filters are available in their own disclosure',page.locator('.tb-position-filter>summary').is_visible() and not page.locator('.tb-position-filter').evaluate('e=>e.open'))
+   page.locator('.tb-position-filter>summary').click();page.wait_for_timeout(300)
    settled();check(tag+' starts with every trade position enabled',page.locator('[data-tb-receive-position]:checked').count()==4)
    check(tag+' uses 44px checkbox labels and preset actions',page.locator('.tb-receive-options label,[data-tb-receive-preset]').evaluate_all('es=>es.every(e=>e.getBoundingClientRect().height>=44&&e.getBoundingClientRect().width>=44)'))
    check(tag+' has no horizontal overflow',page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
