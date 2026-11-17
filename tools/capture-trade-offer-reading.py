@@ -26,6 +26,8 @@ with sync_playwright() as p:
    running=editor.locator(':scope>summary').evaluate('e=>{e.click();return e.parentElement.getAnimations().some(a=>a.playState==="running")}')
    assert running,'search editor lost its shared expansion motion'
    page.wait_for_function('!document.querySelector(".tb-setup").getAnimations().length')
+   assert page.locator('.tb-position-filter>summary').is_visible()
+   page.locator('.tb-position-filter>summary').click()
    assert page.locator('.tb-setup [data-tb-receive-position]').first.is_visible()
    editor.locator(':scope>summary').click();page.wait_for_function('!document.querySelector(".tb-setup").open')
    tag=f'{width}px {theme}';card=page.locator('.tb-offer').first;summary=card.locator('.tb-offer-preview>summary');details=card.locator('.tb-offer-preview')

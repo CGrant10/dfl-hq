@@ -56,7 +56,7 @@ export function mountTradeOfferBoard(root,{getData,getMine,getOffer,getRestricti
    if(button.hasAttribute('data-tob-close'))return close();
    if(button.hasAttribute('data-tob-swap')){
     const owner=Number(button.dataset.owner),old=button.dataset.tobSwap,restriction=getRestrictions(),selected=draft.sends.flat(),team=draft.parties[owner];
-    stopPicker=openTradeReplacement(button,{root:dialog,pool:data.pool,selected,team:{...team,playerIds:team.playerIds.filter(id=>{const p=data.pool.get(String(id));return p&&automaticTradePlayer(p)&&(!restriction.positions||restriction.positions.includes(p.position))})},onSelect:id=>{
+    stopPicker=openTradeReplacement(button,{root:dialog,pool:data.pool,selected,team:{...team,playerIds:team.playerIds.filter(id=>{const p=data.pool.get(String(id));return p&&(owner!==0||!(restriction.excludedSendIds||[]).includes(String(id)))&&automaticTradePlayer(p)&&(!restriction.positions||restriction.positions.includes(p.position))})},onSelect:id=>{
      if(!valid()||!draft)return null;const next=replaceBoardPlayer(draft,owner,old,id,getData().pool,restriction);if(!next){toast('That replacement is no longer available.',true);return button}
      draft=next;paint();const target=dialog.querySelector(`[data-tob-swap="${CSS.escape(id)}"]`);animateUi(target?.closest('li'),[{opacity:.6},{opacity:1}],{duration:160});return target;
     }});return;

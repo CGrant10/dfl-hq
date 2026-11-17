@@ -1,3 +1,69 @@
+# Simpler trade search and private player exclusions — 1.593.0
+
+final result: passed (public release verification follows merge)
+
+Fresh 320/390px Light/Dark captures of the existing controls showed two tall team
+selectors, wrapped team names, crowded picker labels and advanced options placed
+before the player targets. The revised search has a compact partner row, Want
+then Offer, short Find player actions, a Positions disclosure and a Don’t trade
+button. Trading as, exact counts, package size, extra members and planning horizon
+sit together under Trade size & more. Existing goals, tier counts, target searches,
+all-team defaults, manual review and eight-player packages remain available.
+Team names use the shared one-line identity policy. Disclosures preserve their
+current native open state during redraws; filters retain the shared motion system.
+
+Don’t trade opens a searchable roster sheet with staged checkboxes and explicit
+Save/Clear all. It uses the shared sheet lifecycle, heading focus, native body
+scrolling, safe-area footer, viewport fitting, Escape, backdrop/gesture dismissal
+and motion preferences. Player portraits have reserved geometry and a styled
+initials fallback. The private list is stored locally by member, season and roster,
+reconciles ownership, survives new visits and ordinary filter resets, and removes
+conflicting Offer anchors. It is not published as another manager’s trade status.
+Blocked storage falls back to the current visit without breaking the page.
+
+The exclusion is enforced in bilateral generation, fair repairs, refinements,
+all-team worker queries, multi-team generation, automatic counters and outgoing
+Swap choices. Protected players remain in the actual roster and lineup valuation;
+their IDs are removed only from candidate sends. Incoming players are not excluded
+by an outgoing preference. Explicit manual grading remains available. A protected
+and locked sender yields a clear constraint instead of an invalid counter.
+
+FantasyCalc boundary: its official API documentation and data-use policy were
+reviewed at https://fantasycalc.com/api-docs and /terms-of-usage. The documentation
+states, “Only the current values endpoint, GET /values/current, may be used without
+separate written permission.” Trade-database reuse requires that separate access;
+website scraping is also prohibited. No completed-trade or value endpoint was
+called, copied into DFL, or substituted for existing expert/stat valuation. The
+public database supports a provider-ID side1 lookup, but a verified link that
+presets DFL’s complete league format was not found. The delivered external link
+therefore says Choose league filters; its accessible label specifies 12 teams,
+one QB, full PPR and redraft. It does not claim to embed or automatically filter a
+FantasyCalc feed. The user was asked whether existing written permission is held;
+no grant has been supplied. A provider permission and supported feed are still
+needed for native historical comparisons.
+
+Validation:
+- Full suite: 2,617 tests across 312 files passed with two workers after concurrent
+  browser load caused local test timeouts. The default per-test budget was retained.
+  The isolated protection/valuation/routing/offline/import-graph checks also passed.
+- Eighty production-handler browser checks at 320/390px Light/Dark covered all
+  three offer tiers, anchor conflicts, save/cancel/search selection, separate
+  rosters, reload, All teams default, Clear all, one-line names, 44px rows,
+  200% text, footer bounds, focus, motion-off, cleanup and provider link behavior.
+- The broad production trade workflow passed 320/390/768px; 112 reading/position
+  checks, 136 goal/fair-repair checks and 72 received-offer checks passed. Existing
+  tests now open the Positions disclosure before changing those controls.
+- The compiled app with current roster data passed Light/Dark exclusion, exact-ID
+  received-offer import, grading, counters, contrast and horizontal-boundary checks.
+  Provider writes were blocked. Actual portraits and before/final layouts were
+  inspected; evidence is in /workspace/dfl-trade-controls-1593/.
+- Release, theme, type, name, build and bundle checks passed. Startup/Home module
+  counts remain 3/4, with 89 application modules and no new dependency.
+
+No native FantasyCalc trade feed or cross-device preference synchronization is
+claimed. Physical-device keyboard behavior, spoken screen-reader output, frame
+pacing and battery were not measured. NFL Live/play-by-play design was unchanged.
+
 # Received-offer review and complete counters — 1.592.0
 
 final result: passed (release verification recorded separately)

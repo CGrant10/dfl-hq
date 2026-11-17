@@ -37,6 +37,8 @@ with sync_playwright() as p:
                 page.locator('.tb-setup > summary').click()
             if node.evaluate("e=>{const d=e.closest('.tb-refine');return d&&!d.open&&!e.matches('.tb-refine > summary')}"):
                 page.locator('.tb-refine > summary').click()
+            if node.evaluate("e=>{const d=e.closest('.tb-position-filter');return d&&!d.open&&!e.matches('.tb-position-filter > summary')}"):
+                page.locator('.tb-position-filter > summary').click()
             node.evaluate("e=>{const r=e.getBoundingClientRect();window.scrollBy({top:r.top-innerHeight/3,behavior:'instant'})}")
             node.click()
         def pick(side,pid):
