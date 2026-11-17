@@ -18,6 +18,16 @@ class Handler(SimpleHTTPRequestHandler):
 server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start();checks=[]
 def check(name,ok):
  checks.append({'name':name,'pass':bool(ok)});(OUT/'checks.json').write_text(json.dumps(checks,indent=2));assert ok,name;print('PASS '+name,flush=True)
+def counter_grades(page):
+ return page.locator('.td-counter-card').evaluate_all('''async es=>{
+  const {evaluateTradeDeal}=await import('/js/trade-workspace.js');
+  return es.length>0&&es.every(e=>{
+   const sends=[...e.querySelectorAll('.td-counter-packages>section')].map(s=>[...s.querySelectorAll('[data-player-card]')].map(b=>b.dataset.playerCard)),
+   routes=Object.fromEntries([...e.querySelectorAll('[data-player-card]')].map(b=>[b.dataset.playerCard,b.dataset.counterTo])),
+   deal=evaluateTradeDeal(reviewData.teams.slice(0,2),sends,reviewData.pool,routes);
+   return deal&&Math.round(deal.result.fairness)===parseFloat(e.querySelector('header>b').textContent)&&(e.dataset.counterKind!=='fair'||deal.result.fairness>=90);
+  });
+ }''')
 with sync_playwright() as p:
  browser=p.chromium.launch(executable_path=os.environ.get('DFL_REVIEW_CHROMIUM','/usr/bin/chromium'),headless=True,args=['--no-sandbox','--disable-dev-shm-usage'])
  for width in [320,390]:
@@ -49,10 +59,11 @@ with sync_playwright() as p:
     page.locator('[data-tb-quick-goal="RB"]').click();settled();page.locator('.tb-setup').evaluate('e=>e.open=true')
     page.locator('[data-tb-receive-position="RB"]').uncheck();settled()
     check(tag+' exclusions disable the goal and reset both goal controls',page.locator('[data-tb-quick-goal="RB"]').is_disabled() and page.locator('[data-tb-goal]').input_value()=='best' and page.locator('[data-tb-quick-goal="best"]').get_attribute('aria-pressed')=='true')
+    page.locator('[data-tb-receive-position="RB"]').check();settled()
     page.locator('[data-td-mode="manual"]').click();pick(0,'1-0');pick(1,'2-8');before=picked()
-    button=page.locator('[data-td-find-counter]');check(tag+' unfair deal has Make this fair',button.inner_text()=='Make this fair')
+    button=page.locator('[data-td-find-counter]');check(tag+' complete offer enables counter search',button.is_enabled() and button.inner_text()=='Find counters')
     button.click();page.locator('[data-td-use-counter]').first.wait_for()
-    check(tag+' adjustments preview without changing the original package',picked()==before and page.locator('.td-counter-list article p').evaluate_all('es=>es.every(e=>parseFloat(e.textContent)>=90)'))
+    check(tag+' adjustments preview real grades without changing the original package',picked()==before and counter_grades(page))
     page.screenshot(path=str(OUT/f'preview-{width}-{theme}-{font}.png'))
     page.locator('[data-td-use-counter]').first.click()
     result=page.evaluate('''async()=>{const {evaluateTradeDeal}=await import('/js/trade-workspace.js');const sends=[0,1].map(i=>[...document.querySelectorAll(`[data-td-pick="${i}"]:checked`)].map(e=>e.value));return evaluateTradeDeal(window.reviewData.teams.slice(0,2),sends,window.reviewData.pool).result}''')
@@ -60,10 +71,10 @@ with sync_playwright() as p:
     check(tag+' applying a repair focuses Undo',page.locator('[data-td-verdict] [data-td-undo]').evaluate('e=>e===document.activeElement&&!e.hidden'))
     page.screenshot(path=str(OUT/f'repair-{width}-{theme}-{font}.png'))
     page.locator('[data-td-verdict] [data-td-undo]').click()
-    check(tag+' Undo restores the exact original package',picked()==before and page.locator('[data-td-find-counter]').inner_text()=='Make this fair')
+    check(tag+' Undo restores the exact original package',picked()==before and page.locator('[data-td-find-counter]').inner_text()=='Find counters')
     page.locator('[data-td-remove-pick="0"][data-player-id="1-0"]').click();page.locator('[data-td-remove-pick="1"][data-player-id="2-8"]').click();pick(0,'1-4');pick(1,'2-6');before=picked()
-    page.locator('[data-td-find-counter]').click();page.wait_for_function('document.querySelector("[data-td-counter-results]").textContent.includes("No small fair adjustment")')
-    check(tag+' unavailable small repair is honest and leaves the package intact',picked()==before and page.locator('[data-td-use-counter]').count()==0)
+    page.locator('[data-td-find-counter]').click();page.locator('[data-td-use-counter]').first.wait_for()
+    check(tag+' broader repairs retain real grades and leave the package intact',picked()==before and counter_grades(page) and page.locator('.td-counter-card header small').filter(has_text='Main piece changes').count()>0)
     check(tag+' no page errors or horizontal overflow',not errors and page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
     context.close()
  browser.close()
