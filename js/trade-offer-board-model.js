@@ -6,10 +6,10 @@ export function boardOfferDeal(offer,mine,teams,pool){
  if(parties.some(t=>!t)||String(parties[0]?.id)!==String(mine?.id))return null;
  return evaluateTradeDeal(parties,offer.sends||[offer.sendA,offer.sendB],pool,offer.destinations);
 }
-export function replaceBoardPlayer(deal,owner,id,nextId,pool,{positions,locked=[]}={}){
+export function replaceBoardPlayer(deal,owner,id,nextId,pool,{positions,locked=[],excludedSendIds=[]}={}){
  const i=Number(owner),old=String(id),next=String(nextId),player=pool.get(next);
  if(!deal?.parties[i]||!deal.sends[i].includes(old)||locked.map(String).includes(old)||!player||!automaticTradePlayer(player)
-  ||positions&&!positions.includes(player.position)||deal.sends.flat().includes(next)||!deal.parties[i].playerIds.map(String).includes(next))return null;
+  ||i===0&&excludedSendIds.map(String).includes(next)||positions&&!positions.includes(player.position)||deal.sends.flat().includes(next)||!deal.parties[i].playerIds.map(String).includes(next))return null;
  const sends=deal.sends.map(ids=>[...ids]),destinations={...deal.destinations,[next]:deal.destinations[old]};delete destinations[old];sends[i]=sends[i].map(p=>p===old?next:p);
  return evaluateTradeDeal(deal.parties,sends,pool,destinations);
 }

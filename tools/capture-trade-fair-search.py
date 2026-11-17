@@ -57,6 +57,7 @@ with sync_playwright() as p:
     page.evaluate('scrollTo(0,0)');page.screenshot(path=str(OUT/f'goals-{width}-{theme}-{font}.png'))
     check(tag+' goal text contrast',not page.locator('.tb-quick-goals').evaluate("async e=>{const {reviewTextContrast}=await import('/tools/home-review-contrast.js');return reviewTextContrast(e).failures.length}"))
     page.locator('[data-tb-quick-goal="RB"]').click();settled();page.locator('.tb-setup').evaluate('e=>e.open=true')
+    page.locator('.tb-position-filter>summary').click();page.wait_for_timeout(300)
     page.locator('[data-tb-receive-position="RB"]').uncheck();settled()
     check(tag+' exclusions disable the goal and reset both goal controls',page.locator('[data-tb-quick-goal="RB"]').is_disabled() and page.locator('[data-tb-goal]').input_value()=='best' and page.locator('[data-tb-quick-goal="best"]').get_attribute('aria-pressed')=='true')
     page.locator('[data-tb-receive-position="RB"]').check();settled()

@@ -1,3 +1,25 @@
+## 1.593.0 — Compact search and Don’t trade
+
+Reviewed fresh before/final search controls and roster sheets at 320/390px in
+Light/Dark, normal and 200% text, plus current-roster compiled Trades. Compact
+partner identity, Want/Offer picker columns, a count-based Positions summary and
+saved player exclusions replace the taller primary control stack. Advanced
+controls remain together; names stay on one line with complete source labels.
+The roster sheet reserves small portrait geometry, keeps checkboxes aligned,
+uses a scrolling body and safe footer, and follows the shared focus/motion system.
+
+All presentation uses existing Medicine Wheel semantic tokens and shared UI fonts:
+text, line, background, hover wash, selected controls and focus rings. No palette,
+mascot, theme option or new dependency was added. Checked native checkbox states,
+source-image fallback, heading focus, Escape, cancel/apply, read-only current
+rosters, provider handoff, 44px targets, overflow and text contrast. The external
+FantasyCalc action explicitly asks the user to choose league filters; it does not
+claim an exact-format native feed. Eighty new UI checks, the full 2,617-test suite,
+trade reading/counter/received-offer checks and build/theme/type/name checks passed.
+Evidence and the provider access boundary are recorded in design-qa.md and
+/workspace/dfl-trade-controls-1593/. Physical-device keyboard/frame/battery and
+spoken screen-reader behavior remain unverified.
+
 ## 1.592.0 — Received offers and compact counter packages
 
 Reviewed fresh 320/390px Light/Dark import dialogs and complete counter rows,

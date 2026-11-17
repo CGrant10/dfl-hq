@@ -1,6 +1,7 @@
 import {injuryAvailabilityIndex,playerAvailability,automaticTradePlayer} from './player-availability.js';
 import {intentionPlayerAllowed,offerManagerFit} from './trade-intentions-model.js';
 import {normalizeReceivePositions,receivePackageAllowed} from './trade-receive-controls.js';
+import {tradeSendAllowed} from './trade-protected-players.js';
 import {offerPlayerLimit} from './trade-package-limits.js';
 import { scorePlayer } from "./dfl-scoring.js";
 import {tradeTransfers} from './trade-routing.js';
@@ -979,8 +980,9 @@ function withTradeWindow(rows,pool,{horizon,weekSchedules,limit=96,intent='fair'
  * the package ceiling does not turn the Trade Board into a Cartesian freeze.
  */
 export function suggestTrades({ teams = [], teamId, playerId, playerIds, partnerId, anchorTeamId, sendAnchorIds, receiveAnchorIds,
-  pool = new Map(), limit = 12, shapes = [], maxPlayers = 8, intent = "aggressive", goal="best",horizon='season',weekSchedules=[],intentions={},receivePositions } = {}) {
+  pool = new Map(), limit = 12, shapes = [], maxPlayers = 8, intent = "aggressive", goal="best",horizon='season',weekSchedules=[],intentions={},receivePositions,excludedSendIds=[] } = {}) {
   pool = tradePlayerPool(pool);
+  const excluded=new Set(excludedSendIds.map(String));
   const allowedReceive = normalizeReceivePositions(receivePositions);
   if (!allowedReceive.length) return [];
   const mine = teams.find(team => String(team.id) === String(teamId));
@@ -988,6 +990,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
   const anchorId = String(anchorTeamId ?? teamId), anchorTeam = teams.find(team => String(team.id) === anchorId);
   const anchors = (playerIds?.length ? playerIds : [playerId]).filter(Boolean).map(String);
   const sendRequired = [...new Set((sendAnchorIds ?? (anchorId === String(mine.id) ? anchors : [])).map(String))];
+  if(!tradeSendAllowed(sendRequired,excluded))return [];
   const receiveRequired = [...new Set((receiveAnchorIds ?? (anchorId !== String(mine.id) ? anchors : [])).map(String))];
   if (![...sendRequired,...receiveRequired].every(id=>automaticTradePlayer(pool.get(String(id))))||!receivePackageAllowed([...sendRequired,...receiveRequired],pool,allowedReceive)) return [];
   if (sendRequired.some(id => !mine.playerIds.map(String).includes(id))) return [];
@@ -997,7 +1000,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     : anchorId !== String(mine.id) && anchorTeam ? [anchorTeam] : teams.filter(team => String(team.id) !== String(mine.id));
   const allowedShapes = tradeShapes(offerPlayerLimit(maxPlayers, sendRequired, receiveRequired), shapes).filter(([send,receive])=>goal!=='consolidate'||send>receive);
   const possibilities = [],compactPossibilities=[],supported=new Map();
-  const minePlayers = sortedPlayers(mine.playerIds.filter(id=>automaticTradePlayer(pool.get(String(id)))&&intentionPlayerAllowed(mine,id,intentions,sendRequired)&&receivePackageAllowed([id],pool,allowedReceive)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
+  const minePlayers = sortedPlayers(mine.playerIds.filter(id=>!excluded.has(String(id))&&automaticTradePlayer(pool.get(String(id)))&&intentionPlayerAllowed(mine,id,intentions,sendRequired)&&receivePackageAllowed([id],pool,allowedReceive)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
   for (const other of partners) {
     if (receiveRequired.some(id => !other.playerIds.map(String).includes(id))) continue;
     const theirs = sortedPlayers(other.playerIds.filter(id=>automaticTradePlayer(pool.get(String(id)))&&intentionPlayerAllowed(other,id,intentions,receiveRequired)&&receivePackageAllowed([id],pool,allowedReceive)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
@@ -1016,6 +1019,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     }
   }
   const evaluateCandidate = candidate => {
+    if(!tradeSendAllowed(candidate.sendA,excluded))return null;
     // Refinement can add or replace players outside the original candidate pool.
     if (![...candidate.sendA,...candidate.sendB].every(id=>automaticTradePlayer(pool.get(String(id))))||!receivePackageAllowed([...candidate.sendA,...candidate.sendB],pool,allowedReceive)) return null;
     if(candidate.sendA.some(id=>!intentionPlayerAllowed(mine,id,intentions,sendRequired))||candidate.sendB.some(id=>!intentionPlayerAllowed(candidate.other,id,intentions,receiveRequired)))return null;
@@ -1054,8 +1058,10 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
 
 /** Bounded package search for a circular exchange, matching the manual desk. */
 export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlayers = 8,
-  sendAnchorIds = [], receiveAnchorIds = [], sendCount = "any", receiveCount = "any", intent = "aggressive", limit = 96,goal="best",horizon='season',weekSchedules=[],intentions={},receivePositions } = {}) {
+  sendAnchorIds = [], receiveAnchorIds = [], sendCount = "any", receiveCount = "any", intent = "aggressive", limit = 96,goal="best",horizon='season',weekSchedules=[],intentions={},receivePositions,excludedSendIds=[] } = {}) {
   pool = tradePlayerPool(pool);
+  const excluded=new Set(excludedSendIds.map(String));
+  if(!tradeSendAllowed(sendAnchorIds,excluded))return [];
   const allowedReceive = normalizeReceivePositions(receivePositions);
   if (!allowedReceive.length || !receivePackageAllowed([...sendAnchorIds,...receiveAnchorIds],pool,allowedReceive)||![...sendAnchorIds,...receiveAnchorIds].every(id=>automaticTradePlayer(pool.get(String(id))))) return [];
   if (parties.length < 3 || parties.length > 8 || new Set(parties.map(t => String(t.id))).size !== parties.length) return [];
@@ -1063,7 +1069,7 @@ export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlay
   const choices = parties.map((team, index) => {
     const required = index === 0 ? sendAnchorIds : index === parties.length - 1 ? receiveAnchorIds : [];
     if (required.some(id => !team.playerIds.map(String).includes(String(id)))) return [];
-    const ranked = sortedPlayers(team.playerIds.filter(id=>automaticTradePlayer(pool.get(String(id)))&&intentionPlayerAllowed(team,id,intentions,required)
+    const ranked = sortedPlayers(team.playerIds.filter(id=>(index!==0||!excluded.has(String(id)))&&automaticTradePlayer(pool.get(String(id)))&&intentionPlayerAllowed(team,id,intentions,required)
       &&receivePackageAllowed([id],pool,allowedReceive)), pool).sort((a, b) => b.tradeValue - a.tradeValue);
     const players = ranked.slice(0, 8);
     for (const id of required) { const player = ranked.find(p => String(p.id) === String(id)); if (player && !players.includes(player)) players.push(player); }

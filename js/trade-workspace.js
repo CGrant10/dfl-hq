@@ -1,4 +1,5 @@
 import {tradePackageEdits} from './trade-package-edits.js';
+import {tradeSendAllowed} from './trade-protected-players.js';
 import {evaluateTrade,evaluateMultiTeamTrade,tradeLineupPreviews} from './team-analyzer.js';
 import {reconcileTradeDestinations,tradeTransfers,tradePerspective} from './trade-routing.js';
 
@@ -14,21 +15,23 @@ const score=result=>{
  return Number(result.fairness)*.65+Math.min(0,...impacts)*12+impacts.reduce((sum,v)=>sum+Math.max(-2,Math.min(2,v)),0)*5+(Number(p.rosterImpactA)||0)*4-(Number(p.rosterCostA)||0)*.3;
 };
 // Two-edit beam, including lower-value depth. Ownership, routes and locks survive.
-export function findTradeCounteroffers(deal,pool,{limit=3,lockedIds=[],intent='improve',receivePositions}={}){
- const search=tradeCounterofferSearch(deal,pool,{limit,lockedIds,intent,receivePositions});
+export function findTradeCounteroffers(deal,pool,{limit=3,lockedIds=[],intent='improve',receivePositions,excludedSendIds=[]}={}){
+ const search=tradeCounterofferSearch(deal,pool,{limit,lockedIds,intent,receivePositions,excludedSendIds});
  let step=search.next();while(!step.done)step=search.next();return step.value;
 }
 // The manual desk yields between bounded groups; synchronous callers retain
 // exactly the same candidate search and scoring through the wrapper above.
-export function* tradeCounterofferSearch(deal,pool,{limit=3,lockedIds=[],intent='improve',receivePositions}={}){
+export function* tradeCounterofferSearch(deal,pool,{limit=3,lockedIds=[],intent='improve',receivePositions,excludedSendIds=[]}={}){
  if(!deal||limit<=0)return [];
+ const excluded=new Set(excludedSendIds.map(String));
+ if(!tradeSendAllowed(deal.sends[0],excluded))return [];
  const locked=new Set(lockedIds.map(String));
  deal.sends.forEach(ids=>{const main=[...ids].sort((a,b)=>(Number(pool.get(b)?.tradeValue)||0)-(Number(pool.get(a)?.tradeValue)||0))[0];if(main)locked.add(main)});
  const baseline=score(deal.result),current=tradePerspective(deal.result),candidates=[],seen=new Set();
  const key=c=>JSON.stringify([c.sends.map(ids=>[...ids].sort()),c.sends.flat().sort().map(id=>[id,c.destinations[id]])]);
  seen.add(key(deal));
  const original=new Set(deal.sends.flat()),allowed=receivePositions?new Set(receivePositions):null;
- const edits=state=>tradePackageEdits(state,pool,{lockedIds:[...locked]}).filter(edit=>!allowed||edit.sends.flat().every(id=>original.has(id)||allowed.has(pool.get(id)?.position)));
+ const edits=state=>tradePackageEdits(state,pool,{lockedIds:[...locked],excludedSendIds}).filter(edit=>(!allowed||edit.sends.flat().every(id=>original.has(id)||allowed.has(pool.get(id)?.position)))&&tradeSendAllowed(edit.sends[0],excluded));
  let beam=[deal];
  for(let depth=0;depth<2;depth++){
   const next=[],budget=depth===0?80:160;

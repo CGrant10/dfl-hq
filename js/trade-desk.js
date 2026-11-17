@@ -516,7 +516,7 @@ export function tradeDeskMarkup(team, teams, pool, state) {
  * Wire a rendered trade desk. Repaints only the verdict on each change, so
  * building a deal never redraws the report underneath it.
  */
-export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange, onDeal,lockedIds=[],receivePositions }) {
+export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange, onDeal,lockedIds=[],receivePositions,excludedSendIds=[] }) {
   if (!root) return;
   const verdictHost = root.querySelector("[data-td-verdict]"),connection=createTradeConnection();
   let currentDeal=null,counters=[],revision=0,undo=null,stopped=false,stopReplacement=()=>{},stopImport=()=>{};
@@ -653,7 +653,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     }
     const counterButton=event.target.closest('[data-td-find-counter]');
     if(counterButton&&currentDeal){if(counterButton.disabled)return;const at=revision,deal=currentDeal,intent=deal.result.fairness<90?'fair':'improve',label=counterButton.textContent;counterButton.disabled=true;counterButton.setAttribute('aria-busy','true');counterButton.textContent='Finding counters…';await new Promise(resolve=>setTimeout(resolve,0));if(!root.isConnected||at!==revision)return;
-      try{const plan=await planTradeCounteroffers(deal,pool,{lockedIds,intent,receivePositions,active:()=>!stopped&&root.isConnected&&at===revision});if(plan.kind==='cancelled'||!root.isConnected||at!==revision)return;counters=plan.candidates;root.querySelector('[data-td-counter-results]').innerHTML=counterofferMarkup(counters,pool,deal.parties,{intent,plan});}
+      try{const plan=await planTradeCounteroffers(deal,pool,{lockedIds,intent,receivePositions,excludedSendIds,active:()=>!stopped&&root.isConnected&&at===revision});if(plan.kind==='cancelled'||!root.isConnected||at!==revision)return;counters=plan.candidates;root.querySelector('[data-td-counter-results]').innerHTML=counterofferMarkup(counters,pool,deal.parties,{intent,plan});}
       catch{root.querySelector('[data-td-counter-results]').innerHTML='<p role="status">Counteroffers could not be checked. Try again.</p>'}
       finally{if(root.isConnected&&at===revision){counterButton.disabled=false;counterButton.removeAttribute('aria-busy');counterButton.textContent=label;}}return;}
     const useCounter=event.target.closest('[data-td-use-counter]');

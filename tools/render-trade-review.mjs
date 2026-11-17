@@ -20,6 +20,8 @@ import {tradeOpportunities,scoutSnapshot,readScoutBaseline,saveScoutBaseline} fr
 import {tradeOpportunitiesMarkup} from '/js/trade-opportunities-ui.js';
 import {tradeOfferKey,availableTradeOffers,tradeOfferAnchors} from '/js/trade-offer-actions.js';
 import {normalizeReceivePositions,setReceivePositions,receivePositionsMarkup} from '/js/trade-receive-controls.js';
+import {readProtectedPlayers,writeProtectedPlayers,setProtectedPlayers,protectedPlayerIds} from '/js/trade-protected-players.js';
+import {openProtectedPlayers,protectedPlayersButton} from '/js/trade-protected-ui.js';
 import {createTradeIntentions as createRealTradeIntentions} from '/js/trade-intentions-ui.js';
 const createTradeIntentions=options=>createRealTradeIntentions({...options,createApi:async()=>window.reviewIntentionsApi||{list:async()=>[],save:async()=>{throw Error('Review intention writes are blocked')}}});
 import {completedTradeMarkup} from '/js/trade-receipt-ui.js';
