@@ -8,9 +8,14 @@ action titles. Buttons, text, dividers, backgrounds, focus rings and error state
 use existing Medicine Wheel semantic tokens. NFL/player identity art and health
 status colors retain their meaning. No new theme entries or raw brand palette.
 
+The Home week desk also applies complete-title one-line identity labels to close
+races and final receipts; twelve phase/width/theme cases passed. Book wallet and
+paired loading geometry were checked alongside the claim interactions.
+
 The modal follows visible-viewport bounds, scrolls enlarged content, avoids
 opening the keyboard until a field is selected, restores focus and respects
-motion-off/Reduced Motion. Its invalid-name notice clears on edit. 72 production
+motion-off/Reduced Motion. Its invalid-name notice clears on edit. The full
+2,606-test suite passed, with offline registration for the new tools. 72 production
 handler browser checks and 384 trade/availability tests passed. Real roster
 Light/Dark compiled Trades passed exact-ID import/counter, contrast and overflow
 checks. Home/dock, ranks, Clubhouse and NFL name-policy review retain numerical,

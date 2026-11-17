@@ -30,7 +30,9 @@ sheet motion, heading focus, Escape/backdrop dismissal, focus return, scrollable
 content and visual-viewport bounds. Editing clears stale parser errors.
 
 Validation:
-- 384 tests across 45 trade/availability suites passed, including unchanged
+- The full 2,606-test suite (311 files) passed. The new source modules and style
+  are registered in the offline shell; the import-graph check recognizes valid
+  generator declarations. The 384 trade/availability tests include unchanged
   scoring/valuation/routing contracts, exact import ownership, explicit filters,
   locks, no-alternative cases and cancellation during both search phases.
 - Production handler fixture: 72 browser checks passed across 320/390px Light/Dark,
@@ -47,6 +49,12 @@ Validation:
   the full-name child instead of the number/name wrapper. Its fixture resets the
   shared clock after long visual checks and refreshes the commissioner revision
   before Pause, avoiding a time-expired/stale-revision control assertion.
+- Arena completed 337 browser checks with zero errors. Twelve Home week/phase
+  cases in both themes passed; close-race and final-receipt identity labels now
+  explicitly retain their complete titles on one line. Book claim, retry,
+  single-flight, late-response and current paired loading layout checks passed.
+  The broad trade gate re-evaluates every visible counter grade instead of
+  expecting the retired no-small-repair message.
 - Release, type, name, theme, production build and bundle-budget checks passed.
 
 This does not provide automatic private Sleeper offer import or guarantee that

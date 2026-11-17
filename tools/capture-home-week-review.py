@@ -53,7 +53,7 @@ with sync_playwright() as p:
     desk.evaluate("e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-100,behavior:'instant'})")
     page.wait_for_timeout(80)
     metrics=desk.evaluate("""e=>({overflow:e.scrollWidth>e.clientWidth+1,pageOverflow:document.documentElement.scrollWidth>innerWidth+1,
-     badNames:[...e.querySelectorAll('.home-league-race strong,.home-receipt-leader h3,.home-receipt-close strong')].filter(n=>n.scrollWidth>n.clientWidth+1).length,
+     badNames:[...e.querySelectorAll('.home-league-race strong,.home-receipt-leader h3,.home-receipt-close strong')].filter(n=>getComputedStyle(n).whiteSpace!=="nowrap"||n.scrollHeight>n.clientHeight+1||!n.title||!n.textContent.trim()).length,
      links:[...e.querySelectorAll('.home-league-race a,.home-receipt-close')].every(n=>n.getAttribute('href').includes('week=6')&&n.getBoundingClientRect().height>=44)})""")
     assert not metrics['overflow'] and not metrics['pageOverflow'] and not metrics['badNames'] and metrics['links'],metrics
     if phase=='live':

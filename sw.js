@@ -3,6 +3,7 @@ const CACHE_NAME = "dfl-hq-v1.592.0";
 const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
+  "./js/trade-counter-plan.js","./js/trade-offer-import.js","./js/trade-offer-import-ui.js","./css/trade-offer-review.css",
   "./js/player-card-score.js","./js/score-roll.js","./css/player-card-finish.css","./css/score-thermal-finish.css",
   "./js/trade-offer-board.js","./js/trade-offer-menus.js","./js/trade-offer-board-model.js","./css/trade-offer-board.css",
   "./js/viewed-player-points.js","./css/clubhouse-finish.css",
