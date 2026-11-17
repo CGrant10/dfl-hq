@@ -25,4 +25,11 @@ describe("shared player presentation", () => {
     expect(large).toContain('data-portrait-fallback="https://sleepercdn.com/content/nfl/players/thumb/2449.jpg"');
     expect(playerPortrait(player)).not.toContain('data-portrait-fallback');
   });
+  it('retains the complete escaped name for a compact label and its player-card action',()=>{
+    const name='Equanimeous St. Brown & "Washington" III';
+    const html=playerIdentity({id:'long-name',name},{interactive:true});
+    expect(html).toContain('data-ui-name title="Equanimeous St. Brown &amp; &quot;Washington&quot; III"');
+    expect(html).toContain('aria-label="View Equanimeous St. Brown &amp; &quot;Washington&quot; III player card"');
+    expect(html).toContain('>Equanimeous St. Brown &amp; &quot;Washington&quot; III</button>');
+  });
 });

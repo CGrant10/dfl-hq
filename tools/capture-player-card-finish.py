@@ -8,7 +8,7 @@ class Handler(SimpleHTTPRequestHandler):
  def __init__(self,*a,**kw):super().__init__(*a,directory=str(ROOT),**kw)
  def log_message(self,*a):pass
 server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start();base=f'http://127.0.0.1:{server.server_port}/'
-model={'player':{'id':'7564','name':'Ja’Marr Chase','position':'WR','nflTeam':'CIN'},'season':2026,'week':6,'points':29,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'owner':None,'ownerLabel':'The exceptionally long DFL team name','recent':[{'week':4,'points':12,'rawStats':{'rec':6,'rec_yd':60}},{'week':5,'points':31,'rawStats':{'rec':8,'rec_yd':170,'rec_td':1}},{'week':6,'points':29,'rawStats':{'rec':9,'rec_yd':140,'rec_td':1},'opponent':'PIT'}],'stats':{'items':[]},'seasonAverage':None}
+model={'player':{'id':'7564','name':os.environ.get('DFL_REVIEW_PLAYER_NAME','Ja’Marr Chase'),'position':'WR','nflTeam':'CIN'},'season':2026,'week':6,'points':29,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'owner':None,'ownerLabel':'The exceptionally long DFL team name','recent':[{'week':4,'points':12,'rawStats':{'rec':6,'rec_yd':60}},{'week':5,'points':31,'rawStats':{'rec':8,'rec_yd':170,'rec_td':1}},{'week':6,'points':29,'rawStats':{'rec':9,'rec_yd':140,'rec_td':1},'opponent':'PIT'}],'stats':{'items':[]},'seasonAverage':None}
 checks=[];errors=[];held=[]
 def check(name,ok):
  checks.append({'name':name,'pass':bool(ok)});(OUT/'checks.json').write_text(json.dumps(checks,indent=2));assert ok,name;print('PASS '+name,flush=True)
@@ -36,6 +36,7 @@ with sync_playwright() as p:
    check(tag+' useful headline and origin are visible',card.locator('[data-player-game-line]').inner_text()=='9 rec · 140 yd · 1 TD' and card.locator('[data-player-card-origin]').inner_text()=='Clubhouse')
    page.evaluate('window.keptPrimary=document.querySelector(".player-card-primary");window.keptY=document.querySelector("[data-player-card-body]").scrollTop;window.primaryTop=keptPrimary.getBoundingClientRect().top;releaseAverage()')
    check(tag+' optional average patches without replacing controls',card.locator('.player-card-season-average strong').inner_text()=='23.2' and page.evaluate('keptPrimary===document.querySelector(".player-card-primary")&&keptY===document.querySelector("[data-player-card-body]").scrollTop&&Math.abs(primaryTop-keptPrimary.getBoundingClientRect().top)<1'))
+   check(tag+' identity stays one line and retains the full name',card.locator('.player-card-hero .dfl-player-copy strong').evaluate('e=>{const r=document.createRange();r.selectNodeContents(e);return getComputedStyle(e).whiteSpace==="nowrap"&&new Set([...r.getClientRects()].map(n=>Math.round(n.top))).size===1&&e.title===e.textContent}') and card.locator('.player-card-hero .dfl-player-copy strong').inner_text()==model['player']['name'])
    page.screenshot(path=str(OUT/f'card-{theme}-{width}.png'))
    more=card.locator('.player-card-more');more.locator('summary').click();page.wait_for_timeout(320)
    check(tag+' secondary tools expand without overflow',more.evaluate('e=>e.open&&!e.getAnimations().length&&!e.style.height') and card.evaluate('e=>e.scrollWidth<=e.clientWidth'))

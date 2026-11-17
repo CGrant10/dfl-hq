@@ -33,9 +33,9 @@ import { esc } from "./ui.js";
  */
 export function editableName({ text, field, key, canEdit = false } = {}) {
   const shown = text || "—";
-  if (!canEdit) return esc(shown);
-  return `<button type="button" class="name-pick" data-name-pick="${esc(field)}"
-    data-name-key="${esc(key)}" title="Change who this was">${esc(shown)}</button>`;
+  if (!canEdit) return `<span data-ui-name title="${esc(shown)}">${esc(shown)}</span>`;
+  return `<button type="button" class="name-pick" data-ui-name data-name-pick="${esc(field)}"
+    data-name-key="${esc(key)}" title="Change ${esc(shown)}">${esc(shown)}</button>`;
 }
 
 /**

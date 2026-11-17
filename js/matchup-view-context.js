@@ -15,7 +15,7 @@ export function viewingMatchupFrom(source){
 }
 export function matchupContextMarkup(context){
  if(!context)return '';
- return `<aside class="matchup-view-context" aria-label="DFL matchup scores"><small>DFL · Week ${esc(context.week)} <span>${esc(context.phase)}</span></small><div>${context.sides.map(s=>`<span><strong>${esc(s.name)}</strong><b>${s.score.toFixed(2)}</b></span>`).join('')}</div></aside>`;
+ return `<aside class="matchup-view-context" aria-label="DFL matchup scores"><small>DFL · Week ${esc(context.week)} <span>${esc(context.phase)}</span></small><div>${context.sides.map(s=>`<span><strong data-ui-name title="${esc(s.name)}">${esc(s.name)}</strong><b>${s.score.toFixed(2)}</b></span>`).join('')}</div></aside>`;
 }
 export function applyViewingMatchup(dialog,source){
  const context=viewingMatchupFrom(source);setViewingMatchup(dialog,context);

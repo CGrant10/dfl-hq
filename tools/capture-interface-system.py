@@ -46,7 +46,7 @@ with sync_playwright() as p:
     plan.scroll_into_view_if_needed();page.wait_for_timeout(100)
     metrics=page.locator('#home-wrap').evaluate('''e=>{
      const nodes=[...e.querySelectorAll('.home-team-name strong,.home-week-tabs button,.home-position-tabs button,.home-weekly-digest [role="tabpanel"]:not([hidden]) .dfl-player-copy')].filter(n=>n.getClientRects().length);
-     return {overflow:document.documentElement.scrollWidth>innerWidth+1,labelsFit:nodes.every(n=>n.scrollWidth<=n.clientWidth+1),font:getComputedStyle(e.querySelector('.home-week-tabs button')).fontFamily,targets:[...e.querySelectorAll('.home-week-tabs button,.home-position-tabs button')].filter(n=>n.getClientRects().length).every(n=>n.getBoundingClientRect().height>=44),title:getComputedStyle(e.querySelector('[data-home-week-part="plan"] summary strong')).fontSize};
+     return {overflow:document.documentElement.scrollWidth>innerWidth+1,labelsFit:nodes.every(n=>n.scrollWidth<=n.clientWidth+1||n.matches('.home-team-name strong')&&getComputedStyle(n).whiteSpace==='nowrap'&&n.textContent.trim()),font:getComputedStyle(e.querySelector('.home-week-tabs button')).fontFamily,targets:[...e.querySelectorAll('.home-week-tabs button,.home-position-tabs button')].filter(n=>n.getClientRects().length).every(n=>n.getBoundingClientRect().height>=44),title:getComputedStyle(e.querySelector('[data-home-week-part="plan"] summary strong')).fontSize};
     }''')
     contrast=plan.evaluate("async e=>(await import('./tools/home-review-contrast.js')).reviewTextContrast(e)")
     assert not metrics['overflow'] and metrics['labelsFit'] and metrics['targets'],(tag,tab,metrics)
