@@ -18,16 +18,16 @@ function launch(marker,{blocked=false,off=false}={}){
 }
 afterEach(()=>vi.unstubAllGlobals());
 describe('reboot handoff',()=>{
- it('adds opening lights without replacing the round-logo content and completes on actual readiness',()=>{
+ it('keeps soft opening and round-logo content and completes on actual readiness',()=>{
   const f=launch(null);
-  expect(f.classes.has('has-stadium-lights')).toBe(true);
-  expect(f.el.insertAdjacentHTML).toHaveBeenCalledWith('afterbegin',expect.stringContaining('aria-hidden="true"'));
+  expect(f.classes.has('has-soft-halo')).toBe(true);
+  expect(f.el.insertAdjacentHTML).not.toHaveBeenCalled();
   expect(f.el.innerHTML).toBeUndefined();
-  expect(f.styles.get('--update-gate-artwork')).toBe('url("https://example.test/dfl-hq/assets/dfl-update-stadium.webp")');
+  expect(f.styles.has('--update-gate-artwork')).toBe(false);
   expect(f.classes.has('is-system-ready')).toBe(false);
   f.ready();f.flush();expect(f.classes.has('is-system-ready')).toBe(true);
  });
- it('does not light the final opening bank on a slow-route fallback',()=>{
+ it('does not announce readiness on a slow-route fallback',()=>{
   const f=launch(null);f.flush();expect(f.classes.has('is-system-ready')).toBe(false);
  });
  it('consumes the current release marker once and waits for a real route paint',()=>{
@@ -35,8 +35,7 @@ describe('reboot handoff',()=>{
   expect(f.classes.has('is-rebooting')).toBe(true);
   expect(f.store.has('dfl.update.reboot')).toBe(false);
   expect(f.classes.has('is-system-ready')).toBe(false);
-  expect(parseFloat(f.styles.get('--stadium-wave-offset'))).toBeLessThanOrEqual(-1.8);
-  expect(parseFloat(f.styles.get('--stadium-wave-offset'))).toBeGreaterThan(-2);
+  expect(f.styles.has('--stadium-wave-offset')).toBe(false);
   f.document.hidden=true;f.visibility();expect(f.el.dataset.updateHidden).toBe('true');
   f.document.hidden=false;f.visibility();expect(f.el.dataset.updateHidden).toBe('false');
   f.ready();f.flush();

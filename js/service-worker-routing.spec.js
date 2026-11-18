@@ -59,11 +59,11 @@ function worker({ offline = false, saved = {}, legacy = {}, bundle=null, release
 }
 
 describe('installed app worker navigation', () => {
-  it('caches the opening stadium for offline launch and defers other artwork until after the first route',async()=>{
+  it('caches the soft opening halo for offline launch and defers other artwork until after the first route',async()=>{
     const sw=worker({bundle:['./js/bundle/test/app.js']});const initial=[...await sw.install()];
-    expect(initial.filter(r=>r.url.includes('/assets/')).map(r=>r.url)).toEqual([scope+'assets/dfl-update-stadium.webp']);
+    expect(initial.filter(r=>r.url.includes('/assets/')).map(r=>r.url)).toEqual([scope+'assets/loading-soft-halo.webp']);
     const warmed=await sw.warm();expect(warmed.some(r=>r.url.endsWith('/assets/dfl-daily-hero.webp'))).toBe(true);
-    expect(warmed.filter(r=>r.url.endsWith('/assets/dfl-update-stadium.webp'))).toHaveLength(1);
+    expect(warmed.filter(r=>r.url.endsWith('/assets/loading-soft-halo.webp'))).toHaveLength(1);
   });
   it('does not re-download an immutable cached bundle during normal navigation',async()=>{
     const path='./js/bundle/test/app.js',sw=worker({bundle:[path],saved:{[path]:{body:'Cached release module',type:'application/javascript'}}});

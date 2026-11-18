@@ -3247,3 +3247,20 @@ image is cached with the worker shell; other decorative art remains deferred.
 Evidence: `/workspace/dfl-opening-1596/{opening,actual}` and the combined opening
 comparison. Theme checks, 2,626 tests and bundle validation pass. Native device
 pacing, VoiceOver and native offline installation remain unmeasured. See design-qa.md.
+
+### 1.597.0 — Soft Halo loading and theme-colored activity
+
+Reviewed 320/390/768px opening in Medicine Wheel Light/Dark and selected Seattle
+colors, plus short launch, Reduced Motion, app motion off and delayed image.
+The selected black/neutral-white halo keeps original round branding. Activity
+uses --accent-sweep and validated per-mode cached accents for first paint; pinned
+routes do not replace saved loading colors. Update background is also black with
+the same small asset, preserving its shield/CTA and readable existing status.
+Peak/idle update contrast, focus and compact/landscape states pass. No duplicate
+themes or retired UI colors. Stadium banks, image requests and cache entries are
+removed from loading/update presentation; other artwork/theme surfaces remain.
+
+Evidence: `/workspace/dfl-halo-1597/{halo,final,actual}` and combined selected
+source comparison. All 2,628 tests, theme and production bundle checks pass.
+Real current-member startup/Home/navigation checks block provider writes.
+Physical iOS pacing, speech and native offline installation remain unmeasured.

@@ -286,6 +286,9 @@ function apply() {
     drift apart.
   */
   s.setProperty("--accent-sweep", `linear-gradient(90deg, ${fill}, ${fill2})`);
+  // Keep first-paint loading accents in step with the selected theme without
+  // importing the palette graph during startup. Route pins must not replace it.
+  try{if(!pinned)localStorage.setItem('dfl.loadingAccent.v1',JSON.stringify({mode:savedMode(),fill,fill2}));}catch{}
   /* The same pair on a diagonal, for a block rather than a line. */
   s.setProperty("--accent-sweep-135", `linear-gradient(135deg, ${fill}, ${fill2})`);
   /* And vertically, for the edge-lines down the side of a card. */
