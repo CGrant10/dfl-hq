@@ -3340,3 +3340,7 @@ enlarged layouts retain their bounds and exact destinations. Screenshots inspect
 No retired crest accents, new theme entries or alias changes. Evidence:
 `/workspace/dfl-polish-1602/{trade,broadcast,actual-complete}`. Physical phone
 pacing and screen-reader speech are not newly measured.
+
+1.602.1 follow-up: the staged Reset action now reveals all roster-search rows.
+Search → Reset → Cancel is rechecked in the same production sheet at 320/390px,
+Light/Dark, including enlarged text and contrast. No styling or palette change.
