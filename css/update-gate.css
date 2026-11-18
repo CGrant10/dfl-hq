@@ -17,6 +17,14 @@ body.broadcasting #update.update-gate { display: block !important; }
   display: block;
   overflow: auto;
   color: var(--update-ink);
+  border: 0;
+  border-radius: 0;
+  padding: max(clamp(30px, 9dvh, 80px), env(safe-area-inset-top)) 28px max(36px, env(safe-area-inset-bottom));
+  box-shadow: none;
+  isolation: isolate;
+}
+
+:is(#update, #splash).update-gate, #splash.has-stadium-lights {
   background-color: #07090d;
   background-image:
     linear-gradient(180deg, rgba(3, 5, 8, .96) 0%, rgba(4, 6, 9, .94) 48%, rgba(3, 4, 6, .8) 78%, rgba(3, 4, 6, .96) 100%),
@@ -24,12 +32,9 @@ body.broadcasting #update.update-gate { display: block !important; }
   background-position: center, center top;
   background-size: auto, min(100vw, 600px) auto;
   background-repeat: no-repeat;
-  border: 0;
-  border-radius: 0;
-  padding: max(clamp(30px, 9dvh, 80px), env(safe-area-inset-top)) 28px max(36px, env(safe-area-inset-bottom));
-  box-shadow: none;
-  isolation: isolate;
 }
+#splash.has-stadium-lights { isolation:isolate; }
+#splash.has-stadium-lights::after { display:none; }
 
 :is(#update, #splash).update-gate::before {
   content: "";
@@ -166,7 +171,7 @@ body.broadcasting #update.update-gate { display: block !important; }
   html:not([data-ui-motion="off"]) .update-gate[data-logo-ready="true"] .update-gate__glow::before { animation: update-logo-glow 1.2s ease-in-out .4s both; }
 
 }
-.update-gate[data-update-hidden="true"] *, .update-gate[data-update-hidden="true"] *::before { animation-play-state:paused !important; }
+:is(.update-gate,#splash.has-stadium-lights)[data-update-hidden="true"] *, :is(.update-gate,#splash.has-stadium-lights)[data-update-hidden="true"] *::before { animation-play-state:paused !important; }
 .update-gate.is-system-ready .update-gate__glow::before { animation:none !important; opacity:0; }
 .update-gate.is-rebooting .update-gate__content { animation:none !important; }
 @media (prefers-reduced-motion: reduce) {
@@ -209,14 +214,21 @@ html[data-ui-motion="off"] .update-gate__glow::before { animation: none; }
 .update-stadium-bank--left { --stadium-bank-mask:radial-gradient(ellipse 46% 18% at 0% 9%,#000 12%,transparent 95%); --stadium-bank-delay:.18s; }
 .update-stadium-bank--gold { --stadium-bank-mask:radial-gradient(ellipse 42% 17% at 100% 40%,#000 16%,transparent 95%); --stadium-bank-delay:.36s; }
 .update-stadium-bank--final { --stadium-bank-mask:radial-gradient(ellipse 46% 18% at 100% 9%,#000 12%,transparent 95%); }
-.update-gate.is-updating .update-stadium-bank:not(.update-stadium-bank--final) { opacity:.16; }
-.update-gate.is-system-ready .update-stadium-bank--final { opacity:.52; }
+:is(.update-gate.is-updating,#splash.has-stadium-lights) .update-stadium-bank:not(.update-stadium-bank--final) { opacity:.16; }
+:is(.update-gate,#splash.has-stadium-lights).is-system-ready .update-stadium-bank--final { opacity:.52; }
 @media (prefers-reduced-motion:no-preference) {
-  html:not([data-ui-motion="off"]) .update-gate.is-updating .update-stadium-bank:not(.update-stadium-bank--final) {
-    animation:update-stadium-wave 2.1s cubic-bezier(.2,.7,.2,1) calc(var(--stadium-wave-offset,0s) + var(--stadium-bank-delay)) both;
+  html:not([data-ui-motion="off"]) :is(.update-gate.is-updating,#splash.has-stadium-lights) .update-stadium-bank:not(.update-stadium-bank--final) {
+    animation:update-stadium-wave var(--stadium-wave-duration,2.1s) cubic-bezier(.2,.7,.2,1) calc(var(--stadium-wave-offset,0s) + var(--stadium-bank-delay)) both;
   }
   html:not([data-ui-motion="off"]) .update-stadium-bank--final { transition:opacity 350ms cubic-bezier(.2,.7,.2,1); }
   html:not([data-ui-motion="off"]) #splash.update-gate.is-system-ready.is-ready { animation:update-stadium-reveal 420ms cubic-bezier(.2,.7,.2,1) forwards !important; }
+}
+/* Fit the same wave inside ordinary opening time; never hold the route. */
+#splash.has-stadium-lights { --stadium-wave-duration:850ms; }
+#splash.has-stadium-lights .update-stadium-bank--left { --stadium-bank-delay:.06s; }
+#splash.has-stadium-lights .update-stadium-bank--gold { --stadium-bank-delay:.12s; }
+@media (prefers-reduced-motion:no-preference) {
+  html:not([data-ui-motion="off"]) #splash.has-stadium-lights .update-stadium-bank--final { transition-duration:80ms; }
 }
 /* Updating now belongs to the stadium; the shield keeps its finite idle sheen. */
 .update-gate.is-updating[data-logo-ready="true"] .update-gate__glow::before { animation:none !important; opacity:0; }

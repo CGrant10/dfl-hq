@@ -104,9 +104,9 @@ function showGate(el,version){
   if(el.classList.contains('is-updating'))return;
   if(el.dataset.version===version&&!el.classList.contains('hidden')&&el.classList.contains('update-gate'))return;
   stopLogoGlow?.();
-  /* This is the first moment the full-screen stadium treatment is useful.
-     Keeping its URL out of update CSS prevents non-Home routes fetching it. */
-  el.style.setProperty("--update-gate-artwork",'url("assets/dfl-update-stadium.webp")');
+  // Custom-property URLs resolve at the consuming stylesheet; anchor to the
+  // document so this works under /dfl-hq/ as well as the local root.
+  el.style.setProperty("--update-gate-artwork",`url("${new URL('assets/dfl-update-stadium.webp',document.baseURI).href}")`);
   el.dataset.version=version;
   el.setAttribute("role","dialog");
   el.setAttribute("aria-modal","true");

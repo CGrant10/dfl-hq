@@ -10,14 +10,26 @@ function launch(marker,{blocked=false,off=false}={}){
  const classes=new Set(),nodes=new Map(),events=new Map(),timers=[],store=new Map(),styles=new Map();
  if(marker)store.set('dfl.update.reboot',JSON.stringify(marker));
  const storage={getItem:key=>{if(blocked)throw Error('blocked');return key.includes('gameday-motion')&&off?'off':store.get(key)||null},setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)};
- const el={parentNode:true,dataset:{},classList:{add:(...names)=>names.forEach(n=>classes.add(n))},setAttribute(){},getAttribute:()=>2017,style:{setProperty:(k,v)=>styles.set(k,v)},querySelector:s=>{if(!nodes.has(s))nodes.set(s,{textContent:''});return nodes.get(s)},addEventListener:(n,fn)=>events.set(n,fn),remove(){this.parentNode=false}};
- const document={hidden:false,addEventListener:(n,fn)=>events.set(n,fn),removeEventListener:n=>events.delete(n),documentElement:{dataset:{}},getElementById:()=>el,querySelector:()=>({content:version})};
+ const el={parentNode:true,dataset:{},insertAdjacentHTML:vi.fn(),classList:{add:(...names)=>names.forEach(n=>classes.add(n))},setAttribute(){},getAttribute:()=>2017,style:{setProperty:(k,v)=>styles.set(k,v)},querySelector:s=>{if(!nodes.has(s))nodes.set(s,{textContent:''});return nodes.get(s)},addEventListener:(n,fn)=>events.set(n,fn),remove(){this.parentNode=false}};
+ const document={baseURI:'https://example.test/dfl-hq/',hidden:false,addEventListener:(n,fn)=>events.set(n,fn),removeEventListener:n=>events.delete(n),documentElement:{dataset:{}},getElementById:()=>el,querySelector:()=>({content:version})};
  const window={addEventListener:(n,fn)=>events.set(n,fn)};
- vm.runInNewContext(boot,{document,window,sessionStorage:storage,localStorage:storage,location:{search:'',hash:'#/clubhouse'},Date,performance:{now:()=>0},setTimeout:(fn,ms)=>timers.push({fn,ms})});
+ vm.runInNewContext(boot,{document,window,sessionStorage:storage,localStorage:storage,location:{search:'',hash:'#/clubhouse'},Date,URL,performance:{now:()=>0},setTimeout:(fn,ms)=>timers.push({fn,ms})});
  return {el,classes,store,styles,document,visibility:()=>events.get('visibilitychange')?.(),ready:()=>events.get('dfl:app-ready')?.({type:'dfl:app-ready'}),flush:()=>{for(const timer of timers.splice(0).sort((a,b)=>a.ms-b.ms))timer.fn();}};
 }
 afterEach(()=>vi.unstubAllGlobals());
 describe('reboot handoff',()=>{
+ it('adds opening lights without replacing the round-logo content and completes on actual readiness',()=>{
+  const f=launch(null);
+  expect(f.classes.has('has-stadium-lights')).toBe(true);
+  expect(f.el.insertAdjacentHTML).toHaveBeenCalledWith('afterbegin',expect.stringContaining('aria-hidden="true"'));
+  expect(f.el.innerHTML).toBeUndefined();
+  expect(f.styles.get('--update-gate-artwork')).toBe('url("https://example.test/dfl-hq/assets/dfl-update-stadium.webp")');
+  expect(f.classes.has('is-system-ready')).toBe(false);
+  f.ready();f.flush();expect(f.classes.has('is-system-ready')).toBe(true);
+ });
+ it('does not light the final opening bank on a slow-route fallback',()=>{
+  const f=launch(null);f.flush();expect(f.classes.has('is-system-ready')).toBe(false);
+ });
  it('consumes the current release marker once and waits for a real route paint',()=>{
   const f=launch({at:Date.now(),startedAt:Date.now()-1800,version});
   expect(f.classes.has('is-rebooting')).toBe(true);

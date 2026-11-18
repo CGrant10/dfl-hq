@@ -1,5 +1,5 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.595.0";
+const CACHE_NAME = "dfl-hq-v1.596.0";
 const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
@@ -31,7 +31,7 @@ const APP_SHELL = [
   "./js/home-daily-desk.js","./js/trade-watchlist.js","./css/everyday-desk.css",
   "./css/onair-motion.css",
   "./css/broadcast-nfl.css",
-  "./css/league-finish.css","./css/app-shared.css?v=1.595.0","./js/trade-receive-controls.js","./js/trade-offer-search.js","./js/trade-offer-catalog.js","./js/trade-offer-preview.js","./css/trade-book-reading.css","./js/workers/trade-offers.js","./js/tab-scroll-cues.js",
+  "./css/league-finish.css","./css/app-shared.css?v=1.596.0","./js/trade-receive-controls.js","./js/trade-offer-search.js","./js/trade-offer-catalog.js","./js/trade-offer-preview.js","./css/trade-book-reading.css","./js/workers/trade-offers.js","./js/tab-scroll-cues.js",
   "./js/player-watchlist-data.js","./js/player-watchlist-model.js","./js/watchlist-alerts.js","./js/player-watchlist-ui.js",
   "./js/loading-presentation.js","./js/home-score-collapse.js","./js/home-primary-action.js","./js/home-rhythm.js","./js/home-moment-stories.js","./js/connected-artwork.js","./js/archive-route-motion.js","./js/broadcast-gesture-motion.js",
   "./js/player-form.js","./js/player-game-model.js","./js/player-game-explorer.js",
@@ -151,7 +151,7 @@ const APP_SHELL = [
   "./js/service-worker.js","./js/pickem-state.js","./js/golf-event-status.js","./js/pages/calendar.js",
   "./","./index.html","./manifest.json","./css/stakes.css",
   "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/sportsbook.css","./js/sportsbook-slip.js","./js/sportsbook-pickem.js","./js/sleeper-prop-import.js","./js/sleeper-prop-import-ui.js","./css/golf.css","./css/home.css","./css/breaking-trade.css","./css/update-gate.css",
-  "./js/wall-continuity.js","./js/wall-live.js","./js/sportsbook-fantasy-results.js","./js/sportsbook-live-ticket.js","./js/sportsbook-fantasy-data.js","./js/sportsbook-live.js","./js/sportsbook-settlement.js","./js/sportsbook-account-motion.js","./js/live-score-refresh.js","./js/score-freshness.js","./js/game-day-readiness.js","./js/matchup-finish.js","./js/matchup-finish-model.js","./css/matchup-finish.css","./js/lineup-alert-model.js","./js/waiver-coach.js","./js/advice-receipts.js","./js/advice-receipts-data.js","./js/advice-receipts-ui.js","./css/advice-receipts.css?v=1.595.0","./js/waiver-history-data.js","./js/waiver-intelligence.js","./js/waiver-intelligence-ui.js","./js/roster-coach-data.js","./js/roster-coach-ui.js","./js/matchup-targets.js","./js/weekly-roasts.js",
+  "./js/wall-continuity.js","./js/wall-live.js","./js/sportsbook-fantasy-results.js","./js/sportsbook-live-ticket.js","./js/sportsbook-fantasy-data.js","./js/sportsbook-live.js","./js/sportsbook-settlement.js","./js/sportsbook-account-motion.js","./js/live-score-refresh.js","./js/score-freshness.js","./js/game-day-readiness.js","./js/matchup-finish.js","./js/matchup-finish-model.js","./css/matchup-finish.css","./js/lineup-alert-model.js","./js/waiver-coach.js","./js/advice-receipts.js","./js/advice-receipts-data.js","./js/advice-receipts-ui.js","./css/advice-receipts.css?v=1.596.0","./js/waiver-history-data.js","./js/waiver-intelligence.js","./js/waiver-intelligence-ui.js","./js/roster-coach-data.js","./js/roster-coach-ui.js","./js/matchup-targets.js","./js/weekly-roasts.js",
   "./js/config.js","./js/app.js","./js/season-nav.js","./js/router.js","./js/connection-recovery.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
   "./js/app-diagnostics.js","./js/performance.js","./js/performance-findings.js","./js/pages/admin_performance.js","./js/pages/admin_operations.js","./js/breaking-trade.js","./js/custom-alerts.js","./js/league-state.js","./js/league-stakes.js","./js/weekly-briefing.js","./js/roster-next-action.js","./js/pages/stakes.js","./js/sleeper-sync-schedule.js",
   "./js/notifications.js","./js/notification-core.js","./js/notify-nudge.js","./js/profile-notifications.js","./js/weekly-outlook.js","./js/trade-desk.js",
@@ -162,24 +162,22 @@ const APP_SHELL = [
      precache for an image the page never draws - only the OS reads it, at
      install time, when there is by definition a network. The splash mark and
      brand mark ARE drawn on first paint and were not cached at all. */
-  /* Update-gate artwork is fetched only if the gate is actually shown. The
-     anniversary uses its optimized WebP directly from Home instead. */
-  "./icons/dfl-logo-512.webp","./icons/dfl-logo-64.webp",
+  /* The shared opening/update stadium now belongs to the offline shell. */
+  "./icons/dfl-logo-512.webp","./icons/dfl-logo-64.webp","./assets/dfl-update-stadium.webp",
   "./icons/app-192.png","./icons/app-192-1410.png","./icons/dfl-logo-tile-256.webp","./icons/apple-touch-icon-1410.png","./icons/favicon-64-1410.png"
 ];
 // The worker imports the manifest into its own installed script resources.
 // A missing or mismatched bundle cannot activate under the new release label.
 if(typeof importScripts==='function'){
-  importScripts('./js/bundle/1.595.0/precache.js');
+  importScripts('./js/bundle/1.596.0/precache.js');
   if(self.DFL_BUNDLE_RELEASE!==CACHE_NAME.slice(APP_CACHE_PREFIX.length)||!Array.isArray(self.DFL_BUNDLE_SHELL)||!self.DFL_BUNDLE_SHELL.length)throw Error('Application bundle release mismatch');
 }
 const BUNDLED_STYLES=new Set(self.DFL_BUNDLE_STYLES||[]);
 const PRECACHE = self.DFL_BUNDLE_SHELL
   ? [...APP_SHELL.filter(path=>!path.startsWith('./js/')&&!BUNDLED_STYLES.has(path)), ...self.DFL_BUNDLE_SHELL, './js/workers/trade-offers.js']
   : APP_SHELL;
-// A release needs its complete code and styles, not every decorative image.
-// Keep all compiled routes available offline; fill artwork after the first page.
-const INSTALL_CACHE=PRECACHE.filter(path=>!/^\.\/(assets|images)\//.test(path));
+// Cache the one opening image with the shell; defer other decorative artwork.
+const INSTALL_CACHE=PRECACHE.filter(path=>path==='./assets/dfl-update-stadium.webp'||!/^\.\/(assets|images)\//.test(path));
 const EXTRA_CACHE=PRECACHE.filter(path=>!INSTALL_CACHE.includes(path));
 const BUNDLE_URLS=new Set((self.DFL_BUNDLE_SHELL||[]).map(path=>new URL(path,self.registration.scope).href));
 const SHELL_URLS = new Set(PRECACHE.map(path => new URL(path, self.registration.scope).href.split('?')[0]));
