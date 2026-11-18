@@ -5,9 +5,8 @@
 //
 // Three completed seasons is three Sleeper stat maps at roughly 1.8MB
 // each - but loadSeasonStats caches for a week, so that is one fetch per
-// device per week rather than one per visit. The section is open like
-// every other one; the fetch just waits for an idle moment so the report
-// paints first.
+// device per week rather than one per visit. The folded section loads on
+// demand, after the main report. Current production reuses the player pool.
 //
 // The sparkline is inline SVG rather than a chart library: three to five
 // points do not need one, and a 40KB dependency to draw four line
@@ -15,7 +14,7 @@
 // =====================================================================
 
 import { loadSeasonStats, loadTrendingPlayers } from "./sleeper.js";
-import { buildHistories, marketSignal } from "./player-history.js";
+import { buildHistories, marketSignal, withCurrentSeason } from "./player-history.js";
 import { esc } from "./ui.js";
 
 /* How far back to look. Four seasons is two slopes' worth of evidence and
@@ -35,25 +34,23 @@ export const HISTORY_SEASONS = 3;
 export const VOLATILE_SHARE = 0.85;
 
 const TONE = { rising: "up", falling: "down", steady: "flat", insufficient: "unknown" };
-const WORD = { rising: "Rising", falling: "Falling", steady: "Steady", insufficient: "Not enough history" };
+const WORD = { rising: "Rising", falling: "Falling", steady: "Steady" };
 
 let cache = null;
 
-async function load(season, scoringSettings, playerIds) {
-  if (cache) return cache;
+async function load(season) {
+  // Cache raw season maps, never a first team's roster/scoring-specific result.
+  // The live player pool is supplied afresh on every analyzer render.
+  if (cache?.season === season && Date.now() - cache.at < 5 * 60 * 1000) return cache.promise;
   const years = Array.from({ length: HISTORY_SEASONS }, (_, i) => season - 1 - i);
-  const [stats, trending] = await Promise.all([
+  const promise = Promise.all([
     Promise.all(years.map(year => loadSeasonStats(year)
       .then(res => ({ year, stats: res.data || {} }))
       .catch(() => ({ year, stats: {} })))),
     loadTrendingPlayers({ hours: 48, limit: 300 }).catch(() => null),
-  ]);
-  cache = {
-    histories: buildHistories({ playerIds, statsBySeason: stats, scoringSettings }),
-    trending,
-    years: stats.filter(s => Object.keys(s.stats).length).map(s => s.year).sort(),
-  };
-  return cache;
+  ]).then(([stats, trending]) => ({ stats, trending }));
+  cache = { season, at: Date.now(), promise };
+  return promise;
 }
 
 /** A sparkline of per-game scoring. Flat when there is one point to draw. */
@@ -71,7 +68,7 @@ function sparkline(series) {
   });
   const last = points.at(-1).split(",");
   return `<svg class="tp-spark" viewBox="0 0 ${W} ${H}" role="img"
-    aria-label="${series.map(s => `${s.year}: ${s.perGame.toFixed(1)} a game`).join(", ")}">
+    aria-label="${series.map(s => `${s.year}${s.inProgress?` so far, ${s.games} games`:""}: ${s.perGame.toFixed(1)} a game`).join(", ")}">
     ${series.length > 1 ? `<polyline points="${points.join(" ")}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>` : ""}
     <circle cx="${last[0]}" cy="${last[1]}" r="2.6" fill="currentColor"/>
   </svg>`;
@@ -82,6 +79,9 @@ function row(player, history, trending) {
   const tone = TONE[history.direction];
   const seasons = history.seasons;
   const latest = seasons.at(-1);
+  const label = history.direction !== "insufficient" ? WORD[history.direction]
+    : history.current ? (history.current.games < 3 ? "Early sample" : "This season")
+    : seasons.length ? "1 season recorded" : "No games recorded";
   return `<li class="tp-row is-${tone}">
     <div class="tp-who">
       <b>${esc(player.name)}</b>
@@ -89,10 +89,10 @@ function row(player, history, trending) {
     </div>
     <div class="tp-spark-wrap">${sparkline(seasons)}</div>
     <div class="tp-read">
-      <span class="tp-dir">${esc(WORD[history.direction])}</span>
+      <span class="tp-dir">${esc(label)}</span>
       <small>${seasons.length
         ? `${seasons.map(s => `${s.year} ${s.perGame.toFixed(1)}`).join(" · ")} per game`
-        : "no completed season on record"}</small>
+        : "—"}</small>
     </div>
     <div class="tp-tags">
       ${history.volatility != null && history.volatility >= VOLATILE_SHARE
@@ -100,7 +100,7 @@ function row(player, history, trending) {
       ${history.availability != null && history.availability < .72
         ? `<span class="tp-tag is-risk" title="Averaged ${Math.round(history.availability * 17)} of 17 games">Missed time</span>` : ""}
       ${market ? `<span class="tp-tag is-${market.tone}">${esc(market.label)}</span>` : ""}
-      ${latest ? `<span class="tp-latest">${latest.points.toFixed(0)} pts ${latest.year}</span>` : ""}
+      ${latest ? `<span class="tp-latest">${latest.inProgress?`${latest.games} games · ${latest.points.toFixed(1)} pts`:`${latest.points.toFixed(0)} pts ${latest.year}`}</span>` : ""}
     </div>
   </li>`;
 }
@@ -108,20 +108,19 @@ function row(player, history, trending) {
 export async function renderTrendPanel(host, { team, pool, season, scoringSettings }) {
   if (!host || host.dataset.loaded === "1") return;
   host.dataset.loaded = "1";
-  host.innerHTML = `<p class="tp-loading">Reading the last ${HISTORY_SEASONS} completed seasons…</p>`;
+  host.innerHTML = `<p class="tp-loading">Reading player production…</p>`;
 
   const players = (team.playerIds || []).map(id => pool.get(String(id))).filter(Boolean);
   try {
-    const { histories, trending, years } = await load(season, scoringSettings, players.map(p => p.id));
+    const { stats, trending } = await load(season);
+    const histories = buildHistories({ playerIds: players.map(p => p.id), statsBySeason: stats, scoringSettings });
     const ranked = players
-      .map(player => ({ player, history: histories.get(String(player.id)) }))
+      .map(player => ({ player, history: withCurrentSeason(histories.get(String(player.id)), player, season) }))
       .filter(entry => entry.history)
       .sort((a, b) => (b.history.slope ?? -99) - (a.history.slope ?? -99));
 
     host.innerHTML = `
-      <p class="tp-intro">Per-game scoring across ${years.length ? years.join(", ") : "the seasons on record"},
-        in the league's own scoring. Rate rather than season total, so missed games do not read as decline;
-        availability is called out separately.</p>
+      <p class="tp-intro">${esc(season)} production + prior seasons · points per game</p>
       <ul class="tp-list">${ranked.map(({ player, history }) => row(player, history, trending)).join("")}</ul>`;
   } catch (error) {
     host.dataset.loaded = "";

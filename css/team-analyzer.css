@@ -1313,7 +1313,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .tp-row.is-unknown .tp-spark-wrap, .tp-row.is-unknown .tp-dir { color: var(--muted); }
 
 .tp-read { min-width: 0; }
-.tp-dir { font-size: var(--ta-body); font-weight: 800; }
+.tp-dir { flex-shrink: 0; white-space: nowrap; font-size: var(--ta-body); font-weight: 800; }
 .tp-read small { display: block; margin-top: 2px; color: var(--muted); font-size: var(--ta-micro); overflow-wrap: anywhere; }
 
 .tp-tags { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; min-width: 0; }

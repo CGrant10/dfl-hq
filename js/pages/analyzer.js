@@ -238,8 +238,8 @@ const DEFAULT_RUNS_NOTE = `3,000 simulations preserve every completed result, th
 function trendReport(team) {
   /* Folded, and it loads nothing until opened - three seasons of Sleeper stats
      is about 5.6MB. See trend-panel.js. */
-  return section("MULTI-SEASON RECORD", "Trends", { open: false, id: "trends",
-    hint: `${HISTORY_SEASONS} seasons`,
+  return section("CURRENT + HISTORY", "Player trends", { open: false, id: "trends",
+    hint: `This season + ${HISTORY_SEASONS} prior`,
     body: `<div data-trend-panel data-team="${esc(team.id)}"></div>` });
 }
 

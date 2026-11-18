@@ -142,10 +142,10 @@
   grid-column:1; grid-row:2; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:baseline; gap:2px 6px; width:auto; min-width:0; padding:0;
  }
  #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player .gameday-player-score>b { grid-column:2; grid-row:1; }
- #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player .gameday-player-score>small { grid-column:1; grid-row:1; min-width:6ch; max-width:none; text-align:left; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player .gameday-player-score>small { grid-column:1; grid-row:1; min-width:6ch; max-width:none; justify-self:start; text-align:left; }
  #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player:nth-child(3) .gameday-player-score { grid-template-columns:auto minmax(0,1fr); }
  #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player:nth-child(3) .gameday-player-score>b { grid-column:1; }
- #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player:nth-child(3) .gameday-player-score>small { grid-column:2; text-align:right; }
+ #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player:nth-child(3) .gameday-player-score>small { grid-column:2; justify-self:end; text-align:right; }
  #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .nfl-red-badge { grid-column:1/-1; margin:0; }
  #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-lineup-missing { grid-column:1; grid-row:1; min-height:44px; display:flex; align-items:center; }
  #view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-lineup-missing-score { grid-column:1; grid-row:2; justify-self:end; }

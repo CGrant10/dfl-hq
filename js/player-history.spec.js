@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  TREND_SLOPE, buildHistories, direction, historyFor, marketSignal, seasonLine, slopeOf,
+  TREND_SLOPE, buildHistories, direction, historyFor, marketSignal, seasonLine, slopeOf, withCurrentSeason,
 } from "./player-history.js";
 
 /* Full PPR, the league's own setting. rec:1 keeps the fixtures readable -
@@ -135,6 +135,33 @@ describe("buildHistories", () => {
     /* A player nobody has a line for still gets an entry, saying so. */
     expect(out.get("3").direction).toBe("insufficient");
   });
+});
+
+describe('current-season production in history',()=>{
+ it('uses Golden’s ten real games alongside his prior season without flagging unplayed games as missed',()=>{
+  const old=historyFor({seasons:[{year:2025,stats:line(70,14)}],scoringSettings:PPR});
+  const h=withCurrentSeason(old,{currentPoints:179.9,currentGames:10,consistency:{games:10,average:17.99}},2026);
+  expect(h.current.games).toBe(10);expect(h.current.perGame).toBeCloseTo(17.99);expect(h.direction).toBe('rising');
+  expect(h.seasons.map(s=>s.year)).toEqual([2025,2026]);expect(h.availability).toBe(old.availability);
+ });
+ it('shows first-season production without inventing a multi-season trend',()=>{
+  const h=withCurrentSeason(historyFor(),{currentPoints:120,currentGames:8},2026);
+  expect(h.current.perGame).toBe(15);expect(h.direction).toBe('insufficient');expect(h.availability).toBeNull();
+ });
+ it('does not compare a live partial game as a completed game',()=>{
+  const h=withCurrentSeason(historyFor(),{currentPoints:181,currentGames:11,gameForm:{state:'live'},consistency:{games:10,average:17.99}},2026);
+  expect(h.current.games).toBe(10);expect(h.current.points).toBeCloseTo(179.9);
+  expect(withCurrentSeason(historyFor(),{currentPoints:1,currentGames:1,gameForm:{state:'live'}},2026).current).toBeNull();
+ });
+ it('preserves real zero-point games and does not turn missing points into zero',()=>{
+  expect(withCurrentSeason(historyFor(),{currentPoints:0,currentGames:3},2026).current.perGame).toBe(0);
+  expect(withCurrentSeason(historyFor(),{currentPoints:null,currentGames:3},2026).current).toBeNull();
+ });
+ it('keeps a one-game current sample from declaring a yearly rise and respects calendar gaps',()=>{
+  const h=withCurrentSeason(historyFor({seasons:[{year:2025,stats:line(170,17)}],scoringSettings:PPR}),{currentPoints:40,currentGames:1},2026);
+  expect(h.current.perGame).toBe(40);expect(h.direction).toBe('insufficient');
+  expect(slopeOf([{year:2023,perGame:10},{year:2025,perGame:11}])).toBe(.5);
+ });
 });
 
 describe("marketSignal", () => {
