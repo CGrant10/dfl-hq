@@ -1,5 +1,6 @@
 import {DFL_SLOTS,slotEligible,availableBeforeKickoff} from './lineup-alert-model.js';
-import {waiverOfferPriority} from './waiver-coach.js';
+import {waiverOfferPriority,worthwhileWaiverOffer} from './waiver-coach.js';
+import {rosterRetention} from './roster-retention.js';
 import {sleeperUrl} from './sleeper-links.js';
 const skill=p=>['RB','WR','TE'].includes(p?.position);
 const finite=n=>n!=null&&n!==''&&Number.isFinite(Number(n));
@@ -24,11 +25,13 @@ export function rosterNextAction({coach,outlook,move,meSleeperId,now=Date.now()}
  if(returning&&(!urgent||slotEligible(returning.player,urgent.slot)&&returning.gain>0))return action('ir',returning.needsSpace?`Make room for ${returning.player.name} · IR return`:`Activate ${returning.player.name} from IR`,rosterUrl);
  const offers=(coach.plan.offers||[]).filter(o=>{
   if(!o?.player||o.player.outForSeason||o.player.isOut||o.gains?.some(g=>finite(g.gain)&&g.gain< -1.5)||!o.gains?.some(g=>finite(g.gain)&&g.gain>0))return false;
+  if(!worthwhileWaiverOffer(o,week))return false;
   if(!o.drop)return true;
   const drop=pool?.get(String(o.drop.id))||o.drop;
   // Even a stale cached plan must not turn an IR stash into streamer fodder.
   if([...(roster?.reserve||[]),...(roster?.taxi||[])].map(String).includes(String(o.drop.id))||drop.isOut||drop.isRisky||/^(ir|pup|out|questionable|doubtful)$/i.test(drop.injuryStatus||''))return false;
   if(['K','DEF'].includes(o.player.position)&&!['K','DEF'].includes(drop.position))return false;
+  if(roster&&rosterRetention({id:o.drop.id,rosterIds:roster.players.filter(id=>![...(roster.reserve||[]),...(roster.taxi||[])].map(String).includes(String(id))),ownedIds:[...roster.players,...(roster.reserve||[]),...(roster.taxi||[])],values:coach.values||new Map(),weekly:coach.weekly||[],players:coach.players||{},incoming:o.player}))return false;
   return true;
  })
   .sort((a,b)=>waiverOfferPriority(a,week)-waiverOfferPriority(b,week)||(b.score||0)-(a.score||0));
@@ -55,8 +58,7 @@ export function rosterNextAction({coach,outlook,move,meSleeperId,now=Date.now()}
  }
  const pickup=offers.find(o=>{
   if(!skill(o.player)&&o.player.position!=='QB')return false;
-  const target=o.gains.find(g=>g.week===o.targetWeek),threshold=o.player.position==='QB'?5:o.targetWeek===week?3:4;
-  return target?.gain>=threshold;
+  return worthwhileWaiverOffer(o,week);
  });
  if(pickup)return action('waiver',pickupText(pickup),waiverUrl);
  const target=move?.trade?.player,partner=move?.trade?.team;
@@ -69,5 +71,6 @@ export function rosterNextAction({coach,outlook,move,meSleeperId,now=Date.now()}
  }
  if(alerts[0])return action('watch',`Watch ${alerts[0].player.name}${alerts[0].backup?` · keep ${alerts[0].backup.name} available`:''}`,rosterUrl);
  if(move?.need?.urgent&&move.mine?.id!=null&&['RB','WR','TE'].includes(move.need.position))return action('trade',`Shop ${move.need.position} upgrades · keep your depth`,`#/trade?team=${encodeURIComponent(move.mine.id)}`);
- return action('hold','Hold your depth · no worthwhile upgrade');
+ const keep=coach.plan.keep?.[0];
+ return action('hold',keep?`Keep ${keep.name} · ${keep.reason}`:'Hold your depth · no worthwhile upgrade');
 }

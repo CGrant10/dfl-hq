@@ -11,6 +11,7 @@
 import { ANALYZER_POSITIONS } from "./team-analyzer.js";
 import { esc } from "./ui.js";
 import {automaticTradePlayer} from './player-availability.js';
+import {rosterRetention} from './roster-retention.js';
 
 const num = value => Number(value) || 0;
 const nameOf = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || team?.id || ""}`;
@@ -43,6 +44,7 @@ function tradeCandidate(analysis, mine, need, weekly) {
       if (player.position !== need.position || !automaticTradePlayer(player) || player.isRisky || [...(team.reserve||[]),...(team.taxi||[])].map(String).includes(String(player.id))) continue;
       const current = weeklyPlayer(weekly, player.id);
       if (current?.isOut || current && !current.hasGame) continue;
+      if(analysis.pool instanceof Map&&rosterRetention({id:player.id,rosterIds:team.playerIds,ownedIds:[...team.playerIds,...(team.reserve||[]),...(team.taxi||[])],values:analysis.pool,weekly:[{week:weekly?.week,pool:weekly?.pool||new Map()}]}))continue;
       options.push({ player, team, week: projectedWeek(weekly, player) });
     }
   }

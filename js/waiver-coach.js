@@ -1,4 +1,5 @@
 import {DFL_SLOTS,slotEligible,availableBeforeKickoff} from './lineup-alert-model.js';
+import {rosterRetention,retainedRosterDepth} from './roster-retention.js';
 const finite=n=>n!==null&&n!==undefined&&Number.isFinite(Number(n));
 const usable=p=>p&&finite(p.points)&&p.hasGame&&!p.isOut;
 const round=n=>Math.round(n*10)/10;
@@ -9,8 +10,19 @@ export function waiverOfferPriority(offer,week){
   if(current?.coverage>0)return streamerPosition(offer.player)?1:0;
   return ['RB','WR','TE'].includes(offer.player.position)?2:offer.player.position==='QB'?3:4;
 }
+export function worthwhileWaiverOffer(offer,week){
+ const gains=offer.gains||[],current=gains.find(g=>g.week===week);
+ if(gains.some(g=>g.coverage<0||finite(g.gain)&&Number(g.gain)<-1.5))return false;
+ if(gains.some(g=>g.coverage>0&&Number(g.gain)>=1.5))return true;
+ const score=gains.reduce((sum,g)=>sum+(Number(g.gain)||0)*(finite(g.weight)?Number(g.weight):1),0);
+ const qb=offer.player?.position==='QB',threshold=qb?5:3;
+ return Number(current?.gain)>=threshold&&score>=threshold
+  ||gains.some(g=>g.week>week&&Number(g.gain)>=(qb?5:4))&&score>=3
+  ||gains.filter(g=>Number(g.gain)>=1.5).length>=2&&score>=(qb?5:3);
+}
 function protectedDepth(player,value,meta){
   if(streamerPosition(player))return false;
+  if(player?.outForSeason||value?.outForSeason)return false;
   if(injured(player)||injured(value)||injured(meta)||finite(value?.injuryValueFactor)&&Number(value.injuryValueFactor)<1||Number(value?.estimatedMissedGames)>0)return true;
   // A short injury absence must not erase a useful player's healthy outlook.
   const healthy=Math.max(...[value?.forwardPerGame,value?.currentPerGame,value?.recentAverage,finite(value?.projectedPoints)?Number(value.projectedPoints)/17:0,finite(value?.priorPace)?Number(value.priorPace)/17:0].filter(finite).map(Number),0);
@@ -43,6 +55,8 @@ export function buildWaiverPlan({rosters=[],rosterId,weekly=[],schedule=null,val
   const reserve=new Set([...(mine.reserve||[]),...(mine.taxi||[])].map(String));
   const ids=mine.players.map(String).filter(id=>!reserve.has(id)),starters=(mine.starters||[]).map(String),starting=new Set(starters);
   const current=weekly[0].pool;
+  const ownedIds=[...mine.players,...(mine.reserve||[]),...(mine.taxi||[])].map(String);
+  const keep=retainedRosterDepth({rosterIds:ids,ownedIds,values,weekly,players});
   if(starters.some(id=>id!=='0'&&(!current.has(id)||current.get(id).hasGame&&!finite(current.get(id).points))))return {state:'unavailable',offers:[]};
   const state=p=>{const team=({WSH:'WAS',JAC:'JAX',LA:'LAR'}[p?.team]||p?.team);return schedule.get(team)};
   const locked=starters.flatMap((id,slotIndex)=>{if(id==='0')return [];const p=current.get(id);if(p?.hasGame===false)return [];const game=state(p);return !game||game.key!=='upcoming'||Date.parse(game.kickoff)<=now?[{id,slotIndex}]:[]});
@@ -69,13 +83,15 @@ export function buildWaiverPlan({rosters=[],rosterId,weekly=[],schedule=null,val
     // Sleeper's roster capacity counts the non-BN starting slots plus BN slots.
     const options=ids.length<capacity?[null]:dropOptions.filter(drop=>(!streamerPosition(player)||streamerPosition(drop.p))&&(!starting.has(drop.id)||drop.p.position===player.position));
     for(const drop of options){
+      if(drop&&rosterRetention({id:drop.id,rosterIds:ids,ownedIds,values,weekly,players,incoming:player}))continue;
       const next=ids.filter(id=>id!==drop?.id).concat(String(player.id));
       const gains=bases.map(w=>{const after=rosterLineupScore(next,w.pool,{locked:w.locked});return {week:w.week,gain:w.base&&after?round(after.total-w.base.total):null,coverage:w.base&&after?after.filled-w.base.filled:0,weight:w.weight}});
-      if(!gains.some(g=>g.gain>=1.5)||gains.some(g=>g.gain!==null&&g.gain< -1.5))continue;
+      if(!gains.some(g=>g.gain>=1.5)||gains.some(g=>g.coverage<0||g.gain!==null&&g.gain< -1.5))continue;
       const score=gains.reduce((n,g)=>n+(g.gain||0)*g.weight,0);
       if(!best||score>best.score)best={player,drop:drop?{...drop.p,tradeValue:drop.value.tradeValue}:null,gains,score};
     }
     if(!best)continue;
+    if(!worthwhileWaiverOffer(best,weekly[0].week))continue;
     const strongest=[...best.gains].sort((a,b)=>(b.gain||0)-(a.gain||0))[0];
     const kind=strongest.week!==weekly[0].week?'Plan ahead':strongest.coverage>0?'Fill a gap':player.position==='QB'||player.position==='K'||player.position==='DEF'?'Streamer':'Lineup upgrade';
     const adds=Number(trending?.adds?.get(String(player.id)))||0;
@@ -86,7 +102,7 @@ export function buildWaiverPlan({rosters=[],rosterId,weekly=[],schedule=null,val
     offers.push({...best,kind,adds,faab,targetWeek:strongest.week});
   }
   offers.sort((a,b)=>waiverOfferPriority(a,weekly[0].week)-waiverOfferPriority(b,weekly[0].week)||b.score-a.score||b.adds-a.adds||a.player.name.localeCompare(b.player.name));
-  if(wanted)return {state:'ready',offers,returns,futureCount,week:weekly[0].week,rosterId:mine.roster_id};
+  if(wanted)return {state:'ready',offers,returns,keep,futureCount,week:weekly[0].week,rosterId:mine.roster_id};
   const counts=new Map(),shortlist=offers.filter(o=>{const position=o.player.position,count=counts.get(position)||0,limit=['QB','K','DEF'].includes(position)?1:2;if(count>=limit)return false;counts.set(position,count+1);return true}).slice(0,4);
-  return {state:'ready',offers:shortlist,returns,futureCount,week:weekly[0].week,rosterId:mine.roster_id};
+  return {state:'ready',offers:shortlist,returns,keep,futureCount,week:weekly[0].week,rosterId:mine.roster_id};
 }

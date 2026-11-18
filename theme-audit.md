@@ -3294,3 +3294,18 @@ verify the Trade entry in both themes with provider writes blocked.
 Evidence: `/workspace/dfl-trade-1599/{browser,browser-large,actual-final,public}`.
 Theme guard, release checks, complete tests and production bundles pass. Physical
 iOS/Android animation timing and screen-reader speech are not newly measured.
+
+
+### 1.600.0 — Roster-aware waivers and named holds
+
+Reviewed the primary waiver Add/Drop and named hold at 320/390px in Medicine Wheel
+Light/Dark with 16/32px root text. Added single-line player/team-name treatment;
+market details follow the primary action. Refresh and enabled disclosure inks
+now use shared body-text after Light-mode contrast review; no new palette,
+retired accent or duplicate theme. Visible text contrast passes in the additional
+browser cases. Existing refresh/retry focus, disclosure state and 768px/enlarged
+layout checks also pass. Current-league Home/Clubhouse captures are read-only.
+
+Evidence: `/workspace/dfl-roster-1600/{fixture,actual,public}`. All 2,663 tests,
+focused follow-up checks, theme and production validations pass. Native device
+animation timing and screen-reader speech are not newly measured.

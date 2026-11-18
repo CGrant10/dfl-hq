@@ -7,6 +7,8 @@ import {lineupRescuePlan} from './lineup-alert-model.js';
 import {matchesDflStartingSlots} from './analyzer-league-context.js';
 import {loadWaiverHistory,clearWaiverHistoryCache} from './waiver-history-data.js';
 import {buildWaiverIntelligence} from './waiver-intelligence.js';
+import {loadBackfieldRoles} from './backfield-roles-data.js';
+import {backfieldRoleIndex} from './backfield-roles-model.js';
 const cache=new Map();
 export function clearRosterCoachCache(){cache.clear();clearWaiverHistoryCache();}
 globalThis.addEventListener?.('dfl:quick-sync-complete',clearRosterCoachCache);
@@ -24,8 +26,17 @@ export function loadRosterCoachSnapshot(leagueId,season,week){
   })().catch(error=>{cache.delete(key);throw error});cache.set(key,{at:Date.now(),value});return value;
 }
 export async function loadRosterCoach({data,team,season,week}){
-  const snapshot=await loadRosterCoachSnapshot(data.league.sleeper_league_id,season,week);
+  const [snapshot,backfields]=await Promise.all([loadRosterCoachSnapshot(data.league.sleeper_league_id,season,week),
+    loadBackfieldRoles().catch(()=>({status:'Unavailable',usable:false,players:{}}))]);
   const {league,rosters,rows,players,nfl,weekly}=snapshot;
+  // A Home visit may outlive its original analyzer snapshot. Recheck the
+  // small role facts, and require the current NFL team to match the role.
+  const roles=backfieldRoleIndex(backfields),club=t=>({JAC:'JAX',WSH:'WAS',LA:'LAR'}[t]||t);
+  const values=new Map([...data.pool].map(([id,p])=>{
+    if(p.position!=='RB')return [id,p];
+    const team=club(players[id]?.t||players[id]?.team||p.nflTeam),role=roles.get(id);
+    return [id,{...p,nflTeam:team,handcuffForId:role?.team===team?role.handcuffForId:null,backfieldStatus:backfields.status}];
+  }));
   const roster=rosters.find(r=>String(r.roster_id)===String(team.id)),row=rows.find(r=>String(r.roster_id)===String(team.id));
   if(!roster||!row)throw Error('This team’s current lineup is unavailable');
   const submitted=rosters.map(r=>({...r,starters:rows.find(row=>String(row.roster_id)===String(r.roster_id))?.starters||r.starters}));
@@ -33,9 +44,9 @@ export async function loadRosterCoach({data,team,season,week}){
     const user=(Array.isArray(snapshot.users)?snapshot.users:[]).find(u=>String(u.user_id)===String(r.owner_id));
     return [String(r.roster_id),user?.metadata?.team_name||user?.display_name||data.teams?.find(t=>String(t.id)===String(r.roster_id))?.team_name||`Team ${r.roster_id}`];
   }));
-  const basePlan=buildWaiverPlan({rosters:submitted,rosterId:team.id,weekly,schedule:nfl?.teams,values:data.pool,players,league});
+  const basePlan=buildWaiverPlan({rosters:submitted,rosterId:team.id,weekly,schedule:nfl?.teams,values,players,league});
   const plan=buildWaiverIntelligence({plan:basePlan,history:snapshot.history,rosters:submitted,weekly,schedule:nfl?.teams,players,teamNames,league,season,week});
   const live=gameDayLineup({...row,players:roster.players},players,nfl?.teams,{rosterPositions:league.roster_positions});
   const rescue=lineupRescuePlan({...live,bench:live.bench.map(p=>({...p,activeRoster:![...(roster.reserve||[]),...(roster.taxi||[])].map(String).includes(p.id),projection:weekly[0].pool.get(p.id)?.points}))});
-  return {...snapshot,plan,rescue};
+  return {...snapshot,plan,rescue,values};
 }
