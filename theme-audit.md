@@ -3198,3 +3198,20 @@ browser checks and 2,526 tests / 305 files pass, including theme checks. Existin
 Hall of Fame, Yearbook, career totals, Moments and records remain accessible.
 All browser league/account mutations are blocked; real data is read only.
 Physical iOS pacing and screen-reader speech are not measured. See design-qa.md.
+
+### 1.594.0 — Quiet Sheen launch and System Reboot update
+
+Reviewed startup, required-update idle/focus/scanning and reload handoff at
+320/390px in both Medicine Wheel defaults; also 768px and compact/landscape
+screens. The existing update screen is a deliberately dark brand plate under
+both themes, using shared scoped red/gold/white inks and original shield art.
+Accessible eyebrow red is separate from the red button fill; final text contrast
+passes. Round logo remains the ordinary launch mark. No redundant themes or
+retired UI blue. Motion off/Reduced Motion suppress the scan and sheen; document
+visibility pauses the scan. Actual current-member Home/shared navigation and
+scroll states were checked in Light/Dark without provider writes. No layout or
+color changes were made to league pages.
+
+Evidence: `/workspace/dfl-reboot-1594/{final,boot,edges,actual}` and combined source
+comparisons. `pnpm themes`, 2,624 tests and production bundle checks pass.
+Physical iOS pacing and VoiceOver remain unmeasured. See design-qa.md.

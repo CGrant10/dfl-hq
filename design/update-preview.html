@@ -37,7 +37,7 @@
       const release=version.trim();if(!/^\d+\.\d+\.\d+$/.test(release))throw Error('Release unavailable');
       // Load the same renderer and glow as the app, using fresh public source.
       // Only the config import is replaced; this preview does not boot the app.
-      const code=source.replace('import { APP_VERSION, LEAGUE_FOUNDED } from "./config.js";',`const APP_VERSION=${JSON.stringify(release)};const LEAGUE_FOUNDED=2017;`);
+      const code=source.replace(/import\s*\{\s*APP_VERSION,\s*LEAGUE_FOUNDED\s*\}\s*from\s*["'][^"']*config\.js(?:\?[^"']*)?["'];?/,`const APP_VERSION=${JSON.stringify(release)};const LEAGUE_FOUNDED=2017;`);
       moduleUrl=URL.createObjectURL(new Blob([code],{type:'text/javascript'}));
       const {updateGateMarkup,mountUpdateLogoGlow}=await import(moduleUrl);
       const parsed=new DOMParser().parseFromString(index,'text/html');
@@ -47,18 +47,30 @@
       gate.className='update-gate';gate.setAttribute('role','region');gate.setAttribute('aria-label','Update screen preview');
       gate.querySelector('.update-gate__eyebrow').textContent='DFL HQ · UPDATE PREVIEW';
       status.remove();
-      const back=gate.querySelector('#update-go');back.textContent='BACK TO DFL HQ';
-      back.addEventListener('click',()=>location.assign(new URL('./#/home',document.baseURI)));
+      const back=gate.querySelector('#update-go');back.textContent='PREVIEW SYSTEM REBOOT';
       const note=gate.querySelector('.update-gate__status');
       note.replaceChildren(document.createTextNode('Preview · '));
       const replay=document.createElement('button');replay.type='button';replay.textContent='Replay animation';note.append(replay);
+      const home=document.createElement('a');home.href=new URL('./#/home',document.baseURI).href;home.textContent='Back to DFL HQ';home.style.cssText='display:block;color:inherit;min-height:44px;padding:12px';note.append(home);
       let stop=mountUpdateLogoGlow(gate);
+      let timer=0;
+      back.addEventListener('click',()=>{
+        if(back.disabled)return;
+        back.disabled=true;back.textContent='SYSTEM REBOOT';replay.disabled=true;
+        gate.classList.add('is-updating');gate.setAttribute('aria-busy','true');
+        // Demonstration only: no cache refresh, worker replacement or update
+        // download. The app's real first paint completes the preview reveal.
+        timer=setTimeout(()=>{
+          try{sessionStorage.setItem('dfl.update.reboot',JSON.stringify({at:Date.now(),version:release}));}catch{}
+          location.assign(new URL('./?u='+Date.now()+'#/home',document.baseURI));
+        },1100);
+      });
       replay.addEventListener('click',()=>{
         stop();gate.removeAttribute('data-logo-ready');
         getComputedStyle(gate.querySelector('.update-gate__glow'),'::before').animationName;
         stop=mountUpdateLogoGlow(gate);
       });
-      window.addEventListener('pagehide',()=>stop(),{once:true});
+      window.addEventListener('pagehide',()=>{stop();clearTimeout(timer);},{once:true});
     }catch{
       status.textContent='The preview could not load. ';
       const back=document.createElement('a');back.href='./#/home';back.textContent='Open DFL HQ';status.append(back);
