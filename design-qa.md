@@ -1,85 +1,62 @@
-# Quiet Sheen loading and System Reboot updates — 1.594.0
+# Championship stadium update lighting — 1.595.0
 
 final result: passed
 
-Selected visual targets:
-- Startup: `/workspace/generated_images/exec-94f0ee76-493c-4be8-90a0-45ab1c5c27b5.png`.
-- Update: `/workspace/generated_images/exec-81447016-ece5-4987-bf47-c5dc3df03e83.png`.
-- The user selected the first displayed image from each set, then explicitly
-  requested the System Reboot interaction. Existing round launch artwork and
-  supplied shield/update stadium artwork are reused, rather than generated
-  approximations of the brand. Shield remains confined to updates/app icon.
+The user selected Championship Atmosphere: one wave through the stadium light
+banks, faint Medicine Wheel red/gold stadium illumination, and a final bank at
+completion. Existing selected update-screen hierarchy and supplied shield remain.
+The visual layout reference is the first selected update mock at
+`/workspace/generated_images/exec-81447016-ece5-4987-bf47-c5dc3df03e83.png`.
+The prior shipped layout is `/workspace/dfl-reboot-1594/final/dark-390-idle.png`.
 
-Evidence: `/workspace/dfl-reboot-1594/`. Browser-rendered idle, keyboard focus,
-actual refresh/scanning, Reduced Motion and app-motion-off states are in `final/`.
-Bootstrap/handoff states are in `boot/`; short/landscape layouts are in `edges/`.
-Real current-member Home, including shared navigation and scroll states, was
-reviewed in Light and Dark in `actual/`; provider writes were blocked. No account,
-league, notification or wager was mutated. The public update preview exercises
-an explicitly simulated reboot, without downloading an update or replacing a
-worker. The production update handler adds no animation wait to its existing
-refresh/worker lifecycle.
+Browser evidence: `/workspace/dfl-lights-1595/{final,lights,boot,edges,actual}`.
+`light-sequence-comparison.png` places the previous screen, the new wave and
+completed light-bank state together at 390×844 CSS/pixels, deviceScaleFactor 1.
+These adjacent full-screen images make the logo, typography and fixtures readable
+without a separate crop. The original 852×1846 mock was normalized to 390×844
+in the preceding 1.594 review; this refinement intentionally reframes the stadium
+so the actual floodlights are visible. Typography, shield and action positions
+are unchanged. No new illustration, font, icon or network image was introduced.
 
-Comparison normalization: source images are 852×1846; implementations are
-390×844 CSS/pixels at deviceScaleFactor 1. Sources are downsampled and cropped by approximately one pixel to 390×844
-for `update-final-comparison.png` and `launch-final-comparison.png`, each showing
-source and browser-rendered implementation together. Additional update captures
-are 320/390/768×844; compact screens 320×568, 390×667 and 844×390. No device
-chrome is included. The adjacent 390px screens make the logo, type and button
-readable without a further focused crop. `themes-final-comparison.png` compares
-the explicit dark brand plate under both application themes.
+Review:
+- Typography/content: the approved boxy headline, anniversary, functional statuses
+  and 52px Update action remain. No new explanatory text or fake progress.
+- Layout: masks and light images share the original stadium aspect ratio and
+  responsive frame. Safe-area padding, compact/landscape scrolling, focus and
+  button access remain intact at 320×568, 390×667 and 844×390, as well as
+  320/390/768×844. No horizontal overflow.
+- Color: existing black/white/red/gold artwork supplies the light and ribbon-board
+  colors. Both Light/Dark use the explicit dark update plate. Contrast passes
+  while lights peak and after the final bank; no old crest blue/theme option.
+- Image/motion: the original stadium is reused under static feathered masks;
+  only opacity animates. Three banks run once with staggered starts, then settle.
+  The final bank remains dark until real first-route readiness. The shield's
+  repeating scan was removed; its original single idle sheen remains.
+- Handoff: an elapsed start time preserves the lighting phase across reload. The
+  ready reveal fades over 420ms; the 1.2s slow-boot yield remains. The update-only removal guard allows
+  1.8s so a late ready event can finish its fade; ordinary launches keep 1.5s.
+  A fallback/mismatched release never triggers the completion bank. Visibility
+  listeners pause and clean up; Reduced Motion/app motion off stay static.
 
-Findings and fixes:
-- P2: initial shield looked too small because the existing SVG includes generous
-  transparent padding. Increased its wrapper, retained the established optical
-  alignment correction, and compensated for bottom whitespace. Final shield,
-  hierarchy and primary action match the selected composition.
-- P2: initial Rajdhani headline/action rendered optically smaller than the mock.
-  Increased display/label sizes and refined the title/mark/anniversary rhythm.
-  Final screenshot has the intended two-line hierarchy and readable action.
-- P2: legacy HQ splash selectors hid/delayed the new activity rule. Scoped the
-  final HQ presentation to both launch modes with sufficient specificity. Browser
-  checks confirm a visible rule immediately, with no delayed entrance animation.
-- P2: contrast inspection found the update eyebrow and muted version below 4.5:1.
-  Kept the accessible red button fill, lightened the separate red label and muted
-  version. All final update text passes automated contrast checks in both themes.
-- The local Vite preview rewrites config import URLs, preventing the existing
-  preview renderer from loading. Its narrow config-import replacement now
-  supports both raw public and Vite-rewritten sources.
+The browser checks verify single animation iterations, staggered wave phases,
+background-tab pause, static preference states, completion opacity and contrast.
+Existing marker tests now check elapsed phase and visibility. Startup, reboot,
+ready, fallback, stale-marker and short launch checks pass. The preview's explicit
+2.2s demonstration exercises navigation back into Home without replacing a worker
+or refreshing caches. Production refresh has no animation wait. Real current-
+member Home/navigation was checked in Light/Dark with all provider writes blocked.
+No league, account, notification, wager or roster data was changed.
 
-Required fidelity surfaces:
-- Typography: existing bundled Rajdhani/Inter; strong condensed headline,
-  unclipped single-line labels, compact version/status; no new fonts.
-- Spacing: selected full-screen composition; optically centered shield and round
-  logo; 52px primary action, safe-area-aware padding; short screens scroll rather
-  than clipping content. Keyboard focus remains visible.
-- Color: explicit black/white/red/gold brand plate stays legible in both Medicine
-  Wheel defaults. No retired crest blue, new theme option or palette override.
-- Images: original transparent assets, correct alpha masking and optical axis;
-  no rasterized UI, invented crest, hard glow edge or animated image/filter.
-- Copy: selected headline/anniversary/action retained; only functional installing,
-  opening and SYSTEM READY statuses added. No rotating loading jokes/subtext.
+QA history: the first capture script checked a short splash after its normal
+fast dismissal under concurrent build/test load. Moving that inspection earlier
+confirmed the existing timing; application startup was not slowed for captures.
+No unresolved P0/P1/P2 visual findings. Original shield/portrait/asset fidelity
+is retained. Physical iOS animation pacing, VoiceOver speech and genuine worker
+cross-version installation are not measured by these browser tests.
 
-Interaction checks: logo download/decode starts the finite idle sheen; updating
-uses a transform/opacity scan and pauses when hidden; motion preferences disable
-it. A short-lived, one-use session marker continues the update plate across
-reload only for the matching release. Actual first-route paint produces SYSTEM
-READY and a 240ms fade; a slow route yields to its existing loading state without
-claiming readiness. Existing 1.2s/1.5s startup fallbacks are retained. Expired,
-future/mismatched and blocked-storage cases open normally; current route is
-preserved. Ordinary startup uses the selected round logo, quiet activity line
-and one sheen, with existing fast ready dismissal.
+Validation: 2,624 tests / 313 files pass; release coherence, theme, TypeScript,
+identifier and build/bundle checks pass (89 modules, startup 3, Home 4).
+Public release verification follows merge.
 
-Validation: 2,624 tests / 313 files pass, including new handoff/marker tests.
-Release coherence, theme guard, TypeScript, identifier checks, application build
-and bundle verification pass (89 modules; startup 3, Home 4). Final Chromium
-captures show no page exceptions. Public release verification follows merge.
-
-P3/limits: the static mock's permanent lens-like glint is represented by a finite
-masked sheen; the rule is indeterminate rather than a false progress percentage.
-Physical iOS update pacing, VoiceOver speech and a genuine cross-version worker
-installation remain unmeasured. The currently installed older release owns its
-next Update button; this release enables the new animation for later updates.
-
-Implementation checklist: selected hierarchy/assets, reboot lifecycle,
-preferences, focus/contrast, compact layouts, browser review and checks complete.
+Implementation checklist: finite lighting wave, reload phase, ready bank,
+preferences/visibility, mobile layout/contrast, browser preview and checks complete.

@@ -47,7 +47,7 @@
       gate.className='update-gate';gate.setAttribute('role','region');gate.setAttribute('aria-label','Update screen preview');
       gate.querySelector('.update-gate__eyebrow').textContent='DFL HQ · UPDATE PREVIEW';
       status.remove();
-      const back=gate.querySelector('#update-go');back.textContent='PREVIEW SYSTEM REBOOT';
+      const back=gate.querySelector('#update-go');back.textContent='PREVIEW STADIUM LIGHTS';
       const note=gate.querySelector('.update-gate__status');
       note.replaceChildren(document.createTextNode('Preview · '));
       const replay=document.createElement('button');replay.type='button';replay.textContent='Replay animation';note.append(replay);
@@ -57,13 +57,14 @@
       back.addEventListener('click',()=>{
         if(back.disabled)return;
         back.disabled=true;back.textContent='SYSTEM REBOOT';replay.disabled=true;
+        gate.dataset.updateStarted=String(Date.now());
         gate.classList.add('is-updating');gate.setAttribute('aria-busy','true');
         // Demonstration only: no cache refresh, worker replacement or update
         // download. The app's real first paint completes the preview reveal.
         timer=setTimeout(()=>{
-          try{sessionStorage.setItem('dfl.update.reboot',JSON.stringify({at:Date.now(),version:release}));}catch{}
+          try{sessionStorage.setItem('dfl.update.reboot',JSON.stringify({at:Date.now(),startedAt:Number(gate.dataset.updateStarted),version:release}));}catch{}
           location.assign(new URL('./?u='+Date.now()+'#/home',document.baseURI));
-        },1100);
+        },2200);
       });
       replay.addEventListener('click',()=>{
         stop();gate.removeAttribute('data-logo-ready');
