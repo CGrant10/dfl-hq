@@ -87,7 +87,7 @@ export function updateGateMarkup(version){
   const safeVersion=String(version).replace(/[^0-9.]/g,"");
   const season=new Date().getFullYear()-LEAGUE_FOUNDED+1;
   const anniversary=season>=10&&season%10===0;
-  return `<div class="update-gate__content">
+  return `<div class="update-gate__lights" aria-hidden="true"><span class="update-stadium-bank update-stadium-bank--red"></span><span class="update-stadium-bank update-stadium-bank--left"></span><span class="update-stadium-bank update-stadium-bank--gold"></span><span class="update-stadium-bank update-stadium-bank--final"></span></div><div class="update-gate__content">
     <p class="update-gate__eyebrow">DFL HQ UPDATE</p>
     <h1>The league just got better.</h1>
     <span class="update-gate__mark"><img src="icons/app-update-aligned.svg?v=${safeVersion}" alt="DFL HQ" width="512" height="512" crossorigin="anonymous"><span class="update-gate__glow" aria-hidden="true"></span></span>
@@ -164,7 +164,7 @@ export async function forceUpdate(){
   }catch(err){console.warn("Update refresh failed, reloading with cache buster",err)}
   // The next document continues the same update plate. A one-use, short-lived
   // marker never claims readiness: the new router's first paint does that.
-  try{sessionStorage.setItem('dfl.update.reboot',JSON.stringify({at:Date.now(),version:bar()?.dataset.version||APP_VERSION}));}catch{}
+  try{sessionStorage.setItem('dfl.update.reboot',JSON.stringify({at:Date.now(),startedAt:Number(bar()?.dataset.updateStarted)||Date.now(),version:bar()?.dataset.version||APP_VERSION}));}catch{}
   location.replace(`${location.pathname}?u=${Date.now()}${location.hash}`);
   return true;
 }
@@ -183,6 +183,7 @@ export function setupUpdates(){
       if(updateBlocked()){el.querySelector(".update-gate__status").textContent="Finish or sync the current score, then update.";return}
       if(go.disabled)return;
       go.disabled=true;go.textContent="SYSTEM REBOOT";
+      el.dataset.updateStarted=String(Date.now());
       el.classList.add("is-updating");
       el.setAttribute('aria-busy','true');
       el.querySelector(".update-gate__status").textContent="Installing update…";

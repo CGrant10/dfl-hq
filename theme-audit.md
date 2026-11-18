@@ -3215,3 +3215,19 @@ color changes were made to league pages.
 Evidence: `/workspace/dfl-reboot-1594/{final,boot,edges,actual}` and combined source
 comparisons. `pnpm themes`, 2,624 tests and production bundle checks pass.
 Physical iOS pacing and VoiceOver remain unmeasured. See design-qa.md.
+
+### 1.595.0 — Championship update stadium lights
+
+Reviewed the existing dark update plate in both Medicine Wheel defaults at
+320/390/768px, including wave peak, settled lights, final readiness bank, focus,
+Reduced Motion and app motion off. Original stadium artwork supplies meaningful
+red/gold ribbon-board colors and white floodlights under static feathered masks;
+no new theme option or retired UI accent. Text contrast passes at the wave peak
+and final bank. Compact/landscape actions remain reachable. Normal round-logo
+startup and real current-member Home/navigation/scroll states were checked in
+Light/Dark; league page styling is unchanged. Provider writes were blocked.
+
+Evidence: `/workspace/dfl-lights-1595/{final,lights,boot,edges,actual}` and the
+combined light-sequence comparison. Theme checks, 2,624 tests and production
+bundle validation pass. Physical iOS pacing and screen-reader speech remain
+unmeasured. See design-qa.md.

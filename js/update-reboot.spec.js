@@ -7,22 +7,26 @@ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const boot=html.slice(html.indexOf('<script>',html.indexOf('id="splash"'))+8,html.indexOf('</script>',html.indexOf('id="splash"')));
 const version=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8')).version;
 function launch(marker,{blocked=false,off=false}={}){
- const classes=new Set(),nodes=new Map(),events=new Map(),timers=[],store=new Map();
+ const classes=new Set(),nodes=new Map(),events=new Map(),timers=[],store=new Map(),styles=new Map();
  if(marker)store.set('dfl.update.reboot',JSON.stringify(marker));
  const storage={getItem:key=>{if(blocked)throw Error('blocked');return key.includes('gameday-motion')&&off?'off':store.get(key)||null},setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)};
- const el={parentNode:true,classList:{add:(...names)=>names.forEach(n=>classes.add(n))},setAttribute(){},getAttribute:()=>2017,style:{setProperty(){}},querySelector:s=>{if(!nodes.has(s))nodes.set(s,{textContent:''});return nodes.get(s)},addEventListener:(n,fn)=>events.set(n,fn),remove(){this.parentNode=false}};
- const document={documentElement:{dataset:{}},getElementById:()=>el,querySelector:()=>({content:version})};
+ const el={parentNode:true,dataset:{},classList:{add:(...names)=>names.forEach(n=>classes.add(n))},setAttribute(){},getAttribute:()=>2017,style:{setProperty:(k,v)=>styles.set(k,v)},querySelector:s=>{if(!nodes.has(s))nodes.set(s,{textContent:''});return nodes.get(s)},addEventListener:(n,fn)=>events.set(n,fn),remove(){this.parentNode=false}};
+ const document={hidden:false,addEventListener:(n,fn)=>events.set(n,fn),removeEventListener:n=>events.delete(n),documentElement:{dataset:{}},getElementById:()=>el,querySelector:()=>({content:version})};
  const window={addEventListener:(n,fn)=>events.set(n,fn)};
  vm.runInNewContext(boot,{document,window,sessionStorage:storage,localStorage:storage,location:{search:'',hash:'#/clubhouse'},Date,performance:{now:()=>0},setTimeout:(fn,ms)=>timers.push({fn,ms})});
- return {el,classes,store,document,ready:()=>events.get('dfl:app-ready')?.({type:'dfl:app-ready'}),flush:()=>{for(const timer of timers.splice(0).sort((a,b)=>a.ms-b.ms))timer.fn();}};
+ return {el,classes,store,styles,document,visibility:()=>events.get('visibilitychange')?.(),ready:()=>events.get('dfl:app-ready')?.({type:'dfl:app-ready'}),flush:()=>{for(const timer of timers.splice(0).sort((a,b)=>a.ms-b.ms))timer.fn();}};
 }
 afterEach(()=>vi.unstubAllGlobals());
 describe('reboot handoff',()=>{
  it('consumes the current release marker once and waits for a real route paint',()=>{
-  const f=launch({at:Date.now(),version});
+  const f=launch({at:Date.now(),startedAt:Date.now()-1800,version});
   expect(f.classes.has('is-rebooting')).toBe(true);
   expect(f.store.has('dfl.update.reboot')).toBe(false);
   expect(f.classes.has('is-system-ready')).toBe(false);
+  expect(parseFloat(f.styles.get('--stadium-wave-offset'))).toBeLessThanOrEqual(-1.8);
+  expect(parseFloat(f.styles.get('--stadium-wave-offset'))).toBeGreaterThan(-2);
+  f.document.hidden=true;f.visibility();expect(f.el.dataset.updateHidden).toBe('true');
+  f.document.hidden=false;f.visibility();expect(f.el.dataset.updateHidden).toBe('false');
   f.ready();f.flush();
   expect(f.classes.has('is-system-ready')).toBe(true);
   expect(f.el.querySelector('.update-gate__status').textContent).toBe('SYSTEM READY');
