@@ -22,6 +22,14 @@ const weekly = { season: 2026, week: 2, teams: [
 ]) };
 
 describe("dashboard next move", () => {
+  it('does not advertise another manager’s owned RB handcuff as expendable trade depth',()=>{
+    const lead={id:'lead',name:'Lead RB',position:'RB',nflTeam:'KC'},backup={...partner.lineup.bench[0],nflTeam:'KC',handcuffForId:'lead',backfieldStatus:'Fresh'};
+    const pool=new Map([[lead.id,lead],[backup.id,backup]]),other={...partner,playerIds:['lead','target'],lineup:{bench:[backup]}};
+    const view=buildNextMove({analysis:{...analysis,pool,teams:[mine,other]},weekly,meSleeperId:'u1'});
+    expect(view.trade).toBeNull();expect(view.waiver.player.id).toBe('free');
+    const reserved={...other,playerIds:['target'],reserve:['lead']};
+    expect(buildNextMove({analysis:{...analysis,pool,teams:[mine,reserved]},weekly,meSleeperId:'u1'}).trade).toBeNull();
+  });
   it('does not call a worse or marginal market player a starting upgrade',()=>{
     const covered={...mine,positionGrades:{...mine.positionGrades,RB:{...mine.positionGrades.RB,starters:[player('starter','Starter','RB',16,60)]}}};
     expect(buildNextMove({analysis:{...analysis,teams:[covered,partner]},weekly,meSleeperId:'u1'})).toBeNull();

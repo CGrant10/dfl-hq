@@ -174,3 +174,53 @@ Two Python refresh tests and all 2,654 JS tests / 318 files pass; release/theme/
 and production bundle checks pass. Native device pacing and screen-reader speech
 remain unmeasured. Role schedules are configured, not a promise of instantaneous
 NFL depth-chart changes or guaranteed manager acceptance.
+
+
+# Roster-aware Next Move and waivers — 1.600.0
+
+Waiver planning and Home's final Next Move now share retention/usefulness checks.
+Verified owned RB handcuffs stay protected even when their current projection is
+small or their starter is on IR. Known future bye coverage and the last useful
+RB/WR reserve cannot be spent on an unrelated pickup. Same-position additions
+remain possible when they preserve coverage across the available forecast weeks.
+Ordinary QB/TE reserves remain expendable unless an absence or risky starter makes
+them needed cover. Existing injury-return/high-value protections remain, while
+explicitly season-ending players can be replaced. Missing RB-role data produces
+an unverified-role hold rather than an invented handcuff relationship.
+
+Small single-week gains no longer trigger routine churn. The planner accepts a
+real slot gap, a meaningful current/future starter upgrade, or sustained useful
+multiweek improvement, with a larger threshold for ordinary QB pickups. A points
+increase cannot justify leaving fewer legal starting slots filled. Home rechecks
+cached pickup/drop advice against the current owned roster and retention facts;
+its skill-player recommendation uses the same usefulness rule. Named holds give
+one clear action and reason. Home's trade radar also avoids advertising another
+owner's handcuff as ordinary spare depth, including a starter held on IR.
+
+The coach rechecks existing small backfield facts independently of a Home visit's
+original analyzer snapshot and requires the latest NFL team to match. No new
+provider, paid service, backend schema or league/account write. The new pure
+retention module is included in offline dependencies. Startup remains three
+modules and Home four; app production bundle checks pass.
+
+The waiver panel leads with its primary Add/Drop or named hold, then market data.
+Names stay on one line; other pickups and league detail remain expandable. Long
+drop-team attribution moves into the expanded detail. Boilerplate footer text is
+replaced by the check time and forecast window. Refresh and disclosure controls
+use readable shared Medicine Wheel inks after visual review found a faint old
+accent in Light mode. Existing refresh focus, individual disclosure state, FAAB
+limits and failure/retry behavior remain.
+
+Evidence: /workspace/dfl-roster-1600/{fixture,actual,public}. The existing browser
+runner passes priority/FAAB, partial history, recent-drop details, refresh focus,
+independent disclosures, failure/retry and enlarged text at 320/390/768px. Eight
+additional cases apply real Medicine Wheel tokens at 320/390px in Light/Dark and
+16/32px root text: compact Add/Drop, named Walker/Johnson hold, one-line names,
+contrast and no horizontal overflow/page errors. Actual current-league Home and
+Clubhouse captures in both themes are read-only. Roster 9's current waiver plan
+retains Emmett Johnson as Kenneth Walker's handcuff and offers no unsafe drop.
+
+Validation: 2,663 tests / 319 files pass, plus 31 focused checks after final copy
+and ownership refinements. Release coherence, theme guard, TypeScript, identifiers
+and production bundles pass. No native phone pacing or screen-reader speech is
+newly measured; forecast coverage remains limited to available source weeks.

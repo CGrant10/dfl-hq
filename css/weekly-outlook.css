@@ -173,6 +173,12 @@
 .coach-pickups { padding:0; list-style:none; margin:12px 0; }
 .coach-pickups li { border-top:1px solid var(--line); padding:12px 0; }
 .coach-pickups li div { display:grid; gap:3px; }
+.coach-pickups li .coach-swap { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:7px; }
+.coach-swap>div { min-width:0; }
+.coach-swap [data-ui-name],.coach-hold [data-ui-name],.coach-intel [data-ui-name] { display:block; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.coach-hold { min-width:0; margin:12px 0; padding-block:10px; border-block:1px solid var(--line); }
+.coach-hold strong { font-size:.875rem; }
+.coach-hold span { margin-top:4px; color:var(--muted); font-size:.75rem; }
 .coach-pickups strong { font-size:.875rem; overflow-wrap:anywhere; }
 .coach-pickups small,.roster-coach footer small { color:var(--muted); font-size:.6875rem; }
 .coach-pickups span,.coach-pickups p { font-size:.8125rem; line-height:1.45; }
@@ -183,7 +189,8 @@
 .roster-coach footer a { justify-self:start; }
 
 .coach-more > summary { min-height:44px; display:flex; align-items:center; cursor:pointer; font-size:.8125rem; font-weight:600; }
-.roster-coach [data-coach-refresh] { min-height:44px; flex-shrink:0; font-size:.75rem; }
+#view[data-route="analyzer"] .roster-coach [data-coach-refresh] { min-height:44px; flex-shrink:0; font-size:.75rem; color:var(--body-text); }
+#view[data-route="analyzer"] .roster-coach :is(.coach-more,.coach-intel,.coach-drops)>summary { color:var(--body-text); opacity:1; }
 #view.view[data-page-system][data-route][data-route="analyzer"] .roster-coach .wo-head { display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:10px; }
 .roster-coach .wo-head > div { min-width:0; }
 .coach-market { padding:0 0 10px; border-bottom:1px solid var(--line); }
