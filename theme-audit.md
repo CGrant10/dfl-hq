@@ -3231,3 +3231,19 @@ Evidence: `/workspace/dfl-lights-1595/{final,lights,boot,edges,actual}` and the
 combined light-sequence comparison. Theme checks, 2,624 tests and production
 bundle validation pass. Physical iOS pacing and screen-reader speech remain
 unmeasured. See design-qa.md.
+
+### 1.596.0 — Stadium lights on normal opening
+
+Reviewed the round-logo opening at 320/390/768px in Light/Dark, including full and
+short launches, Reduced Motion, app motion off and delayed background loading.
+Original white/gold labels remain on the explicit dark brand plate; the same
+stadium red/gold/white lighting is reused without theme changes or retired blue.
+The update screen's peak/final lighting contrast and compact layouts still pass.
+Original round-logo placement and fast ready dismissal remain. Correct absolute
+image paths work in the actual app under /dfl-hq/; startup DOM is asserted during
+read-only current-member Home/navigation checks in both themes. The one opening
+image is cached with the worker shell; other decorative art remains deferred.
+
+Evidence: `/workspace/dfl-opening-1596/{opening,actual}` and the combined opening
+comparison. Theme checks, 2,626 tests and bundle validation pass. Native device
+pacing, VoiceOver and native offline installation remain unmeasured. See design-qa.md.
