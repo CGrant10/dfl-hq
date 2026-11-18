@@ -3264,3 +3264,18 @@ Evidence: `/workspace/dfl-halo-1597/{halo,final,actual}` and combined selected
 source comparison. All 2,628 tests, theme and production bundle checks pass.
 Real current-member startup/Home/navigation checks block provider writes.
 Physical iOS pacing, speech and native offline installation remain unmeasured.
+
+
+### 1.598.0 — Analyzer production and Clubhouse kickoff alignment
+
+Reviewed actual connected-league Team Analyzer/Player trends and Clubhouse
+matchups at 320/390px in Medicine Wheel Light/Dark, with provider writes blocked.
+Existing semantic rising/falling inks and shared muted/body tokens remain; no
+new palette, duplicate theme or retired blue. Player names remain single-line;
+trend direction no longer shrinks into wrapped letters. Current production and
+points are visible in both themes. Left kickoff labels now anchor left and right
+labels stay right, with no horizontal page overflow or score-position changes.
+
+Evidence: `/workspace/dfl-analyzer-1598/{after,final,public}`. Theme guard and all
+2,636 tests pass; production/release checks pass. Physical iOS and screen-reader
+speech remain unmeasured. No account, roster or league data was changed.

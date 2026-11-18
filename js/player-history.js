@@ -7,7 +7,7 @@
 // has climbed three years running from one who collapsed and bounced, and
 // those are different bets.
 //
-// This reads several completed seasons and reports the shape.
+// This reads completed seasons and, when supplied, current-season production.
 //
 // PER GAME, NOT PER SEASON. A back who missed nine games has a small
 // season total and may have been excellent; comparing totals would call
@@ -16,8 +16,8 @@
 // than being smuggled into the scoring.
 //
 // AND IT SAYS WHEN IT DOES NOT KNOW. Two seasons is a line, not a trend.
-// One is a dot. A rookie has no history at all, and "insufficient" is the
-// honest answer for all of them - see direction(), which refuses rather
+// One is a dot. A first-season player still has real production to display,
+// but no multi-season direction - see direction(), which refuses rather
 // than extrapolating from a single point.
 //
 // Pure functions. sleeper.js fetches, the panel renders.
@@ -30,7 +30,7 @@ import { scorePlayer } from "./dfl-scoring.js";
 export const TREND_SLOPE = 0.75;
 const NFL_SEASON_GAMES = 17;
 
-const num = value => (Number.isFinite(Number(value)) ? Number(value) : null);
+const num = value => value == null || value === "" ? null : (Number.isFinite(Number(value)) ? Number(value) : null);
 
 /**
  * One player's line for one season, scored with the league's own settings.
@@ -54,12 +54,13 @@ export function slopeOf(series = []) {
   const points = series.filter(entry => Number.isFinite(entry?.perGame));
   if (points.length < 2) return null;
   const n = points.length;
-  const meanX = points.reduce((sum, _, i) => sum + i, 0) / n;
+  const years = points.map((point, i) => num(point.year) ?? i);
+  const meanX = years.reduce((sum, year) => sum + year, 0) / n;
   const meanY = points.reduce((sum, entry) => sum + entry.perGame, 0) / n;
   let top = 0, bottom = 0;
   points.forEach((entry, i) => {
-    top += (i - meanX) * (entry.perGame - meanY);
-    bottom += (i - meanX) ** 2;
+    top += (years[i] - meanX) * (entry.perGame - meanY);
+    bottom += (years[i] - meanX) ** 2;
   });
   return bottom === 0 ? null : top / bottom;
 }
@@ -119,6 +120,26 @@ export function historyFor({ seasons = [], scoringSettings = null } = {}) {
     availability: series.reduce((sum, entry) => sum + entry.games, 0)
                 / (series.length * NFL_SEASON_GAMES),
   };
+}
+
+/** Add this season's real production without treating unplayed games as absences.
+ * During a live game use completed weekly samples, not a partial-game average.
+ * Historical volatility/availability remain based on completed seasons only. */
+export function withCurrentSeason(history, player, season) {
+  const base = history || historyFor(), year = num(season);
+  const games = num(player?.currentGames) || 0, points = num(player?.currentPoints);
+  const observedGames = num(player?.consistency?.games) || 0, average = num(player?.consistency?.average);
+  const live = player?.gameForm?.state === 'live';
+  const useObserved = observedGames > 0 && average != null && (live || observedGames >= games || points == null);
+  const count = useObserved ? observedGames : live ? 0 : games;
+  const total = useObserved ? average * observedGames : points;
+  if (!year || count <= 0 || total == null) return { ...base, current: null };
+  const current = { year, points: total, games: count, perGame: total / count, inProgress: true };
+  const seasons = [...base.seasons.filter(s => s.year !== year), current].sort((a, b) => a.year - b.year);
+  // Three completed games are enough to show a current rate in the comparison;
+  // one or two are still displayed but do not establish a yearly trend.
+  const comparable = seasons.filter(s => !s.inProgress || s.games >= 3);
+  return { ...base, seasons, current, direction: direction(comparable), slope: slopeOf(comparable) };
 }
 
 /**

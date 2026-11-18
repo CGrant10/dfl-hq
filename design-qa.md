@@ -70,3 +70,44 @@ app fonts. Physical iOS pacing, screen-reader speech and native offline install
 are not measured. Cache behavior is unit tested. Implementation checklist:
 selected target, asset placement, first-paint theme matching, fast lifecycle,
 preferences, responsive/contrast/browser review and checks complete.
+
+
+# Analyzer production and Clubhouse kickoff alignment — 1.598.0
+
+Reported issue reproduced in the compiled app using the connected league:
+Matthew Golden's Trends row said “Not enough history” while the shared player
+pool held 179.9 points across 10 games (17.99 PPR/game), with recent form rising.
+Only his completed 2025 season appeared in that row. The history panel also
+cached its first roster/scoring-specific result across subsequent teams.
+
+Current-season production now joins the prior-season record without another
+large stats request. Raw prior-season maps are cached by season for five minutes;
+roster histories and league scoring are recomputed for each report. First-season
+players display real games/points rather than a generic insufficient-history
+warning. One/two-game samples are identified without declaring an annual trend;
+partial live games use completed weekly samples. Zero scoring remains distinct
+from missing data. Unplayed current-season weeks do not count as absences.
+Annual slope uses actual year spacing when seasons are missing.
+
+Grading audit: the shared model already included current PPR scoring, recent
+production/consistency, projections, usage, injuries/availability and usable
+FantasyPros ranks. Value prices the point gap above position/flex replacement,
+with the existing ordinary-QB discount for one-QB leagues. Team grades compare
+league starting units (72%), depth (18%) and roster asset value (10%); the five
+starting-unit percentiles have equal weight. No evidence justified changing
+those weights for this display bug. Golden's model/trade value is unchanged.
+
+Mobile Clubhouse kickoff labels inherited grid justify-items:end. The left
+labels now anchor to the player column's left edge, and right labels explicitly
+retain their right edge. Real 320/390px Light/Dark captures verify both edges
+within one pixel, no horizontal overflow and no page errors. Player scores,
+matchups and animation behavior are unchanged. Narrow-screen trend labels also
+remain on one line instead of shrinking into split words.
+
+Evidence: /workspace/dfl-analyzer-1598/{trends-before,after,final,public}; provider
+writes blocked. Golden's compiled after row reads “Rising”, “2025 5.0 · 2026 18.0
+per game”, and “10 games · 179.9 pts”. Regression tests cover roster/scoring and
+season changes, first-season production, live samples, real zeroes and year gaps.
+Full suite: 2,636 tests / 314 files pass. Required theme, release, identifier,
+TypeScript and production bundle checks pass. Physical-device/screen-reader
+behavior is not newly measured; server-side ingestion was not changed.
