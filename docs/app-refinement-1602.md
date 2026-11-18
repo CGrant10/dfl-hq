@@ -83,3 +83,13 @@ Live GET/OPTIONS method/CORS smoke checks pass without sending a league alert.
 
 Evidence: `/workspace/dfl-polish-1602/`. These checks do not measure physical
 phone push arrival, native-device animation pacing or screen-reader speech.
+
+## 1.602.1 follow-up
+
+Reset options also restores roster rows hidden by the staged search query. The
+search input and displayed rows now reset together; Cancel still preserves the
+applied search. Verified with the production dialog handlers at 320/390px in
+Light/Dark, including enlarged text, combined with the existing staged-filter,
+focus, schedule-race and retry checks. Nine focused model/cache tests and the
+release/theme/type/name/build checks pass; the 1.602.0 foundation passed all
+2,709 tests. No palette, notification backend or valuation change.
