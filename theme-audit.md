@@ -3309,3 +3309,18 @@ layout checks also pass. Current-league Home/Clubhouse captures are read-only.
 Evidence: `/workspace/dfl-roster-1600/{fixture,actual,public}`. All 2,663 tests,
 focused follow-up checks, theme and production validations pass. Native device
 animation timing and screen-reader speech are not newly measured.
+
+### 1.601.0 — Compact player valuation context
+
+Reviewed production trade evidence at 320/390px in Medicine Wheel Light/Dark
+with 16/32px root text. Rising role, new injury setback and named quarterback
+availability use existing text/border tokens and the current disclosure layout.
+Player names stay on one line; QB identity truncates independently from its
+status. No new colors, retired accents or theme entries. Eight browser cases
+pass text contrast, horizontal overflow and page-error checks; actual screenshots
+were inspected. Existing navigation and motion are unchanged.
+
+Evidence: `/workspace/dfl-qb-context-1601/ui`. All 2,686 tests / 320 files,
+release coherence, theme guard, TypeScript, identifiers and production build
+checks pass. Physical device motion and screen-reader speech are not newly
+measured.

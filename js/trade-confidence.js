@@ -10,6 +10,7 @@ export function tradeConfidence(result){
  if(evidence.expert.status!=='Fresh')add(`Expert rankings: ${evidence.expert.status.toLowerCase()}; excluded from values.`,true);
  else if(evidence.expert.missing?.length)add(`No safe expert match for ${evidence.expert.missing.join(', ')}.`,true);
  if(evidence.injuries?.length)add(`Availability is uncertain for ${evidence.injuries.join(', ')}.`,true);
+ if(evidence.contextRisks?.length)add(evidence.contextRisks.join(' · '),true);
  if(evidence.fallback?.length)add(`Production fallback for ${evidence.fallback.join(', ')}.`,true);
  if(evidence.expert.disagreements?.length)add(`DFL forecast and expert rank disagree on ${evidence.expert.disagreements.join(', ')}.`,true);
  if(evidence.expert.split?.length)add(`Experts are split on ${evidence.expert.split.join(', ')}.`,true);

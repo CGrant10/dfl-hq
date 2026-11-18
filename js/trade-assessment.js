@@ -17,6 +17,8 @@ export function tradeAssessment(result){
  const flags=[];
  if(evidence?.missing?.length)flags.push('Missing projections');
  if(evidence?.injuries?.length)flags.push('Injury risk');
+ for(const player of evidence?.players||[])for(const flag of player.contextRisks||[])if(!flags.includes(flag))flags.push(flag);
+ if(evidence?.contextRisks?.length&&!evidence?.players?.some(p=>p.contextRisks?.length))flags.push('Player context risk');
  if(evidence?.stale?.length)flags.push('Stale inputs');
  if(evidence?.fallback?.length)flags.push('Production fallback');
  if(evidence?.expert?.required&&evidence.expert.status!=='Fresh')flags.push('Expert feed unavailable');

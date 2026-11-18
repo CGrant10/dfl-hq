@@ -2,6 +2,14 @@ import {tradeAdjustedImpacts,tradeSafeguards,safeBalancedTrade,worthwhileTradeCo
 const n=value=>Number.isFinite(Number(value))?Number(value):0;
 const cap=value=>Math.max(-5,Math.min(8,n(value)));
 
+// An unchanged lineup is not a reason to swap healthy depth for a newly
+// uncertain situation. Explicit player goals and manual checks remain open.
+export function uncompensatedContextRisk(result){
+ const players=result.projectionEvidence?.players||[],incoming=result.receives?.[0]||result.sendB||[],outgoing=result.sends?.[0]||result.sendA||[];
+ const risks=ids=>players.filter(p=>ids.map(String).includes(String(p.id))).reduce((sum,p)=>sum+(p.contextRisks?.length||0),0);
+ return risks(incoming)>risks(outgoing)&&n(result.windowDeltas?.[0]??result.weeklyDeltaA)<=.2;
+}
+
 // Price balance remains a separate grade. Default league-wide Fair
 // recommendations need a useful change without material participant harm.
 // Explicit player/team goals keep their wider, honestly graded search space.
@@ -29,15 +37,15 @@ export function tradeSuggestionQuality(result){
  const weekly=result.windowDeltas||result.weeklyDeltas||[result.weeklyDeltaA,result.weeklyDeltaB];
  const fit=result.windowDeltas?result.windowDeltas.map((v,i)=>n(v)-n(tradeSafeguards(result)[i]?.penalty)+n(tradeSafeguards(result)[i]?.gain)):tradeAdjustedImpacts(result);
  const gains=weekly.map(n),impacts=fit.map(n),least=Math.min(...gains),leastFit=Math.min(...impacts);
- const group=!worthwhileTradeCoverage(result)||least<-.75||leastFit<-.75?0:gains.every(v=>v>.1)?4:impacts.every(v=>v>.1)&&least>=-.1?3:gains.some(v=>v>.1)&&least>=-.1?2:gains[0]>.1&&gains.reduce((a,b)=>a+b,0)>.2?1.5:1;
+ const group=uncompensatedContextRisk(result)||!worthwhileTradeCoverage(result)||least<-.75||leastFit<-.75?0:gains.every(v=>v>.1)?4:impacts.every(v=>v>.1)&&least>=-.1?3:gains.some(v=>v>.1)&&least>=-.1?2:gains[0]>.1&&gains.reduce((a,b)=>a+b,0)>.2?1.5:1;
  const risk=result.projectionEvidence;
- const riskCount=['missing','stale','fallback','injuries'].reduce((sum,key)=>sum+(risk?.[key]?.length||0),0);
+ const riskCount=['missing','stale','fallback','injuries','contextRisks'].reduce((sum,key)=>sum+(risk?.[key]?.length||0),0);
  const complementary=tradeSafeguards(result).length>1&&tradeSafeguards(result).every(s=>s.fillsNeed)?4:0;
  return {group,score:Math.min(...impacts.map(cap))*12+gains.map(cap).reduce((a,b)=>a+b,0)*5+impacts.map(cap).reduce((a,b)=>a+b,0)*2-riskCount*2+complementary};
 }
 
 const packageSize=offer=>Array.isArray(offer.sends)?offer.sends.reduce((n,ids)=>n+ids.length,0):(offer.sendA?.length||0)+(offer.sendB?.length||0);
-const riskCount=offer=>['missing','stale','fallback','injuries'].reduce((n,key)=>n+(offer.projectionEvidence?.[key]?.length||0),0);
+const riskCount=offer=>['missing','stale','fallback','injuries','contextRisks'].reduce((n,key)=>n+(offer.projectionEvidence?.[key]?.length||0),0);
 export function tradeSuggestionPriority(offer){
  const quality=offer.utility||tradeSuggestionQuality(offer);
  return [n(quality.group),Math.floor(n(quality.score)/10),Math.floor(n(offer.fairness)/10),-riskCount(offer),n(offer.managerFit?.score)];

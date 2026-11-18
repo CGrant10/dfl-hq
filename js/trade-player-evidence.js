@@ -18,6 +18,7 @@ export function playerSensitivity(player) {
   return Math.min(.5,Math.max(.1,sampling)+(games<4 ? .06 : 0)
     +(player.modelSource&&player.modelSource!=='projection' ? .12 : 0)
     +(player.isOut ? .16 : player.isRisky ? .06 : 0)+(player.staleSignals?.length ? .12 : 0)
+    +(player.contextRisks?.length ? .1 : 0)
     +(player.expertDisagreement||player.expertSplit ? .1 : 0)+(player.expertFeedStatus&&(!player.expert||player.expertFeedStatus!=='Fresh') ? .08 : 0));
 }
 export function packageValue(ids,pool) {
