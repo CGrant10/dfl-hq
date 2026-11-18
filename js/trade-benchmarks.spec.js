@@ -98,12 +98,15 @@ describe('bounded automatic offer balancing',()=>{
   expect(adjusted.weeklyDeltaA).toBe(exact.weeklyDeltaA);expect(adjusted.weeklyDeltaB).toBe(exact.weeklyDeltaB);
   expect(['2-2','3-2','2-3']).toContain(adjusted.shape);
  });
- it('replaces an unlocked piece, preserves the target and regrades the complete deal',()=>{
+ it('repairs an unlocked piece when roster costs permit it, preserving the target and fully regrading',()=>{
   const {pool,a,b}=fixture();pool.get('a-spare').tradeValue=50;
   const seed={other:b,sendA:['a-spare'],sendB:['b-spare'],shape:'1-1',...evaluateTrade({teamA:a,teamB:b,sendA:['a-spare'],sendB:['b-spare'],pool})};
+  // The old repair silently required dropping a 15-value player. A cheap
+  // expendable cut makes the same adjustment genuinely balanced after drops.
+  pool.get('b-lateral').tradeValue=1;
   const rows=balanceTradeSuggestions([seed],{mine:a,pool,shapes:new Set(['1-1','2-1']),maxPlayers:3,receiveRequired:['b-spare'],evaluate:c=>{const result=evaluateTrade({teamA:a,teamB:b,...c,pool});return {...c,...result,tier:tradeSuggestionTier(result)};}});
   expect(rows.length).toBeGreaterThan(0);
-  for(const row of rows){expect(row.sendB).toEqual(['b-spare']);expect(row.fairness).toBeGreaterThanOrEqual(90);expect(row.sendA.length+row.sendB.length).toBeLessThanOrEqual(3);expect(row.valueToA).toBe(evaluateTrade({teamA:a,teamB:b,...row,pool}).valueToA);}
+  for(const row of rows){expect(row.sendB).toEqual(['b-spare']);expect(row.fairness).toBeGreaterThanOrEqual(90);expect(row.netFairness).toBeGreaterThanOrEqual(90);expect(row.sendA.length+row.sendB.length).toBeLessThanOrEqual(3);expect(row.valueToA).toBe(evaluateTrade({teamA:a,teamB:b,...row,pool}).valueToA);}
  });
  it('never removes locked players or exceeds a fixed shape or evaluation budget',()=>{
   const {pool,a,b}=fixture();pool.get('a-spare').tradeValue=50;

@@ -1,11 +1,12 @@
 import {tradePackageEdits} from './trade-package-edits.js';
 import {tradeSuggestionQuality} from './trade-suggestion-quality.js';
+import {safeBalancedTrade} from './trade-roster-context.js';
 
 const key=row=>JSON.stringify([String(row.other.id),[...row.sendA].sort(),[...row.sendB].sort()]);
 
 export function balanceTradeSuggestions(offers,{mine,pool,shapes,maxPlayers,sendRequired=[],receiveRequired=[],evaluate,budget=120}){
  const seen=new Set(offers.map(key)),groups=new Map(),repaired=[];
- for(const row of offers.filter(row=>row.fairness>=72&&row.fairness<90).sort((a,b)=>b.fairness-a.fairness)){
+ for(const row of offers.filter(row=>row.fairness>=72&&(row.fairness<90||!safeBalancedTrade(row))).sort((a,b)=>tradeSuggestionQuality(b).group-tradeSuggestionQuality(a).group||b.fairness-a.fairness)){
   const id=String(row.other.id);if(!groups.has(id))groups.set(id,[]);
   const seeds=groups.get(id);if(seeds.length<3&&!seeds.some(s=>s.shape===row.shape))seeds.push(row);
  }
@@ -24,7 +25,7 @@ export function balanceTradeSuggestions(offers,{mine,pool,shapes,maxPlayers,send
     const id=key(candidate);if(seen.has(id))continue;seen.add(id);
     spent++;partnerSpent++;
     const result=evaluate(candidate);
-    if(result?.tier==='fair'&&tradeSuggestionQuality(result).group>=Math.max(1,tradeSuggestionQuality(row).group))repaired.push({...result,balancedFrom:{sendA:row.sendA,sendB:row.sendB}});
+    if(result?.tier==='fair'&&safeBalancedTrade(result)&&tradeSuggestionQuality(result).group>=Math.max(1,tradeSuggestionQuality(row).group))repaired.push({...result,balancedFrom:{sendA:row.sendA,sendB:row.sendB}});
    }
   }
  }

@@ -14,12 +14,13 @@ export function tradeConfidence(result){
  if(evidence.expert.disagreements?.length)add(`DFL forecast and expert rank disagree on ${evidence.expert.disagreements.join(', ')}.`,true);
  if(evidence.expert.split?.length)add(`Experts are split on ${evidence.expert.split.join(', ')}.`,true);
  if(evidence.thinSamples?.length)add(`Limited completed-game samples for ${evidence.thinSamples.join(', ')}.`,true);
+ if(evidence.backfield?.required&&evidence.backfield.status!=='Fresh')add('Current RB depth-chart roles are unavailable; handcuff coverage is unverified.',true);
  const incoming=Array.isArray(result.incomingEvidence)?result.incomingEvidence[0]:result.incomingEvidence;
  const outgoing=Array.isArray(result.outgoingEvidence)?result.outgoingEvidence[0]:result.outgoingEvidence;
  const fairness=result.partyBalances?.[0]??result.fairness;
  const overlaps=incoming&&outgoing&&incoming.low<=outgoing.high&&outgoing.low<=incoming.high;
  if(overlaps&&fairness<88)add('The value ranges overlap; the apparent edge may disappear.');
- const limited=evidence.missing?.length||evidence.stale?.length||evidence.expert.status!=='Fresh'||evidence.expert.missing?.length;
+ const limited=evidence.missing?.length||evidence.stale?.length||evidence.expert.status!=='Fresh'||evidence.expert.missing?.length||evidence.backfield?.required&&evidence.backfield.status!=='Fresh';
  const level=limited?'limited':reasons.length?'mixed':'strong';
  return {level,label:level==='strong'?'Strong support':level==='mixed'?'Mixed support':'Limited support',needsReview:review.length>0,reasons:reasons.length?reasons:['Fresh expert rankings and DFL inputs support this estimate.'],source:evidence.expert.source,updatedAt:evidence.expert.updatedAt,experts:evidence.expert.experts};
 }

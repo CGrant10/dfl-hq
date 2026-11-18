@@ -111,3 +111,66 @@ season changes, first-season production, live samples, real zeroes and year gaps
 Full suite: 2,636 tests / 314 files pass. Required theme, release, identifier,
 TypeScript and production bundle checks pass. Physical-device/screen-reader
 behavior is not newly measured; server-side ingestion was not changed.
+
+
+# Trade matching, counters and roster insurance — 1.599.0
+
+The default Fair search now favors balanced, useful roster changes with no
+material participant harm after roster costs. Explicit team/player/position
+searches retain their wider negotiation space and display their actual risks.
+Automatic balancing also revisits price-balanced offers with poor roster fit,
+then re-evaluates every adjusted package. Packages dominated by unused incoming
+names are filtered sooner; the eight-player ceiling and explicit exclusions stay.
+
+Verified NFL RB1/RB2 relationships add roster-specific insurance value without
+inflating a player's shared market price. Losing an owned starter's backup,
+especially behind an injured/questionable starter, lowers recommendation quality;
+losing the last useful position reserve also costs more than expendable depth.
+RB depth receives more protection than WR/TE depth. Acquiring an owned RB's
+verified backup is useful depth. Trading both backs together is not an insurance
+loss. No relationship is guessed from names, ambiguous charts, another NFL team,
+third-string status, or a season-ending starter. A handcuff-for-bench-TE swap
+cannot earn a helpful Fair counter merely through generic bench points: losing
+RB insurance requires meaningful starter improvement or replacement coverage.
+Projected points remain separate from these qualitative roster preferences.
+
+Small Sleeper facts (143 RB roles, ~4.7KB) refresh every six hours through a
+bounded GitHub workflow. The app reads current published/shipped facts in parallel,
+shares/caches requests, and excludes stale (>36 hours), malformed or mismatched
+roles. Failed final verification cannot certify a cached role source as fresh.
+Relevant unavailable RB-role evidence remains visible and blocks a Steal claim.
+No paid feed, raw multi-megabyte player download on the phone, database migration,
+or mutation of league rosters is introduced. Role facts/modules are precached.
+
+Offer price labels are Balanced / Favors you / You're overpaying, with data
+quality separate. Required drops also produce a net balance; a quoted balanced
+package can lose its Fair recommendation after cuts. The old blanket “50% expert
+weight” copy is corrected to reflect the existing coverage/agreement-based blend.
+Player prices, 1QB discount and the existing QB Steal restriction are retained.
+
+Counters present distinct closest-fair, best-improvement and keep-core options;
+when no improvement exists, the label says Best available fit. Locked players,
+position filters, exclusions, routing and current ownership remain enforced.
+The bounded yielding beam retains requested targets as well as smaller repairs,
+and continues past flat lateral swaps to seek a useful counter. Main-piece
+changes are explicit. Closest packages are not relabeled fair, duplicates are
+removed, and an impossible legal alternative offers target editing or a three-team
+builder. Latest roster/coverage changes trigger re-review before sharing.
+
+Read-only connected-league verification recognizes Emmett Johnson behind Kenneth
+Walker in KC on roster 9, including Walker's current risk status. Removing Johnson
+costs coverage while Walker remains. A four-player, all-team default search returns
+60 Fair offers at the requested cap; sample trades improve both lineups. The
+expensive search remains in the existing worker; counter search yields and cancels
+when the draft changes. Startup remains three modules; Home remains four.
+
+Evidence: /workspace/dfl-trade-1599/{browser,browser-large,actual-final,public}.
+320/390px Medicine Wheel Light/Dark browser checks exercise named coverage,
+full regrading of every Fair counter, distinct packages, current routing,
+single-line names and no horizontal overflow/page errors. Additional enlarged
+text captures use 32px root type. Existing motion and focus handlers are retained.
+No account, notification, roster, transaction or wager was changed by browser QA.
+Two Python refresh tests and all 2,654 JS tests / 318 files pass; release/theme/type/name
+and production bundle checks pass. Native device pacing and screen-reader speech
+remain unmeasured. Role schedules are configured, not a promise of instantaneous
+NFL depth-chart changes or guaranteed manager acceptance.

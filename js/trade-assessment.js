@@ -1,5 +1,6 @@
 import {tradeConfidence} from './trade-confidence.js';
 import {tradeLineupFitLabel} from './trade-suggestion-quality.js';
+import {tradeAdjustedImpacts,worthwhileTradeCoverage} from './trade-roster-context.js';
 const num=value=>Number.isFinite(Number(value))?Number(value):0;
 
 // Price, roster fit, and evidence remain separate throughout the workspace.
@@ -10,8 +11,9 @@ export function tradeAssessment(result){
  const fairness=Number.isFinite(Number(result.fairness))?num(result.fairness):Math.min(num(result.valueToA),num(result.valueToB))/high*100;
  const edge=(num(result.valueToA)-num(result.valueToB))/high*100;
  const weeklyA=num(result.weeklyDeltaA),weeklyB=num(result.weeklyDeltaB);
- const fitA=result.rosterImpactA==null?weeklyA+num(result.depthDeltaA)*.35:num(result.rosterImpactA);
- const fitB=result.rosterImpactB==null?weeklyB+num(result.depthDeltaB)*.35:num(result.rosterImpactB);
+ const adjusted=tradeAdjustedImpacts(result);
+ const fitA=adjusted[0]??weeklyA+num(result.depthDeltaA)*.35;
+ const fitB=adjusted[1]??weeklyB+num(result.depthDeltaB)*.35;
  const flags=[];
  if(evidence?.missing?.length)flags.push('Missing projections');
  if(evidence?.injuries?.length)flags.push('Injury risk');
@@ -21,21 +23,24 @@ export function tradeAssessment(result){
  if(evidence?.expert?.required&&evidence.expert.missing?.length)flags.push('Expert coverage gap');
  if(evidence?.expert?.required&&(evidence.expert.disagreements?.length||evidence.expert.split?.length))flags.push('Rank disagreement');
  if(evidence?.thinSamples?.length)flags.push('Limited samples');
+ if(evidence?.backfield?.required&&evidence.backfield.status!=='Fresh')flags.push('RB roles unavailable');
  const needsReview=!!(flags.length||confidence?.needsReview);
  const fairFit=Math.min(fitA,fitB)>=-.75&&Math.min(weeklyA,weeklyB)>=-1;
  const supported=!needsReview&&(!confidence||confidence.level==='strong');
  const netEdge=(num(result.valueToA)-num(result.rosterCostA)-num(result.valueToB))/high*100;
  const clearsBand=result.incomingEvidence&&result.outgoingEvidence?result.incomingEvidence.low-num(result.rosterCostA)>result.outgoingEvidence.high:netEdge>=12;
  const receivesQb=(result.incomingPositionsA||result.incomingPositions?.[0])?.includes('QB');
+ const keepsCover=worthwhileTradeCoverage(result,{firstOnly:true});
  const stealBlockers=[...flags];
  if(receivesQb)stealBlockers.push('Incoming QB');
  if(result.comparableStarPremium)stealBlockers.push('Comparable-star premium');
  if(netEdge<12)stealBlockers.push('Small value edge');
  if(!clearsBand)stealBlockers.push('Overlapping value ranges');
  if(fitA<-.25)stealBlockers.push('Your roster loses value');
+ if(!keepsCover)stealBlockers.push('Handcuff cover lost');
  // Fair describes the quoted price. Fit and uncertainty have their own
  // signals; neither turns a balanced estimate into an aggressive offer.
- const tier=fairness>=90&&!evidence?.missing?.length?'fair':netEdge>=12&&clearsBand&&supported&&!receivesQb&&!result.comparableStarPremium&&fitA>=-.25?'steal':'aggressive';
+ const tier=fairness>=90&&!evidence?.missing?.length?'fair':netEdge>=12&&clearsBand&&supported&&!receivesQb&&!result.comparableStarPremium&&fitA>=-.25&&keepsCover?'steal':'aggressive';
  let value;
  if(evidence?.missing?.length)value={tone:'even',headline:'Projection gap',who:null};
  else if(fairness>=90)value={tone:'even',headline:'Balanced',who:null};
@@ -43,6 +48,9 @@ export function tradeAssessment(result){
  else if(confidence&&confidence.level!=='strong'||result.incomingEvidence&&result.outgoingEvidence&&fairness>=72&&result.incomingEvidence.low<=result.outgoingEvidence.high&&result.outgoingEvidence.low<=result.incomingEvidence.high)value={tone:'even',headline:'Close call',who:null};
  else value={tone:fairness>=72?'slight':fairness>=55?'clear':'lopsided',headline:fairness>=72?'Slight edge':fairness>=55?'Clear value edge':'FLEECE',who:edge>0?'a':'b'};
  const lineup=tradeLineupFitLabel(result.weeklyDeltas||[weeklyA,weeklyB]);
- const price=value.headline==='Review needed'?{tone:'even',headline:'Close call',who:null}:value;
+ const balance=result.netBalanceA??fairness;
+ const price=evidence?.missing?.length?{tone:'even',headline:'Projection gap',who:null}
+  :balance>=90?{tone:'even',headline:'Balanced',who:null}
+  :{tone:netEdge>0?'slight':'clear',headline:netEdge>0?'Favors you':"You’re overpaying",who:netEdge>0?'a':'b'};
  return {fairness,edge,fitA,fitB,weeklyA,weeklyB,tier,value,price,fit:{label:lineup,balanced:fairFit},needsReview,flags,confidence,stealBlockers};
 }

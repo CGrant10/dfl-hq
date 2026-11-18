@@ -2,6 +2,7 @@ import {tradePackageEdits} from './trade-package-edits.js';
 import {tradeSendAllowed} from './trade-protected-players.js';
 import {evaluateTrade,evaluateMultiTeamTrade,tradeLineupPreviews} from './team-analyzer.js';
 import {reconcileTradeDestinations,tradeTransfers,tradePerspective} from './trade-routing.js';
+import {safeBalancedTrade,tradeAdjustedImpacts} from './trade-roster-context.js';
 
 export function evaluateTradeDeal(parties,sends,pool,destinations=null){
  const transfers=tradeTransfers(parties,sends,destinations);if(!transfers)return null;
@@ -11,7 +12,7 @@ export function evaluateTradeDeal(parties,sends,pool,destinations=null){
 export function lineupPreviewsFor(deal,pool){return deal?tradeLineupPreviews({teams:deal.parties,sends:deal.sends,receives:deal.receives,pool}):[];}
 
 const score=result=>{
- const p=tradePerspective(result),impacts=result.rosterImpacts||[Number(p.rosterImpactA??p.weeklyDeltaA??0),Number(p.rosterImpactB??p.weeklyDeltaB??0)];
+ const p=tradePerspective(result),impacts=tradeAdjustedImpacts(result);
  return Number(result.fairness)*.65+Math.min(0,...impacts)*12+impacts.reduce((sum,v)=>sum+Math.max(-2,Math.min(2,v)),0)*5+(Number(p.rosterImpactA)||0)*4-(Number(p.rosterCostA)||0)*.3;
 };
 // Two-edit beam, including lower-value depth. Ownership, routes and locks survive.
@@ -47,7 +48,7 @@ export function* tradeCounterofferSearch(deal,pool,{limit=3,lockedIds=[],intent=
    if(row.result.projectionEvidence?.missing?.length)continue;
    if(intent==='fair'){
     const weekly=row.result.weeklyDeltas||[p.weeklyDeltaA,p.weeklyDeltaB];
-    if(row.result.fairness<90||impacts.some(v=>Number(v)<-.75)||weekly.some(v=>Number(v)<-1)
+    if(!safeBalancedTrade(row.result)||impacts.some(v=>Number(v)<-.75)||weekly.some(v=>Number(v)<-1)
      ||row.result.cutIncomingA?.length||row.result.cutIncomingB?.length||row.result.cutIncoming?.some(ids=>ids.length))continue;
    }else{
     if(row.result.fairness<55||impacts.some(v=>Number(v)<-1)||row.score<=baseline+.5)continue;

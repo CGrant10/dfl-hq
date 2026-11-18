@@ -12,6 +12,8 @@ export function recheckTradeOffer(deal, previousPool, teams, pool) {
   const playersChanged = deal.sends.flat().some(id => availability(previousPool.get(String(id))) !== availability(pool.get(String(id)))
     || Math.abs(Number(previousPool.get(String(id))?.tradeValue) - Number(pool.get(String(id))?.tradeValue)) >= .5);
   const ratingChanged = Math.abs(refreshed.result.fairness - deal.result.fairness) >= 1
+    || Math.abs(Number(refreshed.result.netFairness??refreshed.result.fairness)-Number(deal.result.netFairness??deal.result.fairness))>=1
+    || JSON.stringify(refreshed.result.rosterSafeguards)!==JSON.stringify(deal.result.rosterSafeguards)
     || tradeSuggestionTier(refreshed.result) !== tradeSuggestionTier(deal.result);
   const support=result=>{const c=tradeConfidence(result);return JSON.stringify(c?[c.level,c.needsReview,c.reasons]:null)};
   const evidenceChanged=support(refreshed.result)!==support(deal.result);

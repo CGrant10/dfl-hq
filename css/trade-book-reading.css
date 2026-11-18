@@ -86,3 +86,16 @@ html[data-ui-motion="off"] .tb-offer-preview>summary i { transition:none; }
 #view[data-route="sportsbook"] .sb-slip-totals { display:flex; justify-content:space-between; gap:12px; margin-bottom:10px; color:var(--body-text); font:500 0.6875rem/1.4 var(--font-body); }
 #view[data-route="sportsbook"] .sb-slip-totals b { display:block; color:var(--text); font:700 1rem/1.4 var(--font-body); font-variant-numeric:tabular-nums; }
 #view[data-route="sportsbook"] .sb-slip-totals>span:last-child { text-align:right; }
+
+/* Compact, named roster consequences use the shared Medicine Wheel inks. */
+.td-coverage { display:grid; gap:6px; margin:8px 0; }
+.td-coverage-row { display:grid; grid-template-columns:minmax(0,1fr); gap:2px; min-width:0; padding:7px 9px; border-inline-start:2px solid var(--accent-2); background:var(--bg); text-align:left; }
+.td-coverage-row.is-gain { border-inline-start-color:var(--ok); }
+.td-coverage-row>span { color:var(--muted); font-size:.66rem; }
+.td-coverage-row>b { font-size:.75rem; }
+.td-coverage-row>small { color:var(--muted); font-size:.66rem; }
+.td-coverage-row [data-ui-name] { display:block; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.td-coverage.is-compact { margin:6px 0; }
+.td-counter-drops { margin:0 0 7px; color:var(--muted); font-size:.7rem; overflow-wrap:break-word; }
+.td-counter-card>header>strong { min-width:0; font-size:.75rem; }
+.td-decision dd .td-price-label { display:block; margin-top:2px; color:var(--muted); font-size:.62rem; line-height:1.25; }

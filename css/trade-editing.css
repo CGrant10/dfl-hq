@@ -25,7 +25,7 @@
 #view[data-route="trade"] .td-edit-package { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; min-height:44px; min-width:0; padding:4px; border:0; border-radius:4px; text-align:left; background:transparent; color:var(--text); }
 #view[data-route="trade"] .td-edit-package span { min-width:0; }
 #view[data-route="trade"] .td-edit-package small { display:block; color:var(--body-text); font:500 .625rem/1.4 var(--font-body); }
-#view[data-route="trade"] .td-edit-package b { display:block; font:600 .75rem/1.4 var(--font-body); word-break:normal; overflow-wrap:break-word; }
+#view[data-route="trade"] .td-edit-package b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:600 .75rem/1.4 var(--font-body); word-break:normal; }
 #view[data-route="trade"] .td-edit-bar>p { grid-column:1/-1; margin:2px 4px 0; font:500 .6875rem/1.5 var(--font-body); color:var(--body-text); }
 #view[data-route="trade"] .td-edit-bar>.linkbtn { min-width:44px; min-height:44px; font:600 .75rem/1.4 var(--font-body); }
 #view[data-route="trade"]:has([data-td-edit-bar]:not([hidden])) .dfl-scroll-context { visibility:hidden; pointer-events:none; }

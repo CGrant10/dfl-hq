@@ -70,7 +70,7 @@ describe('12-team PPR positional and shared-flex prices',()=>{
   expect(stale.get('WR21').expertWeight).toBe(0);
  });
  it('attributes the actual weight and continues to disclose stale-source exclusion',()=>{
-  expect(expertSourceMarkup({status:'Fresh'})).toContain('50%');
+  expect(expertSourceMarkup({status:'Fresh'})).toContain('weight reflects expert coverage and agreement');
   expect(expertSourceMarkup({status:'Stale'})).toContain('Excluded from player values');
  });
 });

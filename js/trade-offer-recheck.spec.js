@@ -9,6 +9,13 @@ describe('fresh trade sharing',()=>{
  it('blocks a selected player who moved to another roster',()=>{const f=fixture(),teams=f.teams.map(t=>({...t,playerIds:t.playerIds.filter(id=>id!=='1-1')}));teams[1].playerIds.push('1-1');expect(recheckTradeOffer(f.deal,f.pool,teams,f.pool).status).toBe('invalid');});
  it('requires review for a new injury or reserve designation',()=>{const f=fixture(),pool=new Map(f.pool);pool.set('2-1',{...pool.get('2-1'),injuryStatus:'Out',isOut:true});expect(recheckTradeOffer(f.deal,f.pool,f.teams,pool).status).toBe('changed');});
  it('requires review when a formerly injured player is healthy again',()=>{const f=fixture(),previous=new Map(f.pool);previous.set('2-1',{...previous.get('2-1'),injuryStatus:'Questionable',isRisky:true});expect(recheckTradeOffer(f.deal,previous,f.teams,f.pool).status).toBe('changed');});
+ it('requires review when coverage changes on a player outside the offered packages',()=>{
+  const f=fixture(),previous=new Map([...f.pool].map(([id,p])=>[id,{...p}]));
+  previous.get('1-2').nflTeam='KC';previous.get('1-7').nflTeam='KC';previous.get('1-7').handcuffForId='1-2';
+  const deal=evaluateTradeDeal(f.teams.slice(0,2),[['1-7'],['2-9']],previous);
+  const next=new Map([...previous].map(([id,p])=>[id,{...p}]));next.get('1-2').isRisky=true;
+  expect(recheckTradeOffer(deal,previous,f.teams,next).status).toBe('changed');
+ });
  it('requires review when expert support becomes stale even if prices and the Fair tier stay unchanged',()=>{
   const f=fixture(),previous=new Map([...f.pool].map(([id,p])=>[id,{...p,expertFeedStatus:'Fresh',expert:{rank:20},expertSource:'FantasyPros',expertCount:8}]));
   const pool=new Map([...previous].map(([id,p])=>[id,{...p,expertFeedStatus:'Stale'}]));
