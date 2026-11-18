@@ -249,15 +249,18 @@ describe("the initial app shell", () => {
     expect(finances).not.toContain('<div class="card-title">Fees summary</div>');
   });
 
-  it("does not precache the update-only stadium artwork", () => {
+  it("shares the small loading halo without fetching retired stadium artwork", () => {
     const worker = fs.readFileSync("sw.js", "utf8");
     const updateCss = fs.readFileSync("css/update-gate.css", "utf8");
     const updateJs = fs.readFileSync("js/update.js", "utf8");
     const shell = worker.slice(worker.indexOf("const APP_SHELL"), worker.indexOf("const SHELL_URLS"));
     expect(shell).not.toContain("dfl-update-stadium.png");
+    expect(shell).not.toContain("dfl-update-stadium.webp");
+    expect(shell).toContain("loading-soft-halo.webp");
     expect(shell).not.toContain("app-update-512.png");
     expect(updateCss).not.toContain("dfl-update-stadium.");
-    expect(updateJs).toContain('el.style.setProperty("--update-gate-artwork"');
+    expect(updateCss).toContain("loading-soft-halo.webp");
+    expect(updateJs).not.toContain("dfl-update-stadium");
   });
 
   it("preserves Sleeper data caches when an app shell activates", () => {

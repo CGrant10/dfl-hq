@@ -24,29 +24,10 @@ body.broadcasting #update.update-gate { display: block !important; }
   isolation: isolate;
 }
 
-:is(#update, #splash).update-gate, #splash.has-stadium-lights {
-  background-color: #07090d;
-  background-image:
-    linear-gradient(180deg, rgba(3, 5, 8, .96) 0%, rgba(4, 6, 9, .94) 48%, rgba(3, 4, 6, .8) 78%, rgba(3, 4, 6, .96) 100%),
-    var(--update-gate-artwork, none);
-  background-position: center, center top;
-  background-size: auto, min(100vw, 600px) auto;
-  background-repeat: no-repeat;
-}
-#splash.has-stadium-lights { isolation:isolate; }
-#splash.has-stadium-lights::after { display:none; }
-
-:is(#update, #splash).update-gate::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(ellipse at 50% 43%, rgba(244, 242, 238, .035), transparent 55%);
-}
+:is(#update, #splash).update-gate { background:#000; }
 #splash.update-gate::after { display: none; }
 #splash.update-gate.is-running { animation: none !important; }
-#splash.update-gate.is-ready { animation: dfl-splash-out 240ms ease-out forwards !important; }
+#splash.update-gate.is-ready { animation: dfl-splash-out 180ms ease-out forwards !important; }
 
 .update-gate__content {
   position: relative;
@@ -99,6 +80,7 @@ body.broadcasting #update.update-gate { display: block !important; }
   transform: translateX(-2.734375%);
   filter: drop-shadow(0 12px 28px rgba(0, 0, 0, .62));
 }
+:is(#update,#splash).update-gate::before { content:""; position:fixed; z-index:-1; width:min(calc(80vw + 100px),420px); aspect-ratio:1; left:50%; top:43%; transform:translate(-50%,-50%); background:url('../assets/loading-soft-halo.webp') center / contain no-repeat; pointer-events:none; }
 .update-gate__mark > img { display: block; width: 100%; height: auto; }
 .update-gate__glow { display: none; pointer-events: none; }
 
@@ -168,10 +150,10 @@ body.broadcasting #update.update-gate { display: block !important; }
   html:not([data-ui-motion="off"]) :is(.home-newspaper-edition.is-anniversary,.update-gate[data-logo-ready="true"] .update-gate__anniversary) .dfl-anniversary__label { animation:anniversary-label .65s ease-out .12s both; }
   html:not([data-ui-motion="off"]) :is(.home-newspaper-edition.is-anniversary,.update-gate[data-logo-ready="true"] .update-gate__anniversary)::after { animation:anniversary-rule .85s cubic-bezier(.2,.75,.25,1) .2s both; }
   html:not([data-ui-motion="off"]) .update-gate__content { animation: update-gate-in .42s cubic-bezier(.2,.75,.25,1) both; }
-  html:not([data-ui-motion="off"]) .update-gate[data-logo-ready="true"] .update-gate__glow::before { animation: update-logo-glow 1.2s ease-in-out .4s both; }
+  html:not([data-ui-motion="off"]) .update-gate[data-logo-ready="true"] .update-gate__glow::before { animation: update-logo-glow .6s ease-in-out .1s both; }
 
 }
-:is(.update-gate,#splash.has-stadium-lights)[data-update-hidden="true"] *, :is(.update-gate,#splash.has-stadium-lights)[data-update-hidden="true"] *::before { animation-play-state:paused !important; }
+:is(.update-gate,#splash.has-soft-halo)[data-update-hidden="true"] *, :is(.update-gate,#splash.has-soft-halo)[data-update-hidden="true"] *::before { animation-play-state:paused !important; }
 .update-gate.is-system-ready .update-gate__glow::before { animation:none !important; opacity:0; }
 .update-gate.is-rebooting .update-gate__content { animation:none !important; }
 @media (prefers-reduced-motion: reduce) {
@@ -185,65 +167,6 @@ html[data-ui-motion="off"] .update-gate__glow::before { animation: none; }
 .update-gate.hidden .update-gate__glow::before { animation: none; }
 
 @keyframes update-gate-in { from { opacity: 0; transform: translateY(10px); } }
-/* Reveal the real floodlights/ribbon boards in the existing stadium image.
-   Static feathered masks isolate each bank; only opacity changes per frame.
-   The wave runs once, settles, and resumes its elapsed phase after reload. */
-.update-gate__lights {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: min(100%, 600px);
-  transform: translateX(-50%);
-  z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
-}
-.update-stadium-bank {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  aspect-ratio: 853 / 1844;
-  background: var(--update-gate-artwork, none) center top / 100% 100% no-repeat;
-  opacity: 0;
-  -webkit-mask-image: var(--stadium-bank-mask);
-  mask-image: var(--stadium-bank-mask);
-}
-.update-stadium-bank--red { --stadium-bank-mask:radial-gradient(ellipse 42% 17% at 0% 40%,#000 16%,transparent 95%); --stadium-bank-delay:0s; }
-.update-stadium-bank--left { --stadium-bank-mask:radial-gradient(ellipse 46% 18% at 0% 9%,#000 12%,transparent 95%); --stadium-bank-delay:.18s; }
-.update-stadium-bank--gold { --stadium-bank-mask:radial-gradient(ellipse 42% 17% at 100% 40%,#000 16%,transparent 95%); --stadium-bank-delay:.36s; }
-.update-stadium-bank--final { --stadium-bank-mask:radial-gradient(ellipse 46% 18% at 100% 9%,#000 12%,transparent 95%); }
-:is(.update-gate.is-updating,#splash.has-stadium-lights) .update-stadium-bank:not(.update-stadium-bank--final) { opacity:.16; }
-:is(.update-gate,#splash.has-stadium-lights).is-system-ready .update-stadium-bank--final { opacity:.52; }
-@media (prefers-reduced-motion:no-preference) {
-  html:not([data-ui-motion="off"]) :is(.update-gate.is-updating,#splash.has-stadium-lights) .update-stadium-bank:not(.update-stadium-bank--final) {
-    animation:update-stadium-wave var(--stadium-wave-duration,2.1s) cubic-bezier(.2,.7,.2,1) calc(var(--stadium-wave-offset,0s) + var(--stadium-bank-delay)) both;
-  }
-  html:not([data-ui-motion="off"]) .update-stadium-bank--final { transition:opacity 350ms cubic-bezier(.2,.7,.2,1); }
-  html:not([data-ui-motion="off"]) #splash.update-gate.is-system-ready.is-ready { animation:update-stadium-reveal 420ms cubic-bezier(.2,.7,.2,1) forwards !important; }
-}
-/* Fit the same wave inside ordinary opening time; never hold the route. */
-#splash.has-stadium-lights { --stadium-wave-duration:850ms; }
-#splash.has-stadium-lights .update-stadium-bank--left { --stadium-bank-delay:.06s; }
-#splash.has-stadium-lights .update-stadium-bank--gold { --stadium-bank-delay:.12s; }
-@media (prefers-reduced-motion:no-preference) {
-  html:not([data-ui-motion="off"]) #splash.has-stadium-lights .update-stadium-bank--final { transition-duration:80ms; }
-}
-/* Updating now belongs to the stadium; the shield keeps its finite idle sheen. */
-.update-gate.is-updating[data-logo-ready="true"] .update-gate__glow::before { animation:none !important; opacity:0; }
-html[data-ui-motion="off"] .update-stadium-bank { animation:none !important; transition:none; }
-@keyframes update-stadium-wave {
-  0% { opacity:0; }
-  28% { opacity:.62; }
-  68% { opacity:.26; }
-  100% { opacity:.16; }
-}
-@keyframes update-stadium-reveal {
-  0%,18% { opacity:1; }
-  100% { opacity:0; }
-}
-
 @keyframes update-logo-glow {
   0% { opacity: 0; transform: translateX(-110%); }
   15%, 80% { opacity: 1; }

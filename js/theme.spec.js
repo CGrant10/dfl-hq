@@ -14,6 +14,13 @@ vi.mock('./supabase.js',()=>({db:()=>({from:()=>({select:()=>({eq:()=>({maybeSin
 import {activeMode,applyTheme,modeOptions,normalizeMode,pinMode,savedMode,saveMode,syncThemeFromMember} from './theme.js';
 beforeEach(()=>{state.storage.clear();state.tokens.clear();state.watch.matches=false;state.member=null;state.remote=null;pinMode();});
 describe('canonical theme preferences',()=>{
+ it('remembers selected loading accents without letting a pinned route overwrite them',()=>{
+  saveMode('team:SEA');
+  const cached=localStorage.getItem('dfl.loadingAccent.v1');
+  expect(JSON.parse(cached)).toEqual({mode:'team:SEA',fill:state.tokens.get('--accent-fill'),fill2:state.tokens.get('--accent-2-fill')});
+  pinMode('fairway');expect(localStorage.getItem('dfl.loadingAccent.v1')).toBe(cached);
+  pinMode();expect(localStorage.getItem('dfl.loadingAccent.v1')).toBe(cached);
+ });
  it('offers each base palette once',()=>{
   expect(modeOptions().map(o=>o.id)).toEqual(['system','dark','light','fairway']);
   expect(savedMode()).toBe('dark');

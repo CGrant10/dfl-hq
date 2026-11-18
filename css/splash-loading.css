@@ -15,108 +15,28 @@
   .brand-text { line-height: 1; }
 }
 
-/* HQ full-launch gets a theatrical progress sequence. Short launches and the
-   Golf/Broadcast openings keep their existing timing and behavior. */
-#splash.is-full.is-hq.is-running {
-  animation: dfl-splash-out 220ms var(--ease) 2.72s forwards;
-}
-
-/* JavaScript releases the splash as soon as the first route is actually
-   ready. This wins over the old theatrical timer, while keeping a clean fade. */
-#splash.is-ready {
-  animation: dfl-splash-out 160ms var(--ease) forwards !important;
-}
-
-#splash.is-full.is-hq .sp-rule {
-  width: min(64vw, 330px);
-  height: 5px;
-  border: 1px solid rgba(244,242,238,.18);
-  border-radius: 999px;
-  background: rgba(244,242,238,.08);
-  overflow: hidden;
-  opacity: 0;
-  transform: none;
-}
-#splash.is-full.is-hq .sp-rule::before {
-  content: "";
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-  /* An EVEN split, and from the palette rather than hardcoded crest hex:
-     this was #E5011B held for 45% and then blue, so a team palette never
-     reached the loading bar at all and the two colours were not even. */
-  background: var(--accent-sweep);
-  transform: scaleX(.03);
-  transform-origin: left center;
-}
-#splash.is-full.is-hq.is-running .sp-rule {
-  animation: dfl-loading-track-in 280ms var(--ease) .86s both;
-}
-#splash.is-full.is-hq.is-running .sp-rule::before {
-  animation: dfl-loading-progress 1.78s cubic-bezier(.18,.72,.22,1) .92s forwards;
-}
-
-#splash.is-full.is-hq .sp-tag {
-  min-height: 1.25em;
-  color: transparent;
-  font-weight: 700;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-}
-#splash.is-full.is-hq .sp-tag::before {
-  content: "LOADING PLAYERS...";
-  display: block;
-  color: #f4f2ee;
-  animation: dfl-loading-copy 1.9s steps(1,end) 1s both;
-}
-
-@keyframes dfl-loading-track-in {
-  from { opacity: 0; transform: translateY(3px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes dfl-loading-progress {
-  0%   { transform: scaleX(.03); }
-  38%  { transform: scaleX(.39); }
-  68%  { transform: scaleX(.72); }
-  88%  { transform: scaleX(.9); }
-  100% { transform: scaleX(1); }
-}
-@keyframes dfl-loading-copy {
-  0%, 31%  { content: "LOADING PLAYERS..."; color: #f4f2ee; }
-  32%, 68% { content: "LOADING SINS..."; color: #f4f2ee; }
-  69%, 100%{ content: "TIME TO FOLD!"; color: #EFC94C; }
-}
-
-/* Quiet Sheen launch: original round artwork, one restrained pass of light.
-   This is an indeterminate activity line, never a simulated percent complete. */
+/* Fast, quiet opening. The application boots underneath as before. */
+#splash.is-ready { animation:dfl-splash-out 160ms var(--ease) forwards !important; }
 .sp-logo { position:relative; display:block; }
 .sp-logo > .sp-mark { display:block; }
 .sp-logo-glow { display:none; }
-#splash.is-hq.is-running:is(.is-full,.is-short) .sp-inner { gap:18px; transform:translateY(-3dvh); }
-#splash.is-hq.is-running:is(.is-full,.is-short) .sp-logo { width:min(62vw,240px); }
+#splash.has-soft-halo { --opening-logo-size:min(60vw,224px); background:#000; isolation:isolate; }
+#splash.has-soft-halo::after { display:none; }
+#splash.is-hq.is-running:is(.is-full,.is-short) .sp-inner { padding:0; gap:20px; transform:translateY(-5.5dvh); }
+#splash.is-hq.is-running:is(.is-full,.is-short) .sp-logo { width:var(--opening-logo-size); }
+#splash.is-hq.is-running:is(.is-full,.is-short) .sp-inner::before { content:""; position:absolute; z-index:-1; width:calc(var(--opening-logo-size) + 200px); aspect-ratio:1; left:50%; top:calc(var(--opening-logo-size) / 2); transform:translate(-50%,-50%); background:url('../assets/loading-soft-halo.webp') center / contain no-repeat; pointer-events:none; }
 #splash.is-hq.is-running:is(.is-full,.is-short) .sp-mark { display:block; width:100%; opacity:1; animation:none; }
-#splash.is-hq.is-running:is(.is-full,.is-short) .sp-season { font-size:11px; letter-spacing:.28em; }
 #splash.is-hq.is-running:is(.is-full,.is-short) .sp-word { font-size:24px; line-height:1.1; letter-spacing:.3em; }
-#splash.is-hq.is-running:is(.is-full,.is-short) :is(.sp-word,.sp-season,.sp-rule) { opacity:1; animation:none; transform:none; }
-#splash.is-hq.is-running:is(.is-full,.is-short) :is(.sp-tag,.sp-sweep) { display:none; }
-#splash.is-hq.is-running:is(.is-full,.is-short) .sp-rule { display:block; width:min(62vw,240px); height:3px; margin-top:6px; border:1px solid rgba(244,242,238,.16); background:rgba(244,242,238,.04); border-radius:3px; overflow:hidden; }
-#splash.is-hq.is-running:is(.is-full,.is-short) .sp-rule::before { content:""; display:block; width:34%; height:100%; border-radius:inherit; background:linear-gradient(90deg,#c82032,#efc94c); transform:none; }
-@supports (mask-image:url("")) or (-webkit-mask-image:url("")) {
-  #splash.is-hq.is-running:is(.is-full,.is-short) .sp-logo-glow { display:block; position:absolute; inset:0; overflow:hidden; pointer-events:none; -webkit-mask:url('../icons/dfl-logo-512.webp') center / contain no-repeat; mask:url('../icons/dfl-logo-512.webp') center / contain no-repeat; }
-  .sp-logo-glow::before { content:""; position:absolute; inset:0; opacity:0; background:linear-gradient(110deg,transparent 30%,rgba(255,249,235,.45) 50%,transparent 70%); }
-}
+#splash.is-hq.is-running:is(.is-full,.is-short) :is(.sp-word,.sp-rule) { opacity:1; animation:none; transform:none; }
+#splash.is-hq.is-running:is(.is-full,.is-short) :is(.sp-tag,.sp-season,.sp-sweep) { display:none; }
+#splash.is-hq.is-running:is(.is-full,.is-short) .sp-rule { display:block; width:min(50vw,184px); height:3px; margin-top:4px; border:0; background:rgba(244,242,238,.22); border-radius:3px; overflow:hidden; }
+#splash.is-hq.is-running:is(.is-full,.is-short) .sp-rule::before { content:""; display:block; width:38%; height:100%; border-radius:inherit; background:linear-gradient(90deg,transparent 94%,rgba(255,255,255,.85)),var(--accent-sweep); transform:none; }
 @media (prefers-reduced-motion:no-preference) {
-  html:not([data-ui-motion="off"]) #splash.is-hq.is-running:is(.is-full,.is-short) .sp-logo-glow::before { animation:dfl-launch-sheen 1.1s ease-in-out .08s both; }
-  html:not([data-ui-motion="off"]) #splash.is-hq.is-running:is(.is-full,.is-short) .sp-rule::before { animation:dfl-launch-activity 1.6s ease-in-out infinite; }
+  html:not([data-ui-motion="off"]) #splash.has-soft-halo .sp-inner::before { animation:dfl-halo-in 260ms ease-out both; }
+  html:not([data-ui-motion="off"]) #splash.is-hq.is-running:is(.is-full,.is-short) .sp-rule::before { animation:dfl-launch-activity 1.25s ease-in-out infinite; }
 }
-html[data-ui-motion="off"] #splash.is-hq.is-running:is(.is-full,.is-short) .sp-logo-glow::before,
 html[data-ui-motion="off"] #splash.is-hq.is-running:is(.is-full,.is-short) .sp-rule::before { animation:none !important; }
-@keyframes dfl-launch-sheen {
-  0% { opacity:0; transform:translateX(-110%); }
-  15%,80% { opacity:1; }
-  100% { opacity:0; transform:translateX(110%); }
-}
+@keyframes dfl-halo-in { from { opacity:0; } to { opacity:1; } }
 @keyframes dfl-launch-activity {
   0% { transform:translateX(-100%); }
   100% { transform:translateX(300%); }
