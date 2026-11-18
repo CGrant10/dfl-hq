@@ -11,7 +11,7 @@
 #view .tb-setup[open]>.tb-setup-summary{border-bottom:1px solid var(--line)}
 #view .tb-setup[open]>.tb-setup-summary>b{font-size:0}#view .tb-setup[open]>.tb-setup-summary>b:after{content:'Hide';font-size:12px}
 #view .tb-setup-body{padding:14px 16px}
-#view .tb-setup:not([open])>.tb-setup-body{display:none}
+#view details.tb-setup:not([open])>.tb-setup-body{display:none}
 #view .tb-browse-offers{width:100%;margin-top:14px;min-height:44px}
 #view .tb-intent{scroll-margin-top:110px}
 #view.view[data-page-system][data-route][data-route="trade"] .tb-offers-card{padding:0;border:0;background:transparent;box-shadow:none}

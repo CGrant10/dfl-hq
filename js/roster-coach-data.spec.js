@@ -1,0 +1,21 @@
+import {beforeEach,afterEach,describe,it,expect,vi} from 'vitest';
+import {DFL_STARTING_SLOTS} from './analyzer-league-context.js';
+const wire=vi.hoisted(()=>({roles:{status:'Fresh',usable:true,players:{}},build:vi.fn(()=>({state:'ready',offers:[]}))}));
+vi.mock('./sleeper.js',()=>({sleeper:{league:vi.fn(async()=>({season:'2026',roster_positions:DFL_STARTING_SLOTS,scoring_settings:{rec:1}})),rosters:vi.fn(async()=>[{roster_id:1,players:['p'],starters:['p']},{roster_id:2,players:['q'],starters:['q']}]),matchups:vi.fn(async()=>[{roster_id:1,starters:['p']},{roster_id:2,starters:['q']}]),users:vi.fn(async()=>[])},loadPlayers:vi.fn(async()=>({p:{n:'P',p:'RB',t:'KC'},q:{n:'Q',p:'WR',t:'DEN'}})),loadWeeklyProjections:vi.fn(async()=>({data:[{player_id:'p',player:{position:'RB'},stats:{rec:10}}],fetchedAt:Date.now()}))}));
+vi.mock('./nfl-game-day.js',()=>({loadNflGameDay:vi.fn(async()=>({teams:new Map([['KC',{key:'upcoming',kickoff:'2026-11-18T12:00:20Z'}]])}))}));
+vi.mock('./waiver-history-data.js',()=>({loadWaiverHistory:vi.fn(async()=>[]),clearWaiverHistoryCache:vi.fn()}));
+vi.mock('./backfield-roles-data.js',()=>({loadBackfieldRoles:vi.fn(async()=>wire.roles)}));
+vi.mock('./waiver-coach.js',()=>({buildWaiverPlan:wire.build}));
+vi.mock('./waiver-intelligence.js',()=>({buildWaiverIntelligence:({plan})=>plan}));
+vi.mock('./game-day-model.js',()=>({gameDayLineup:()=>({bench:[]})}));
+vi.mock('./lineup-alert-model.js',()=>({lineupRescuePlan:()=>[]}));
+import {clearRosterCoachCache,loadRosterCoach} from './roster-coach-data.js';
+const input=()=>({data:{league:{sleeper_league_id:'league'},pool:new Map([['p',{id:'p',position:'RB',nflTeam:'KC'}],['q',{id:'q',position:'WR',nflTeam:'DEN'}]])},team:{id:1},season:2026,week:11});
+beforeEach(()=>{vi.useFakeTimers();vi.setSystemTime(new Date('2026-11-18T12:00:00Z'));wire.roles={status:'Fresh',usable:true,players:{}};wire.build.mockClear();clearRosterCoachCache()});
+afterEach(()=>vi.useRealTimers());
+describe('roster advice computation reuse',()=>{
+ it('shares concurrent and repeated work for the same snapshot and team',async()=>{const args=input(),[a,b]=await Promise.all([loadRosterCoach(args),loadRosterCoach(args)]);expect(a).toBe(b);expect(await loadRosterCoach(args)).toBe(a);expect(wire.build).toHaveBeenCalledTimes(1)});
+ it('never carries a plan into another roster or newly valued player pool',async()=>{const args=input(),a=await loadRosterCoach(args);expect(await loadRosterCoach({...args,team:{id:2}})).not.toBe(a);expect(await loadRosterCoach({...args,data:{...args.data,pool:new Map(args.data.pool)}})).not.toBe(a);expect(wire.build).toHaveBeenCalledTimes(3)});
+ it('rechecks advice at kickoff even inside the minute source cache',async()=>{const args=input(),a=await loadRosterCoach(args);vi.advanceTimersByTime(20001);expect(await loadRosterCoach(args)).not.toBe(a);expect(wire.build).toHaveBeenCalledTimes(2)});
+ it('rebuilds when role facts, source freshness, minute cache or explicit refresh change',async()=>{const args=input();await loadRosterCoach(args);wire.roles={status:'Stale',usable:false,players:{}};await loadRosterCoach(args);vi.advanceTimersByTime(60001);await loadRosterCoach(args);clearRosterCoachCache();await loadRosterCoach(args);expect(wire.build).toHaveBeenCalledTimes(4)});
+});

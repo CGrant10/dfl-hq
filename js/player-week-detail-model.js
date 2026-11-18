@@ -48,5 +48,5 @@ export function playerWeekDetail(player,weeks=[],{season,week,completed=false}={
 export function playerWeekDetailHtml(player,{line='',average=null,games=0,stale=false}={}) {
  if(!player||player.empty)return '';
  const value=average===null?'—':average.toFixed(1),label=average===null?'Season PPR average unavailable':`Season average: ${value} PPR points per completed game, ${games} game${games===1?'':'s'}${stale?', last available stats':''}`;
- return `<span class="gd-player-week-detail" data-player-week-detail="${esc(`${player.roster}:${player.id}`)}" data-player-week-position="${esc(player.position||'')}"><span class="gd-player-week-line">${esc(line||'Loading stats…')}</span><span class="gd-player-week-average" aria-label="${esc(label)}">${value} PPR/g${stale&&average!==null?' · cached':''}</span></span>`;
+ return `<span class="gd-player-week-detail${player.state==='upcoming'&&(!line||['Yet to play','Loading stats…'].includes(line))?' is-pregame':''}" data-player-week-detail="${esc(`${player.roster}:${player.id}`)}" data-player-week-position="${esc(player.position||'')}"><span class="gd-player-week-line">${esc(line||'Loading stats…')}</span><span class="gd-player-week-average" aria-label="${esc(label)}">${value} PPR/g${stale&&average!==null?' · cached':''}</span></span>`;
 }

@@ -10,7 +10,8 @@ import {buildWaiverIntelligence} from './waiver-intelligence.js';
 import {loadBackfieldRoles} from './backfield-roles-data.js';
 import {backfieldRoleIndex} from './backfield-roles-model.js';
 const cache=new Map();
-export function clearRosterCoachCache(){cache.clear();clearWaiverHistoryCache();}
+let plans=new WeakMap();
+export function clearRosterCoachCache(){cache.clear();plans=new WeakMap();clearWaiverHistoryCache();}
 globalThis.addEventListener?.('dfl:quick-sync-complete',clearRosterCoachCache);
 export function loadRosterCoachSnapshot(leagueId,season,week){
   const key=`${leagueId}:${season}:${week}`,hit=cache.get(key);if(hit&&Date.now()-hit.at<60000)return hit.value;
@@ -23,12 +24,20 @@ export function loadRosterCoachSnapshot(leagueId,season,week){
     const weekly=results.slice(7).flatMap((r,i)=>r.status==='fulfilled'&&r.value.data?.length&&!r.value.stale?[{week:week+i,pool:buildWeeklyPool(r.value.data,league.scoring_settings),fetchedAt:r.value.fetchedAt}]:[]);
     if(weekly[0]?.week!==week)throw Error('Fresh weekly projections unavailable');
     return {league,rosters,rows,players,nfl,weekly,users:get(5),history:get(6),checkedAt:Date.now()};
-  })().catch(error=>{cache.delete(key);throw error});cache.set(key,{at:Date.now(),value});return value;
+  })().catch(error=>{if(cache.get(key)?.value===value)cache.delete(key);throw error});cache.set(key,{at:Date.now(),value});return value;
 }
 export async function loadRosterCoach({data,team,season,week}){
   const [snapshot,backfields]=await Promise.all([loadRosterCoachSnapshot(data.league.sleeper_league_id,season,week),
     loadBackfieldRoles().catch(()=>({status:'Unavailable',usable:false,players:{}}))]);
   const {league,rosters,rows,players,nfl,weekly}=snapshot;
+  // Reuse work only for the same source snapshot, model pool, roster and role
+  // facts. A new score/roster snapshot, value pool, depth update or explicit
+  // refresh recomputes advice; retrieval timestamps alone do not.
+  let byPool=plans.get(snapshot);if(!byPool){byPool=new WeakMap();plans.set(snapshot,byPool)}
+  let byTeam=byPool.get(data.pool);if(!byTeam){byTeam=new Map();byPool.set(data.pool,byTeam)}
+  const locks=[...(nfl?.teams||[])].map(([club,game])=>[club,game.key,Number.isFinite(Date.parse(game.kickoff))&&Date.now()>=Date.parse(game.kickoff)]);
+  const roleKey=JSON.stringify([backfields.status,backfields.usable,backfields.players,locks]),key=String(team.id),hit=byTeam.get(key);
+  if(hit?.roleKey===roleKey)return hit.result;
   // A Home visit may outlive its original analyzer snapshot. Recheck the
   // small role facts, and require the current NFL team to match the role.
   const roles=backfieldRoleIndex(backfields),club=t=>({JAC:'JAX',WSH:'WAS',LA:'LAR'}[t]||t);
@@ -48,5 +57,5 @@ export async function loadRosterCoach({data,team,season,week}){
   const plan=buildWaiverIntelligence({plan:basePlan,history:snapshot.history,rosters:submitted,weekly,schedule:nfl?.teams,players,teamNames,league,season,week});
   const live=gameDayLineup({...row,players:roster.players},players,nfl?.teams,{rosterPositions:league.roster_positions});
   const rescue=lineupRescuePlan({...live,bench:live.bench.map(p=>({...p,activeRoster:![...(roster.reserve||[]),...(roster.taxi||[])].map(String).includes(p.id),projection:weekly[0].pool.get(p.id)?.points}))});
-  return {...snapshot,plan,rescue,values};
+  const result={...snapshot,plan,rescue,values};byTeam.set(key,{roleKey,result});return result;
 }

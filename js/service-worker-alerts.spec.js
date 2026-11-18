@@ -6,7 +6,7 @@ function push(data,{clients=[],failedClients=false}={}){
  const handlers={},showNotification=vi.fn(()=>Promise.resolve());
  runInNewContext(source,{URL,Request,Response,console,self:{clients:{matchAll:()=>failedClients?Promise.reject(Error('Client unavailable')):Promise.resolve(clients)},registration:{scope:'https://example.com/dfl-hq/',showNotification},addEventListener:(name,fn)=>{handlers[name]=fn}}});
  const promises=[];handlers.push({data:{json:()=>data},waitUntil:p=>promises.push(p)});
- return {showNotification,promises};
+ return {showNotification,promises,handlers};
 }
 describe('injury alert expiry on the device',()=>{
  it('does not display delayed or invalid injury alerts after kickoff',()=>{
@@ -31,5 +31,25 @@ describe('injury alert expiry on the device',()=>{
  });
  it('keeps the phone notification working when a window cannot be reached',async()=>{
   const sw=push({title:'A touchdown'},{failedClients:true});await expect(Promise.all(sw.promises)).resolves.toBeDefined();expect(sw.showNotification).toHaveBeenCalledOnce();
+ });
+});
+
+describe('notification tap destinations',()=>{
+ const route='#/clubhouse?season=2026&week=11&tab=highlights&matchup=2&moment=nfl:999:123:3&nflGame=999&clip=456';
+ async function click(clients,{failed=false,url=route}={}){
+  const handlers={},opened=vi.fn(async()=>({}));
+  runInNewContext(source,{URL,Request,Response,console,self:{clients:{matchAll:async()=>{if(failed)throw Error('unavailable');return clients},openWindow:opened},registration:{scope:'https://example.com/dfl-hq/'},addEventListener:(name,fn)=>handlers[name]=fn}});
+  const pending=[];handlers.notificationclick({notification:{close:vi.fn(),data:{url}},waitUntil:p=>pending.push(p)});await Promise.all(pending);return opened;
+ }
+ it('reuses the visible DFL window and awaits the exact video destination',async()=>{
+  const focused=vi.fn(async()=>{}),other={url:'https://example.com/other-app/',navigate:vi.fn()},app={url:'https://example.com/dfl-hq/#/home',visibilityState:'visible',navigate:vi.fn(async()=>({focus:focused}))};
+  const opened=await click([other,app]);expect(other.navigate).not.toHaveBeenCalled();expect(app.navigate).toHaveBeenCalledWith('https://example.com/dfl-hq/'+route);expect(focused).toHaveBeenCalledOnce();expect(opened).not.toHaveBeenCalled();
+ });
+ it('opens a fresh DFL window if a tab closes or client lookup fails',async()=>{
+  const closing={url:'https://example.com/dfl-hq/',navigate:vi.fn(async()=>{throw Error('closed')})};
+  expect(await click([closing])).toHaveBeenCalledWith('https://example.com/dfl-hq/'+route);expect(await click([],{failed:true})).toHaveBeenCalledWith('https://example.com/dfl-hq/'+route);
+ });
+ it('does not trust an external or malformed destination on an old notification',async()=>{
+  for(const url of ['https://evil.test','javascript:alert(1)','#/clubhouse bad'])expect(await click([],{url})).toHaveBeenCalledWith('https://example.com/dfl-hq/#/notifications');
  });
 });

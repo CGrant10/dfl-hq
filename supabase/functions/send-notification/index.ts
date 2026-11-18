@@ -1,4 +1,5 @@
 import {footballNotificationTarget} from '../../../js/football-notification-target.js';
+import {notificationUrgency} from '../../../js/notification-core.js';
 import {highlightVideoUrl} from '../../../js/home-highlight-model.js';
 import {livePlaySource,LIVE_PLAY_AGE} from '../../../js/live-football-model.js';
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
@@ -217,7 +218,7 @@ Deno.serve(async request => {
       await Promise.all((subscriptions || []).filter(row => Array.isArray(row.categories) && row.categories.includes(category)).map(async row => {
         try {
           if(expiring&&expiresAt<=Date.now())return;
-          await webpush.sendNotification({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, payload, { TTL: expiring?Math.max(1,Math.min(7200,Math.floor((expiresAt-Date.now())/1000))):86400, urgency: category === "trades" || lineupAlert ? "high" : "normal" });
+          await webpush.sendNotification({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, payload, { TTL: expiring?Math.max(1,Math.min(7200,Math.floor((expiresAt-Date.now())/1000))):86400, urgency: notificationUrgency(category,{lineupAlert,livePlay:!!livePlay}) });
           delivered++;
           await admin.from("push_subscriptions").update({ failure_count: 0, last_success_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", row.id);
         } catch (error) {

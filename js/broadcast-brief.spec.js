@@ -1,6 +1,11 @@
 import {describe,it,expect} from 'vitest';
 import {renderBroadcastBrief} from './broadcast-brief.js';
 describe('wide broadcast previews',()=>{
+ it('draws only sourced, nonnegative football score proportions and keeps projected or missing scores uncharted',()=>{
+  const item={kind:'league-story',temporal:'final',sides:[{name:'A',score:75},{name:'B',score:25}]};
+  expect(renderBroadcastBrief(item)).toContain('--bx-score-share:75.0%');expect(renderBroadcastBrief(item)).toContain('--bx-score-share:25.0%');
+  for(const changed of [{...item,temporal:'upcoming'},{...item,kind:'golf'},{...item,sides:[item.sides[0],{name:'B',score:null}]}])expect(renderBroadcastBrief(changed)).not.toContain('bx-brief-score-chart');
+ });
  it('retains golf scores and the confirmed live/final state in the compact view',()=>{
   const html=renderBroadcastBrief({kind:'golf',treatment:'scoreboard',temporal:'live',headline:'DFL Golf',kicker:'League outing',sides:[{name:'North',score:4},{name:'South',score:0}],href:'#/golf'});
   expect(html).toContain('<b>4</b>');expect(html).toContain('<b>0</b>');expect(html).toContain('· live');expect(html).toContain('Open golf day');

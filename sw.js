@@ -1,8 +1,9 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.601.0";
+const CACHE_NAME = "dfl-hq-v1.602.0";
 const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
+  "./js/trade-search-options.js",
   "./js/roster-retention.js",
   "./data/backfield-roles.json","./js/backfield-roles-data.js","./js/backfield-roles-model.js","./js/trade-roster-context.js","./js/trade-roster-ui.js","./js/trade-counter-options.js",
   "./js/trade-protected-players.js","./js/trade-protected-ui.js","./css/trade-search-controls.css",
@@ -33,7 +34,7 @@ const APP_SHELL = [
   "./js/home-daily-desk.js","./js/trade-watchlist.js","./css/everyday-desk.css",
   "./css/onair-motion.css",
   "./css/broadcast-nfl.css",
-  "./css/league-finish.css","./css/app-shared.css?v=1.601.0","./js/trade-receive-controls.js","./js/trade-offer-search.js","./js/trade-offer-catalog.js","./js/trade-offer-preview.js","./css/trade-book-reading.css","./js/workers/trade-offers.js","./js/tab-scroll-cues.js",
+  "./css/league-finish.css","./css/app-shared.css?v=1.602.0","./js/trade-receive-controls.js","./js/trade-offer-search.js","./js/trade-offer-catalog.js","./js/trade-offer-preview.js","./css/trade-book-reading.css","./js/workers/trade-offers.js","./js/tab-scroll-cues.js",
   "./js/player-watchlist-data.js","./js/player-watchlist-model.js","./js/watchlist-alerts.js","./js/player-watchlist-ui.js",
   "./js/loading-presentation.js","./js/home-score-collapse.js","./js/home-primary-action.js","./js/home-rhythm.js","./js/home-moment-stories.js","./js/connected-artwork.js","./js/archive-route-motion.js","./js/broadcast-gesture-motion.js",
   "./js/player-form.js","./js/player-game-model.js","./js/player-game-explorer.js",
@@ -153,7 +154,7 @@ const APP_SHELL = [
   "./js/service-worker.js","./js/pickem-state.js","./js/golf-event-status.js","./js/pages/calendar.js",
   "./","./index.html","./manifest.json","./css/stakes.css",
   "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/sportsbook.css","./js/sportsbook-slip.js","./js/sportsbook-pickem.js","./js/sleeper-prop-import.js","./js/sleeper-prop-import-ui.js","./css/golf.css","./css/home.css","./css/breaking-trade.css","./css/update-gate.css",
-  "./js/wall-continuity.js","./js/wall-live.js","./js/sportsbook-fantasy-results.js","./js/sportsbook-live-ticket.js","./js/sportsbook-fantasy-data.js","./js/sportsbook-live.js","./js/sportsbook-settlement.js","./js/sportsbook-account-motion.js","./js/live-score-refresh.js","./js/score-freshness.js","./js/game-day-readiness.js","./js/matchup-finish.js","./js/matchup-finish-model.js","./css/matchup-finish.css","./js/lineup-alert-model.js","./js/waiver-coach.js","./js/advice-receipts.js","./js/advice-receipts-data.js","./js/advice-receipts-ui.js","./css/advice-receipts.css?v=1.601.0","./js/waiver-history-data.js","./js/waiver-intelligence.js","./js/waiver-intelligence-ui.js","./js/roster-coach-data.js","./js/roster-coach-ui.js","./js/matchup-targets.js","./js/weekly-roasts.js",
+  "./js/wall-continuity.js","./js/wall-live.js","./js/sportsbook-fantasy-results.js","./js/sportsbook-live-ticket.js","./js/sportsbook-fantasy-data.js","./js/sportsbook-live.js","./js/sportsbook-settlement.js","./js/sportsbook-account-motion.js","./js/live-score-refresh.js","./js/score-freshness.js","./js/game-day-readiness.js","./js/matchup-finish.js","./js/matchup-finish-model.js","./css/matchup-finish.css","./js/lineup-alert-model.js","./js/waiver-coach.js","./js/advice-receipts.js","./js/advice-receipts-data.js","./js/advice-receipts-ui.js","./css/advice-receipts.css?v=1.602.0","./js/waiver-history-data.js","./js/waiver-intelligence.js","./js/waiver-intelligence-ui.js","./js/roster-coach-data.js","./js/roster-coach-ui.js","./js/matchup-targets.js","./js/weekly-roasts.js",
   "./js/config.js","./js/app.js","./js/season-nav.js","./js/router.js","./js/connection-recovery.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
   "./js/app-diagnostics.js","./js/performance.js","./js/performance-findings.js","./js/pages/admin_performance.js","./js/pages/admin_operations.js","./js/breaking-trade.js","./js/custom-alerts.js","./js/league-state.js","./js/league-stakes.js","./js/weekly-briefing.js","./js/roster-next-action.js","./js/pages/stakes.js","./js/sleeper-sync-schedule.js",
   "./js/notifications.js","./js/notification-core.js","./js/notify-nudge.js","./js/profile-notifications.js","./js/weekly-outlook.js","./js/trade-desk.js",
@@ -171,7 +172,7 @@ const APP_SHELL = [
 // The worker imports the manifest into its own installed script resources.
 // A missing or mismatched bundle cannot activate under the new release label.
 if(typeof importScripts==='function'){
-  importScripts('./js/bundle/1.601.0/precache.js');
+  importScripts('./js/bundle/1.602.0/precache.js');
   if(self.DFL_BUNDLE_RELEASE!==CACHE_NAME.slice(APP_CACHE_PREFIX.length)||!Array.isArray(self.DFL_BUNDLE_SHELL)||!self.DFL_BUNDLE_SHELL.length)throw Error('Application bundle release mismatch');
 }
 const BUNDLED_STYLES=new Set(self.DFL_BUNDLE_STYLES||[]);
@@ -328,10 +329,13 @@ self.addEventListener("push", event => {
 
 self.addEventListener("notificationclick", event => {
   event.notification.close();
-  const target = new URL(event.notification.data?.url || "#/notifications", self.registration.scope).href;
-  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async clients => {
-    const existing = clients.find(client => new URL(client.url).origin === new URL(target).origin);
-    if (existing) { await existing.focus(); existing.navigate(target); return; }
+  const route=event.notification.data?.url;
+  const target = new URL(/^#\/[a-z0-9-]+(?:\?[^\s]*)?$/i.test(route||'')?route:'#/notifications', self.registration.scope).href;
+  event.waitUntil((async()=>{
+    let clients=[];try{clients=await self.clients.matchAll({type:'window',includeUncontrolled:true})}catch{/* Open a fresh DFL window below. */}
+    // A shared origin can host several unrelated apps. Only reuse this scope.
+    const existing=clients.filter(client=>client.url.startsWith(self.registration.scope)).sort((a,b)=>Number(b.visibilityState==='visible')-Number(a.visibilityState==='visible'));
+    for(const client of existing)try{const navigated=await client.navigate(target);if(navigated){await navigated.focus();return}}catch{/* A closing tab must not swallow the notification tap. */}
     return self.clients.openWindow(target);
-  }));
+  })());
 });

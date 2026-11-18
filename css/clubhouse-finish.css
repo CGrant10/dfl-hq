@@ -25,3 +25,12 @@ html[data-readability="comfortable"] :is(#view,.home-reel-player) [data-nfl-layo
 .gameday-player-score:has(.player-return-delta)>.gd-score-delta { display:none; }
 
 [data-viewed-player]:has(.player-return-delta)>small { opacity:0; }
+
+/* Kickoff already identifies pregame players. Keep the useful season average
+   without repeating a second 'Yet to play' status beneath every name. */
+#view[data-route="clubhouse"] .gd-compare-row .gd-player-week-detail.is-pregame .gd-player-week-line { display:none; }
+#view[data-route="clubhouse"] .gd-compare-row .gd-player-week-detail { gap:3px; }
+#view[data-route="clubhouse"] .gd-compare-row .gd-player-week-average { color:var(--body-text); font:500 .625rem/1.4 var(--font-ui); font-variant-numeric:tabular-nums; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player .gameday-player-score>small { font-variant-numeric:tabular-nums; }
+#view[data-route="clubhouse"] .gd-lineup-comparison .gd-player-stat-line { margin-top:0; padding-bottom:6px; }
+html[data-readability="comfortable"] #view[data-route="clubhouse"] .gd-compare-row .gd-player-week-average { font-size:.8125rem; }

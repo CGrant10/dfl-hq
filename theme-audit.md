@@ -3324,3 +3324,19 @@ Evidence: `/workspace/dfl-qb-context-1601/ui`. All 2,686 tests / 320 files,
 release coherence, theme guard, TypeScript, identifiers and production build
 checks pass. Physical device motion and screen-reader speech are not newly
 measured.
+
+### 1.602.0 — Trade options, Clubhouse reading and broadcast results
+
+Reviewed Trade and the new options sheet at 320/390px in Medicine Wheel Light/Dark
+with normal and 200% root text. Existing theme tokens drive controls, selected
+positions, criteria chips, body copy and focus rings; names stay on one line.
+The scrollable sheet keeps Apply/Cancel accessible and the fixed footer inside
+the viewport. Visible text contrast, overflow, apply/cancel and focus return pass.
+Clubhouse removes redundant pregame copy while retaining kickoff/PPR averages;
+current-league captures in both themes keep aligned side-by-side rows. Broadcast
+score rails use existing semantic tokens and actual scores; 96 standard and 60
+enlarged layouts retain their bounds and exact destinations. Screenshots inspected.
+
+No retired crest accents, new theme entries or alias changes. Evidence:
+`/workspace/dfl-polish-1602/{trade,broadcast,actual-complete}`. Physical phone
+pacing and screen-reader speech are not newly measured.

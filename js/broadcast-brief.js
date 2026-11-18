@@ -39,7 +39,9 @@ export function renderBroadcastBrief(item){
    }
   }
  }else if(item.sides?.length===2){
-  kind='result';action=item.kind==='golf'?'Open golf day':'View matchup';body=`<div class="bx-brief-scores">${item.sides.map(s=>`<div${s.up?' class="is-winner"':''}><strong>${esc(s.name)}</strong><b>${esc(s.score)}</b></div>`).join('')}</div>`;
+  kind='result';action=item.kind==='golf'?'Open golf day':'View matchup';
+  const values=item.sides.map(s=>s.score==null||String(s.score).trim()===''?NaN:Number(s.score)),total=values.reduce((a,b)=>a+b,0),chart=item.kind!=='golf'&&values.every(v=>Number.isFinite(v)&&v>=0)&&total>0&&item.temporal!=='upcoming';
+  body=`<div class="bx-brief-scores${chart?' bx-brief-score-chart':''}">${item.sides.map((s,i)=>`<div${s.up?' class="is-winner"':''}${chart?` style="--bx-score-share:${(values[i]/total*100).toFixed(1)}%"`:''}><strong data-ui-name title="${esc(s.name)}">${esc(s.name)}</strong><b>${esc(s.score)}</b>${chart?'<i class="bx-brief-score-rail" aria-hidden="true"></i>':''}</div>`).join('')}</div>`;
   const scores=item.sides.map(s=>s.score===null||s.score===undefined||String(s.score).trim()===''?NaN:Number(s.score));
   if(item.kind!=='golf'&&item.temporal==='final'&&scores.every(Number.isFinite))detail=`<b>${Math.abs(scores[0]-scores[1]).toFixed(2)}</b> pt margin`;
  }else if(item.treatment==='injuries'){

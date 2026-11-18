@@ -3,7 +3,7 @@ import {normalizeReceivePositions} from './trade-receive-controls.js';
 // New visits and the empty-state reset share one truly unrestricted search.
 // The manual trade draft is deliberately separate from these filters.
 export function resetTradeSearch(shop,{intent='fair'}={}) {
-  Object.assign(shop,{scoutOpen:false,passedOffers:[],lastPassed:null,setupOpen:false,refineOpen:false,partnerId:'all',memberIds:[],anchorPartnerId:'all',
+  Object.assign(shop,{scheduleRequest:(shop.scheduleRequest||0)+1,scheduleLoading:false,scheduleError:false,scoutOpen:false,passedOffers:[],lastPassed:null,setupOpen:false,refineOpen:false,partnerId:'all',memberIds:[],anchorPartnerId:'all',
     sendAnchors:[],receiveAnchors:[],receivePositions:normalizeReceivePositions(),sendCount:'any',receiveCount:'any',maxPlayers:8,goal:'best',horizon:'season',
     mode:'offers',customOpen:false,intent,openTiers:new Set([intent]),visibleCount:6});
 }

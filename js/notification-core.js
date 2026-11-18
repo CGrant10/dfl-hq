@@ -41,6 +41,12 @@ export const NOTIFICATION_PRESETS = Object.freeze({
   all: ALL_NOTIFICATION_CATEGORIES.filter(id => id !== "updates"),
 });
 
+// Time-limited, verified player events should not wait behind ordinary news.
+// This affects transport priority only; opt-outs, deduplication and TTL remain.
+export function notificationUrgency(category,{lineupAlert=false,livePlay=false}={}){
+  return category==='trades'||lineupAlert||category==='matchup_moments'&&livePlay?'high':'normal';
+}
+
 export function safeNotificationUrl(value) {
   const url = String(value || "").trim();
   return /^#\/[a-z0-9-]+(?:\?[^\s]*)?$/i.test(url) ? url : "#/home";

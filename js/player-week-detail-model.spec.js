@@ -64,3 +64,11 @@ describe('shared weekly data loading',()=>{
   let calls=0;expect(await loadPlayerWeekDetails(season,week,{load:async()=>{calls++;return {data:[]}}})).toEqual([]);expect(calls).toBe(0);
  });
 });
+
+it('keeps season averages while distinguishing redundant pregame copy from live stats',()=>{
+ const upcoming={id:'p',roster:'1',position:'WR',state:'upcoming'};
+ const waiting=playerWeekDetailHtml(upcoming,{line:'Yet to play',average:14.2,games:5});
+ expect(waiting).toContain('is-pregame');expect(waiting).toContain('14.2 PPR/g');
+ const live=playerWeekDetailHtml({...upcoming,state:'live'},{line:'4 rec · 52 yd',average:14.2,games:5});
+ expect(live).not.toContain('is-pregame');expect(live).toContain('4 rec · 52 yd');
+});
