@@ -1,3 +1,4 @@
+import {valueContextKey} from './player-value-context.js';
 import {tradePackageEdits} from './trade-package-edits.js';
 import {tradeSendAllowed} from './trade-protected-players.js';
 import {evaluateTrade,evaluateMultiTeamTrade,tradeLineupPreviews} from './team-analyzer.js';
@@ -64,11 +65,12 @@ export function* tradeCounterofferSearch(deal,pool,{limit=3,lockedIds=[],intent=
  return candidates.sort((a,b)=>b.score-a.score||a.changes.length-b.changes.length||a.sends.flat().length-b.sends.flat().length).slice(0,limit);
 }
 
-export function savedTradeProposal(deal,{id,at=Date.now(),pool}={}){return {id:String(id||at),at,teamIds:deal.parties.map(t=>String(t.id)),sends:deal.sends.map(ids=>[...ids]),destinations:{...deal.destinations},...(pool?{baseline:{fairness:deal.result.fairness,players:Object.fromEntries(deal.sends.flat().map(id=>{const p=pool.get(String(id));return [id,{name:p?.name,value:Number(p?.tradeValue)||0,status:p?.injuryStatus||p?.playerStatus||'',out:!!p?.outForSeason}] }))}}:{})};}
+export function savedTradeProposal(deal,{id,at=Date.now(),pool}={}){return {id:String(id||at),at,teamIds:deal.parties.map(t=>String(t.id)),sends:deal.sends.map(ids=>[...ids]),destinations:{...deal.destinations},...(pool?{baseline:{fairness:deal.result.fairness,players:Object.fromEntries(deal.sends.flat().map(id=>{const p=pool.get(String(id));return [id,{name:p?.name,value:Number(p?.tradeValue)||0,status:p?.injuryStatus||p?.playerStatus||'',out:!!p?.outForSeason,context:valueContextKey(p)}] }))}}:{})};}
 export function savedTradeChanges(proposal,teams,pool){
  const messages=[];proposal.sends?.forEach((ids,i)=>ids.forEach(id=>{const p=pool.get(String(id)),old=proposal.baseline?.players?.[id],owner=teams.find(t=>String(t.id)===String(proposal.teamIds[i]));
   if(!p||!owner?.playerIds?.map(String).includes(String(id)))messages.push(`${p?.name||old?.name||id}: roster changed`);
   else if(old&&(old.status!==(p.injuryStatus||p.playerStatus||'')||old.out!==!!p.outForSeason))messages.push(`${p.name}: availability changed`);
+  else if(old?.context&&old.context!==valueContextKey(p))messages.push(`${p.name}: situation changed`);
   else if(old&&Math.abs(old.value-Number(p.tradeValue))>=3)messages.push(`${p.name}: value ${Number(p.tradeValue)>old.value?'up':'down'}`);
  }));return messages.slice(0,3);
 }

@@ -379,8 +379,11 @@ function evidenceMarkup(result) {
     ${evidence.stale?.length?`<p>Stale inputs: ${esc(evidence.stale.join(', '))}</p>`:''}
     <section class="td-player-evidence" aria-label="Selected player evidence">${(evidence.players||[]).map(p=>{
       const fmt=v=>v==null?'Unavailable':Number(v).toFixed(1),sample=p.consistency||{};
-      return `<article><h3>${esc(p.name)}</h3><p>${esc([p.position,p.nflTeam,p.injuryStatus||'No injury designation',p.practiceParticipation].filter(Boolean).join(' · '))}</p><dl>
+      return `<article><h3 data-ui-name title="${esc(p.name)}">${esc(p.name)}</h3><p>${esc([p.position,p.nflTeam,p.injuryStatus||'No injury designation',p.practiceParticipation].filter(Boolean).join(' · '))}</p><dl>
         <div><dt>Projected ROS points / game</dt><dd>${fmt(p.tradePerGame)}</dd></div>
+        ${p.valueContext?.roleChange?`<div><dt>Workload</dt><dd>${p.valueContext.roleChange==='expanded'?'Rising role':'Reduced role'}</dd></div>`:''}
+        ${p.valueContext?.injurySetback?`<div><dt>Availability</dt><dd>New injury setback</dd></div>`:''}
+        ${p.valueContext?.quarterback?`<div><dt>Quarterback</dt><dd class="td-context-identity"><span data-ui-name title="${esc(p.valueContext.quarterback.quarterbackName)}">${esc(p.valueContext.quarterback.quarterbackName)}</span><span>· ${esc(p.valueContext.quarterback.status)}</span></dd></div>`:''}
         ${p.expert?`<div><dt>Expert ROS rank</dt><dd>#${p.expert.rank} · ${esc(p.expert.position)}${p.expert.positionRank}${p.expertWeight?'':' · excluded'}</dd></div><div><dt>Expert rank range</dt><dd>${p.expert.minRank}–${p.expert.maxRank}</dd></div>${p.expertDisagreement?`<div><dt>DFL forecast rank</dt><dd>${esc(p.position)}${p.modelPositionRank} · disagrees with experts</dd></div>`:''}`:`<div><dt>Expert ROS rank</dt><dd>No verified match</dd></div>`}
         <div><dt>Season points / game</dt><dd>${fmt(p.currentPerGame)} · ${p.currentGames||0} games</dd></div>
         <div><dt>Recent points / game</dt><dd>${fmt(p.recentAverage)} · ${p.recentGames||0} games</dd></div>

@@ -1,6 +1,7 @@
 import {tradeSuggestionTier} from './team-analyzer.js';
 import {evaluateTradeDeal} from './trade-workspace.js';
 import {tradeConfidence} from './trade-confidence.js';
+import {valueContextKey} from './player-value-context.js';
 
 const availability = player => JSON.stringify([player?.injuryStatus || '', player?.playerStatus || '', !!player?.isOut, !!player?.isRisky,!!player?.outForSeason,player?.automaticTradeEligible, player?.nflTeam || player?.team || '']);
 export function recheckTradeOffer(deal, previousPool, teams, pool) {
@@ -10,6 +11,7 @@ export function recheckTradeOffer(deal, previousPool, teams, pool) {
   const refreshed = evaluateTradeDeal(parties, deal.sends, pool, deal.destinations);
   if (!refreshed) return {status: 'invalid', deal: null};
   const playersChanged = deal.sends.flat().some(id => availability(previousPool.get(String(id))) !== availability(pool.get(String(id)))
+    || valueContextKey(previousPool.get(String(id)))!==valueContextKey(pool.get(String(id)))
     || Math.abs(Number(previousPool.get(String(id))?.tradeValue) - Number(pool.get(String(id))?.tradeValue)) >= .5);
   const ratingChanged = Math.abs(refreshed.result.fairness - deal.result.fairness) >= 1
     || Math.abs(Number(refreshed.result.netFairness??refreshed.result.fairness)-Number(deal.result.netFairness??deal.result.fairness))>=1

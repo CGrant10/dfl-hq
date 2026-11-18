@@ -17,6 +17,7 @@ export function injuryAvailabilityIndex(payload,{season,now=Date.now()}={}){
  }
  return index;
 }
+export const playerInjuryReport=(player,index=new Map())=>index.get(key(player.name,player.nflTeam,player.position));
 const reserveStatus=value=>/^(?:IR|IR-R|PUP|injured[ -]?reserve|physically unable(?: to perform)?)$/i.test(String(value||'').trim());
 function definitiveSeasonEnd(text){
  const statement=String(text||'').split(/(?<=[.!?])\s/)[0];
@@ -24,7 +25,7 @@ function definitiveSeasonEnd(text){
  return /\bseason[- ]ending\b|\b(?:out|done|ruled out) for (?:the |this )?season\b|\bmiss (?:the )?(?:rest|remainder|entirety) of (?:the |this )?season\b/i.test(statement);
 }
 export function playerAvailability(player,{index=new Map(),season,now=Date.now()}={}){
- const report=index.get(key(player.name,player.nflTeam,player.position));
+ const report=playerInjuryReport(player,index);
  const reserve=reserveStatus(player.injuryStatus)||reserveStatus(player.playerStatus)||reserveStatus(report?.status);
  const explicitHealthy=report&&/^(active|healthy|normal)$/i.test(report.status||'');
  const returnAt=Date.parse(report?.details?.returnDate||player.expectedReturnDate||''),end=regularSeasonEnd(season);

@@ -224,3 +224,25 @@ Validation: 2,663 tests / 319 files pass, plus 31 focused checks after final cop
 and ownership refinements. Release coherence, theme guard, TypeScript, identifiers
 and production bundles pass. No native phone pacing or screen-reader speech is
 newly measured; forecast coverage remains limited to available source weeks.
+
+### 1.601.0 — Workload, injury setback and QB context in trades
+
+Player values now rebase materially obsolete role projections only after
+sustained opportunity changes. Fresh, matched injury reports add setbacks and
+established-QB availability context; default searches avoid newly risky lateral
+swaps with no starter gain. Manual checks, saved deals and sharing use the same
+context, with a fresh review on meaningful changes. PPR/1QB replacement prices,
+roster ownership, handcuff safeguards and frozen receipts remain intact.
+
+Eight browser cases use production trade markup with captured public NFL facts:
+320/390px, Medicine Wheel Light/Dark, 16/32px root text. Compact context rows,
+one-line names, readable text contrast, no horizontal overflow or page errors
+are verified and screenshots inspected. Current-league reads reproduce Coleman
+22 versus Brown 11, 50% balance and no starter gain for the Coleman owner; Brown
+has the sourced setback and Maye uncertainty flags. No league writes were made.
+
+Validation: 2,686 tests / 320 files, release coherence, theme guard, TypeScript,
+identifier checks and production build pass. Evidence and read-only source
+comparisons: `/workspace/dfl-qb-context-1601`. Full model rules, the temporary
+QB stress assumption and verification limits are documented in
+`docs/player-value-context-validation.md`.

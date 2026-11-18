@@ -9,12 +9,13 @@ import {productionProfile, packageEvidence, packageValue, comparableStarPremium}
 import {matchExpertRankings,expertValueIndex} from './expert-rankings-model.js';
 import {tradeAssessment} from './trade-assessment.js';
 import {targetedTradePackages,tradeGoalScore} from './trade-target-search.js';
-import {tradeSuggestionQuality,compareTradeSuggestions,tradePartnerFit,prioritizeTradeSuggestions,usefulFairTrade} from './trade-suggestion-quality.js';
+import {tradeSuggestionQuality,compareTradeSuggestions,tradePartnerFit,prioritizeTradeSuggestions,usefulFairTrade,uncompensatedContextRisk} from './trade-suggestion-quality.js';
 import {refineTradeOffers} from './trade-refine-offers.js';
 import {balanceTradeSuggestions} from './trade-auto-balance.js';
 import {tradeWeekPlayerPool} from './trade-week-forecast.js';
 import {backfieldRoleIndex} from './backfield-roles-model.js';
 import {tradeRosterContext,tradeAdjustedImpacts,safeBalancedTrade} from './trade-roster-context.js';
+import {teamQuarterbackContext,currentInjurySetback,workloadChange} from './player-value-context.js';
 
 export const ANALYZER_POSITIONS = ["QB", "RB", "WR", "TE"];
 export const ANALYZER_UNITS = [...ANALYZER_POSITIONS, "FLEX"];
@@ -85,6 +86,7 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
   const weeklyById = new Map((weeklyProjections || []).map(row => [projectionId(row), row]));
   const recentById = recentProduction(recentStats, scoringSettings);
   const seasonById = recentProduction(seasonWeeklyStats, scoringSettings);
+  const quarterbackContexts=teamQuarterbackContext({players,weeks:seasonWeeklyStats,injuryIndex,season,now});
   const ids = [...new Set(rosters.flatMap(roster => Array.isArray(roster?.players) ? roster.players.map(String) : []))];
   const reserveIds = new Set(rosters.flatMap(roster => roster.reserve || []).map(String));
   const rostered = new Set([...ids,...reserveIds,...rosters.flatMap(roster=>roster.taxi||[]).map(String)]);
@@ -124,34 +126,39 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const recentScores = (recentById.get(id) || []).slice(-3).map(s=>s.points);
     const consistency = productionProfile(seasonById.get(id) || []);
     const recentAverage = recentScores.length ? recentScores.reduce((sum, points) => sum + points, 0) / recentScores.length : null;
-    /* Current production earns influence gradually: one wild Sunday cannot
-       rewrite a season, but by midseason the model should reflect this year
-       more than its preseason priors. Actual points already earned are never
-       projected away; only the unplayed games use the blended forward pace. */
-    /* Two or three real games should matter without taking the wheel from a
-       full projection. Reach the in-season blend sooner, then cap it so a
-       short hot streak never becomes the whole forecast. */
-    const currentWeight = Math.min(.65, currentGames / 6 * .65);
-    const baselinePerGame = baselinePoints == null ? null : baselinePoints / 17;
-    const currentPerGame = currentGames > 0 ? currentPoints / currentGames : null;
-    /* Recent form is a correction inside the in-season share, not a second
-       full-strength input. Three hot Sundays can move the forecast, but they
-       cannot erase the season projection or the larger current sample. */
-    const formWeight = Math.min(.3, recentScores.length / 3 * .3);
-    const formPerGame = currentPerGame != null && recentAverage != null
-      ? currentPerGame * (1 - formWeight) + recentAverage * formWeight
-      : currentPerGame ?? recentAverage;
-    const pointForecast = baselinePerGame != null && formPerGame != null
-      ? baselinePerGame * (1 - currentWeight) + formPerGame * currentWeight
-      : baselinePerGame ?? formPerGame;
-    // Sustained opportunity changes add a small correction, never a one-game
-    // boost. Missing usage and short samples leave the points forecast alone.
     const usageRows=(recentById.get(id)||[]).slice(-3),carryWeight=position==='RB'?.35:0;
     const usageKnown=['RB','WR','TE'].includes(position)&&currentGames>=5&&usageRows.length===3&&usageRows.every(r=>r.targets!=null&&(!carryWeight||r.carries!=null))&&finite(currentLine?.rec_tgt)!=null&&(!carryWeight||finite(currentLine?.rush_att)!=null);
     const recentUsage=usageKnown?usageRows.reduce((n,r)=>n+r.targets+carryWeight*(r.carries||0),0)/3:null;
     const priorUsage=usageKnown?(currentLine.rec_tgt+carryWeight*(currentLine.rush_att||0)-recentUsage*3)/(currentGames-3):null;
-    const usageFactor=priorUsage>=2?Math.max(.95,Math.min(1.05,1+(recentUsage/priorUsage-1)*.1)):1;
-    const forwardPerGame=pointForecast==null?null:pointForecast*usageFactor;
+    const nflTeam=({JAC:'JAX',WSH:'WAS',LA:'LAR'}[meta?.t||meta?.team]||meta?.t||meta?.team);
+    const backfield=backfields.get(id)?.team===nflTeam?backfields.get(id):null;
+    const roleChange=workloadChange({position,currentGames,recentUsage,priorUsage,usageRows,carryWeight,depthOrder:backfield?.depthOrder});
+    const injurySetback=currentInjurySetback({name:meta?.n||meta?.full_name||id,nflTeam,position},{injuryIndex,now});
+    const quarterback=['WR','TE'].includes(position)?quarterbackContexts.get(nflTeam)||null:null;
+    // Sustained opportunity replaces an obsolete role projection more quickly.
+    // A lone boom game retains the normal blend. A verified new injury setback
+    // gives this season's observed output more weight than preseason optimism.
+    const baselinePerGame=baselinePoints==null?null:baselinePoints/17;
+    const currentPerGame=currentGames>0?currentPoints/currentGames:null;
+    // If output already matches the forecast, opportunity alone retains the
+    // modest correction. Rebase only a materially obsolete role forecast.
+    const roleGap=recentAverage!=null&&baselinePerGame!=null?recentAverage-baselinePerGame:0;
+    const rebasedRole=roleChange&&Math.abs(roleGap)>Math.max(1.5,Math.abs(baselinePerGame||0)*.15)
+      &&(roleChange==='expanded'?roleGap>0:roleGap<0);
+    const formWeight=rebasedRole ? .65 : Math.min(.3,recentScores.length/3*.3);
+    const formPerGame=currentPerGame!=null&&recentAverage!=null
+      ? currentPerGame*(1-formWeight)+recentAverage*formWeight : currentPerGame??recentAverage;
+    const currentWeight=rebasedRole ? .85 : injurySetback&&currentGames>=3&&formPerGame<baselinePerGame ? .8 : Math.min(.65,currentGames/6*.65);
+    const pointForecast=baselinePerGame!=null&&formPerGame!=null
+      ? baselinePerGame*(1-currentWeight)+formPerGame*currentWeight : baselinePerGame??formPerGame;
+    // Do not count a verified role change twice through the small usage factor.
+    const usageFactor=rebasedRole?1:priorUsage>=2?Math.max(.95,Math.min(1.05,1+(recentUsage/priorUsage-1)*.1)):1;
+    // A temporary, bounded stress assumption, not a measured QB downgrade.
+    // It expires after replacement production is represented in recent form.
+    const quarterbackFactor=quarterback?.factor||1;
+    const forwardPerGame=pointForecast==null?null:pointForecast*usageFactor*quarterbackFactor;
+    const contextRisks=[...(injurySetback?['Injury setback']:[]),...(quarterback?['QB change']:[]),...(roleChange==='reduced'?['Reduced role']:[])];
+    const valueContext={roleChange,injurySetback,quarterback};
     const remainingGames = Math.max(0, 17 - currentGames);
     const expectedPoints = seasonAvailability.outForSeason ? (currentPoints||0) : currentGames > 0 && forwardPerGame != null
       ? currentPoints + forwardPerGame * Math.max(0, remainingGames - Math.min(remainingGames, availability.missedGames))
@@ -165,7 +172,7 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const tradePerGame = seasonAvailability.outForSeason ? 0 : forwardPerGame == null ? null
       : forwardPerGame * (1 - Math.min(remainingWeeks, availability.missedGames) / remainingWeeks);
     return {
-      id,...seasonAvailability,
+      id,...seasonAvailability,valueContext,contextRisks,quarterbackFactor,
       name: meta?.n || meta?.full_name || id,
       position,
       nflTeam: meta?.t || meta?.team || "FA",
@@ -503,13 +510,14 @@ function projectionEvidence(ids, pool) {
   const missing = [...players.filter(p => p.modelSource === 'unrated').map(p => p.name),...unique.filter(id=>!pool.has(id)).map(id=>`Unrated player ${id}`)];
   const fallback = players.filter(p => ['current', 'previous'].includes(p.modelSource)).map(p => p.name);
   const injuries = players.filter(p => p.injuryStatus || p.isOut || p.isRisky).map(p => p.name);
+  const contextRisks=players.filter(p=>p.contextRisks?.length).map(p=>`${p.name}: ${p.contextRisks.join(', ')}`);
   const stale = players.filter(p=>p.staleSignals?.length).map(p=>p.name);
   const required=players.some(p=>Object.hasOwn(p,'expertFeedStatus'));
   const timestamps=players.map(p=>p.expertUpdatedAt).filter(at=>Number.isFinite(at)&&at>0);
   const expert={required,status:players.find(p=>p.expertFeedStatus&&p.expertFeedStatus!=='Fresh')?.expertFeedStatus|| (required?'Fresh':'Not connected'),source:players[0]?.expertSource||'FantasyPros',updatedAt:timestamps.length?Math.min(...timestamps):0,experts:players[0]?.expertCount||0,
     missing:players.filter(p=>!p.expert).map(p=>p.name),disagreements:players.filter(p=>p.expertDisagreement).map(p=>p.name),split:players.filter(p=>p.expertSplit).map(p=>p.name)};
   const thinSamples=players.filter(p=>(p.requiredResultSamples||0)>(p.consistency?.games||0)).map(p=>p.name);
-  return { label: missing.length ? 'Limited' : fallback.length || injuries.length || stale.length ? 'Mixed' : 'Complete', missing, fallback, injuries, stale, players,thinSamples,expert,expertConsensus:expert.status,backfield:backfieldEvidence(unique,pool) };
+  return { label: missing.length ? 'Limited' : fallback.length || injuries.length || stale.length || contextRisks.length ? 'Mixed' : 'Complete', missing, fallback, injuries, stale, contextRisks,players,thinSamples,expert,expertConsensus:expert.status,backfield:backfieldEvidence(unique,pool) };
 }
 
 function depthHoles(ids, pool) {
@@ -1062,7 +1070,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
       && other.sendA.join(",") === result.sendA.join(",") && other.sendB.join(",") === result.sendB.join(",")));
   const ranked=withTradeWindow(usable,pool,{horizon,weekSchedules,limit,intent,goal},row=>[mine,row.other],row=>[row.sendA,row.sendB])
     .filter(row=>row.tier!=='fair'||intent!=='fair'||goal!=='best'||partnerId||sendRequired.length||receiveRequired.length||safeBalancedTrade(row))
-    .filter(row=>(row.tier!=='fair'||goal!=='best'||partnerId||sendRequired.length||receiveRequired.length||usefulFairTrade(row))&&(!['starter','consolidate'].includes(goal)||(row.windowDeltas?.[0]??row.weeklyDeltaA)>.1)).sort(compareTradeSuggestions);
+    .filter(row=>(goal!=='best'||partnerId||sendRequired.length||receiveRequired.length||!uncompensatedContextRisk(row))&&(row.tier!=='fair'||goal!=='best'||partnerId||sendRequired.length||receiveRequired.length||usefulFairTrade(row))&&(!['starter','consolidate'].includes(goal)||(row.windowDeltas?.[0]??row.weeklyDeltaA)>.1)).sort(compareTradeSuggestions);
   const chooseDiverse = partnerId ? diverseOffers : diverseOffersAcrossPartners;
   // The page displays only the selected intent. Spend its full result budget
   // on that tier before filling any remaining space with other categories.
