@@ -7,7 +7,7 @@
   "season": 2026,
   "experts": 6,
   "updatedAt": 1794952352000,
-  "fetchedAt": 1794963630775,
+  "fetchedAt": 1794991057084,
   "players": [
     {
       "sourceId": 22968,
@@ -3874,7 +3874,7 @@
       "sourceId": 22728,
       "name": "Michael Carter",
       "position": "RB",
-      "team": "FA",
+      "team": "TEN",
       "rank": 408,
       "positionRank": 110,
       "minRank": 367,
