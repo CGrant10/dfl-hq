@@ -250,7 +250,8 @@ describe("team analyzer", () => {
     const teams = analyzeLeague({ rosters, pool });
     const offers = suggestTrades({ teams, teamId: "1", anchorTeamId: "2", partnerId: "2", playerId: "w1", pool, maxPlayers: 4, limit: 100 });
     const shapes = new Set(offers.map(offer => offer.shape));
-    // Three depth names do not automatically buy a star with the stricter prices.
+    // Explicit target searches retain a wider negotiation space, with the
+    // actual roster consequences shown separately from the quoted balance.
     expect(shapes).toEqual(new Set(["1-1", "1-2", "2-1", "2-2"]));
     expect(shapes.size).toBeGreaterThan(3);
     expect(offers.every(offer => offer.sendB.includes("w1"))).toBe(true);

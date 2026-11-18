@@ -1,4 +1,5 @@
 import {beforeEach,describe,it,expect,vi} from 'vitest';
+vi.mock('./backfield-roles-data.js',()=>({loadBackfieldRoles:vi.fn(async()=>({status:'Unavailable',usable:false,players:{}}))}));
 vi.mock('./injury-report-data.js',()=>({loadNflInjuries:vi.fn(async()=>({payload:{injuries:[]},checkedAt:1}))}));
 const wire=vi.hoisted(()=>({tables:{},rosters:[],stale:false,offline:false,playerInjury:null}));
 vi.mock('./supabase.js',()=>({db:()=>({from:table=>{

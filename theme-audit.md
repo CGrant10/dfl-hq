@@ -3279,3 +3279,18 @@ labels stay right, with no horizontal page overflow or score-position changes.
 Evidence: `/workspace/dfl-analyzer-1598/{after,final,public}`. Theme guard and all
 2,636 tests pass; production/release checks pass. Physical iOS and screen-reader
 speech remain unmeasured. No account, roster or league data was changed.
+
+
+### 1.599.0 — Trade roster coverage and compact counter choices
+
+Reviewed Trade/Check a trade and counter cards at 320/390px in both Medicine Wheel
+defaults, including enlarged text, named RB insurance loss, position depth,
+package swaps, quoted balance and evidence warnings. New compact coverage rows
+use shared bg/text/muted/accent-2/ok tokens; no new palette or duplicate themes.
+Player/team names truncate on one line. Existing navigation, package motion,
+focus preservation and disclosure behavior remain. Connected-league screenshots
+verify the Trade entry in both themes with provider writes blocked.
+
+Evidence: `/workspace/dfl-trade-1599/{browser,browser-large,actual-final,public}`.
+Theme guard, release checks, complete tests and production bundles pass. Physical
+iOS/Android animation timing and screen-reader speech are not newly measured.

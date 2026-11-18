@@ -1,6 +1,7 @@
 import {describe,it,expect} from 'vitest';
 import {resetTradeSearch,tradeSearchRestricted} from './trade-draft.js';
 import {tradeAssessment} from './trade-assessment.js';
+import {tradeAdjustedImpacts} from './trade-roster-context.js';
 import {tradeOfferEmptyCopy} from './trade-workspace-ui.js';
 describe('trade search restrictions and honest empty results',()=>{
  it('clears every saved search restriction without discarding the manual deal',()=>{
@@ -29,14 +30,16 @@ describe('compact Steal discovery in a crowded league search',()=>{
   const f=JSON.parse(readFileSync(new URL('../tools/fixtures/trade-steal-discovery.json',import.meta.url),'utf8'));
   const pool=new Map(f.players.map(p=>[p.id,p]));
   const offers=suggestTrades({...f,pool,intent:'steal',limit:132}),steals=offers.filter(o=>o.tier==='steal');
-  expect(steals.length).toBeGreaterThanOrEqual(15);
+  expect(steals.length).toBeGreaterThanOrEqual(10);
   // This compact offer was excluded by the old shape budget although it
-  // clears the unchanged full model. IDs and owners are anonymized.
+  // still clears the full model after roster-coverage costs. IDs and owners
+  // are anonymized; padding the count cannot outrank preserving useful depth.
   const rescued=steals.find(o=>o.other.id==='t6'&&o.sendA.includes('p89')&&o.sendA.includes('p86')&&o.sendB.includes('p14')&&o.sendB.includes('p5'));
   expect(rescued).toBeTruthy();
   for(const offer of steals){
    expect(tradeSuggestionTier(offer)).toBe('steal');expect(isPlausibleTradeSuggestion(offer)).toBe(true);
    expect(tradeAssessment(offer).stealBlockers).toEqual([]);
+   expect(tradeAdjustedImpacts(offer)[0]).toBeGreaterThanOrEqual(-.25);
    expect(offer.incomingEvidence.low-offer.rosterCostA).toBeGreaterThan(offer.outgoingEvidence.high);
    expect(offer.incomingPositionsA).not.toContain('QB');
   }

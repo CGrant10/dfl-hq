@@ -13,6 +13,8 @@ import {tradeSuggestionQuality,compareTradeSuggestions,tradePartnerFit,prioritiz
 import {refineTradeOffers} from './trade-refine-offers.js';
 import {balanceTradeSuggestions} from './trade-auto-balance.js';
 import {tradeWeekPlayerPool} from './trade-week-forecast.js';
+import {backfieldRoleIndex} from './backfield-roles-model.js';
+import {tradeRosterContext,tradeAdjustedImpacts,safeBalancedTrade} from './trade-roster-context.js';
 
 export const ANALYZER_POSITIONS = ["QB", "RB", "WR", "TE"];
 export const ANALYZER_UNITS = [...ANALYZER_POSITIONS, "FLEX"];
@@ -76,8 +78,9 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
                                   projections = [], weeklyProjections = [], recentStats = [], seasonWeeklyStats = recentStats, trending = null, dataSignals = {},
                                   scoringSettings = null,
                                   currentWeek = 0, season = null, expertRankings = null,
-                                  scoringFormat = "ppr", injuryReport=null, now=Date.now() } = {}) {
+                                  scoringFormat = "ppr", injuryReport=null, backfieldRoles=null, now=Date.now() } = {}) {
   const injuryIndex=injuryAvailabilityIndex(injuryReport,{season,now});
+  const backfields=backfieldRoleIndex(backfieldRoles);
   const projectionById = new Map((projections || []).map(row => [projectionId(row), row]));
   const weeklyById = new Map((weeklyProjections || []).map(row => [projectionId(row), row]));
   const recentById = recentProduction(recentStats, scoringSettings);
@@ -166,6 +169,8 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
       name: meta?.n || meta?.full_name || id,
       position,
       nflTeam: meta?.t || meta?.team || "FA",
+      ...(position==='RB'&&backfieldRoles?{backfieldStatus:backfieldRoles.status||'Unavailable'}:{}),
+      ...(position==='RB'&&backfields.get(id)?.team===({JAC:'JAX',WSH:'WAS',LA:'LAR'}[meta?.t||meta?.team]||meta?.t||meta?.team)?backfields.get(id):{}),
       lastPoints: finite(lastPoints),
       priorPace: finite(priorPace),
       projectedPoints: finite(projectedPoints),
@@ -489,6 +494,10 @@ function tradePlayerPool(pool) {
   return forward;
 }
 
+function backfieldEvidence(ids,pool){
+ const players=ids.map(id=>pool.get(String(id))).filter(p=>p?.position==='RB'&&Object.hasOwn(p,'backfieldStatus'));
+ return {required:players.length>0,status:players.find(p=>p.backfieldStatus!=='Fresh')?.backfieldStatus||'Fresh'};
+}
 function projectionEvidence(ids, pool) {
   const unique=[...new Set(ids.map(String))],players = unique.map(id => pool.get(id)).filter(Boolean);
   const missing = [...players.filter(p => p.modelSource === 'unrated').map(p => p.name),...unique.filter(id=>!pool.has(id)).map(id=>`Unrated player ${id}`)];
@@ -500,7 +509,7 @@ function projectionEvidence(ids, pool) {
   const expert={required,status:players.find(p=>p.expertFeedStatus&&p.expertFeedStatus!=='Fresh')?.expertFeedStatus|| (required?'Fresh':'Not connected'),source:players[0]?.expertSource||'FantasyPros',updatedAt:timestamps.length?Math.min(...timestamps):0,experts:players[0]?.expertCount||0,
     missing:players.filter(p=>!p.expert).map(p=>p.name),disagreements:players.filter(p=>p.expertDisagreement).map(p=>p.name),split:players.filter(p=>p.expertSplit).map(p=>p.name)};
   const thinSamples=players.filter(p=>(p.requiredResultSamples||0)>(p.consistency?.games||0)).map(p=>p.name);
-  return { label: missing.length ? 'Limited' : fallback.length || injuries.length || stale.length ? 'Mixed' : 'Complete', missing, fallback, injuries, stale, players,thinSamples,expert,expertConsensus:expert.status };
+  return { label: missing.length ? 'Limited' : fallback.length || injuries.length || stale.length ? 'Mixed' : 'Complete', missing, fallback, injuries, stale, players,thinSamples,expert,expertConsensus:expert.status,backfield:backfieldEvidence(unique,pool) };
 }
 
 function depthHoles(ids, pool) {
@@ -574,6 +583,7 @@ function packageFit(ids, recipientBaseIds, recipientNextIds, pool, recipient, pr
     let role = 0;
     if (kept.has(player.id)) {
       if (starters.has(player.id)) role = 1;
+      else if(player.position==='RB'&&player.handcuffForId&&recipientNextIds.includes(String(player.handcuffForId)))role=.72;
       else if(player.position==='QB'&&player.oneQbValueFactor!=null)role=String(player.id)===String(backupQb?.id)? .2 : .05;
       else if (recipient?.need === player.position || holes.has(player.position)) role = .72;
       else if (coreDepth.has(player.id) && Number.isFinite(starterFloor[player.position])
@@ -616,11 +626,16 @@ export function evaluateTrade({ teamA, teamB, sendA = [], sendB = [], pool = new
   const valueToA = incomingEvidence.value, valueToB = outgoingEvidence.value;
   const impactA = rosterImpact(beforeA, afterA), impactB = rosterImpact(beforeB, afterB);
   const high = Math.max(valueToA, valueToB, 1);
+  const rosterCostA=rawPackageValue(planA.drops,pool),rosterCostB=rawPackageValue(planB.drops,pool);
+  const balance=(into,out)=>round(Math.min(Math.max(0,into),out)/Math.max(into,out,1)*100);
+  const netPartyBalances=[balance(valueToA-rosterCostA,valueToB),balance(valueToB-rosterCostB,valueToA)];
   return {
     decisionVersion: 2,
+    rosterSafeguards:[tradeRosterContext(teamA.playerIds,nextA,pool,{before:beforeA,after:afterA}),tradeRosterContext(teamB.playerIds,nextB,pool,{before:beforeB,after:afterB})],
+    netPartyBalances,netBalanceA:netPartyBalances[0],netFairness:Math.min(...netPartyBalances),
     requiredDropsA:planA.drops,requiredDropsB:planB.drops,waiverAddsA:planA.adds,waiverAddsB:planB.adds,openSlotsA:planA.openSlots,openSlotsB:planB.openSlots,
-    rosterCostA:rawPackageValue(planA.drops,pool),rosterCostB:rawPackageValue(planB.drops,pool),
-    projectionEvidence: projectionEvidence([...sendA, ...sendB], pool),
+    rosterCostA,rosterCostB,
+    projectionEvidence: {...projectionEvidence([...sendA,...sendB],pool),backfield:backfieldEvidence([...sendA,...sendB,...planA.drops,...planB.drops],pool)},
     sendA: sendA.map(String), sendB: sendB.map(String),
     incomingPositionsA: packagePositions(sendB,pool),
     deltaA: round(afterA.score - beforeA.score),
@@ -664,10 +679,13 @@ export function evaluateMultiTeamTrade({ teams = [], sends = [], destinations = 
   const partyBalances=values.map((value,i)=>Math.round(Math.min(value,outgoingValues[i])/Math.max(value,outgoingValues[i],1)*100));
   const impacts = teams.map((_, index) => rosterImpact(before[index], after[index]));
   const weekly = impacts.map(impact => impact.weekly);
+  const rosterCosts=plans.map(p=>rawPackageValue(p.drops,pool));
+  const netPartyBalances=values.map((value,i)=>Math.round(Math.min(Math.max(0,value-rosterCosts[i]),outgoingValues[i])/Math.max(value-rosterCosts[i],outgoingValues[i],1)*100));
   return {
     decisionVersion:2,requiredDrops:plans.map(p=>p.drops),waiverAdds:plans.map(p=>p.adds),openSlots:plans.map(p=>p.openSlots),
-    rosterCosts:plans.map(p=>rawPackageValue(p.drops,pool)),
-    projectionEvidence: projectionEvidence(transfer.sends.flat(), pool),
+    rosterCosts,netPartyBalances,netBalanceA:netPartyBalances[0],netFairness:Math.min(...netPartyBalances),
+    rosterSafeguards:teams.map((team,i)=>tradeRosterContext(team.playerIds,next[i],pool,{before:before[i],after:after[i]})),
+    projectionEvidence: {...projectionEvidence(transfer.sends.flat(),pool),backfield:backfieldEvidence([...transfer.sends.flat(),...plans.flatMap(p=>p.drops)],pool)},
     incomingPositions: receives.map(ids=>packagePositions(ids,pool)),
     sends: packages, receives, destinations:transfer.destinations, routeValues:Object.fromEntries(packages.flat().map(id=>[id,Number(pool.get(id)?.tradeValue)||0])), outgoingValues, values, weeklyDeltas: weekly,
     incomingEvidence, outgoingEvidence, fitValues:fits.map(f=>f.value),startingIncoming:fits.map(f=>f.starterIds),
@@ -1043,6 +1061,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     .filter((result, index, all) => index === all.findIndex(other => String(other.other.id) === String(result.other.id)
       && other.sendA.join(",") === result.sendA.join(",") && other.sendB.join(",") === result.sendB.join(",")));
   const ranked=withTradeWindow(usable,pool,{horizon,weekSchedules,limit,intent,goal},row=>[mine,row.other],row=>[row.sendA,row.sendB])
+    .filter(row=>row.tier!=='fair'||intent!=='fair'||goal!=='best'||partnerId||sendRequired.length||receiveRequired.length||safeBalancedTrade(row))
     .filter(row=>(row.tier!=='fair'||goal!=='best'||partnerId||sendRequired.length||receiveRequired.length||usefulFairTrade(row))&&(!['starter','consolidate'].includes(goal)||(row.windowDeltas?.[0]??row.weeklyDeltaA)>.1)).sort(compareTradeSuggestions);
   const chooseDiverse = partnerId ? diverseOffers : diverseOffersAcrossPartners;
   // The page displays only the selected intent. Spend its full result budget
@@ -1108,6 +1127,7 @@ export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlay
     &&(goal!=='consolidate'||result.sendA.length>result.receives[0].length&&result.startingIncoming[0].length&&(horizon==='next4'||result.weeklyDeltaA>.1)))
     ;
   return withTradeWindow(usable,pool,{horizon,weekSchedules,limit,intent,goal},()=>parties,row=>row.sends)
+    .filter(row=>row.tier!=='fair'||intent!=='fair'||goal!=='best'||sendAnchorIds?.length||receiveAnchorIds?.length||safeBalancedTrade(row))
     .filter(row=>!['starter','consolidate'].includes(goal)||(row.windowDeltas?.[0]??row.weeklyDeltaA)>.1)
     .sort((a,b)=>Number(b.tier===intent)-Number(a.tier===intent)||compareTradeSuggestions(a,b)).slice(0,limit);
 }
@@ -1115,11 +1135,12 @@ export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlay
 export function isPlausibleTradeSuggestion(result) {
   if (!result || result.fairness < 40 || result.projectionEvidence?.missing?.length) return false;
   if(result.cutIncomingA?.length||result.cutIncomingB?.length||result.cutIncoming?.some(ids=>ids.length))return false;
-  const padded=(ids,useful,surplus)=>ids?.length>=4&&surplus?.length>=2&&useful?.length<Math.ceil(ids.length/2);
+  const padded=(ids,useful,surplus)=>ids?.length>=3&&surplus?.length>=Math.ceil(ids.length/2)&&useful?.length<=Math.floor(ids.length/2);
   if(padded(result.sendB,result.usefulIncomingA,result.surplusIncomingA)||padded(result.sendA,result.usefulIncomingB,result.surplusIncomingB)||result.receives?.some((ids,i)=>padded(ids,result.usefulIncoming?.[i],result.surplusIncoming?.[i])))return false;
   const a = Number(result.weeklyDeltaA) || 0, b = Number(result.weeklyDeltaB) || 0;
   const fitA = Number.isFinite(Number(result.rosterImpactA)) ? Number(result.rosterImpactA) : a;
   const fitB = Number.isFinite(Number(result.rosterImpactB)) ? Number(result.rosterImpactB) : b;
+  if(result.rosterSafeguards&&tradeAdjustedImpacts(result).some(value=>value< -2.25))return false;
   if (Array.isArray(result.usefulIncomingA) && !result.usefulIncomingA.length) return false;
   if (Array.isArray(result.usefulIncomingB) && !result.usefulIncomingB.length) return false;
   return a >= -2.5 && b >= -2.5 && fitA >= -2.25 && fitB >= -2.25 && fitA + fitB >= -3;

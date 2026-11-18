@@ -35,6 +35,7 @@ import {analyzerPlayerSignal} from "./analyzer-player-form.js";
 
 import {evaluateTradeDeal,applyTradeDeal} from './trade-workspace.js';
 import {planTradeCounteroffers} from './trade-counter-plan.js';
+import {tradeAdjustedImpacts,worthwhileTradeCoverage} from './trade-roster-context.js';
 import {openTradeOfferImport} from './trade-offer-import-ui.js';
 import {reconcileTradeDestinations,tradePerspective,tradeRoutingIssue} from './trade-routing.js';
 import {lineupComparisonMarkup,counterofferMarkup} from './trade-workspace-ui.js';
@@ -79,9 +80,7 @@ export function recommendationFor(result) {
   const fairness = Number.isFinite(suppliedFairness)
     ? suppliedFairness
     : Math.min(num(result.valueToA), num(result.valueToB)) / valueBase * 100;
-  const rosterImpact = Number.isFinite(Number(result.rosterImpactA))
-    ? Number(result.rosterImpactA)
-    : num(result.weeklyDeltaA) + num(result.depthDeltaA) * .35;
+  const rosterImpact = tradeAdjustedImpacts(result)[0];
   const signal = valueEdge * .55 + rosterImpact * 8;
   if(result.projectionEvidence?.stale?.length || result.projectionEvidence?.fallback?.length || result.projectionEvidence?.injuries?.length)
     return {action:'REVIEW',tone:'negotiate',signal,valueEdge};
@@ -93,8 +92,9 @@ export function recommendationFor(result) {
   const incoming=result.incomingEvidence,outgoing=result.outgoingEvidence;
   if(incoming&&outgoing&&incoming.low<=outgoing.high&&outgoing.low<=incoming.high&&Math.abs(valueEdge)<12)
     return {action:'NEGOTIATE',tone:'negotiate',signal,valueEdge};
-  if (signal >= 7) return { action: "ACCEPT", tone: "accept", signal, valueEdge };
   if (signal <= -7) return { action: "PASS", tone: "pass", signal, valueEdge };
+  if(!worthwhileTradeCoverage(result,{firstOnly:true})||result.rosterSafeguards?.[0]?.penalty>0&&rosterImpact<-.75)return {action:'NEGOTIATE',tone:'negotiate',signal,valueEdge};
+  if (signal >= 7) return { action: "ACCEPT", tone: "accept", signal, valueEdge };
   return { action: "NEGOTIATE", tone: "negotiate", signal, valueEdge };
 }
 
@@ -192,6 +192,10 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
     && weakIncoming >= 2 && valueGap < 0 && fairness < 75;
   const them = teamName(teamB);
   const reasons = [];
+  if(!worthwhileTradeCoverage(result,{firstOnly:true})){
+    const link=result.rosterSafeguards[0].lostHandcuffs[0],backup=pool.get(String(link.playerId)),starter=pool.get(String(link.starterId));
+    reasons.push({tone:'warn',weight:116,title:'Keep your RB insurance.',copy:`${backup?.name||link.playerId} covers ${starter?.name||link.starterId}. This adds ${signed(result.weeklyDeltaA)} points per week to your starters.`});
+  }
   if(result.comparableStarPremium)reasons.push({tone:'warn',weight:105,title:'Similar star. Extra player. Check the price.',
     copy:'The main players have comparable forecast and value ratings. Adding useful depth is a premium for a small upgrade, not a steal. Try the stars straight up or ask for something back.'});
   if(result.incomingEvidence&&result.outgoingEvidence&&result.fairness>=72&&result.fairness<88&&result.incomingEvidence.low<=result.outgoingEvidence.high&&result.outgoingEvidence.low<=result.incomingEvidence.high)reasons.push({tone:'warn',weight:103,title:'Close call. Don’t declare a robbery.',copy:'The value sensitivity ranges overlap. The model leans one way, but the current evidence does not establish a clear winner.'});
@@ -431,7 +435,7 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
         <div class="td-total"><small>Value in</small><b class="td-in">${Math.round(num(result.valueToA))}</b></div>
       </section>
     </div>
-    ${tradeDecisionMarkup(result,pool)}
+    ${tradeDecisionMarkup(result,pool,{parties:[teamA,teamB]})}
     <details class="td-data-context td-impact-details"><summary>Depth &amp; roster fit</summary>
     <div class="td-lines">
       <div class="td-line"><span>Your lineup</span><b class="${result.weeklyDeltaA >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltaA)} avg/wk</b></div>
@@ -467,7 +471,7 @@ function multiTicketMarkup(result, parties, pool, sends) {
       ${parties.map((from,index)=>`<div class="td-leg"><small>${esc(teamName(from))} SENDS</small>${sends[index].map(id=>`<div class="td-routed-player">${packageRows([id],pool,index)}<small>→ ${esc(teamName(parties.find(t=>String(t.id)===String(result.destinations?.[id]||parties[(index+1)%parties.length].id))))}</small></div>`).join('')}<div class="td-total"><small>Value out</small><b>${num(result.outgoingValues?.[index]??result.values[(index+1)%parties.length])}</b></div><div class="td-total"><small>Value in</small><b>${num(result.values[index])}</b></div></div>`).join('')}
     </div>
 
-    ${tradeDecisionMarkup(result,pool)}
+    ${tradeDecisionMarkup(result,pool,{parties})}
     <details class="td-data-context td-impact-details"><summary>Depth &amp; roster fit</summary>
     <div class="td-lines">
       ${parties.map((party, index) => `<div class="td-line"><span>${esc(teamName(party))} lineup</span><b class="${result.weeklyDeltas[index] >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltas[index])} avg/wk</b></div><div class="td-line"><span>${esc(teamName(party))} depth</span><b class="${num(result.depthDeltas?.[index]) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltas?.[index])} avg/wk</b></div>`).join("")}
@@ -638,6 +642,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
   for(const section of root.querySelectorAll('[data-td-roster]')) section.addEventListener('toggle',event=>{state.rosterOpen||={};state.rosterOpen[event.currentTarget.dataset.tdRoster]=event.currentTarget.open;});
 
   root.addEventListener("click", async event => {
+    if(event.target.closest('[data-td-counter-route]')){root.querySelector('[data-td-add-member]')?.click();return;}
     if(event.target.closest('[data-td-import]')){stopImport();stopImport=openTradeOfferImport({team,teams,pool,maxPlayers:MAX_TRADE_PLAYERS,onImport:deal=>{if(stopped)return;remember();applyTradeDeal(state,deal);state.editing=false;state.counterAfterImport=true;onPartnerChange?.({imported:true});}});return;}
     if(event.target.closest('[data-td-counter-edit]')){const builder=root.querySelector('.td-builder');if(builder){builder.open=true;builder.querySelector('summary')?.focus({preventScroll:true});builder.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches||document.documentElement.dataset.uiMotion==='off'?'instant':'smooth'})}return;}
     if(event.target.closest('[data-td-review]')){const heading=verdictHost.querySelector('h2');verdictHost.scrollIntoView({block:'start',behavior:'instant'});if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}return;}

@@ -1,14 +1,15 @@
 import {evaluateTradeDeal,tradeCounterofferSearch} from './trade-workspace.js';
 import {tradePackageEdits} from './trade-package-edits.js';
-import {tradePerspective} from './trade-routing.js';
 import {automaticTradePlayer} from './player-availability.js';
 import {tradeSendAllowed} from './trade-protected-players.js';
+import {safeBalancedTrade,tradeAdjustedImpacts} from './trade-roster-context.js';
+import {chooseCounterOptions} from './trade-counter-options.js';
 
 const signature=deal=>JSON.stringify([deal.sends.map(ids=>[...ids].sort()),Object.entries(deal.destinations).sort(([a],[b])=>a.localeCompare(b))]);
-const impacts=deal=>{const p=tradePerspective(deal.result);return deal.result.rosterImpacts||[p.rosterImpactA??p.weeklyDeltaA,p.rosterImpactB??p.weeklyDeltaB]};
+const impacts=deal=>tradeAdjustedImpacts(deal.result);
 const cutIncoming=deal=>deal.result.cutIncoming?.some(ids=>ids.length)||deal.result.cutIncomingA?.length||deal.result.cutIncomingB?.length;
 const priced=deal=>!deal.result.projectionEvidence?.missing?.length;
-const fair=deal=>deal.result.fairness>=90&&impacts(deal).every(v=>Number(v)>=-.75)&&(deal.result.weeklyDeltas||[deal.result.weeklyDeltaA,deal.result.weeklyDeltaB]).every(v=>Number(v)>=-1)&&!cutIncoming(deal);
+const fair=deal=>safeBalancedTrade(deal.result);
 const quality=deal=>Number(deal.result.fairness)-Math.abs(Math.min(0,...impacts(deal).map(Number)))*12-(deal.changes?.length||0)*.75-deal.sends.flat().length*.15;
 const pause=()=>new Promise(resolve=>setTimeout(resolve,0));
 
@@ -20,19 +21,19 @@ export async function planTradeCounteroffers(deal,pool,{limit=3,lockedIds=[],int
  const usable=row=>tradeSendAllowed(row.sends[0],excluded)&&row.sends.flat().every(id=>(!allowed||allowed.has(pool.get(id)?.position))&&automaticTradePlayer(pool.get(id)));
  const finish=rows=>{
   const main=deal.sends.map(ids=>[...ids].sort((a,b)=>(Number(pool.get(b)?.tradeValue)||0)-(Number(pool.get(a)?.tradeValue)||0))[0]);
-  const candidates=rows.slice(0,limit).map(row=>({...row,counterKind:fair(row)?'fair':'closest',changesMain:main.some((id,i)=>id&&!row.sends[i].includes(id))}));
+  const candidates=chooseCounterOptions(rows,deal,pool,limit).map(row=>({...row,changesMain:main.some((id,i)=>id&&!row.sends[i].includes(id))}));
   return {kind:candidates.every(fair)?'fair':'closest',candidates,message:candidates.every(fair)?'':'Closest packages · balance shown as graded.'};
  };
  if(!active())return {kind:'cancelled',candidates:[]};
  if(deal.parties[0].playerIds.every(id=>excluded.has(String(id)))||deal.sends[0].some(id=>excluded.has(id)&&locked.has(id)))return {kind:'constraints',candidates:[],message:'Update Don’t trade or unlock a protected player to find counters.'};
  if(allowed&&(!allowed.size||[...locked].some(id=>original.has(id)&&!allowed.has(pool.get(id)?.position))))return {kind:'constraints',candidates:[],message:'Change the position filters or locked players to build a different package.'};
- const search=tradeCounterofferSearch(deal,pool,{limit,lockedIds,intent,receivePositions,excludedSendIds});
+ const search=tradeCounterofferSearch(deal,pool,{limit:36,lockedIds,intent,receivePositions,excludedSendIds});
  let step=search.next();
  while(!step.done){await yieldTask();if(!active())return {kind:'cancelled',candidates:[]};step=search.next();}
  const small=step.value.filter(row=>usable(row)&&priced(row));
- if(small.length)return finish(small);
  let beam=[{...deal,changes:[]}],checked=0,unpriced=false;
- const seen=new Set([signature(deal)]),candidates=[];
+ const seen=new Set([signature(deal)]),candidates=[...small];
+ const targetMains=deal.sends.slice(1).map(ids=>[...ids].sort((a,b)=>(Number(pool.get(b)?.tradeValue)||0)-(Number(pool.get(a)?.tradeValue)||0))[0]);
  const budget=Math.max(0,Math.min(360,Number(maxChecks)||0));
  for(let depth=0;depth<3&&checked<budget;depth++){
   const queues=beam.map(row=>tradePackageEdits(row,pool,{lockedIds:[...locked],excludedSendIds})),next=[];
@@ -50,8 +51,12 @@ export async function planTradeCounteroffers(deal,pool,{limit=3,lockedIds=[],int
     candidates.push(row);
    }
   }
-  if(candidates.some(fair))break;
-  beam=next.sort((a,b)=>quality(b)-quality(a)).slice(0,8);
+  if(depth>=1&&candidates.some(row=>fair(row)&&((row.result.weeklyDeltas?.[0]??row.result.weeklyDeltaA)>.2||impacts(row)[0]>.3)))break;
+  const ranked=next.sort((a,b)=>quality(b)-quality(a));
+  // Flat lateral repairs must not exhaust the beam before inspecting a
+  // useful counter that retains the originally requested main player(s).
+  const anchored=ranked.filter(row=>targetMains.every((id,i)=>row.sends[i+1].includes(id))).slice(0,4);
+  beam=[...new Map([...anchored,...ranked].map(row=>[signature(row),row])).values()].slice(0,8);
   if(!beam.length)break;
  }
  if(!active())return {kind:'cancelled',candidates:[],checked};

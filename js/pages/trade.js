@@ -55,6 +55,7 @@ import { tradeDraft, restoreTradeDraft, resetTradeSearch, tradeSearchRestricted 
 import {tradePerspective,tradeTransfers} from '../trade-routing.js';
 import {evaluateTradeDeal,readTradeProposals,writeTradeProposals,savedTradeProposal,restoreTradeProposal,applyTradeDeal} from '../trade-workspace.js';
 import {proposalsMarkup,tradeDataContext,tradeOfferEmptyCopy,closestTradeOffers} from '../trade-workspace-ui.js';
+import {tradeCoverageMarkup} from '../trade-roster-ui.js';
 import { mountTradePlayerPickers, focusTradePicker } from '../trade-player-picker.js';
 
 import {completedTradeMarkup} from '../trade-receipt-ui.js';
@@ -115,7 +116,7 @@ function offerMarkup(offer, pool) {
   return `<article class="tb-offer" data-offer-key="${esc(offerKey(offer))}">
     <header><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<strong>${esc(teamName(offer.other))}</strong></small><b class="tb-offer-verdict"><span>${esc(call)}</span><strong aria-label="${Math.round(assessment.fairness)} percent value balance">${Math.round(assessment.fairness)}%</strong></b></header>
     <div class="tb-offer-flow">${offerPackage(offer.sendA,pool,'You send')}${offerPackage(offer.sendB,pool,'You get')}</div>
-    ${offerBalance(offer)}${offerPreview(offer,pool)}
+    ${tradeCoverageMarkup(offer,pool,{compact:true,parties:[null,offer.other]})}${offerBalance(offer)}${offerPreview(offer,pool)}
     <footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-ui-action="primary" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(','))}" data-send-b="${esc(offer.sendB.join(','))}" data-weekly-delta="${Number(offer.weeklyDeltaA)||0}">Analyze <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer>
   </article>`;
 }

@@ -25,6 +25,7 @@ import {openProtectedPlayers,protectedPlayersButton} from '/js/trade-protected-u
 import {createTradeIntentions as createRealTradeIntentions} from '/js/trade-intentions-ui.js';
 const createTradeIntentions=options=>createRealTradeIntentions({...options,createApi:async()=>window.reviewIntentionsApi||{list:async()=>[],save:async()=>{throw Error('Review intention writes are blocked')}}});
 import {completedTradeMarkup} from '/js/trade-receipt-ui.js';
+import {tradeCoverageMarkup} from '/js/trade-roster-ui.js';
 import {tradeAssessment} from '/js/trade-assessment.js';
 import {sleeperAction} from '/js/sleeper-links.js';
 import {createTradeNegotiation as createRealTradeNegotiation} from '/js/trade-negotiation-ui.js';
