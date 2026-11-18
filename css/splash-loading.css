@@ -88,6 +88,40 @@
   69%, 100%{ content: "TIME TO FOLD!"; color: #EFC94C; }
 }
 
+/* Quiet Sheen launch: original round artwork, one restrained pass of light.
+   This is an indeterminate activity line, never a simulated percent complete. */
+.sp-logo { position:relative; display:block; }
+.sp-logo > .sp-mark { display:block; }
+.sp-logo-glow { display:none; }
+#splash.is-hq.is-running:is(.is-full,.is-short) .sp-inner { gap:18px; transform:translateY(-3dvh); }
+#splash.is-hq.is-running:is(.is-full,.is-short) .sp-logo { width:min(62vw,240px); }
+#splash.is-hq.is-running:is(.is-full,.is-short) .sp-mark { display:block; width:100%; opacity:1; animation:none; }
+#splash.is-hq.is-running:is(.is-full,.is-short) .sp-season { font-size:11px; letter-spacing:.28em; }
+#splash.is-hq.is-running:is(.is-full,.is-short) .sp-word { font-size:24px; line-height:1.1; letter-spacing:.3em; }
+#splash.is-hq.is-running:is(.is-full,.is-short) :is(.sp-word,.sp-season,.sp-rule) { opacity:1; animation:none; transform:none; }
+#splash.is-hq.is-running:is(.is-full,.is-short) :is(.sp-tag,.sp-sweep) { display:none; }
+#splash.is-hq.is-running:is(.is-full,.is-short) .sp-rule { display:block; width:min(62vw,240px); height:3px; margin-top:6px; border:1px solid rgba(244,242,238,.16); background:rgba(244,242,238,.04); border-radius:3px; overflow:hidden; }
+#splash.is-hq.is-running:is(.is-full,.is-short) .sp-rule::before { content:""; display:block; width:34%; height:100%; border-radius:inherit; background:linear-gradient(90deg,#c82032,#efc94c); transform:none; }
+@supports (mask-image:url("")) or (-webkit-mask-image:url("")) {
+  #splash.is-hq.is-running:is(.is-full,.is-short) .sp-logo-glow { display:block; position:absolute; inset:0; overflow:hidden; pointer-events:none; -webkit-mask:url('../icons/dfl-logo-512.webp') center / contain no-repeat; mask:url('../icons/dfl-logo-512.webp') center / contain no-repeat; }
+  .sp-logo-glow::before { content:""; position:absolute; inset:0; opacity:0; background:linear-gradient(110deg,transparent 30%,rgba(255,249,235,.45) 50%,transparent 70%); }
+}
+@media (prefers-reduced-motion:no-preference) {
+  html:not([data-ui-motion="off"]) #splash.is-hq.is-running:is(.is-full,.is-short) .sp-logo-glow::before { animation:dfl-launch-sheen 1.1s ease-in-out .08s both; }
+  html:not([data-ui-motion="off"]) #splash.is-hq.is-running:is(.is-full,.is-short) .sp-rule::before { animation:dfl-launch-activity 1.6s ease-in-out infinite; }
+}
+html[data-ui-motion="off"] #splash.is-hq.is-running:is(.is-full,.is-short) .sp-logo-glow::before,
+html[data-ui-motion="off"] #splash.is-hq.is-running:is(.is-full,.is-short) .sp-rule::before { animation:none !important; }
+@keyframes dfl-launch-sheen {
+  0% { opacity:0; transform:translateX(-110%); }
+  15%,80% { opacity:1; }
+  100% { opacity:0; transform:translateX(110%); }
+}
+@keyframes dfl-launch-activity {
+  0% { transform:translateX(-100%); }
+  100% { transform:translateX(300%); }
+}
+
 /* ---------------------------------------------------------------------
    ROUTE FEEL
 

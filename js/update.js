@@ -14,6 +14,7 @@ export function mountUpdateLogoGlow(el){
   let stopped=false,decoded=false,decoding=false,frame=0;
   const visible=()=>!stopped&&el.isConnected&&!document.hidden&&!el.classList.contains('hidden');
   const paint=()=>{
+    el.dataset.updateHidden=String(document.hidden);
     if(!decoded||!visible()||el.dataset.logoReady==='true')return;
     cancelAnimationFrame(frame);
     frame=requestAnimationFrame(()=>{frame=0;if(visible())el.dataset.logoReady='true';});
@@ -89,8 +90,8 @@ export function updateGateMarkup(version){
   return `<div class="update-gate__content">
     <p class="update-gate__eyebrow">DFL HQ UPDATE</p>
     <h1>The league just got better.</h1>
-    ${anniversary?`<p class="update-gate__anniversary dfl-anniversary"><span class="dfl-anniversary__number">${season}</span> <span class="dfl-anniversary__label">YEAR ANNIVERSARY</span></p>`:""}
     <span class="update-gate__mark"><img src="icons/app-update-aligned.svg?v=${safeVersion}" alt="DFL HQ" width="512" height="512" crossorigin="anonymous"><span class="update-gate__glow" aria-hidden="true"></span></span>
+    ${anniversary?`<p class="update-gate__anniversary">${season} YEAR ANNIVERSARY</p>`:""}
     <div class="update-gate__action">
       <button class="update-gate__button" id="update-go" type="button">UPDATE NOW</button>
       <p class="update-gate__version">Version ${safeVersion}</p>
@@ -100,6 +101,7 @@ export function updateGateMarkup(version){
 }
 
 function showGate(el,version){
+  if(el.classList.contains('is-updating'))return;
   if(el.dataset.version===version&&!el.classList.contains('hidden')&&el.classList.contains('update-gate'))return;
   stopLogoGlow?.();
   /* This is the first moment the full-screen stadium treatment is useful.
@@ -160,6 +162,9 @@ export async function forceUpdate(){
       await navigator.serviceWorker.ready.catch(()=>{});
     }
   }catch(err){console.warn("Update refresh failed, reloading with cache buster",err)}
+  // The next document continues the same update plate. A one-use, short-lived
+  // marker never claims readiness: the new router's first paint does that.
+  try{sessionStorage.setItem('dfl.update.reboot',JSON.stringify({at:Date.now(),version:bar()?.dataset.version||APP_VERSION}));}catch{}
   location.replace(`${location.pathname}?u=${Date.now()}${location.hash}`);
   return true;
 }
@@ -176,10 +181,18 @@ export function setupUpdates(){
     const go=e.target.closest("#update-go");
     if(go){
       if(updateBlocked()){el.querySelector(".update-gate__status").textContent="Finish or sync the current score, then update.";return}
-      go.disabled=true;go.textContent="UPDATING…";
+      if(go.disabled)return;
+      go.disabled=true;go.textContent="SYSTEM REBOOT";
       el.classList.add("is-updating");
-      el.querySelector(".update-gate__status").textContent="Refreshing DFL HQ…";
-      await forceUpdate();return;
+      el.setAttribute('aria-busy','true');
+      el.querySelector(".update-gate__status").textContent="Installing update…";
+      const updated=await forceUpdate();
+      if(!updated){
+        el.classList.remove('is-updating');el.removeAttribute('aria-busy');
+        go.disabled=false;go.textContent='UPDATE NOW';
+        el.querySelector('.update-gate__status').textContent='Finish or sync the current score, then update.';
+      }
+      return;
     }
   });
   checkForUpdate().catch(()=>{});
