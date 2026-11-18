@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { BROADCAST_NOTIFICATION_CATEGORIES, cleanNotificationDraft, DEFAULT_NOTIFICATION_CATEGORIES, NOTIFICATION_PRESETS, safeNotificationUrl, timeAgo } from "./notification-core.js";
+import { notificationUrgency,BROADCAST_NOTIFICATION_CATEGORIES, cleanNotificationDraft, DEFAULT_NOTIFICATION_CATEGORIES, NOTIFICATION_PRESETS, safeNotificationUrl, timeAgo } from "./notification-core.js";
 
 describe("notification helpers", () => {
+  it('prioritizes verified expiring player events while keeping routine moments and news normal',()=>{
+    expect(notificationUrgency('matchup_moments',{livePlay:true})).toBe('high');expect(notificationUrgency('trades')).toBe('high');expect(notificationUrgency('matchups',{lineupAlert:true})).toBe('high');
+    expect(notificationUrgency('matchup_moments')).toBe('normal');expect(notificationUrgency('announcements',{livePlay:true})).toBe('normal');
+  });
   it("keeps app updates off by default while leaving them available", () => {
     expect(DEFAULT_NOTIFICATION_CATEGORIES).not.toContain("updates");
     expect(DEFAULT_NOTIFICATION_CATEGORIES).not.toContain("wall");

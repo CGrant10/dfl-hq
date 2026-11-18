@@ -9,6 +9,7 @@ import {readPageChoice} from './page-disclosure.js';
 import {keyPlayersHtml,matchupTalkHtml} from './clubhouse-matchup-cards.js';
 import {mountLiveScoreRefresh} from './live-score-refresh.js';
 import {mountScoreFreshness} from './score-freshness.js';
+import {patchGameDay} from './game-day-dom.js';
 let stopCurrent=null;
 async function previews(root,threads,active){
  const ids=[...threads.values()];if(!ids.length)return;
@@ -17,7 +18,7 @@ async function previews(root,threads,active){
   const {data,error}=await db().from('member_wall_replies').select('id,body,created_at,members(display_name)').eq('post_id',post).order('created_at',{ascending:false}).order('id',{ascending:false}).limit(1);
   if(!active())return;const slot=root.querySelector(`[data-chat-preview="${matchup}"]`);if(!slot)return;
   const row=data?.[0],count=counts.data?.find(r=>String(r.post_id)===String(post))?.reply_count;
-  const talk=matchupTalkHtml({reply:row,count,error:!!error});slot.dataset.talkState=talk.state;slot.innerHTML=talk.html;
+  const talk=matchupTalkHtml({reply:row,count,error:!!error});slot.dataset.talkState=talk.state;patchGameDay(slot,talk.html);
  }));
 }
 export function mountMatchupLive(root,model,threads,active,{onUpdate=(_data)=>{},onError=()=>{},onStop=()=>{}}={}){
@@ -39,14 +40,14 @@ export function mountMatchupLive(root,model,threads,active,{onUpdate=(_data)=>{}
     const sides=['left','right'].map(side=>matchupTeamView(rosters.get(String(game[side].roster)),players,nfl,{completed:model.completed}));
     for(const [i,side]of ['left','right'].entries()){
      const team=sides[i],score=root.querySelector(`[data-score-${side}="${game.matchup_id}"]`);
-     if(team.score!==null){score.querySelector('[data-matchup-score-value]').textContent=team.score.toFixed(2);totals[`${game.matchup_id}:${side}`]=team.score;}
+     if(team.score!==null){const value=score.querySelector('[data-matchup-score-value]'),text=team.score.toFixed(2);if(value.textContent!==text)value.textContent=text;totals[`${game.matchup_id}:${side}`]=team.score;}
      const remaining=root.querySelector(`[data-remaining-${side}="${game.matchup_id}"]`);remaining.hidden=model.completed;remaining.textContent=model.completed?'':team.remaining===null?'Player status unavailable':`${team.remaining} remaining${team.live?` · ${team.live} live`:''}`;
-     const featured=root.querySelector(`[data-players-${side}="${game.matchup_id}"]`);if(featured&&!featured.hidden)featured.innerHTML=keyPlayersHtml(team);
+     const featured=root.querySelector(`[data-players-${side}="${game.matchup_id}"]`);if(featured&&!featured.hidden)patchGameDay(featured,keyPlayersHtml(team));
     }
     model.chirpScores ||= new Map();
     model.chirpScores.set(String(game.matchup_id),[{...game.left,...sides[0]},{...game.right,...sides[1]}]);
     const chirp=root.querySelector(`[data-matchup-chirp="${game.matchup_id}"]`);
-    if(chirp)chirp.innerHTML=matchupChirpHtml(clubhouseChirp(game,model));
+    if(chirp)patchGameDay(chirp,matchupChirpHtml(clubhouseChirp(game,model)));
     const phase=matchupPhase(sides[0],sides[1],model.completed),badge=root.querySelector(`[data-matchup-phase="${game.matchup_id}"]`);badge.textContent=phase.label;badge.dataset.state=phase.key;
     root.querySelector(`[data-matchup-summary="${game.matchup_id}"]`).textContent=matchupSummary({...game.left,...sides[0]},{...game.right,...sides[1]},{completed:model.completed});
    }

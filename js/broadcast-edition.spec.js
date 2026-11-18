@@ -3,6 +3,14 @@ import {broadcastEdition,broadcastEditionKey} from './broadcast-edition.js';
 import {homeBroadcastDeck} from './home-presentation.js';
 const date='2026-10-27';
 describe('full Home broadcast editions',()=>{
+ it('deduplicates automatic claims across generators after freshness ranking, preserving authored cards',()=>{
+  const a={id:'old',kind:'news',generator:'wire',headline:'A real story',href:'#/clubhouse',publishedAt:date+'T09:00:00Z'},b={...a,id:'fresh',generator:'league',publishedAt:date+'T11:00:00Z'};
+  expect(broadcastEdition([a,b],date)).toEqual([b]);expect(broadcastEdition([a,{...b,source:'manual'}],date)).toHaveLength(2);
+ });
+ it('retires dated automatic final results after a week without hiding archive records or manual stories',()=>{
+  const result={id:'final',kind:'league-story',temporal:'final',publishedAt:'2026-10-19T12:00:00Z'};
+  expect(broadcastEdition([result],date)).toEqual([]);expect(broadcastEdition([{...result,kind:'record'}],date)).toHaveLength(1);expect(broadcastEdition([{...result,source:'manual'}],date)).toHaveLength(1);
+ });
  it('remembers visible editions while ignoring heartbeat-only refreshes',()=>{
   const first=[{id:'odds',headline:'Playoff picture',figure:'72%',checkedAt:1}];
   expect(broadcastEditionKey(first)).toBe(broadcastEditionKey([{...first[0],checkedAt:2}]));

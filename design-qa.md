@@ -246,3 +246,26 @@ identifier checks and production build pass. Evidence and read-only source
 comparisons: `/workspace/dfl-qb-context-1601`. Full model rules, the temporary
 QB stress assumption and verification limits are documented in
 `docs/player-value-context-validation.md`.
+
+### 1.602.0 — Everyday controls and stable updates
+
+Common Trade targets remain visible; one staged options sheet replaces scattered
+position, exclusion and package controls. Criteria are removable, full names stay
+accessible, and existing multi-team routing and FantasyCalc access remain.
+Explicit apply/cancel, valid package capacities and planning-horizon cancellation
+are checked. Repeated roster advice reuses matching inputs while kickoff, role,
+value, roster and freshness changes force recomputation. Clubhouse patches live
+player content in place and removes duplicated pregame status text. Broadcast
+adds actual score-proportion rails and filters duplicate/stale automatic stories.
+
+Mobile verification covers 320/390px in both Medicine Wheel themes with enlarged
+text, contrast, focus and viewport checks. Broadcast covers 96 standard plus 60
+enlarged layouts with no copy/art overlap or broken destinations. Current-league
+Home/Clubhouse/Trade captures block provider writes; repeated advice lookup is
+approximately 0.2–0.4ms on the checked snapshot. Startup and Home module budgets
+remain 3/4. The notification sender's tested version 17 is deployed, preserving
+authentication, opt-outs, expiry and deduplication while prioritizing verified
+live plays. Tests use simulated push I/O; no physical phone arrival is claimed.
+
+Evidence and detailed model/interaction limits:
+`/workspace/dfl-polish-1602/` and `docs/app-refinement-1602.md`.

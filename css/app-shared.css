@@ -6000,7 +6000,7 @@ dialog.dfl-player-card { height:min(720px,calc(100dvh - 24px),var(--dialog-viewp
 #view .tb-setup[open]>.tb-setup-summary{border-bottom:1px solid var(--line)}
 #view .tb-setup[open]>.tb-setup-summary>b{font-size:0}#view .tb-setup[open]>.tb-setup-summary>b:after{content:'Hide';font-size:12px}
 #view .tb-setup-body{padding:14px 16px}
-#view .tb-setup:not([open])>.tb-setup-body{display:none}
+#view details.tb-setup:not([open])>.tb-setup-body{display:none}
 #view .tb-browse-offers{width:100%;margin-top:14px;min-height:44px}
 #view .tb-intent{scroll-margin-top:110px}
 #view.view[data-page-system][data-route][data-route="trade"] .tb-offers-card{padding:0;border:0;background:transparent;box-shadow:none}
@@ -10363,6 +10363,15 @@ html[data-readability="comfortable"] :is(#view,.home-reel-player) [data-nfl-layo
 
 [data-viewed-player]:has(.player-return-delta)>small { opacity:0; }
 
+/* Kickoff already identifies pregame players. Keep the useful season average
+   without repeating a second 'Yet to play' status beneath every name. */
+#view[data-route="clubhouse"] .gd-compare-row .gd-player-week-detail.is-pregame .gd-player-week-line { display:none; }
+#view[data-route="clubhouse"] .gd-compare-row .gd-player-week-detail { gap:3px; }
+#view[data-route="clubhouse"] .gd-compare-row .gd-player-week-average { color:var(--body-text); font:500 .625rem/1.4 var(--font-ui); font-variant-numeric:tabular-nums; }
+#view.view[data-route="clubhouse"] .clubhouse-command-center[data-clubhouse-design="stadium"] .gd-compare-player .gameday-player-score>small { font-variant-numeric:tabular-nums; }
+#view[data-route="clubhouse"] .gd-lineup-comparison .gd-player-stat-line { margin-top:0; padding-bottom:6px; }
+html[data-readability="comfortable"] #view[data-route="clubhouse"] .gd-compare-row .gd-player-week-average { font-size:.8125rem; }
+
 
 /* Source: css/trade-offer-board.css */
 /* Complete offers share the compact score/name rhythm of the Clubhouse. */
@@ -11550,6 +11559,13 @@ html[data-ui-motion="off"] :is(.gameday-player,.dfl-player-card) .dfl-player-por
  #view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief-award-long>.bx-head { font-size:1.125rem; }
 }
 
+/* Actual score proportions add a quiet sports graphic without another stat,
+   invented chart data, animation loop, or image competing with the headline. */
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief-score-chart>div { position:relative; padding-bottom:8px; }
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief-score-rail { position:absolute; inset:auto 0 0; height:2px; background:var(--line-soft); }
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief-score-rail::after { content:''; display:block; width:var(--bx-score-share); height:100%; background:var(--body-text); }
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .is-winner>.bx-brief-score-rail::after { background:var(--accent); }
+
 
 /* Source: css/onair-motion.css */
 /* Finite broadcast beats. Figures keep their real values throughout. */
@@ -11705,6 +11721,51 @@ body dialog.trade-protected-sheet>header h2 { font:700 1rem/1.35 var(--font-ui);
 .trade-protected-sheet>footer .linkbtn { min-height:44px; color:var(--accent); font:500 .8125rem/1.4 var(--font-ui); }
 .trade-protected-sheet :is(input,button):focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 @media(prefers-reduced-motion:reduce){.trade-protected-sheet{scroll-behavior:auto}}
+
+/* One staged options sheet; common teams and targets stay on the page. */
+#view[data-route="trade"] .tb-options-bar { display:flex; justify-content:flex-end; padding:4px 0 8px; }
+#view[data-route="trade"] .tb-options-bar button { display:flex; align-items:center; gap:8px; min-height:44px; font:600 .8125rem/1.4 var(--font-ui); }
+#view[data-route="trade"] .tb-active-filters { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
+#view[data-route="trade"] .tb-active-filters:empty { display:none; }
+#view[data-route="trade"] .tb-active-filters button { display:flex; align-items:center; gap:8px; max-width:100%; min-height:44px; padding:6px 9px; border:1px solid var(--line); border-radius:6px; background:transparent; color:var(--body-text); font:500 .75rem/1.35 var(--font-ui); }
+#view[data-route="trade"] .tb-active-filters [data-ui-name] { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#view[data-route="trade"] .tb-active-filters i { font-style:normal; }
+.trade-options-sheet { width:min(100% - 20px,520px); max-height:min(88dvh,780px); padding:0; color:var(--text); border:1px solid var(--line); border-radius:12px 12px 0 0; }
+.trade-options-sheet>header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--line); }
+.trade-options-sheet>header button { min-height:44px; color:var(--body-text); background:none; border:0; font:600 .8125rem/1.4 var(--font-ui); }
+.trade-options-sheet>form { display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+.trade-options-sheet [data-sheet-body] { overflow:auto; min-height:0; padding:0 16px; overscroll-behavior:contain; }
+.trade-options-sheet [data-sheet-body]>section { padding:14px 0; border-bottom:1px solid var(--line-soft); }
+.trade-options-sheet h3 { margin:0 0 10px; font:650 .875rem/1.4 var(--font-ui); }
+.trade-options-sheet .tb-receive-positions { padding:0; margin:0; border:0; }
+.trade-options-sheet .tb-receive-positions>legend { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.trade-options-sheet .tb-receive-options { display:flex; flex-wrap:wrap; gap:8px; }
+.trade-options-sheet .tb-receive-options :is(label,button) { display:flex; gap:6px; align-items:center; min-height:44px; padding:4px 8px; border:1px solid var(--line); border-radius:6px; color:var(--text); background:transparent; font:600 .8125rem/1.4 var(--font-ui); }
+.trade-options-sheet .tb-receive-options label:has(:checked) { border-color:var(--accent); background:var(--bg-2); }
+.trade-options-sheet :is(input[type=checkbox],input[type=range]) { accent-color:var(--accent); }
+.trade-options-sheet .trade-options-split { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr)); gap:12px; }
+.trade-options-sheet label { min-width:0; font:500 .8125rem/1.4 var(--font-ui); }
+.trade-options-sheet label>select { display:block; box-sizing:border-box; width:100%; min-height:44px; margin-top:6px; padding:8px; border:1px solid var(--line); border-radius:6px; color:var(--text); background:var(--bg-2); font:400 16px/1.4 var(--font-ui); }
+.trade-options-size { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:10px; }
+.trade-options-size output { margin-left:auto; font-weight:700; }
+.trade-options-size>input { width:100%; min-height:36px; }
+.trade-options-sheet .trade-options-protected { border:0; padding:0 0 12px; }
+.trade-options-protected>summary { display:flex; justify-content:space-between; align-items:center; min-height:48px; font:650 .875rem/1.4 var(--font-ui); cursor:pointer; }
+.trade-options-search input { box-sizing:border-box; width:100%; min-height:44px; padding:8px; margin-bottom:8px; border:1px solid var(--line); border-radius:6px; background:var(--bg-2); color:var(--text); font:400 16px/1.4 var(--font-ui); }
+.trade-options-sheet .trade-protected-player[hidden] { display:none; }
+.trade-options-sheet form>footer { display:flex; flex:none; justify-content:space-between; gap:12px; padding:12px 16px max(12px,env(safe-area-inset-bottom)); border-top:1px solid var(--line); }
+.trade-options-sheet form>footer button { min-height:44px; }
+.trade-options-sheet form>footer .linkbtn { color:var(--body-text); font:500 .8125rem/1.4 var(--font-ui); }
+.trade-options-sheet[open] { display:flex; flex-direction:column; }
+.trade-options-sheet>header { flex:none; }
+.trade-options-sheet>form { flex:1; }
+.trade-options-sheet [data-sheet-body] { flex:1; }
+#view.view[data-page-system][data-route="trade"] section.tb-setup { margin:12px 0 0; padding:0; border:0; background:transparent; }
+#view.view[data-page-system][data-route="trade"] .tb-setup-body>.tb-refine { margin:0; padding:0; border:0; background:transparent; }
+#view.view[data-page-system][data-route="trade"] .tb-setup-body>.tb-refine>summary { min-height:44px; padding:0; background:transparent; }
+.trade-options-market { display:flex; justify-content:space-between; align-items:center; gap:12px; min-height:44px; padding:6px 0; color:var(--body-text); border-top:1px solid var(--line-soft); font:500 .75rem/1.4 var(--font-ui); }
+#view[data-route="trade"] .tb-options-status { display:flex; align-items:center; gap:12px; color:var(--body-text); font:500 .75rem/1.4 var(--font-ui); }
+#view[data-route="trade"] .tb-options-status button { min-height:44px; color:var(--body-text); }
 
 
 /* Source: css/identity-names.css */

@@ -136,3 +136,10 @@
  #view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief-award>.bx-head { font-size:1.375rem; }
  #view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief-award-long>.bx-head { font-size:1.125rem; }
 }
+
+/* Actual score proportions add a quiet sports graphic without another stat,
+   invented chart data, animation loop, or image competing with the headline. */
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief-score-chart>div { position:relative; padding-bottom:8px; }
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief-score-rail { position:absolute; inset:auto 0 0; height:2px; background:var(--line-soft); }
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .bx-brief-score-rail::after { content:''; display:block; width:var(--bx-score-share); height:100%; background:var(--body-text); }
+#view.view #home-wrap[data-home-edition] .bx-stage[data-bx-format="wide"] .is-winner>.bx-brief-score-rail::after { background:var(--accent); }

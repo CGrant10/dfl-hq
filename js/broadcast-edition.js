@@ -28,6 +28,7 @@ export function broadcastEdition(stories=[],date='',{now=Date.parse(date+'T12:00
   // Generator pins make a card eligible; they are not commissioner pins.
   // A receipt or announcement earns two days, with its first day leading.
   if(!authored&&['news','trade'].includes(story.kind)&&Number.isFinite(at)&&(at>Number(now)||Number(now)-at>STORY_SHELF_MS))continue;
+  if(!authored&&story.temporal==='final'&&['league-story','fantasy','golf'].includes(story.kind)&&Number.isFinite(at)&&(at>Number(now)||Number(now)-at>7*FRESH_STORY_MS))continue;
   if(!authored&&(staticKinds.has(story.kind)||story.temporal==='historical')){
    if(['champion','chip'].includes(story.kind)){if(!awards.has(story.kind))awards.set(story.kind,story)}
    else if(story.kind!=='identity')archive.push(story);
@@ -56,7 +57,15 @@ export function broadcastEdition(stories=[],date='',{now=Date.parse(date+'T12:00
  const live=[...pinned,...ranked.slice(0,Math.max(0,6-pinned.length))];
  const picks=archivePicks(archive,date,Math.max(0,BROADCAST_STORY_LIMIT-live.length-awards.size));
  // Separate the two awards with another subject when one is available.
- return [...live,...(awards.has('champion')?[awards.get('champion')]:[]),...picks.slice(0,1),...(awards.has('chip')?[awards.get('chip')]:[]),...picks.slice(1)];
+ const claims=new Set();
+ // Deduplicate after freshness ranking so an expired or older copy cannot
+ // suppress the fresh story. Deliberate commissioner cards stay authoritative.
+ return [...live,...(awards.has('champion')?[awards.get('champion')]:[]),...picks.slice(0,1),...(awards.has('chip')?[awards.get('chip')]:[]),...picks.slice(1)].filter(story=>{
+  if(authoredStory(story))return true;
+  if(!String(story.headline||'').trim()||!story.href&&story.figure==null&&!story.sides?.length)return true;
+  const claim=JSON.stringify([String(story.headline||'').trim().toLowerCase(),story.figure??null,story.href||'',story.sides?.map(s=>[s.name,s.score])]);
+  if(claims.has(claim))return false;claims.add(claim);return true;
+ });
 }
 
 /** Reading state follows visible story changes, not background fetch timestamps. */
