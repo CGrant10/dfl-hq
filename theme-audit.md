@@ -3344,3 +3344,18 @@ pacing and screen-reader speech are not newly measured.
 1.602.1 follow-up: the staged Reset action now reveals all roster-search rows.
 Search → Reset → Cancel is rechecked in the same production sheet at 320/390px,
 Light/Dark, including enlarged text and contrast. No styling or palette change.
+
+### 1.603.0 — Simpler trade filters
+
+Reviewed Trade and the staged Filters sheet at 320/390px in Medicine Wheel
+Light/Dark, with normal and 200% root text. Positions use equal columns;
+package and timing controls share a collapsed section, and protected players
+remain searchable. Existing palette tokens, focus rings and sheet motion remain.
+The main toolbar pairs Teams & routing with Filters and puts removable criteria
+in a horizontal row. Open team controls retain their width without covering
+Filters. Inspected default, expanded, team-routing and enlarged-text screenshots.
+
+Browser checks cover both-way positions, valid package counts, protected players,
+Apply/Reset/Cancel, focus return, schedule cancellation/retry, contrast and viewport
+bounds. Evidence: `/workspace/dfl-filters-1603/trade/checks`. Physical-device
+animation pacing and screen-reader speech are not newly measured.
