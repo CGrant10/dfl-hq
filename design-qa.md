@@ -269,3 +269,14 @@ live plays. Tests use simulated push I/O; no physical phone arrival is claimed.
 
 Evidence and detailed model/interaction limits:
 `/workspace/dfl-polish-1602/` and `docs/app-refinement-1602.md`.
+
+### 1.603.0 — Trade filter hierarchy
+
+Kept positions and trade goal visible in the sheet; grouped maximum size,
+send/get counts and planning horizon under Package & timing, with a live summary.
+Retained searchable Don’t trade exclusions, FantasyCalc access, staged reset and
+cancel, manager selection and multi-team routing. Filters and Teams & routing
+share a compact toolbar; applied criteria scroll in one removable-chip row.
+No search or valuation rules changed. Phone checks cover 320/390px Light/Dark,
+enlarged text, contrast, overflow, keyboard dismissal and actual offer constraints.
+Evidence: `/workspace/dfl-filters-1603/`.
