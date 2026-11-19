@@ -3396,3 +3396,19 @@ viewport bounds, keyboard tabs, and metadata updates preserving the selected
 pick, tiebreaker, focus and click handlers. Wrong-week updates are ignored.
 Evidence: `/workspace/dfl-pickem-1605/{mobile,mobile320,enlarged-final}`.
 Physical-device animation pacing and screen-reader speech are not newly measured.
+
+### 1.606.0 — Update and first-paint handoff
+
+Retained the existing black update plate, shield, soft halo and normal round-logo
+opening. No palette or motion changes. Shared chrome stays hidden until actual
+first-route readiness, so the static legacy navigation cannot flash during boot.
+A reboot keeps its update plate until that paint or an actual connection error,
+with a retry after a stalled load. Normal launch retains its quick loading fallback.
+
+Reviewed real HTML/updater/service workers in Light/Dark mobile Chromium with
+an intentionally delayed first render, including the legacy updater path.
+The failed-install retry stays usable and in the same gate. Recorded zero visible
+legacy-navigation frames. Also checked the compiled app’s actual Home/opening
+and Sportsbook/Pick’em/navigation in both themes; no uncaught page errors.
+Evidence: `/workspace/dfl-update-1606/{gate-*,opening-*,ready-*,retry-*,compiled}`.
+Physical iOS launch snapshots and native-device frame pacing are not newly measured.

@@ -275,6 +275,7 @@ function bootFailure(error) {
   if(error)console.error(error);
   const view=document.getElementById('view'),offline=navigator.onLine===false;
   if(view)view.innerHTML=`<section class="state is-error" role="alert"><h1 class="state-title">${offline?'You’re offline':'DFL HQ could not connect'}</h1><button class="btn" type="button" data-retry-page>Retry</button></section>`;
+  window.dispatchEvent(new Event('dfl:app-failed'));
 }
 function retryBoot() {
   if(booted)return renderRoute({retry:true});

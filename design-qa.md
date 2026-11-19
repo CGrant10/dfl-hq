@@ -359,3 +359,27 @@ exact edge-bundle auth, replay, settlement, quotes, context and provider checks.
 No new table permissions or RLS changes; no Pick’em-table security findings.
 
 final result: passed
+
+### 1.606.0 — Faster, continuous updates
+
+Reproduced the reported old-app glimpse: at 1.7 seconds the old splash timer had
+removed the overlay while static Home/Keepers/Golf/Polls chrome was visible.
+Removed the redundant loaded-file refresh before worker installation. The update
+action now waits for the requested controlling release, with a bounded failure
+and usable retry, preserving the route and pending golf-score safeguards.
+An already-active target skips another update check. A failed update stays put.
+
+Reboot overlay now exits on actual route paint or actual boot failure. It no
+longer disappears at 1.5 seconds. Shared chrome cannot show the legacy HTML
+fallback before initialization. A stalled reboot exposes retry within the plate.
+The ordinary opening keeps its short fallback, with legacy chrome hidden.
+
+Verified 2,740 unit tests, release/theme/type/name/build checks. Browser regression
+`tools/capture-update-handoff.py` runs the real HTML/updater/service workers on an
+isolated local origin, covering both the current and previous updater, an explicit
+install failure/retry and a deliberately 3.5-second-delayed first render. Both
+mobile themes recorded zero visible stale-navigation frames and no page errors.
+Compiled-app real-data read-only checks verify normal opening and current chrome.
+Evidence: `/workspace/dfl-update-1606`. Native-device launch snapshots remain unmeasured.
+
+final result: passed
