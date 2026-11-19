@@ -33,8 +33,6 @@ with sync_playwright() as p:
         page.goto(url);page.wait_for_function('window.reviewReady===true');page.evaluate('document.fonts.ready')
         def click(selector):
             node=page.locator(selector).first
-            if node.evaluate("e=>{const d=e.closest('.tb-setup');return d&&!d.open&&!e.matches('.tb-setup > summary')}"):
-                page.locator('.tb-setup > summary').click()
             if node.evaluate("e=>{const d=e.closest('.tb-refine');return d&&!d.open&&!e.matches('.tb-refine > summary')}"):
                 page.locator('.tb-refine > summary').click()
             if node.evaluate("e=>{const d=e.closest('.tb-position-filter');return d&&!d.open&&!e.matches('.tb-position-filter > summary')}"):
@@ -45,10 +43,25 @@ with sync_playwright() as p:
             summary=f'[data-td-roster="{side}"]'
             if not page.locator(summary).evaluate('e=>e.open'):click(summary+' > summary')
             click(f'[data-td-pick="{side}"][value="{pid}"]')
+        option_names={'[data-tb-horizon]':'horizon','[data-tb-goal]':'goal','[data-tb-send-count]':'sendCount','[data-tb-receive-count]':'receiveCount','[data-tb-max]':'maxPlayers'}
+        def option_value(selector):
+            click('[data-tb-options]')
+            sheet=page.locator('.trade-options-sheet[open]')
+            value=sheet.locator('[name="'+option_names[selector]+'"]').input_value()
+            sheet.locator('[data-options-cancel]').click()
+            page.wait_for_function('!document.querySelector(".trade-options-sheet[open]")')
+            return value
         def select(selector,value):
+            if selector in option_names:
+                click('[data-tb-options]')
+                sheet=page.locator('.trade-options-sheet[open]')
+                name=option_names[selector]
+                if name!='goal':sheet.locator('.trade-options-advanced>summary').click()
+                sheet.locator('[name="'+name+'"]').select_option(value)
+                sheet.locator('[type=submit]').click()
+                page.wait_for_function('!document.querySelector(".trade-options-sheet[open]")')
+                return
             node=page.locator(selector)
-            if node.evaluate("e=>!!e.closest('.tb-setup')&&!e.closest('.tb-setup').open"):
-                click('.tb-setup > summary')
             if node.evaluate("e=>!!e.closest('.tb-refine')&&!e.closest('.tb-refine').open"):
                 click('.tb-refine > summary')
             if node.get_attribute('hidden') is not None:
@@ -60,10 +73,10 @@ with sync_playwright() as p:
                 page.wait_for_function('!document.querySelector(".trade-player-picker")?.open')
             else:node.select_option(value)
         assert page.locator('[data-tb-tier="fair"]').evaluate('e=>e.open')
-        # Offers lead; Edit search reveals the complete player controls.
-        assert not page.locator('.tb-setup').evaluate('e=>e.open')
-        assert not page.locator('[data-trade-picker="send"]').is_visible()
-        assert not page.locator('[data-trade-picker="league"]').is_visible()
+        # Common targets stay visible; advanced filters remain in the sheet.
+        assert page.locator('[data-trade-picker="send"]').is_visible()
+        assert page.locator('[data-trade-picker="league"]').is_visible()
+        assert page.locator('[data-tb-options]').is_visible()
         # Each count comes from its own intent's completed search, including
         # empty tiers. Switching cached tabs keeps those counts intact.
         def settled_counts():
@@ -73,17 +86,17 @@ with sync_playwright() as p:
         assert page.locator('.tb-offer').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-44')
         assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
         page.screenshot(path=str(output/f'trade-{width}-entry.png'))
-        click('.tb-setup > summary')
         assert not page.locator('.tb-refine').evaluate('e=>e.open')
-        assert page.locator('[data-trade-picker="send"]').is_visible()
-        assert page.locator('[data-trade-picker="league"]').is_visible()
         assert page.locator('[data-trade-picker="send"]').evaluate('e=>e.getBoundingClientRect().height>=44')
-        assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
-        click('[data-tb-view-offers]')
-        assert not page.locator('.tb-setup').evaluate('e=>e.open')
-        assert page.locator('[data-tb-intent="fair"]').evaluate('e=>e===document.activeElement')
+        click('[data-tb-options]')
+        filters=page.locator('.trade-options-sheet[open]')
+        assert not filters.locator('.trade-options-advanced').evaluate('e=>e.open')
+        assert not filters.locator('.trade-options-protected').evaluate('e=>e.open')
+        assert filters.locator('[name=goal]').is_visible()
         page.screenshot(path=str(output/f'trade-{width}-compact-search.png'))
-        click('.tb-setup > summary')
+        filters.locator('[data-options-cancel]').click()
+        page.wait_for_function('!document.querySelector(".trade-options-sheet[open]")')
+        assert page.locator('[data-tb-options]').evaluate('e=>e===document.activeElement')
         assert page.locator('[data-ta-shop-partner]').input_value()=='all'
         assert page.locator('.tb-supporting').count()==0
         for card in page.locator('.tb-offer:not(.tb-multi-offer)').all():
@@ -110,10 +123,10 @@ with sync_playwright() as p:
         # a Next 4 weeks label on rest-of-season numbers.
         select('[data-tb-horizon]','next4')
         page.wait_for_selector('[data-tb-retry-schedules]')
-        assert page.locator('[data-tb-horizon]').input_value()=='season'
+        assert option_value('[data-tb-horizon]')=='season'
         page.evaluate("""()=>{const club=v=>({WSH:'WAS',JAC:'JAX',LA:'LAR'}[v]||v);const teams=[...new Set([...window.reviewData.pool.values()].map(p=>club(p.nflTeam)))];window.reviewSchedules=[6,7,8,9].map(week=>({week,schedule:new Map(teams.map(t=>[t,{opponent:'NFL',available:true}]))}))}""")
         click('[data-tb-retry-schedules]')
-        page.wait_for_function("document.querySelector('[data-tb-horizon]')?.value==='next4'&&!document.querySelector('.tb-search-placeholder')")
+        page.wait_for_function("!!document.querySelector('[data-tb-remove-filter=horizon]')&&!document.querySelector('.tb-search-placeholder')")
         settled_counts()
         assert 'Weeks 6–9' in offer_horizon()
         page.screenshot(path=str(output/f'trade-{width}-next-four-weeks.png'))
@@ -123,7 +136,7 @@ with sync_playwright() as p:
             need=page.locator('[data-tb-shop-need]').get_attribute('data-tb-shop-need')
             click('[data-tb-shop-need]');settled_counts()
             assert page.locator('[data-ta-shop-partner]').input_value()=='all'
-            assert page.locator('[data-tb-goal]').input_value()==need
+            assert option_value('[data-tb-goal]')==need
         page.evaluate('sessionStorage.clear();localStorage.clear()');page.reload();page.wait_for_function('window.reviewReady===true')
         counts=settled_counts()
         for tier in ['aggressive','steal','fair']:
@@ -178,9 +191,7 @@ with sync_playwright() as p:
         click('[data-td-load-offer]')
         assert page.locator('.td-ticket').count(),f'{width}: Analyze offer did not open a ticket'
         page.evaluate('window.renderReview()');settled_counts()
-        assert not page.locator('.tb-setup').evaluate('e=>e.open'), 'A saved expanded search must not reopen setup on a new visit'
-        assert not page.locator('[data-trade-picker="send"]').is_visible()
-        click('.tb-setup > summary')
+        assert not page.locator('.tb-refine').evaluate('e=>e.open'), 'Team controls must not reopen on a new visit'
         assert page.locator('[data-trade-picker="send"]').is_visible()
         assert page.locator('[data-ta-shop-partner]').input_value()=='all'
         assert page.locator('[data-trade-picker="league"]').count()==1
@@ -358,16 +369,16 @@ with sync_playwright() as p:
             page.keyboard.press('Escape')
         # Larger required packages remain available in the actual page handlers.
         page.evaluate("document.documentElement.style.fontSize='';sessionStorage.clear();localStorage.clear();window.renderReview()")
-        assert page.locator('[data-tb-max]').input_value()=='8'
+        assert option_value('[data-tb-max]')=='8'
         for pid in ['1-1','1-2','1-3','1-4','1-6']:select('[data-tb-add-anchor="send"]',pid)
         assert page.locator('[data-tb-remove-anchor="send"]').count()==5
-        assert page.locator('[data-tb-max]').input_value()=='8'
+        assert option_value('[data-tb-max]')=='8'
         page.reload();page.wait_for_function('window.reviewReady===true')
         assert page.locator('[data-tb-remove-anchor="send"]').count()==0
-        assert page.locator('[data-tb-send-count]').input_value()=='any'
-        assert page.locator('[data-tb-receive-count]').input_value()=='any'
-        assert page.locator('[data-tb-goal]').input_value()=='best'
-        assert page.locator('[data-tb-horizon]').input_value()=='season'
+        assert option_value('[data-tb-send-count]')=='any'
+        assert option_value('[data-tb-receive-count]')=='any'
+        assert option_value('[data-tb-goal]')=='best'
+        assert option_value('[data-tb-horizon]')=='season'
         # A restricted, empty Steal search can broaden without relabeling offers.
         select('[data-tb-goal]','QB');click('[data-tb-intent="steal"]')
         page.locator('[data-tb-reset-search]').wait_for()
@@ -378,8 +389,8 @@ with sync_playwright() as p:
             page.locator('[data-tb-reset-search]').scroll_into_view_if_needed()
             page.screenshot(path=str(output/f'trade-empty-{photo_theme}-{width}.png'))
         click('[data-tb-reset-search]')
-        assert page.locator('[data-tb-goal]').input_value()=='best'
-        assert page.locator('[data-tb-send-count]').input_value()=='any'
+        assert option_value('[data-tb-goal]')=='best'
+        assert option_value('[data-tb-send-count]')=='any'
         assert page.locator('[data-ta-shop-partner]').input_value()=='all'
         page.evaluate('sessionStorage.clear();localStorage.clear();window.renderReview()')
         click('[data-td-mode="manual"]');pick(0,'1-4');pick(1,'2-6')

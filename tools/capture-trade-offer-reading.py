@@ -22,14 +22,12 @@ with sync_playwright() as p:
   for theme in ['light','dark']:
    c=browser.new_context(viewport={'width':width,'height':844},has_touch=True,is_mobile=True,service_workers='block');c.route('**/*',lambda r:r.continue_() if r.request.url.startswith('http://127.0.0.1:') else r.abort());page=c.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f'http://127.0.0.1:{server.server_port}/trade-review/index.html#/trade');page.wait_for_function('window.reviewReady');page.wait_for_selector('.tb-offer');page.evaluate('document.fonts.ready')
    page.evaluate('''async theme=>{const {saveMode}=await import('/js/theme.js');saveMode(theme);const {mountPageMotion,startUiMotion}=await import('/js/ui-motion.js');startUiMotion();window.stopReadingMotion=mountPageMotion(document.querySelector('#view'));}''',theme);page.wait_for_timeout(200)
-   editor=page.locator('.tb-setup');assert not editor.evaluate('e=>e.open')
-   running=editor.locator(':scope>summary').evaluate('e=>{e.click();return e.parentElement.getAnimations().some(a=>a.playState==="running")}')
-   assert running,'search editor lost its shared expansion motion'
-   page.wait_for_function('!document.querySelector(".tb-setup").getAnimations().length')
-   assert page.locator('.tb-position-filter>summary').is_visible()
-   page.locator('.tb-position-filter>summary').click()
-   assert page.locator('.tb-setup [data-tb-receive-position]').first.is_visible()
-   editor.locator(':scope>summary').click();page.wait_for_function('!document.querySelector(".tb-setup").open')
+   page.locator('[data-tb-options]').click()
+   filters=page.locator('.trade-options-sheet[open]')
+   assert filters.locator('[data-tb-receive-position]').first.is_visible()
+   assert not filters.locator('.trade-options-advanced').evaluate('e=>e.open')
+   filters.locator('[data-options-cancel]').click();page.wait_for_function('!document.querySelector(".trade-options-sheet[open]")')
+   assert page.locator('[data-tb-options]').evaluate('e=>e===document.activeElement')
    tag=f'{width}px {theme}';card=page.locator('.tb-offer').first;summary=card.locator('.tb-offer-preview>summary');details=card.locator('.tb-offer-preview')
    check(tag+' compact balance stays visible and deeper metrics start folded',card.locator('.tb-offer-verdict strong').is_visible() and card.locator('.tb-offer-verdict strong').inner_text().endswith('%') and not card.locator('.tb-offer-summary').is_visible())
    check(tag+' starter previews are lazy',page.locator('[data-offer-lineup]>div').count()==0)
@@ -58,7 +56,7 @@ with sync_playwright() as p:
    check(tag+' reduced motion expands immediately',details.evaluate('e=>e.open&&!e.getAnimations().length'))
    if width==390:
     page.emulate_media(reduced_motion='no-preference')
-    page.evaluate('''()=>{const goal=document.querySelector('[data-tb-goal]');goal.value='starter';goal.dispatchEvent(new Event('change',{bubbles:true}));}''')
+    page.locator('[data-tb-options]').click();page.locator('.trade-options-sheet [name=goal]').select_option('starter');page.locator('.trade-options-sheet [type=submit]').click();page.wait_for_function('!document.querySelector(".trade-options-sheet[open]")')
     page.wait_for_function('!document.querySelector(".tb-offers-card[aria-busy=true]")&&!!document.querySelector(".tb-offer")')
     improved=page.locator('.tb-offer').filter(has=page.locator('[data-td-load-offer]')).first
     improved.locator('.tb-offer-preview>summary').click();page.wait_for_timeout(330)
