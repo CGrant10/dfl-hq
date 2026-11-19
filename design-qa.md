@@ -323,3 +323,11 @@ Remaining P3: physical-device animation frame pacing and spoken screen-reader
 output are not measured by these browser captures.
 
 final result: passed
+
+1.604.1 user-directed follow-up: every matchup is shown by default. Removed the
+three-matchup cap, extra disclosure and unused styles; retained collapsed early
+lines. Actual compiled mobile checks confirm six visible matchup cards with
+no expansion control, both themes, contrast/overflow, selection and review.
+Screenshots: `/workspace/dfl-book-all-1604-1/mobile`.
+
+final result: passed

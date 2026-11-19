@@ -3376,3 +3376,9 @@ The 24-layout slip review and 48 result/share checks pass. Source and rendered
 screens were compared together; see the 1.604.0 entry in `design-qa.md`.
 Evidence: `/workspace/dfl-book-1604/{qa,final,small,enlarged-final,slips,results}`.
 Native iOS frame pacing and screen-reader speech are not newly measured.
+
+1.604.1 follow-up: all six fantasy matchups in the selected week now render by
+default, without an All 6 expansion step. Early lines remain collapsed. Reviewed
+compiled 390px Light/Dark screenshots; all six rows are visible in the DOM,
+text contrast/overflow and selection/review/navigation checks pass. No palette
+or motion changes. Evidence: `/workspace/dfl-book-all-1604-1/mobile`.

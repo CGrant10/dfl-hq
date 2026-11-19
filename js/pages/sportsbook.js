@@ -511,7 +511,7 @@ function fantasySlateHtml(slate,clock,byMarket,canBook,picked,held,members,membe
  });
  const finalCount=slate.markets.filter(m=>m.status==='settled'||m.status==='void').length,lockedCount=slate.markets.length-openCount-finalCount;
  const count=[`${openCount} open`,lockedCount?`${lockedCount} locked`:null,finalCount?`${finalCount} final`:null].filter(Boolean).join(' · ');
- const body=`<div class="sb-market-grid">${(upcoming?cards:cards.slice(0,3)).join('')}</div>${!upcoming&&cards.length>3?`<details class="sb-more-lines"><summary>All ${cards.length} matchups ${replayIcon('chevron-right')}</summary><div class="sb-market-grid">${cards.slice(3).join('')}</div></details>`:''}`;
+ const body=`<div class="sb-market-grid">${cards.join('')}</div>`;
  if(upcoming)return `<details class="block sb-section sb-fantasy-slate sb-early-lines" data-fantasy-week="${slate.week}" data-fantasy-period="upcoming"><summary><h2>${heading}</h2><span>${openCount} open</span>${replayIcon('chevron-right')}</summary>${body}</details>`;
  return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-line-columns"><span>Fantasy matchups</span><span>Proj.</span><span>Moneyline</span></div>${body}</section>`;
 }
