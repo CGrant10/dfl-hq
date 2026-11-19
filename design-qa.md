@@ -331,3 +331,31 @@ no expansion control, both themes, contrast/overflow, selection and review.
 Screenshots: `/workspace/dfl-book-all-1604-1/mobile`.
 
 final result: passed
+
+### 1.605.0 — Weekly Pick’em lines, logos and weather
+
+The existing free ESPN scoreboard now supplies current spreads/moneylines and
+venue weather through the scheduled five-minute worker and existing board RPC.
+No extra provider, paid ingestion or phone-side polling loop. The open Pick’em
+panel refreshes metadata through the existing visibility-aware Book lifecycle
+at most once per minute; interactive pick controls are retained. Straight-up
+grading, card locks, saved picks and accepted wager prices are unchanged.
+
+Checked correct home/away favorite assignment, current versus opening lines,
+even games, negative moneylines on both sides, team aliases and mismatched IDs.
+Missing lines/forecasts are explicit; indoor venues do not show outside weather.
+Daytime highs are not substituted for missing event forecast temperatures.
+The live signed worker returned 200 with all 13 current-week games carrying lines.
+The deployed edge version 18 exactly matches the locally tested bundle.
+
+Compiled mobile screenshots in both themes: 390px, 320px and 200% text.
+All 26 NFL logos load; no text-contrast failures or page errors. Browser state
+checks verify that metadata patches preserve draft selection, tiebreaker, focus
+and handlers, and ignore a different week. The enlarged-text hero counter now
+wraps rather than clipping. Evidence: `/workspace/dfl-pickem-1605`.
+
+Validation: 326 test files / 2,733 tests; release/theme/type/name/build checks;
+exact edge-bundle auth, replay, settlement, quotes, context and provider checks.
+No new table permissions or RLS changes; no Pick’em-table security findings.
+
+final result: passed

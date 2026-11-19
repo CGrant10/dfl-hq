@@ -1,3 +1,5 @@
+import {teamLogo} from './nfl-teams.js';
+import {pickemSideLine,pickemWeather,pickemTeamCode} from './pickem-game-context.js';
 import { db } from "./supabase.js";
 import { toast } from "./ui.js";
 
@@ -11,18 +13,35 @@ export async function loadPickemBoard(){
   return data||{available:false};
 }
 
+function sideLineMarkup(game,side,esc){
+ const line=pickemSideLine(game,side);return line?`<strong>${esc([line.tag,line.spread].filter(Boolean).join(' '))}</strong>${line.moneyline?`<small>ML ${esc(line.moneyline)}</small>`:''}`:'<small>Line unavailable</small>';
+}
+function pickemTeamMarkup(game,side,esc){
+ const name=game[side+'_team_name'],logo=teamLogo(pickemTeamCode(game[side+'_team_id']),{size:24,className:'sb-pickem-logo'}).replace(/alt="[^"]*"/,'alt=""');
+ return `<span class="sb-pickem-team">${logo}<span data-ui-name title="${esc(name)}">${esc(name)}</span></span><span class="sb-pickem-quote" data-pickem-quote="${side}">${sideLineMarkup(game,side,esc)}</span>`;
+}
+export function patchPickemGameContext(host,board,esc){
+ const root=host.querySelector(`.sb-pickem[data-season="${Number(board.season)}"][data-week="${Number(board.week)}"]`);if(!root)return;
+ const games=new Map((board.games||[]).map(game=>[String(game.provider_event_id),game]));
+ for(const node of root.querySelectorAll('[data-pickem-game]')){
+  const game=games.get(node.dataset.pickemGame);if(!game)continue;
+  for(const side of ['away','home']){const slot=node.querySelector(`[data-pickem-quote="${side}"]`);if(slot)slot.innerHTML=sideLineMarkup(game,side,esc);}
+  const weather=node.querySelector('[data-pickem-weather]');if(weather)weather.textContent=pickemWeather(game);
+ }
+}
+
 export function pickemMarkup(board,esc,canBook=false){
   if(!board?.available)return `<section class="sb-pickem-empty"><small>NFL PICK'EM</small><h2>Building this week's card</h2><p>A commissioner can tap Sync Pick'em now, or the free public NFL feed will fill it during the next automatic refresh.</p></section>`;
   const { picks, isLocked, chosen, entered, correct, wrong, pending } = pickemState(board), games=board.games||[];
   return `<section class="sb-pickem" data-season="${Number(board.season)}" data-week="${Number(board.week)}">
-    <div class="sb-pickem-hero"><div><small>WEEK ${Number(board.week)} · ${Number(board.season)}</small><h2>${isLocked ? entered ? "Receipts are live." : "This week’s card is closed." : "Call the whole slate."}</h2><p>${isLocked ? entered ? `${correct} right · ${wrong} wrong · ${pending} pending` : "No card submitted. Follow the league results below and check back for the next slate." : `Pick every winner before ${esc(fmt(board.locksAt))}.`}</p></div><span>${isLocked ? entered ? `${correct}–${wrong}` : "NO CARD" : `${chosen}/${games.length}`}</span></div>
+    <div class="sb-pickem-hero"><div><small>WEEK ${Number(board.week)} · ${Number(board.season)} · STRAIGHT-UP</small><h2>${isLocked ? entered ? "Receipts are live." : "This week’s card is closed." : "Call the whole slate."}</h2><p>${isLocked ? entered ? `${correct} right · ${wrong} wrong · ${pending} pending` : "No card submitted. Follow the league results below and check back for the next slate." : `Pick every winner before ${esc(fmt(board.locksAt))}.`}</p></div><span>${isLocked ? entered ? `${correct}–${wrong}` : "NO CARD" : `${chosen}/${games.length}`}</span></div>
     <div class="sb-pickem-games">${games.map(g=>{
       const live=g.status==="live",final=g.status==="final",state=final?`${g.away_score}–${g.home_score}`:live?"LIVE":esc(fmt(g.starts_at));
       return `<article class="sb-pickem-game${g.is_monday_night?" is-mnf":""}" data-pickem-game="${esc(g.provider_event_id)}"><div class="sb-pickem-gamehead"><small>${g.is_monday_night?"MONDAY NIGHT · TIEBREAKER":"NFL"}</small><b>${state}</b></div><div class="sb-pickem-sides">
-        <button type="button" data-pickem-team="${esc(g.away_team_id)}" aria-pressed="${String(picks[g.provider_event_id])===String(g.away_team_id)}" ${isLocked?"disabled":""}><span>${esc(g.away_team_name)}</span>${final?`<b>${Number(g.away_score)}</b>`:""}${isLocked?`<small>${Number(g.awayPickPct||0)}%${Number(g.awayPickPct||0)>0&&Number(g.awayPickPct||0)<35?" · UPSET":""}</small>`:""}</button>
+        <button type="button" data-pickem-team="${esc(g.away_team_id)}" aria-pressed="${String(picks[g.provider_event_id])===String(g.away_team_id)}" ${isLocked?"disabled":""}>${pickemTeamMarkup(g,'away',esc)}${final?`<b>${Number(g.away_score)}</b>`:""}${isLocked?`<small>${Number(g.awayPickPct||0)}%${Number(g.awayPickPct||0)>0&&Number(g.awayPickPct||0)<35?" · UPSET":""}</small>`:""}</button>
         <span>@</span>
-        <button type="button" data-pickem-team="${esc(g.home_team_id)}" aria-pressed="${String(picks[g.provider_event_id])===String(g.home_team_id)}" ${isLocked?"disabled":""}><span>${esc(g.home_team_name)}</span>${final?`<b>${Number(g.home_score)}</b>`:""}${isLocked?`<small>${Number(g.homePickPct||0)}%${Number(g.homePickPct||0)>0&&Number(g.homePickPct||0)<35?" · UPSET":""}</small>`:""}</button>
-      </div></article>`}).join("")}</div>
+        <button type="button" data-pickem-team="${esc(g.home_team_id)}" aria-pressed="${String(picks[g.provider_event_id])===String(g.home_team_id)}" ${isLocked?"disabled":""}>${pickemTeamMarkup(g,'home',esc)}${final?`<b>${Number(g.home_score)}</b>`:""}${isLocked?`<small>${Number(g.homePickPct||0)}%${Number(g.homePickPct||0)>0&&Number(g.homePickPct||0)<35?" · UPSET":""}</small>`:""}</button>
+      </div><p class="sb-pickem-weather"><span>Weather</span> <span data-pickem-weather>${esc(pickemWeather(g))}</span></p></article>`}).join("")}</div>
     <div class="sb-pickem-lock"><label><span>Monday night total</span><input type="number" min="0" max="150" inputmode="decimal" id="pickem-total" value="${board.entry?.tiebreakTotal??""}" placeholder="47.5" ${isLocked?"disabled":""}></label>${!isLocked?`<button type="button" class="btn" id="pickem-save">Lock my card</button>`:""}<p id="pickem-status" class="muted tiny" aria-live="polite"></p></div>
     ${pickemStandings(board.standings||[],esc,"Weekly board",false,games,isLocked)}
     ${pickemStandings(board.seasonStandings||[],esc,"Season race",true)}

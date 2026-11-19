@@ -3382,3 +3382,17 @@ default, without an All 6 expansion step. Early lines remain collapsed. Reviewed
 compiled 390px Light/Dark screenshots; all six rows are visible in the DOM,
 text contrast/overflow and selection/review/navigation checks pass. No palette
 or motion changes. Evidence: `/workspace/dfl-book-all-1604-1/mobile`.
+
+### 1.605.0 — Weekly Pick’em game context
+
+Reviewed the compiled weekly card in Medicine Wheel Light/Dark at 390px and
+320px, plus 320px with 200% root text. Actual NFL logos, favorite/underdog
+spreads, moneylines and compact venue weather use existing shared tokens.
+Numbers stay together; weather and the hero counter reflow when space is tight.
+Team names stay on one line with a full-name title. No palette or motion changes.
+
+Real browser checks cover loaded logos for all 13 games, readable contrast,
+viewport bounds, keyboard tabs, and metadata updates preserving the selected
+pick, tiebreaker, focus and click handlers. Wrong-week updates are ignored.
+Evidence: `/workspace/dfl-pickem-1605/{mobile,mobile320,enlarged-final}`.
+Physical-device animation pacing and screen-reader speech are not newly measured.

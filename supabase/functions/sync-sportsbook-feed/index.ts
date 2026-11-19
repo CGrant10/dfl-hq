@@ -1,3 +1,4 @@
+import {buildPickemGameContext} from '../../../js/pickem-game-context.js';
 import {legacyPropResult} from '../../../js/sportsbook-legacy-props.js';
 import {scorePlayer} from '../../../js/dfl-scoring.js';
 import { corePropStat, selectCoreProps } from "../../../js/sportsbook-core-props.js";
@@ -172,7 +173,7 @@ async function syncPublicPickem(admin:ReturnType<typeof createClient>,season:num
       const status=name.includes("cancel")||name.includes("postpon")?"cancelled":type.completed||type.state==="post"?"final":type.state==="in"?"live":"scheduled";
       const started=status==="live"||status==="final";
       const start=new Date(startsAt);
-      const row={provider_event_id:`espn:${event.id}`,season,week:targetWeek,starts_at:start.toISOString(),away_team_id:String(away.team?.abbreviation||away.team?.id),away_team_name:String(away.team?.shortDisplayName||away.team?.displayName),home_team_id:String(home.team?.abbreviation||home.team?.id),home_team_name:String(home.team?.shortDisplayName||home.team?.displayName),away_score:started?value(away.score):null,home_score:started?value(home.score):null,status,is_monday_night:start.toLocaleString("en-US",{timeZone:"America/Chicago",weekday:"short"})==="Mon",updated_at:new Date().toISOString()};
+      const row={provider_event_id:`espn:${event.id}`,season,week:targetWeek,starts_at:start.toISOString(),away_team_id:String(away.team?.abbreviation||away.team?.id),away_team_name:String(away.team?.shortDisplayName||away.team?.displayName),home_team_id:String(home.team?.abbreviation||home.team?.id),home_team_name:String(home.team?.shortDisplayName||home.team?.displayName),away_score:started?value(away.score):null,home_score:started?value(home.score):null,status,game_context:buildPickemGameContext(event),is_monday_night:start.toLocaleString("en-US",{timeZone:"America/Chicago",weekday:"short"})==="Mon",updated_at:new Date().toISOString()};
       const{error}=await admin.from("nfl_pickem_games").upsert(row,{onConflict:"provider_event_id"});if(error)throw error;
       games++;weeks.add(`${season}:${targetWeek}`);
     }

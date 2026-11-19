@@ -10703,6 +10703,24 @@ body .dfl-player-card[data-motion=off] .player-game-group i { transition:none; }
 
 #view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-lineboard-outcomes>.sb-outcome { grid-template-rows:auto; }
 
+/* Pick'em decision context: real NFL identities, point spreads, moneylines and weather. */
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-gamehead { flex-wrap:wrap; align-items:center; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-sides>button { min-width:0; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px; padding:10px 8px; align-content:start; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-sides>button>.sb-pickem-team { grid-column:1/-1; grid-row:1; display:flex; align-items:center; gap:7px; min-width:0; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-team>.sb-pickem-logo { width:24px; height:24px; flex:none; object-fit:contain; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-team>[data-ui-name] { min-width:0; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:650 .8125rem/1.35 var(--font-ui); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-sides>button>.sb-pickem-quote { grid-column:1/-1; grid-row:2; display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:3px 6px; min-width:0; white-space:normal; font-variant-numeric:tabular-nums; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-quote>strong { color:var(--text); font:600 .6875rem/1.4 var(--font-ui); white-space:nowrap; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-quote>small { margin:0; color:var(--body-text); font:400 .625rem/1.4 var(--font-ui); white-space:nowrap; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-sides>button>b { grid-row:3; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-sides>button>small { grid-row:3; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-weather { display:flex; flex-wrap:wrap; align-items:baseline; gap:3px 8px; margin:8px 0 0; color:var(--body-text); font:400 .6875rem/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-weather>span:first-child { font-weight:600; }
+
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-hero { flex-wrap:wrap; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-hero>div { min-width:0; flex:1 1 12rem; }
+#view.view[data-page-system][data-route][data-daily-desk="sportsbook"] #sportsbook-wrap.sb-lineboard .sb-pickem-hero>span { flex:none; }
+
 
 /* Source: css/sports-desk-finish.css */
 /* Current football comes first; early markets stay a deliberate second stop. */
