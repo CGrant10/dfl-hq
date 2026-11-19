@@ -280,3 +280,46 @@ share a compact toolbar; applied criteria scroll in one removable-chip row.
 No search or valuation rules changed. Phone checks cover 320/390px Light/Dark,
 enlarged text, contrast, overflow, keyboard dismissal and actual offer constraints.
 Evidence: `/workspace/dfl-filters-1603/`.
+
+### 1.604.0 — Selected Sportsbook lineboard
+
+Source visual truth: `/workspace/generated_images/exec-c323b52a-5d39-4c58-ac2d-8ff05c861aef.png`
+(852×1846), normalized to the 390×844 CSS viewport with aspect-preserving fit.
+Implementation: `/workspace/dfl-book-1604/qa/book-selected-dark.png`, 390×844,
+deviceScaleFactor 1. State: one selected fantasy pick, first three matchups,
+compact slip visible. Illustrative source teams/tickets are replaced by live
+league data and the selected profile. Full comparison and readable row crops:
+`/workspace/dfl-book-1604/comparison-final.png` and
+`/workspace/dfl-book-1604/comparison-rows-final.png`; post-density-fix capture:
+`/workspace/dfl-book-1604/qa/book-selected-dark.png`.
+
+Comparison history:
+- [P1] A saved selection could duplicate its outcome during route re-entry,
+  breaking the paired rows. Market outcomes now deduplicate by ID; the regression
+  test and both compiled themes confirm exactly two rows per matchup.
+- [P2] The prior two-column design left an empty grid row in each team button,
+  adding 8px per row. Reset grid rows, align the four tracks, and retain a 44px
+  price target. The revised capture makes All 6 matchups reachable above the bar.
+- Fonts/typography: shared Inter and squared Rajdhani numerals; compact names,
+  one decimal projections, tabular prices, one-line truncation and accessible
+  full names. Scores switch to final-point labels when a result is verified.
+- Spacing/layout: flat divided rows, two primary tabs, external My bets button,
+  week controls and a single anchored review action. Three pairs lead; the rest
+  expand with shared native disclosure motion. Claim and row controls keep 44px
+  targets, making the header slightly taller than the generated reference.
+- Colors/tokens: shared Medicine Wheel surfaces, text, selected-state and action
+  tokens in both themes; no retired crest accents or added theme entries.
+- Images: existing sharp round DFL mark and actual Sleeper/DFL portraits; no
+  generated replacement avatars or decorative imagery.
+- Copy/content: Fantasy/Pick’em only, current team names and dates, small My bets
+  access. Early lines appear collapsed only when real next-week markets exist.
+
+Primary interactions verified in a real Chromium-rendered compiled app:
+selection, review without placing a wager, close/focus return, keyboard tabs,
+My bets, Pick’em, week arrows, all-six expansion, both themes and larger text.
+No uncaught page errors or horizontal overflow. Intentional deviations are
+44px controls, actual league data, and retention of the existing Clear action.
+Remaining P3: physical-device animation frame pacing and spoken screen-reader
+output are not measured by these browser captures.
+
+final result: passed

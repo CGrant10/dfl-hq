@@ -1,0 +1,12 @@
+import {it,expect,vi,beforeEach} from 'vitest';
+const mocks=vi.hoisted(()=>({league:vi.fn(),rows:vi.fn(),projections:vi.fn()}));
+vi.mock('./sleeper.js',()=>({sleeper:{league:mocks.league},loadWeeklyProjections:mocks.projections}));
+vi.mock('./weekly-clubhouse-data.js',()=>({loadWeeklyRosters:mocks.rows}));
+import {loadFantasyBookProjections} from './sportsbook-fantasy-projections.js';
+let serial=0;
+const client=()=>{const id='league-'+serial++;const q={select:()=>q,in:()=>q,abortSignal:async()=>({data:[{season:2026,sleeper_league_id:id}],error:null})};return {from:vi.fn(()=>q),rpc:vi.fn()};};
+const market={id:1,category:'Fantasy',auto_key:'matchup:2026:11:2',status:'open'};
+beforeEach(()=>{vi.resetAllMocks();mocks.league.mockResolvedValue({scoring_settings:{rec:1,rec_yd:.1}});mocks.rows.mockResolvedValue([{matchup_id:2,roster_id:1,starters:['a']},{matchup_id:2,roster_id:2,starters:['b']}]);mocks.projections.mockResolvedValue({data:[{player_id:'a',stats:{rec:6,rec_yd:80}},{player_id:'b',stats:{rec:5,rec_yd:70}}]});});
+it('uses current starters and actual league scoring on both sides, without writing prices',async()=>{const db=client(),result=await loadFantasyBookProjections(db,[market],{force:true});expect([...result.get('1')]).toEqual([['1',14],['2',12]]);expect(mocks.rows).toHaveBeenCalledWith(expect.any(String),11,{maxAgeMs:0});expect(mocks.projections).toHaveBeenCalledWith(2026,11,{maxAgeMs:0});expect(db.rpc).not.toHaveBeenCalled();});
+it('reflects a lineup change on the next read, including after betting locks',async()=>{const db=client();await loadFantasyBookProjections(db,[market],{force:true});mocks.rows.mockResolvedValue([{matchup_id:2,roster_id:1,starters:['b']},{matchup_id:2,roster_id:2,starters:['a']}]);const result=await loadFantasyBookProjections(db,[{...market,status:'locked'}],{force:true});expect(result.get('1').get('1')).toBe(12);expect(result.get('1').get('2')).toBe(14);});
+it('does not label missing data as a zero projection or fetch settled/provider markets',async()=>{const db=client();expect(await loadFantasyBookProjections(db,[{...market,status:'settled'},{category:'Player Props'}])).toEqual(new Map());expect(db.from).not.toHaveBeenCalled();mocks.projections.mockResolvedValue({data:[]});await expect(loadFantasyBookProjections(db,[market])).rejects.toThrow('Projections unavailable');});

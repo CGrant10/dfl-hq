@@ -36,8 +36,8 @@ const fmtOdds=n=>n===null||n===undefined||String(n).trim()===''||!Number.isFinit
 const fmtTime=v=>v?new Date(v).toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
 const isOpen=m=>m.status==="open"&&(!m.closes_at||new Date(m.closes_at)>new Date());
 const isGolf=m=>m.category==="Golf"||String(m.auto_key||"").startsWith("golf:");
-const ACTIVE_BOOK_CATEGORIES=new Set(["Fantasy","Player Props","Team Totals","Game Totals"]);
-const isBookCategory=m=>ACTIVE_BOOK_CATEGORIES.has(String(m?.category||""));
+const ACTIVE_BOOK_CATEGORIES=new Set(["Fantasy"]);
+const isBookCategory=m=>ACTIVE_BOOK_CATEGORIES.has(String(m?.category||""))&&!!fantasyMarketKey(m);
 const num=n=>Number(n||0).toLocaleString();
 
 /*
@@ -101,13 +101,17 @@ export async function render(view){
   let wallet,ledger,leaders,markets,outcomes,bets,trends,members,pickem,recap,leagueWeek={},feedStatus={};
   try{
     wallet=await loadBookWallet(db());
-    const providerMarketPages=async()=>{const rows=[];for(let from=0;;from+=1000){const{data,error}=await db().from("sportsbook_markets").select("*").in("category",["Team Totals","Game Totals"]).in("status",["open","locked"]).order("provider_updated_at",{ascending:false}).range(from,from+999);if(error)return{data:rows,error};rows.push(...(data||[]));if((data||[]).length<1000)return{data:rows,error:null}}};
-    const[account,mr,propMarkets,propIndex,fantasyMarkets]=await Promise.all([
-      loadBookAccount(db(),me.id),
+    const account=await loadBookAccount(db(),me.id);
+    const ticketIds=[...new Set(account.bets.flatMap(b=>{
+      let legs=b.legs;if(typeof legs==='string')try{legs=JSON.parse(legs)}catch{legs=[]}
+      return [b.market_id,...(Array.isArray(legs)?legs.map(l=>l.market_id):[])].filter(id=>id!=null);
+    }))];
+    const [mr,propMarkets,fantasyMarkets]=await Promise.all([
       db().from("sportsbook_markets").select("*").neq("source","provider").order("created_at",{ascending:false}).limit(100),
-      providerMarketPages(),loadPropIndex(db()),
-      db().from("sportsbook_markets").select("*").eq("category","Fantasy").in("status",["open","locked"]).order("closes_at",{ascending:false}).limit(36)
+      ticketIds.length?db().from("sportsbook_markets").select("*").in("id",ticketIds):Promise.resolve({data:[],error:null}),
+      db().from("sportsbook_markets").select("*").eq("category","Fantasy").order("closes_at",{ascending:false}).limit(36)
     ]);
+    const propIndex=[];
     if(mr.error||propMarkets.error||fantasyMarkets.error)throw mr.error||propMarkets.error||fantasyMarkets.error;
     const discovered=new Map([...propIndex,...(mr.data||[]),...(propMarkets.data||[]),...(fantasyMarkets.data||[])].map(market=>[String(market.id),market]));
     // Reload selected picks only, including markets that closed while away.
@@ -132,7 +136,7 @@ export async function render(view){
       loadNflState().catch(()=>null)
     ]);
     const err=lr.error||br.error||or.error||btr.error;if(err)throw err;
-    wallet.balance=account.balance;ledger=lr.data||[];leaders=br.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];pickem=pickemBoard;recap=recapResult.error?null:recapResult.data;feedStatus=feedResult?.data||{};leagueWeek={season:Number(nfl?.data?.season||pickemBoard?.season),week:Number(nfl?.data?.week||pickemBoard?.week)};
+    wallet.balance=account.balance;ledger=lr.data||[];leaders=br.data||[];outcomes=[...new Map((or.data||[]).map(row=>[String(row.id),row])).values()];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];pickem=pickemBoard;recap=recapResult.error?null:recapResult.data;feedStatus=feedResult?.data||{};leagueWeek={season:Number(nfl?.data?.season||pickemBoard?.season),week:Number(nfl?.data?.week||pickemBoard?.week)};
   }catch(err){if(generation!==renderGeneration)return;if(refreshing)toast('The book could not refresh. Try again.',true);else{view.innerHTML=`<h1>DFL Sportsbook</h1><section class="state is-error" role="alert"><h2>The book could not load</h2><button class="btn" type="button" data-book-load-retry data-route-retry>Retry</button></section>`;}return}
   if(generation!==renderGeneration)return;
 
@@ -141,12 +145,12 @@ export async function render(view){
   for(const o of outcomes){const k=String(o.market_id);if(!byMarket.has(k))byMarket.set(k,[]);byMarket.get(k).push(o)}
   const marketMap=new Map(markets.map(m=>[String(m.id),m])),outcomeMap=new Map(outcomes.map(o=>[String(o.id),o]));
   const available=markets.filter(m=>isOpen(m)&&isBookCategory(m)&&!isGolf(m));
-  const open=[...available.filter(m=>m.category!=="Player Props"),...selectFeaturedProps(available)];
+  const open=available;
   const lockedFantasy=markets.filter(m=>matchupKey(m)&&["open","locked"].includes(m.status)&&!isOpen(m));
   const lastLocked=lockedFantasy.map(m=>matchupKey(m).slice(1,3).map(Number)).sort((a,b)=>b[0]-a[0]||b[1]-a[1])[0];
   const lockedMatchups=lockedFantasy.filter(m=>{const key=matchupKey(m);return Number(key[1])===lastLocked?.[0]&&Number(key[2])===lastLocked?.[1]});
   const currentMatchups=markets.filter(m=>{const key=fantasyMarketKey(m);return key?.season===leagueWeek.season&&key.week===leagueWeek.week});
-  const boardMarkets=[...new Map([...open,...lockedMatchups,...currentMatchups].map(m=>[String(m.id),m])).values()];
+  const boardMarkets=markets.filter(m=>isBookCategory(m));
   const onBoard=new Set(open.map(m=>String(m.id)));
   /*
     OFF THE BOARD, AND WHY THAT USED TO TRAP MONEY.
@@ -177,22 +181,22 @@ export async function render(view){
   slip=slip.filter(id=>{const o=outcomeMap.get(String(id));const m=o&&marketMap.get(String(o.market_id));return !!m&&isOpen(m)});
   if(slip.length<before)toast(`${before-slip.length} pick${before-slip.length===1?"":"s"} dropped: the line closed`,true);
 
-  view.innerHTML=`<div id="sportsbook-wrap"${slip.length?' class="has-slip"':""}>
-    <header class="sb-masthead page-identity"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>${esc(sportsbookWeekCaption(leagueWeek))}</span></div><div class="sb-account"><div class="sb-wallet" aria-label="Bankroll"><small>BANKROLL</small><strong data-book-balance>${num(wallet?.balance)}</strong><span>SIN</span></div>${bankrollCard(wallet)}</div></header>
-    <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-view="markets" data-sb-tab="markets" data-sb-product="book">Board</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-view="tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button><button type="button" role="tab" aria-selected="false" aria-controls="sb-pickem-panel" id="sb-tab-pickem" data-sb-view="pickem" data-sb-product="pickem" tabindex="-1">NFL Pick'em</button></div>
+  view.innerHTML=`<div id="sportsbook-wrap" data-book-clock-week="${leagueWeek.week||''}" data-book-clock-season="${leagueWeek.season||''}" class="sb-lineboard${slip.length?' has-slip':''}">
+    <header class="sb-masthead page-identity"><div class="sb-brand"><h1>Sportsbook</h1><button type="button" class="linkbtn sb-my-bets" aria-controls="sb-tickets" aria-expanded="false" data-sb-view="tickets" data-sb-tab="tickets">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div><div class="sb-account"><div class="sb-wallet" aria-label="Bankroll"><small>BANKROLL</small><strong data-book-balance>${num(wallet?.balance)}</strong><span>SIN</span></div>${bankrollCard(wallet)}</div></header>
+    <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-view="markets" data-sb-tab="markets" data-sb-product="book">Fantasy</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-pickem-panel" id="sb-tab-pickem" data-sb-view="pickem" data-sb-product="pickem" tabindex="-1">Pick’em</button></div>
     <div id="sb-book-panel">
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
     ${categoryBoard(boardMarkets,byMarket,bets,canBook,outcomeMap,marketMap,members,me.id,leagueWeek)}
-    ${!open.length?'<p class="sb-empty">No open lines right now. Check back for the next matchup.</p>':""}
+
     </div>
-    <div id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden>
+    <div id="sb-tickets" role="region" aria-label="My bets" hidden>
     ${ticketsMarkup(bets,marketMap,outcomeMap)}
     </div>
     <div class="sb-book-extras">${disclosure("sportsbook-trends","Trending picks",`${trends.length} picks`,trendingPicks(trends))}
     ${recap?.available ? `<details class="sb-secondary"><summary>Last week’s sportsbook recap</summary>${weeklyRecapMarkup(recap)}</details>` : ""}
     ${canBook&&rulings.length?rulingQueue(rulings,byMarket):""}
-    ${canBook?`<details class="sb-secondary sb-book-tools"><summary>Book controls</summary>${refreshFeedControl(feedStatus)}${sleeperPropImporterMarkup()}</details>`:""}
-    ${canBook?commissionerBook():""}
+    ${canBook?`<details class="sb-secondary sb-book-tools"><summary>Book controls</summary>${refreshFeedControl(feedStatus)}</details>`:""}
+
     <details class="sb-secondary"><summary>SIN leaderboard</summary><section class="block"><div class="card"><div class="card-body">${leaders.length?leaders.slice(0,12).map((r,i)=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${i+1}.</strong> ${esc(r.display_name)}</span><strong>${num(r.balance)} SIN</strong></div>`).join(""):`<span class="muted">No bankrolls yet.</span>`}</div></div></section></details>
     <details class="card"><summary class="card-title">Receipts</summary><div class="card-body" data-book-ledger>${ledgerMarkup(ledger)}</div></details>
     </div>
@@ -204,8 +208,8 @@ export async function render(view){
   view.__bets=bets;
   const refreshSlip=wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
   rememberView(view,me.id);
-  wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
-  wireMarketActivities(view,leagueWeek);wirePageDisclosures(view);wireBookTabs(view,me.id);wireClaim(view,active);wireTicketActions(view,marketMap,outcomeMap,me,()=>view._refreshFantasy?.({paint:false}));wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);revealSportsbookTicket(view);
+  wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);
+  wireMarketActivities(view,{...leagueWeek,games:pickem?.games||[]});wirePageDisclosures(view);wireBookTabs(view,me.id);wireClaim(view,active);wireTicketActions(view,marketMap,outcomeMap,me,()=>view._refreshFantasy?.({paint:false}));wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);revealSportsbookTicket(view);
   if(canBook)wireCommissioner(view);
   const noticeSettlements=createSettlementTracker(bets,globalThis.localStorage,me.id),recentSettled=new Set();
   wallet ||= {balance:0};
@@ -249,20 +253,27 @@ export async function render(view){
     if(fantasyTask)return fantasyTask;
     fantasyTask=(async()=>{
       let results=new Map();
+      try{const {loadFantasyBookProjections}=await import('../sportsbook-fantasy-projections.js');const projected=await loadFantasyBookProjections(db(),[...marketMap.values()],{force});if(active()){for(const button of view.querySelectorAll('[data-bet-outcome]')){const outcome=outcomeMap.get(button.dataset.betOutcome),value=projected.get(String(outcome?.market_id))?.get(String(outcome?.sleeper_roster_id));if(Number.isFinite(value)&&!fantasyOutcomeResult(marketMap.get(String(outcome?.market_id)),outcome))updateBookQuote(button.querySelector('[data-book-projection]'),value.toFixed(1));}const status=view.querySelector('[data-book-updated]');if(status)status.textContent=projected.size?'Updated now':'Projections unavailable';}}catch{const status=view.querySelector('[data-book-updated]');if(status)status.textContent='Refresh unavailable';}
       try{const {loadFantasyBookResults}=await import('../sportsbook-fantasy-data.js');results=await loadFantasyBookResults(db(),[...marketMap.values()],{force});}catch{/* An unavailable feed cannot keep a claimed result. */}
       if(!active())return;
       for(const market of marketMap.values()){delete market._fantasyResult;const result=results.get(String(market.id));if(result)market._fantasyResult=result;}
+      for(const slate of view.querySelectorAll('.sb-fantasy-slate')){
+        const games=[...marketMap.values()].filter(m=>fantasyMarketKey(m)?.week===Number(slate.dataset.fantasyWeek));
+        const final=games.length>0&&games.every(m=>['settled','void'].includes(m.status)||m._fantasyResult?.final);
+        const label=slate.querySelector('.sb-line-columns>span:nth-child(2)');if(label)label.textContent=final?'Pts':'Proj.';
+        if(final&&!slate.hidden&&slate.tagName==='SECTION'){const status=view.querySelector('[data-book-updated]');if(status)status.textContent='Final';}
+      }
       const official=[...outcomeMap.values()].filter(outcome=>{const m=marketMap.get(String(outcome.market_id));return fantasyMarketKey(m)&&['settled','void'].includes(m.status)}).map(outcome=>[outcome.id,marketMap.get(String(outcome.market_id)).status,outcome.is_winner]);
       const stamp=JSON.stringify([[...results].map(([id,{final,scores,winner}])=>[id,final,scores,winner]),official]);
       if(paint&&!view._bookTicketBusy&&stamp!==fantasyPainted){
         for(const button of view.querySelectorAll('[data-bet-outcome]')){
           const outcome=outcomeMap.get(button.dataset.betOutcome),market=marketMap.get(String(outcome?.market_id));if(!fantasyMarketKey(market))continue;
           const result=fantasyOutcomeResult(market,outcome),name=button.querySelector('.sb-outcome-name');name?.querySelector('[data-fantasy-result]')?.remove();
-          const detail=button.querySelector('.sb-outcome-label>small');
+          const detail=button.querySelector('[data-book-projection],.sb-outcome-label>small');
           if(result){
             const mark=document.createElement('span');mark.dataset.fantasyResult=result.status;mark.className='sb-fantasy-result';mark.setAttribute('aria-label',result.status==='won'?'Hit':result.status==='lost'?'Miss':'Push');mark.textContent=result.status==='won'?'✓':result.status==='lost'?'×':'—';name?.append(mark);
-            if(detail){detail.dataset.fantasyBaseText??=detail.textContent;detail.textContent=Number.isFinite(result.score)?`${result.score.toFixed(2)} pts`:'Final';}
-          }else if(detail?.dataset.fantasyBaseText!=null){detail.textContent=detail.dataset.fantasyBaseText;delete detail.dataset.fantasyBaseText;}
+            if(detail){detail.setAttribute('aria-label','Final points');detail.dataset.fantasyBaseText??=detail.textContent;detail.textContent=Number.isFinite(result.score)?`${result.score.toFixed(1)}`:'Final';}
+          }else if(detail?.dataset.fantasyBaseText!=null){detail.setAttribute('aria-label','Projected points');detail.textContent=detail.dataset.fantasyBaseText;delete detail.dataset.fantasyBaseText;}
           const state=button.closest('.sb-market')?.querySelector('.sb-market-state');if(state)state.textContent=result?'FINAL':isOpen(market)?'OPEN':'LOCKED';
         }
         updateAccount({balance:wallet.balance,bets,ledger},{forceTickets:true});fantasyPainted=stamp;
@@ -288,6 +299,7 @@ export async function render(view){
       const name=button.querySelector('.sb-outcome-name'),label=name?.querySelector('[data-sb-outcome-name]');if(label){label.textContent=quote.label;label.title=quote.label}else if(name?.firstChild?.nodeType===3)name.firstChild.textContent=quote.label;
       const line=button.closest('.sb-player-line');
       if(line){updateBookQuote(line.querySelector('.sb-player-stat strong'),propLine(market));const meta=propMarketMeta(market,[quote]);button.setAttribute('aria-label',`${meta.player}, ${meta.stat}, ${quote.label}, ${fmtOdds(quote.odds_american)}`);}
+      const values=String(market.lore_note||'').match(/projected\s+([\d.]+)[–-]([\d.]+)/i)?.slice(1);const choices=named.outcomes.filter(o=>String(o.market_id)===String(market.id)).sort((a,b)=>a.sort_order-b.sort_order);const projected=values?.[choices.findIndex(o=>String(o.id)===String(quote.id))];if(projected&&!fantasyOutcomeResult(market,quote))updateBookQuote(button.querySelector('[data-book-projection]'),projected);
       const card=button.closest('.sb-market'),state=card?.querySelector('.sb-market-state');
       const heading=card?.querySelector('.card-heading');if(heading)heading.textContent=market.title;
       const locks=card?.querySelector('.sb-locks');if(locks&&market.closes_at)locks.textContent=`${button.disabled?'Locked':'Locks'} ${fmtTime(market.closes_at)}`;
@@ -301,17 +313,26 @@ export async function render(view){
 
 function wireMarketActivities(view,leagueWeek={}){
  const host=view.querySelector('#sb-markets');if(!host)return;
- const sections=[...host.children].filter(el=>!el.matches('.sb-empty'));
- const groups=[['fantasy','Matchups'],['props','Player props'],['other','NFL lines']];
- const nav=document.createElement('div');nav.className='sb-market-context';
- nav.innerHTML=`<label for="sb-market-type"><span class="sr-only">Market type</span><select id="sb-market-type" aria-controls="${groups.map(([key])=>'sb-market-panel-'+key).join(' ')}">${groups.map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select></label><span>${esc(leagueWeek.week&&leagueWeek.season?`Week ${leagueWeek.week} · ${leagueWeek.season}`:sportsbookWeekCaption(leagueWeek))}</span>`;host.prepend(nav);
- const panels=new Map(groups.map(([key,label])=>{const panel=document.createElement('div');panel.id=`sb-market-panel-${key}`;panel.setAttribute('role','region');panel.setAttribute('aria-label',label);host.append(panel);return[key,panel]}));
- for(const section of sections){const heading=section.querySelector('h2')?.textContent?.toLowerCase()||section.querySelector('summary')?.textContent?.toLowerCase()||'';const key=section.matches('.sb-props')?'props':section.matches('.sb-fantasy-slate')||heading.includes('fantasy')||heading.includes('early lines')?'fantasy':'other';panels.get(key).append(section)}
- for(const [key,panel]of panels)if(!panel.children.length)panel.innerHTML=`<p class="sb-empty">No ${key==='fantasy'?'fantasy matchups':key==='props'?'player props':'additional lines'} available right now.</p>`;
- const select=nav.querySelector('select');
- const activate=key=>{select.value=key;for(const [name,panel]of panels)panel.hidden=name!==key;savePageChoice('sportsbook-markets',key)};
- select.addEventListener('change',()=>activate(select.value));
- const player=new URLSearchParams(location.hash.split('?')[1]||'').get('player');activate(player?'props':readPageChoice('sportsbook-markets',groups.map(g=>g[0]),'fantasy'));
+ const slates=[...host.querySelectorAll('.sb-fantasy-slate:not(.sb-early-lines)')];
+ slates.sort((a,b)=>Number(a.dataset.fantasyWeek)-Number(b.dataset.fantasyWeek));
+ const nav=document.createElement('div');nav.className='sb-week-nav';
+ nav.innerHTML=`<button type="button" class="linkbtn" data-book-week-step="-1" aria-label="Previous week">${replayIcon('chevron-left')}</button><div><strong data-book-week-title></strong><small data-book-week-dates></small><span data-book-updated role="status">Checking projections…</span></div><button type="button" class="linkbtn" data-book-week-step="1" aria-label="Next week">${replayIcon('chevron-right')}</button>`;
+ host.prepend(nav);
+ let selected=Math.max(0,slates.findIndex(s=>s.dataset.fantasyPeriod==='current'));
+ const activate=index=>{
+  selected=Math.max(0,Math.min(slates.length-1,index));
+  slates.forEach((slate,i)=>slate.hidden=i!==selected);
+  const slate=slates[selected],week=Number(slate?.dataset.fantasyWeek||leagueWeek.week);
+  nav.querySelector('[data-book-week-title]').textContent=week?`Week ${week}`:'Fantasy matchups';
+  const market=slate?.querySelector('[data-fantasy-market] .sb-locks');
+  const times=week===Number(leagueWeek.week)?(leagueWeek.games||[]).map(g=>Date.parse(g.starts_at)).filter(Number.isFinite):[];
+  const dates=times.length?[new Date(Math.min(...times)),new Date(Math.max(...times))]:[];
+  nav.querySelector('[data-book-week-dates]').textContent=dates.length?`${dates[0].toLocaleDateString([],{month:'short',day:'numeric'})}–${dates[1].getMonth()===dates[0].getMonth()?dates[1].getDate():dates[1].toLocaleDateString([],{month:'short',day:'numeric'})} · ${leagueWeek.season}`:market?.textContent.replace(/^(?:Locks|Locked) /,'')||String(leagueWeek.season||'');
+  for(const button of nav.querySelectorAll('button'))button.disabled=!slates.length||(Number(button.dataset.bookWeekStep)<0?selected<=0:selected>=slates.length-1);
+  if(view._refreshFantasy){nav.querySelector('[data-book-updated]').textContent='Checking…';void view._refreshFantasy();}
+ };
+ for(const button of nav.querySelectorAll('button'))button.addEventListener('click',()=>activate(selected+Number(button.dataset.bookWeekStep)));
+ activate(selected);
  for(const [i,section]of [...view.querySelectorAll('.sb-secondary,details.card')].entries())section.dataset.pageDetail=`sportsbook-${section.querySelector('summary')?.textContent.trim().toLowerCase().replace(/[^a-z]+/g,'-')||i}`;
 }
 
@@ -402,13 +423,13 @@ function outcomeButtons(m,outcomes,picked,held,members=[]){
   const prop=["Player Props","Team Totals","Game Totals"].includes(m.category);
   const paired=!!fantasyMarketKey(m)&&outcomes.length===2;
   const propSource=String(m.provider_key||"").startsWith("sleeper-import:")?"Sleeper line":"Book consensus";
-  return `<div class="sb-outcomes${paired?' sb-desk-outcomes':''}">${paired?'<span class="sb-desk-versus" aria-hidden="true">VS</span>':''}${outcomes.map((o,i)=>{
+  return `<div class="sb-outcomes${paired?' sb-desk-outcomes sb-lineboard-outcomes':''}">${outcomes.map((o,i)=>{
     const held=mine.has(String(o.id)),inSlip=picked.has(String(o.id));
     return `
     <button class="sb-outcome${held?" is-mine":""}${inSlip?" is-picked":""}" data-bet-outcome="${o.id}" aria-pressed="${inSlip}"${!isOpen(m)?' disabled':''}>
       ${prop?`<span class="sb-prop-side" aria-hidden="true">${i===0?"O":"U"}</span>`:teamPortrait({team_name:o.label,identity:identities.get(identityKey(o.label))||null},{className:"sb-team-mark"})}
-      <span class="sb-outcome-label"><span class="sb-outcome-name" data-ui-row-title><span data-ui-name data-sb-outcome-name title="${esc(o.label)}">${esc(o.label)}</span>${held?`<span class="sb-held">Held</span>`:""}</span><small${!prop&&!projected[i]?' class="sr-only"':''}>${prop?propSource:projected[i]?`${esc(projected[i])} projected`:"Moneyline"}</small></span>
-      <strong class="sb-price" data-ui-number>${fmtOdds(o.odds_american)}</strong>
+      <span class="sb-outcome-label"><span class="sb-outcome-name" data-ui-row-title><span data-ui-name data-sb-outcome-name title="${esc(o.label)}">${esc(o.label)}</span>${held?`<span class="sb-held">Held</span>`:""}</span>${paired?'':`<small>${prop?propSource:"Moneyline"}</small>`}</span>
+      ${paired?`<span class="sb-outcome-projection" data-book-projection aria-label="Projected points">${projected[i]?esc(projected[i]):'—'}</span>`:''}<strong class="sb-price" data-ui-number>${fmtOdds(o.odds_american)}</strong>
     </button>`}).join("")}</div>`;
 }
 function houseControls(m,outcomes,canBook){return canBook?`<div class="sb-house">${outcomes.map(o=>`<button type="button" class="linkbtn" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)}</button>`).join(" · ")} · <button type="button" class="linkbtn" data-void-market="${m.id}">Void</button></div>`:""}
@@ -487,12 +508,12 @@ function fantasySlateHtml(slate,clock,byMarket,canBook,picked,held,members,membe
   const mine=(byMarket.get(String(m.id))||[]).some(o=>ownNames.has(identityKey(o.label)));
   const card=marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held,members);
   return mine?card.replace('class="card sb-market"','class="card sb-market sb-your-matchup" data-your-matchup').replace('<small class="sb-market-kicker">','<span class="sb-your-matchup-label">Your matchup</span><small class="sb-market-kicker">'):card;
- }).join('');
+ });
  const finalCount=slate.markets.filter(m=>m.status==='settled'||m.status==='void').length,lockedCount=slate.markets.length-openCount-finalCount;
  const count=[`${openCount} open`,lockedCount?`${lockedCount} locked`:null,finalCount?`${finalCount} final`:null].filter(Boolean).join(' · ');
- const body=`<div class="sb-market-grid">${cards}</div>`;
+ const body=`<div class="sb-market-grid">${(upcoming?cards:cards.slice(0,3)).join('')}</div>${!upcoming&&cards.length>3?`<details class="sb-more-lines"><summary>All ${cards.length} matchups ${replayIcon('chevron-right')}</summary><div class="sb-market-grid">${cards.slice(3).join('')}</div></details>`:''}`;
  if(upcoming)return `<details class="block sb-section sb-fantasy-slate sb-early-lines" data-fantasy-week="${slate.week}" data-fantasy-period="upcoming"><summary><h2>${heading}</h2><span>${openCount} open</span>${replayIcon('chevron-right')}</summary>${body}</details>`;
- return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head" data-ui-section-head><div><small>${slate.period==='current'?'THIS WEEK':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${count}</span></div>${body}</section>`;
+ return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-line-columns"><span>Fantasy matchups</span><span>Proj.</span><span>Moneyline</span></div>${body}</section>`;
 }
 
 // Provider identifiers stay intact for routing/filtering; labels use NFL codes.
@@ -574,10 +595,10 @@ function slipBar(ids,outcomeMap,marketMap){
     <div class="sb-slipbar-body">
       <div class="sb-slipbar-head">
         <strong>${ids.length} pick${ids.length===1?"":"s"}</strong>
-        <span class="sb-slipbar-odds">${combined===null?"—":fmtOdds(combined)}</span>
+        <span class="sb-slipbar-odds">${ids.length===1?esc(outcomeMap.get(String(ids[0]))?.label||'')+' ':''}${combined===null?"—":fmtOdds(combined)}</span>
       </div>
     </div>
-    <button type="button" class="btn sb-slipbar-go" data-slip-open aria-label="Review ${ids.length} selected pick${ids.length===1?'':'s'}">${ids.length===1?"Review bet":"Review picks"}</button>
+    <button type="button" class="btn sb-slipbar-go" data-slip-open aria-label="Review ${ids.length} selected pick${ids.length===1?'':'s'}">Review slip</button>
     <button type="button" class="linkbtn sb-slipbar-clear" data-slip-clear aria-label="Clear selected picks">Clear</button>
   </div>`;
 }
@@ -713,7 +734,7 @@ function ticketCard(b,marketMap,outcomeMap){
     const m=blocking.market;
     const category=m?.category||blocking.leg.category;
     if(pendingResult)return '';
-    if((m?.source==="provider"||blocking.leg.provider_side)&&ACTIVE_BOOK_CATEGORIES.has(String(category||"")))return '';
+    if(m?.source==="provider"||blocking.leg.provider_side)return '';
     if(fantasyMarketKey(m))return '';
     if(!m)return "This line is gone from the board. The house has to void it to release your stake.";
     if(isGolf(m)||!isBookCategory(m))return `${esc(blocking.leg.label)} is on a retired line. The house has to void it to release your stake.`;
@@ -779,8 +800,8 @@ function rulingQueue(markets,byMarket){
   feature had it all along. A commissioner is here to book. Nobody else ever
   sees it: canBook gates the whole thing.
 */
-function commissionerBook(){return `<details class="card sb-book" open><summary class="card-title">Open a line</summary><form class="card-body" id="sportsbook-market-form"><label for="book-title">Market</label><input id="book-title" maxlength="120" required placeholder="Market title"><label for="book-category">Category</label><select id="book-category"><option>Fantasy</option><option>DFL Life</option><option>Marvel</option><option>Gaming</option></select><label for="book-close">Closes</label><input id="book-close" type="datetime-local"><label for="book-note">House note</label><input id="book-note" maxlength="180" placeholder="Optional"><p class="muted tiny">American odds, like -110 or +150. Two outcomes minimum, the third optional.</p><div class="section-head"><h3>Outcomes</h3></div>${outcomeInput(1,"YES","-110")}${outcomeInput(2,"NO","-110")}${outcomeInput(3,"","")}<div class="row-end"><button class="btn" type="submit">Open market</button></div></form></details>`}
-function refreshFeedControl(status={}){const objects=Number(status.monthlyEventObjects)||0,last=status.lastSuccessAt?fmtTime(status.lastSuccessAt):"not synced";return `<div class="sb-feed-control"><div><small>NFL FEED</small><span>Matchups, real prop lines + settlement</span></div><button type="button" class="btn small" id="sb-feed-refresh">Sync lines</button><p id="sb-feed-status" class="muted tiny" aria-live="polite">Last ${esc(last)} · ${objects} API event objects this month${status.lastError?` · ${esc(status.lastError)}`:""}</p></div>`}
+function commissionerBook(){return `<details class="card sb-book" open><summary class="card-title">Open a line</summary><form class="card-body" id="sportsbook-market-form"><label for="book-title">Market</label><input id="book-title" maxlength="120" required placeholder="Market title"><label for="book-category">Category</label><select id="book-category"><option>Fantasy</option></select><label for="book-close">Closes</label><input id="book-close" type="datetime-local"><label for="book-note">House note</label><input id="book-note" maxlength="180" placeholder="Optional"><p class="muted tiny">American odds, like -110 or +150. Two outcomes minimum, the third optional.</p><div class="section-head"><h3>Outcomes</h3></div>${outcomeInput(1,"YES","-110")}${outcomeInput(2,"NO","-110")}${outcomeInput(3,"","")}<div class="row-end"><button class="btn" type="submit">Open market</button></div></form></details>`}
+function refreshFeedControl(status={}){const objects=Number(status.monthlyEventObjects)||0,last=status.lastSuccessAt?fmtTime(status.lastSuccessAt):"not synced";return `<div class="sb-feed-control"><div><small>NFL FEED</small><span>Pick’em and existing ticket results</span></div><button type="button" class="btn small" id="sb-feed-refresh">Refresh results</button><p id="sb-feed-status" class="muted tiny" aria-live="polite">Last ${esc(last)} · ${objects} API event objects this month${status.lastError?` · ${esc(status.lastError)}`:""}</p></div>`}
 function outcomeInput(n,label,odds){return `<div class="row" style="gap:8px"><input data-book-label="${n}" maxlength="60" placeholder="Outcome ${n}" value="${esc(label)}" ${n<3?"required":""}><input data-book-odds="${n}" inputmode="numeric" placeholder="-110" value="${esc(odds)}" style="max-width:100px" ${n<3?"required":""}></div>`}
 
 /*
@@ -851,15 +872,16 @@ function wireTicketActions(view,marketMap,outcomeMap,me,refreshFantasy=async()=>
 function wireBookTabs(view,memberId) {
   const tabs=[...view.querySelectorAll('[data-sb-view]')];if(!tabs.length)return;
   const select=tab=>{
-    const key=tab.dataset.sbView;
-    for(const button of tabs){const on=button===tab;button.setAttribute('aria-selected',String(on));button.tabIndex=on?0:-1;view.querySelector('#'+button.getAttribute('aria-controls')).hidden=!on;}
+    const key=tab.dataset.sbView;view.dataset.bookView=key;
+    for(const button of tabs){const on=button===tab;button.setAttribute(button.getAttribute('role')==='tab'?'aria-selected':'aria-expanded',String(on));button.tabIndex=on||button.dataset.sbView==='tickets'||key==='tickets'&&button.dataset.sbView==='markets'?0:-1;view.querySelector('#'+button.getAttribute('aria-controls')).hidden=!on;}
     const extras=view.querySelector('.sb-book-extras');if(extras)extras.hidden=key==='pickem';
     writeBookState(memberId,{product:key==='pickem'?'pickem':'book',tab:key==='tickets'?'tickets':'markets'});
   };
   const requested=new URLSearchParams(location.hash.split('?')[1]||'');
   const saved=readBookState(memberId),key=requested.has('player')?'markets':(requested.get('product')||saved.product)==='pickem'?'pickem':saved.tab==='tickets'?'tickets':'markets';
   select(tabs.find(tab=>tab.dataset.sbView===key)||tabs[0]);
-  tabs.forEach((tab,index)=>{tab.addEventListener('click',()=>select(tab));tab.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;select(tabs[next]);tabs[next].focus();});});
+  const keyboardTabs=tabs.filter(tab=>tab.getAttribute('role')==='tab');
+  tabs.forEach(tab=>{tab.addEventListener('click',()=>select(tab));tab.addEventListener('keydown',event=>{const index=keyboardTabs.indexOf(tab);if(index<0||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?keyboardTabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+keyboardTabs.length)%keyboardTabs.length;select(keyboardTabs[next]);keyboardTabs[next].focus();});});
 }
 
 let stopRemembering=null;
@@ -1025,7 +1047,7 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
       }
 
       status.textContent="Placing your entry…";
-      const{error}=await db().rpc("sportsbook_place_entry",{entry_outcome_ids:ids.map(Number),sin_stake:stake});
+      const{error}=await db().rpc("sportsbook_place_entry",{entry_outcome_ids:ids.map(Number),sin_stake:stake,quoted_prices:Object.fromEntries(picks.map(o=>[String(o.id),Number(o.odds_american)]))});
       if(error)throw error;
       slip=[];slipStake=null;stopSlipDrag?.();stopSlipDrag=null;
       dialog.close();dialog.remove();
