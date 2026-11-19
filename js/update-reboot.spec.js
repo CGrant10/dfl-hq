@@ -11,10 +11,10 @@ function launch(marker,{blocked=false,off=false}={}){
  if(marker)store.set('dfl.update.reboot',JSON.stringify(marker));
  const storage={getItem:key=>{if(blocked)throw Error('blocked');return key.includes('gameday-motion')&&off?'off':store.get(key)||null},setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)};
  const el={parentNode:true,dataset:{},insertAdjacentHTML:vi.fn(),classList:{add:(...names)=>names.forEach(n=>classes.add(n))},setAttribute(){},getAttribute:()=>2017,style:{setProperty:(k,v)=>styles.set(k,v)},querySelector:s=>{if(!nodes.has(s))nodes.set(s,{textContent:''});return nodes.get(s)},addEventListener:(n,fn)=>events.set(n,fn),remove(){this.parentNode=false}};
- const document={baseURI:'https://example.test/dfl-hq/',hidden:false,addEventListener:(n,fn)=>events.set(n,fn),removeEventListener:n=>events.delete(n),documentElement:{dataset:{}},getElementById:()=>el,querySelector:()=>({content:version})};
+ const document={baseURI:'https://example.test/dfl-hq/',hidden:false,addEventListener:(n,fn)=>events.set(n,fn),removeEventListener:n=>events.delete(n),documentElement:{dataset:{appBoot:"loading"},removeAttribute(name){if(name==='data-app-boot')delete this.dataset.appBoot}},getElementById:()=>el,querySelector:()=>({content:version})};
  const window={addEventListener:(n,fn)=>events.set(n,fn)};
  vm.runInNewContext(boot,{document,window,sessionStorage:storage,localStorage:storage,location:{search:'',hash:'#/clubhouse'},Date,URL,performance:{now:()=>0},setTimeout:(fn,ms)=>timers.push({fn,ms})});
- return {el,classes,store,styles,document,visibility:()=>events.get('visibilitychange')?.(),ready:()=>events.get('dfl:app-ready')?.({type:'dfl:app-ready'}),flush:()=>{for(const timer of timers.splice(0).sort((a,b)=>a.ms-b.ms))timer.fn();}};
+ return {el,classes,store,styles,document,visibility:()=>events.get('visibilitychange')?.(),failed:()=>events.get('dfl:app-failed')?.({type:'dfl:app-failed'}),ready:()=>events.get('dfl:app-ready')?.({type:'dfl:app-ready'}),advance:ms=>{for(const timer of timers.filter(t=>t.ms<=ms))timer.fn();},flush:()=>{for(const timer of timers.splice(0).sort((a,b)=>a.ms-b.ms))timer.fn();}};
 }
 afterEach(()=>vi.unstubAllGlobals());
 describe('reboot handoff',()=>{
@@ -40,12 +40,21 @@ describe('reboot handoff',()=>{
   f.document.hidden=false;f.visibility();expect(f.el.dataset.updateHidden).toBe('false');
   f.ready();f.flush();
   expect(f.classes.has('is-system-ready')).toBe(true);
+  expect(f.document.documentElement.dataset.appBoot).toBeUndefined();
   expect(f.el.querySelector('.update-gate__status').textContent).toBe('SYSTEM READY');
  });
- it('yields to a slow route loading state without falsely announcing readiness',()=>{
-  const f=launch({at:Date.now(),version});f.flush();
+ it('keeps the update plate across a slow route, with recovery instead of old chrome',()=>{
+  const f=launch({at:Date.now(),version});f.advance(1600);
+  expect(f.el.parentNode).toBe(true);expect(f.classes.has('is-ready')).toBe(false);
+  expect(f.document.documentElement.dataset.appBoot).toBe('loading');
+  f.flush();expect(f.el.querySelector('.update-gate__button').outerHTML).toContain('RETRY UPDATE');
   expect(f.classes.has('is-system-ready')).toBe(false);
   expect(f.el.querySelector('.update-gate__status').textContent).not.toBe('SYSTEM READY');
+ });
+ it('reveals an actual connection failure without claiming that the app is ready',()=>{
+  const f=launch({at:Date.now(),version});f.failed();f.flush();
+  expect(f.classes.has('is-ready')).toBe(true);expect(f.classes.has('is-system-ready')).toBe(false);
+  expect(f.document.documentElement.dataset.appBoot).toBe('loading');
  });
  it.each([{at:Date.now()-100000,version},{at:Date.now()+100000,version},{at:Date.now(),version:'0.0.1'}])('ignores an expired, future or mismatched marker: %j',marker=>{
   const f=launch(marker);expect(f.classes.has('is-rebooting')).toBe(false);expect(f.store.has('dfl.update.reboot')).toBe(false);

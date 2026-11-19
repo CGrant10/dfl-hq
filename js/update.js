@@ -52,31 +52,6 @@ function scoreEntryOpen(){
 
 export function updateBlocked(){return pendingGolfScores()||scoreEntryOpen();}
 
-async function routeList(){
-  try{const r=await import("./router.js");if(typeof r.routeNames==="function")return r.routeNames()}catch{}
-  return [...document.querySelectorAll("#tabbar a[data-route]")].map(a=>a.dataset.route).filter(Boolean);
-}
-
-async function appFiles(){
-  const base=new URL(".",location.href).href;
-  const loaded=performance.getEntriesByType("resource").map(e=>e.name.split("?")[0]).filter(n=>n.startsWith(location.origin)&&/\.(js|css|json|html)$/.test(n));
-  // Versioned bundles are installed atomically by the new worker. Re-fetching
-  // raw page modules here would add a second, unused application graph.
-  if(document.documentElement.dataset.dflBundle)return [...new Set([
-    ...["","index.html","manifest.json","sw.js"].map(p=>base+p),...loaded
-  ])];
-  const pages=(await routeList()).map(n=>`${base}js/pages/${n}.js`);
-  const shell=["","index.html","css/style.css","css/profile-neutral.css","manifest.json","sw.js","js/config.js","js/nav-neutral.js","js/golf-gps-course-map.js","js/golf-club-recommendation.js","js/golf-gps-beta.js","js/golf-gps-red-trail-beta.js","js/golf-gps-rolla-beta.js","js/golf-gps-imported.js","js/golf-event-course-picker.js","js/golf-live-to-par.js"].map(p=>base+p);
-  return [...new Set([...shell,...loaded,...pages])];
-}
-
-async function refetchAll(){
-  const files=await appFiles();
-  const results=await Promise.allSettled(files.map(url=>fetch(url,{cache:"reload"})));
-  const failed=results.filter(r=>r.status==="rejected").length;
-  if(failed)console.warn(`Update: ${failed} of ${files.length} files could not be refreshed`);
-}
-
 export function isNewer(remote,local){
   const a=String(remote).trim().split(".").map(Number),b=String(local).trim().split(".").map(Number);
   for(let i=0;i<Math.max(a.length,b.length);i++){const x=a[i]||0,y=b[i]||0;if(x>y)return true;if(x<y)return false}
@@ -124,44 +99,55 @@ async function serverVersion(){
   return text;
 }
 
-function watchWorkerChange(timeout=5000){
-  if(!("serviceWorker" in navigator))return{promise:Promise.resolve(),cancel(){}};
-  let finish=()=>{};
-  const promise=new Promise(resolve=>{
-    let done=false,timer;
-    finish=()=>{
-      if(done)return;
-      done=true;
-      clearTimeout(timer);
-      navigator.serviceWorker.removeEventListener("controllerchange",finish);
-      resolve();
-    };
-    navigator.serviceWorker.addEventListener("controllerchange",finish);
-    timer=setTimeout(finish,timeout);
+// Ask the controlling worker, rather than assuming a five-second timer means
+// installation finished. The new release owns its own atomic offline bundle.
+function workerRelease(worker){
+  if(!worker)return Promise.resolve('');
+  return new Promise(resolve=>{
+    const channel=new MessageChannel();let done=false;
+    const finish=value=>{if(done)return;done=true;clearTimeout(timer);channel.port1.close();channel.port2.close();resolve(value)};
+    const timer=setTimeout(()=>finish(''),500);
+    channel.port1.onmessage=event=>finish(event.data?.release||'');
+    try{worker.postMessage({type:'DFL_APP_RELEASE'},[channel.port2])}catch{finish('')}
   });
-  return{promise,cancel:finish};
+}
+
+export function activateUpdate(version,{timeoutMs=30000}={}){
+  if(!('serviceWorker' in navigator))return Promise.resolve();
+  const workers=navigator.serviceWorker;
+  return new Promise((resolve,reject)=>{
+    let done=false,checking=false,again=false;
+    const finish=error=>{if(done)return;done=true;clearTimeout(timer);workers.removeEventListener('controllerchange',check);error?reject(error):resolve()};
+    const check=async()=>{
+      if(done)return;
+      if(checking){again=true;return}
+      checking=true;
+      const release=await workerRelease(workers.controller);checking=false;
+      if(done)return;
+      if(release===version){finish();return}
+      if(again){again=false;void check()}
+    };
+    const timer=setTimeout(()=>finish(new Error('The new app did not finish installing. Please retry.')),timeoutMs);
+    workers.addEventListener('controllerchange',check);
+    void (async()=>{
+      const registration=await workers.getRegistration();
+      if(done)return;
+      // A browser without an installed worker can navigate directly to fresh HTML.
+      if(!registration){finish();return}
+      await check();if(done)return;
+      await registration.update();
+      if(!done)void check();
+    })().catch(finish);
+  });
 }
 
 export async function forceUpdate(){
   if(updateBlocked())return false;
-  try{
-    // Keep the current shell available until the replacement worker is ready.
-    await refetchAll();
-    if("serviceWorker" in navigator){
-      const regs=await navigator.serviceWorker.getRegistrations();
-      const before=navigator.serviceWorker.controller;
-      const change=watchWorkerChange();
-      await Promise.all(regs.map(r=>r.update().catch(()=>{})));
-      const replacement=regs.some(r=>r.installing||r.waiting);
-      const alreadyChanged=navigator.serviceWorker.controller!==before;
-      if(replacement&&!alreadyChanged)await change.promise;
-      else change.cancel();
-      await navigator.serviceWorker.ready.catch(()=>{});
-    }
-  }catch(err){console.warn("Update refresh failed, reloading with cache buster",err)}
-  // The next document continues the same update plate. A one-use, short-lived
-  // marker never claims readiness: the new router's first paint does that.
-  try{sessionStorage.setItem('dfl.update.reboot',JSON.stringify({at:Date.now(),version:bar()?.dataset.version||APP_VERSION}));}catch{}
+  const version=bar()?.dataset.version||APP_VERSION;
+  // Do not re-fetch the loaded (old) app graph or wait on unrelated worker
+  // registrations. Keep the gate visible until the requested release controls us.
+  await activateUpdate(version);
+  try{sessionStorage.setItem('dfl.update.reboot',JSON.stringify({at:Date.now(),version}));}catch{}
   location.replace(`${location.pathname}?u=${Date.now()}${location.hash}`);
   return true;
 }
@@ -183,12 +169,16 @@ export function setupUpdates(){
       el.classList.add("is-updating");
       el.setAttribute('aria-busy','true');
       el.querySelector(".update-gate__status").textContent="Installing update…";
-      const updated=await forceUpdate();
-      if(!updated){
-        el.classList.remove('is-updating');el.removeAttribute('aria-busy');
-        go.disabled=false;go.textContent='UPDATE NOW';
+      try{
+        const updated=await forceUpdate();
+        if(updated)return;
         el.querySelector('.update-gate__status').textContent='Finish or sync the current score, then update.';
+      }catch(error){
+        console.warn('Update installation failed',error);
+        el.querySelector('.update-gate__status').textContent='Could not finish updating. Check your connection and retry.';
       }
+      el.classList.remove('is-updating');el.removeAttribute('aria-busy');
+      go.disabled=false;go.textContent='RETRY UPDATE';
       return;
     }
   });
