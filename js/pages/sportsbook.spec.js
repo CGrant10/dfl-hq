@@ -42,19 +42,19 @@ it('renders the real markets and wallet with separate accessible ticket panel', 
   expect(view.innerHTML).toContain('https://example.com/team-a.jpg');
   expect(view.innerHTML).toContain('--team-accent:#22C7A9');
   expect(view.innerHTML).toContain('data-bet-outcome="2"');
-  expect(view.innerHTML).toContain('id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden');
+  expect(view.innerHTML).toContain('id="sb-tickets" role="region" aria-label="My bets" hidden');
   expect(view.innerHTML).toContain('No tickets yet');
   expect(view.innerHTML).toContain('Trending picks');
   expect(view.innerHTML).toContain('3 tickets');
   expect(view.innerHTML).toContain('2 bettors &middot; 60% of picks');
-  expect(view.innerHTML).not.toContain('Projected');
+  expect(view.innerHTML).toContain('data-book-projection');
 });
 
 it('keeps the NFL clock distinct from the week attached to fantasy markets', async()=>{
   const view=fakeView();
   await render(view);
-  expect(view.innerHTML).toContain('Week 3');
-  expect(view.innerHTML).toContain('Week 4 · 2026 · NFL &amp; fantasy');
+  expect(view.innerHTML).toContain('data-fantasy-week="3"');
+  expect(view.innerHTML).toContain('data-book-clock-week="4"');expect(view.innerHTML).toContain('data-book-clock-season="2026"');
   expect(view.innerHTML).not.toContain('WEEK 1');
 });
 
@@ -77,13 +77,13 @@ it('shows live ticket progress against the accepted line', async()=>{
   bets.length=0;
 });
 
-it('groups player props behind game collapsibles with search and stat filters', async()=>{
+it('keeps NFL props out of new betting without removing ticket support', async()=>{
   markets.push({id:22,category:'Player Props',source:'provider',status:'open',title:'Player One · Rushing yards',provider_event_id:'game-1',lore_note:'AAA @ BBB · Book consensus 54.5',closes_at:'2099-01-01'});
   outcomes.push({id:44,market_id:22,label:'Over 54.5',odds_american:-110,provider_side:'over'},{id:45,market_id:22,label:'Under 54.5',odds_american:-110,provider_side:'under'});
   const view=fakeView();await render(view);
-  expect(view.innerHTML).toContain('id="sb-prop-search"');
-  expect(view.innerHTML).toContain('AAA @ BBB');
-  expect(view.innerHTML).toContain('data-prop-game');
+  expect(view.innerHTML).not.toContain('id="sb-prop-search"');
+  expect(view.innerHTML).not.toContain('AAA @ BBB');
+  expect(view.innerHTML).not.toContain('data-prop-game');
   markets.pop();outcomes.splice(-2);
 });
 
@@ -183,7 +183,7 @@ it('keeps locked fantasy winner picks visible and disabled',async()=>{
  markets.push({id:99,category:'Fantasy',status:'open',title:'Locked A vs Locked B',auto_key:'matchup:2026:4:1',closes_at:'2026-01-01'});
  outcomes.push({id:991,market_id:99,label:'Locked A',odds_american:-110});
  const view=fakeView();await render(view);
- expect(view.innerHTML).toContain('Week 4 lines');
+ expect(view.innerHTML).toContain('data-fantasy-week="4"');
  expect(view.innerHTML).toContain('LOCKED');
  expect(view.innerHTML).toContain('data-market-state="locked"');
  expect(view.innerHTML).toMatch(/data-bet-outcome="991"[^>]*disabled/);
@@ -226,4 +226,9 @@ it('keeps settled current results on the board while next-week lines are open',a
  outcomes.push({id:3031,market_id:303,label:'Final A',odds_american:120,is_winner:true});
  try{const v=fakeView();await render(v);expect(v.innerHTML).toContain('Final A');expect(v.innerHTML).toContain('data-fantasy-period="current"');expect(v.innerHTML).toMatch(/data-bet-outcome="3031"[^>]*disabled/);}
  finally{markets.pop();outcomes.pop()}
+});
+
+it('deduplicates selected outcomes when their markets are already loaded',async()=>{
+ bets.push({id:101,status:'open',stake:25,odds_american:-150,potential_payout:41,legs:[{outcome_id:2,market_id:1,label:'Team <A>',status:'open',odds_american:-150}]});
+ try{const view=fakeView();await render(view);expect((view.innerHTML.match(/data-bet-outcome="2"/g)||[])).toHaveLength(1);expect((view.innerHTML.match(/data-bet-outcome="3"/g)||[])).toHaveLength(1);}finally{bets.length=0;}
 });

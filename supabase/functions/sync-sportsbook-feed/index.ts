@@ -1,7 +1,10 @@
+import {legacyPropResult} from '../../../js/sportsbook-legacy-props.js';
+import {scorePlayer} from '../../../js/dfl-scoring.js';
 import { corePropStat, selectCoreProps } from "../../../js/sportsbook-core-props.js";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const TOKEN_HASH="c7429c5c8cfd182e13e7f1b537b0f671b0b99dcb004b19f8580b960f8f957091";
+const NFL_PROPS_ENABLED=false;
 const API="https://api.sportsgameodds.com/v2/events";
 const ESPN="https://cdn.espn.com/core/nfl/scoreboard";
 const cors=(r?:Request)=>({"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":r?.headers.get("access-control-request-headers")||"authorization, x-client-info, apikey, content-type, x-admin-token, x-member-id, x-commissioner-pin, x-dfl-cron-token","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Max-Age":"86400",Vary:"Access-Control-Request-Headers"});
@@ -101,6 +104,51 @@ async function settleSleeperImports(admin:ReturnType<typeof createClient>){
   return settled;
 }
 
+async function publicJson(url:string){
+ const response=await fetch(url,{headers:{'User-Agent':'DFL-HQ-Book/1.0'},signal:AbortSignal.timeout(20000)});
+ if(!response.ok)throw Error(`Book source returned ${response.status}`);return response.json();
+}
+async function refreshFantasyQuotes(admin:ReturnType<typeof createClient>){
+ const checkedAt=new Date().toISOString();
+ const {data:config,error:configError}=await admin.from('sleeper_config').select('sleeper_league_id').eq('id',1).single();if(configError)throw configError;
+ const id=config?.sleeper_league_id;if(!id)return 0;
+ const {data:markets,error}=await admin.from('sportsbook_markets').select('id,auto_key,title').eq('category','Fantasy').in('status',['open','locked']).gte('closes_at',new Date(Date.now()-8*86400000).toISOString()).order('closes_at',{ascending:false}).limit(24);if(error)throw error;
+ const groups=new Map<string,J[]>();for(const m of markets||[]){const key=String(m.auto_key||'').match(/^matchup:(\d+):(\d+):/);if(!key)continue;const group=`${key[1]}:${key[2]}`,rows=groups.get(group)||[];rows.push(m);groups.set(group,rows);}
+ if(!groups.size)return 0;
+ const league=await publicJson(`https://api.sleeper.app/v1/league/${id}`);if(!league?.scoring_settings)throw Error('Scoring unavailable');
+ let refreshed=0;
+ for(const [group,markets]of groups){
+  const [season,week]=group.split(':').map(Number);
+  const [rows,projections]=await Promise.all([publicJson(`https://api.sleeper.app/v1/league/${id}/matchups/${week}`),publicJson(`https://api.sleeper.app/projections/nfl/${season}/${week}?season_type=regular`)]);
+  if(!Array.isArray(rows)||!Array.isArray(projections)||!projections.length)continue;
+  const values=new Map(projections.map((row:J)=>[String(row.player_id),row.stats||{}]));
+  for(const market of markets){
+   const matchup=Number(market.auto_key.split(':')[3]),sides=rows.filter((row:J)=>Number(row.matchup_id)===matchup);
+   if(sides.length!==2||sides.some((row:J)=>!(row.starters||[]).some((id:string)=>values.has(String(id)))))continue;
+   const totals=sides.map((row:J)=>(row.starters||[]).reduce((sum:number,id:string)=>sum+scorePlayer(values.get(String(id))||{},league.scoring_settings),0));
+   const probability=Math.max(.18,Math.min(.82,1/(1+Math.exp(-(totals[0]-totals[1])/13))));
+   const odds=(p:number)=>{const n=Math.round((p>=.5?-100*p/(1-p):100*(1-p)/p)/5)*5;return Math.abs(n)<100?(n<0?-100:100):n;};
+   const quotes=sides.map((row:J,i:number)=>({roster_id:Number(row.roster_id),projected:Number(totals[i].toFixed(1)),odds:odds(Math.min(.95,(i?1-probability:probability)+.025))}));
+   const result=await admin.rpc('sportsbook_refresh_matchup_quotes',{target_key:market.auto_key,quotes,checked_at:checkedAt});if(result.error)throw result.error;if(result.data)refreshed++;
+  }
+ }
+ return refreshed;
+}
+async function settleLegacyTickets(admin:ReturnType<typeof createClient>){
+ const {data:legs,error}=await admin.from('sportsbook_bet_legs').select('market_id,sportsbook_bets!inner(status)').eq('status','open').eq('sportsbook_bets.status','open');if(error)throw error;
+ const ids=[...new Set((legs||[]).map(row=>row.market_id))];if(!ids.length)return 0;
+ const {data:markets,error:marketError}=await admin.from('sportsbook_markets').select('*').in('id',ids).eq('category','Player Props').like('provider_key','sgo:%').in('status',['open','locked']).lt('closes_at',new Date().toISOString());if(marketError)throw marketError;if(!markets?.length)return 0;
+ const {data:directory,error:directoryError}=await admin.from('nfl_player_directory').select('players').eq('id',1).single();if(directoryError)throw directoryError;
+ const first=new Date(Math.min(...markets.map(m=>Date.parse(m.closes_at)))-60000).toISOString();
+ const {data:games,error:gamesError}=await admin.from('nfl_pickem_games').select('*').gte('starts_at',first).lte('starts_at',new Date().toISOString());if(gamesError)throw gamesError;
+ const weeks=new Map<string,J[]>();for(const market of markets){const matching=(games||[]).filter(g=>Math.abs(Date.parse(g.starts_at)-Date.parse(market.closes_at))<60000);const periods=[...new Set(matching.map(g=>`${g.season}:${g.week}`))];if(periods.length!==1)continue;const rows=weeks.get(periods[0])||[];rows.push(market);weeks.set(periods[0],rows);}
+ let settled=0;
+ for(const [period,markets]of weeks){const [season,week]=period.split(':').map(Number);const rows=await publicJson(`https://api.sleeper.app/stats/nfl/${season}/${week}?season_type=regular`);if(!Array.isArray(rows))continue;
+  for(const market of markets){const result=legacyPropResult(market,{players:directory.players,rows,games:games||[]});if(!result)continue;const {data,error}=await admin.rpc('sportsbook_settle_provider_market',{target_provider_key:result.provider_key,winner_side:result.winner_side,final_score:result.final_score,void_market:result.void_market});if(error)throw error;if(data)settled++;}
+ }
+ return settled;
+}
+
 async function publicNflState(){
   const response=await fetch("https://api.sleeper.app/v1/state/nfl",{headers:{"User-Agent":"DFL-HQ-Pickem/1.0"},signal:AbortSignal.timeout(12000)});
   if(!response.ok)throw new Error(`NFL week lookup returned ${response.status}`);
@@ -192,7 +240,7 @@ Deno.serve(async request=>{
   if(input.action==="status"){
     const[{count:activeMarkets},{data:lastMarket}]=await Promise.all([admin.from("sportsbook_markets").select("id",{count:"exact",head:true}).eq("source","provider").in("status",["open","locked"]),admin.from("sportsbook_markets").select("provider_updated_at").eq("source","provider").order("provider_updated_at",{ascending:false}).limit(1).maybeSingle()]);
     const currentMonth=new Date().toISOString().slice(0,7),monthlyEventObjects=feedHealth.month===currentMonth?Number(feedHealth.monthlyEventObjects)||0:0;
-    return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:!!apiKey,...feedHealth,monthlyEventObjects,activeMarkets:activeMarkets||0,lastMarketAt:lastMarket?.provider_updated_at||null},200,request);
+    return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:NFL_PROPS_ENABLED&&!!apiKey,propsPaused:!NFL_PROPS_ENABLED,...feedHealth,monthlyEventObjects,activeMarkets:activeMarkets||0,lastMarketAt:lastMarket?.provider_updated_at||null},200,request);
   }
   let stage="starting";
   try{
@@ -201,10 +249,13 @@ Deno.serve(async request=>{
     stage="public Pick'em slate";
     const publicGames=await syncPublicPickem(admin,nfl.season,nfl.week);
     stage="imported prop settlement";
-    const sleeperPropsSettled=await settleSleeperImports(admin);
+    const tasks=await Promise.allSettled([settleSleeperImports(admin),settleLegacyTickets(admin),refreshFantasyQuotes(admin)]);
+    const warnings=tasks.flatMap((result,i)=>result.status==='rejected'?[['Imported settlement','Legacy settlement','Fantasy quotes'][i]]:[]);
+    for(const [i,result]of tasks.entries())if(result.status==='rejected')console.warn('Book task unavailable',['Imported settlement','Legacy settlement','Fantasy quotes'][i],result.reason?.message);
+    const sleeperPropsSettled=tasks[0].status==='fulfilled'?tasks[0].value:0,legacyPropsSettled=tasks[1].status==='fulfilled'?tasks[1].value:0,fantasyQuotesRefreshed=tasks[2].status==='fulfilled'?tasks[2].value:0;
     stage="Pick'em notifications";
     const notices=await pickemNotifications(admin,url,request.headers.get("x-dfl-cron-token")||"",nfl.season,nfl.week);
-    if(!apiKey)return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:false,games:publicGames,props:0,settled:sleeperPropsSettled,notices,syncedAt:new Date().toISOString()},200,request);
+    if(!NFL_PROPS_ENABLED||!apiKey)return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:false,propsPaused:true,warnings,games:publicGames,fantasyQuotesRefreshed,props:0,settled:sleeperPropsSettled+legacyPropsSettled,notices,syncedAt:new Date().toISOString()},200,request);
     const now=new Date();
     const lastSuccess=Date.parse(feedHealth.lastSuccessAt||"");
     const cooldownMs=30*60*1000;

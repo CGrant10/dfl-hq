@@ -3359,3 +3359,20 @@ Browser checks cover both-way positions, valid package counts, protected players
 Apply/Reset/Cancel, focus return, schedule cancellation/retry, contrast and viewport
 bounds. Evidence: `/workspace/dfl-filters-1603/trade/checks`. Physical-device
 animation pacing and screen-reader speech are not newly measured.
+
+### 1.604.0 — Sportsbook Compact Lineboard
+
+Reviewed the selected lineboard in Medicine Wheel Light/Dark at 390px and
+320px, plus enlarged root text. All new colors use shared theme tokens.
+Single-line current team names, existing profile-image preferences, aligned
+projection/price columns, selected prices, claim controls and the compact
+Review slip bar retain readable contrast and screen bounds. Normal rows retain
+44px targets; enlarged text reflows projection cells under the name. Existing
+bottom navigation, mobile sheet controls and reduced-motion behavior remain.
+
+Actual compiled-app captures cover Fantasy/Pick’em/My bets, keyboard tab changes,
+week arrows, all-six expansion, selection, slip opening/closing and no page errors.
+The 24-layout slip review and 48 result/share checks pass. Source and rendered
+screens were compared together; see the 1.604.0 entry in `design-qa.md`.
+Evidence: `/workspace/dfl-book-1604/{qa,final,small,enlarged-final,slips,results}`.
+Native iOS frame pacing and screen-reader speech are not newly measured.

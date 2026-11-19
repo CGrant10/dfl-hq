@@ -32,7 +32,7 @@ with sync_playwright() as p:
    check(tag+' Monday starter keeps its leg open while completed parlay legs show hits',page.locator('#sb-ticket-3 [data-leg-result="won"]').count()==1 and page.locator('#sb-ticket-3 [data-leg-result="open"]').count()==1)
    check(tag+' ties show a neutral mark',page.locator('#sb-ticket-4 [data-leg-result="void"] .sb-leg-mark svg.bi-dash-lg').count()==1 and 'Push' in page.locator('#sb-ticket-4').inner_text())
    check(tag+' actual bankroll and official bet status remain unchanged',page.locator('[data-review-wallet]').inner_text()=='420 SIN' and page.locator('#sb-ticket-1').get_attribute('data-ticket-status')=='open' and 'To return' in page.locator('#sb-ticket-1').text_content())
-   check(tag+' book board shows hit/miss and actual final scores',page.locator('[data-fantasy-result="won"]').count()==1 and page.locator('[data-fantasy-result="lost"]').count()==1 and '120.50 pts' in page.locator('[data-review-board]').inner_text())
+   check(tag+' book board shows hit/miss and actual final scores',page.locator('[data-fantasy-result="won"]').count()==1 and page.locator('[data-fantasy-result="lost"]').count()==1 and '120.5' in page.locator('[data-review-board] [data-book-projection]').all_text_contents())
 
    check(tag+' result pills retain semantic green and red',page.evaluate("""()=>{
     const ctx=document.createElement('canvas').getContext('2d');const color=c=>{ctx.fillStyle=c;ctx.fillRect(0,0,1,1);return [...ctx.getImageData(0,0,1,1).data].join(',')};
