@@ -28,7 +28,7 @@ import {replayIcon} from '../replay-icons.js';
 import {slipIcons} from '../share-slip-icons.js';
 import {ticketLegView,ticketPreviewIndices} from '../sportsbook-live-ticket.js';
 import {nflTeams,team as nflTeam} from '../nfl-teams.js';
-import { loadPickemBoard, pickemMarkup, wirePickem } from "../sportsbook-pickem.js";
+import { loadPickemBoard, pickemMarkup, wirePickem, patchPickemGameContext } from "../sportsbook-pickem.js";
 import { sleeperPropImporterMarkup, wireSleeperPropImporter } from "../sleeper-prop-import-ui.js";
 import { propMarketMeta, propGameNames, propMatches, readPropFavorites, sortPropRows, togglePropFavorite } from "../sportsbook-props.js";
 
@@ -282,7 +282,14 @@ export async function render(view){
     return fantasyTask;
   };
   view._refreshFantasy=refreshFantasy;
-  if(view.isConnected)stopLive=mountSportsbookLive(view,{client:db(),memberId:me.id,outcomeMap,active,interval:30000,onRefresh:force=>refreshFantasy({force}),onAccount:updateAccount,onAccountError:()=>accountStatus(true),onError:()=>lineStatus(true),onUpdate:(fresh,ids)=>{
+  let pickemChecked=Date.now(),pickemTask=null;
+  const refreshPickem=force=>{
+    if(!active()||!force&&Date.now()-pickemChecked<60000)return Promise.resolve();
+    if(pickemTask)return pickemTask;
+    pickemTask=loadPickemBoard().then(fresh=>{if(active())patchPickemGameContext(view,fresh,esc);pickemChecked=Date.now()}).catch(()=>{}).finally(()=>pickemTask=null);return pickemTask;
+  };
+  view._refreshPickemContext=refreshPickem;
+  if(view.isConnected)stopLive=mountSportsbookLive(view,{client:db(),memberId:me.id,outcomeMap,active,interval:30000,onRefresh:force=>view.dataset.bookView==='pickem'?refreshPickem(force):refreshFantasy({force}),onAccount:updateAccount,onAccountError:()=>accountStatus(true),onError:()=>lineStatus(true),onUpdate:(fresh,ids)=>{
     lineStatus(false);
     const named=currentSportsbookNames({markets:fresh.markets,outcomes:fresh.outcomes,bets:[],trends:[],recap:null},members);
     const present=new Set(named.markets.map(m=>String(m.id)));
@@ -872,7 +879,7 @@ function wireTicketActions(view,marketMap,outcomeMap,me,refreshFantasy=async()=>
 function wireBookTabs(view,memberId) {
   const tabs=[...view.querySelectorAll('[data-sb-view]')];if(!tabs.length)return;
   const select=tab=>{
-    const key=tab.dataset.sbView;view.dataset.bookView=key;
+    const key=tab.dataset.sbView;view.dataset.bookView=key;if(key==='pickem')void view._refreshPickemContext?.(false);
     for(const button of tabs){const on=button===tab;button.setAttribute(button.getAttribute('role')==='tab'?'aria-selected':'aria-expanded',String(on));button.tabIndex=on||button.dataset.sbView==='tickets'||key==='tickets'&&button.dataset.sbView==='markets'?0:-1;view.querySelector('#'+button.getAttribute('aria-controls')).hidden=!on;}
     const extras=view.querySelector('.sb-book-extras');if(extras)extras.hidden=key==='pickem';
     writeBookState(memberId,{product:key==='pickem'?'pickem':'book',tab:key==='tickets'?'tickets':'markets'});
