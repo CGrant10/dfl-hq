@@ -14,7 +14,7 @@ else:raise RuntimeError('No previous release is available for the update review'
 for name in ['index.html','sw.js','js/update.js']:
  dest=OUT/'previous'/name;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(old_file(ref,name))
 if not (ROOT/'js/bundle'/OLD/'precache.js').is_file():raise RuntimeError('Build the app first; the previous bundle is required for this review')
-state={'new':False,'legacy':False}
+state={'new':False,'legacy':False,'unrelated':0}
 class H(SimpleHTTPRequestHandler):
  def __init__(self,*a,**k):super().__init__(*a,directory=str(ROOT),**k)
  def log_message(self,*a):pass
@@ -22,6 +22,8 @@ class H(SimpleHTTPRequestHandler):
   self.send_response(200);self.send_header('Content-Type',kind);self.send_header('Cache-Control','no-store');self.end_headers();self.wfile.write(body if isinstance(body,bytes) else body.encode())
  def do_GET(self):
   path=self.path.split('?')[0]
+  if state['new'] and os.environ.get('DFL_REVIEW_SLOW_OPTIONAL') and ('/pages/golf.js' in path or '/golf-' in path):
+   state['unrelated']+=1;time.sleep(15)
   if path in ['/','/index.html']:
    return self.send((ROOT/'index.html' if state['new'] else OUT/'previous/index.html').read_bytes(),'text/html')
   if path=='/sw.js':return self.send((ROOT/'sw.js' if state['new'] else OUT/'previous/sw.js').read_bytes())
@@ -57,6 +59,8 @@ function observe(){const nav=document.querySelector('#tabbar'),splash=document.q
    page.screenshot(path=str(OUT/f'retry-{mode}.png'));page.evaluate('navigator.serviceWorker.getRegistration=nativeGetRegistration')
   start=time.monotonic()
   with page.expect_navigation(wait_until='domcontentloaded',timeout=60000):page.locator('#update-go').click()
+  install_seconds=round(time.monotonic()-start,2)
+  if os.environ.get('DFL_REVIEW_SLOW_OPTIONAL'):assert state['unrelated']==0,'Unrelated page delayed installation'
   page.wait_for_timeout(1700)
   assert page.locator('#splash.is-rebooting').is_visible(),'Update plate vanished on timer'
   assert page.locator('#tabbar').evaluate('e=>getComputedStyle(e).visibility')=='hidden','Legacy chrome exposed'
@@ -67,6 +71,6 @@ function observe(){const nav=document.querySelector('#tabbar'),splash=document.q
   assert page.evaluate('handoffFrames.length')==0,page.evaluate('handoffFrames')
   assert not errors,errors
   page.screenshot(path=str(OUT/f'ready-{mode}.png'))
-  result={'mode':mode,'legacyUpdater':legacy,'secondsIncludingDeliberate3_5sRenderDelay':round(time.monotonic()-start,2),'staleFrames':page.evaluate('handoffFrames'),'errors':errors};results.append(result);print('PASS',json.dumps(result),flush=True);c.close()
+  result={'mode':mode,'legacyUpdater':legacy,'installationSeconds':install_seconds,'secondsIncludingDeliberate3_5sRenderDelay':round(time.monotonic()-start,2),'staleFrames':page.evaluate('handoffFrames'),'errors':errors};results.append(result);print('PASS',json.dumps(result),flush=True);c.close()
  b.close()
 s.shutdown();(OUT/'handoff-checks.json').write_text(json.dumps(results,indent=2))

@@ -1,6 +1,8 @@
 import {defineConfig} from 'vite';
 import {readFileSync} from 'node:fs';
 import {dirname,relative,resolve} from 'node:path';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
 import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('.',import.meta.url));
 const version=JSON.parse(readFileSync(resolve(root,'package.json'),'utf8')).version;
@@ -19,6 +21,9 @@ export default defineConfig({
  publicDir:false,
  plugins:[{
   name:'dfl-existing-assets',enforce:'pre',
+  // The shipped app owns its pinned SDK. Raw-module review fixtures retain
+  // the existing import URL, while production has no runtime CDN dependency.
+  resolveId(id){if(id==='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/+esm')return require.resolve('@supabase/supabase-js')},
   transform(code,id){
    if(!id.startsWith(resolve(root,'js')+'/')||!id.endsWith('.js'))return;
    // Keep existing asset/worker URLs and cache identities after module relocation.
@@ -28,6 +33,6 @@ export default defineConfig({
  build:{
   outDir:`js/bundle/${version}`,emptyOutDir:true,target:'es2022',minify:'oxc',sourcemap:false,
   modulePreload:false,
-  rolldownOptions:{input,external:id=>/^https?:/.test(id),output:{entryFileNames:'[name].js',chunkFileNames:'[name]-[hash].js',codeSplitting:{groups:[{name:'app-core',test:id=>core.has(id),priority:2},{name:'home-core',test:id=>home.has(id)&&!core.has(id),priority:1}]}}},
+  rolldownOptions:{input,external:id=>/^https?:/.test(id)&&id!=='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/+esm',output:{entryFileNames:'[name].js',chunkFileNames:'[name]-[hash].js',codeSplitting:{groups:[{name:'app-core',test:id=>core.has(id),priority:2},{name:'home-core',test:id=>home.has(id)&&!core.has(id),priority:1}]}}},
  },
 });
