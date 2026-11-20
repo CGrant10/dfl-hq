@@ -462,3 +462,15 @@ final result: passed
 1.608.1 safeguard: nullified/overturned plays suppress the score-at-play chip,
 so a rescinded scoring snapshot cannot appear beside “No play”. Added a source
 markup regression check; all other presentation and theme behavior is unchanged.
+
+### 1.608.2 — NFL header abbreviation fit
+
+Fixed the reported cropped backdrop letters by removing negative placement,
+using both full header columns and scaling the decorative type to each side.
+Its size caps below the header height, including fallback-font metrics.
+Reviewed 320/390/430px in both themes at 100% and 200% text; tested all 32 NFL
+team codes on both sides using Range bounds. All 84 relevant browser checks
+pass. Foreground text, live feed behavior, scores, colors and motion are retained.
+Screenshots: `/workspace/dfl-watermark-1608-2/screens-pass`.
+
+final result: passed
