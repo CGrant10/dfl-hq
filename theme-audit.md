@@ -3446,3 +3446,15 @@ pacing and the external provider’s publication latency are not inferred.
 1.608.1 safeguard: nullified/overturned plays suppress the score-at-play chip,
 so a rescinded scoring snapshot cannot appear beside “No play”. Added a source
 markup regression check; all other presentation and theme behavior is unchanged.
+
+### 1.608.2 — Complete NFL abbreviation watermarks
+
+Removed negative offsets and the oversized 80px background abbreviations. Each
+team side fills its own header column; decorative text now sizes to that side
+and remains inside its bounds. Foreground names/scores and theme tokens remain.
+
+Inspected 320/390/430px Light/Dark screenshots at normal and 200% text. Geometry
+checks cover all 32 NFL abbreviations on both sides, with DFL and fallback fonts:
+84 browser checks passed without clipping or horizontal overflow. Added a
+header-bound regression assertion to the existing mobile Scores runner.
+Evidence: `/workspace/dfl-watermark-1608-2/screens-pass`.

@@ -1,1 +1,0 @@
-import{Fr as e}from"./app-core-7T3zI5lU.js";function t(t){return`<span class="dfl-network-mark"><b>DFL</b><span>${e(t)}</span><i aria-hidden="true"></i></span>`}export{t};
