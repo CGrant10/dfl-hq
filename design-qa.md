@@ -458,3 +458,7 @@ Remaining P3: native font rasterization and exact licensed feed timing are not
 measurable from these browser fixtures.
 
 final result: passed
+
+1.608.1 safeguard: nullified/overturned plays suppress the score-at-play chip,
+so a rescinded scoring snapshot cannot appear beside “No play”. Added a source
+markup regression check; all other presentation and theme behavior is unchanged.
