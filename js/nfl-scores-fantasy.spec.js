@@ -1,7 +1,7 @@
 import {it,expect} from 'vitest';
 import {readFileSync} from 'node:fs';
 import {nflScoresFantasyRows} from './nfl-scores-fantasy.js';
-import {nflScoresFantasyMarkup} from './nfl-scores-ui.js';
+import {nflScoresFantasyMarkup,nflScoresPlayMarkup} from './nfl-scores-ui.js';
 import {nflPlayNameIndex,nflScoresPlayPresentation} from './nfl-play-presentation.js';
 import {nflCenterPlays} from './nfl-game-center-model.js';
 const f=JSON.parse(readFileSync(new URL('../tools/fixtures/nfl-scores-game.json',import.meta.url),'utf8'));
@@ -22,3 +22,10 @@ it('never makes a nullified play a scoring highlight',()=>{expect(nflScoresPlayP
 it('keeps compact source stat order without repeating yardage categories',()=>{const r=rows();expect(r.find(p=>p.name==='Jayden Daniels').line).toBe('7/10 CMP, 61 YD, 1 CAR, 3 YD');expect(r.every(p=>!p.line.includes('0/0 REC')&&!p.line.includes('PASS YD')&&!p.line.includes('RUSH YD')&&!p.line.includes('REC YD'))).toBe(true)});
 
 it('starts each position in the official box-score order instead of alphabetically',()=>{const r=rows();expect(r.filter(p=>p.nflTeam==='WAS'&&p.position==='WR').map(p=>p.name).slice(0,3)).toEqual(['Treylon Burks','Stefon Diggs','Antonio Williams']);expect(r.filter(p=>p.nflTeam==='NYG'&&p.position==='WR').map(p=>p.name).slice(0,3)).toEqual(['Malik Nabers','Darnell Mooney','Malachi Fields'])});
+
+it('renders current official participant totals and the play-time score beside a readable headline',()=>{
+ const names=nflPlayNameIndex(f.summary),play=nflCenterPlays(f.summary,{sides:sides.map((s,i)=>({...s,id:i?'19':'28'}))})[0],view=nflScoresPlayPresentation(play,names);
+ const html=nflScoresPlayMarkup(play,{uid:'fixture',view,teams:sides});
+ expect(html).toContain('7/10 CMP, 61 YD, 1 CAR, 3 YD');expect(html).toContain('Current game totals');expect(html).toContain('Score after play:');expect(html).toContain('nfl-feed-person');
+ expect(nflScoresPlayMarkup({...play,away:null,home:null},{uid:'fixture',view,teams:sides})).not.toContain('Score after play:');
+});

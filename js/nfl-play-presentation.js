@@ -1,3 +1,5 @@
+import {nflFantasyRows} from './nfl-game-center-model.js';
+import {nflScoresStatLine} from './nfl-scores-fantasy.js';
 import {footballTeam} from './live-football-model.js';
 import {nflShortName} from './nfl-stats-model.js';
 const clean=value=>String(value||'').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
@@ -9,12 +11,13 @@ function positionIndex(directory){
 }
 export function nflPlayNameIndex(summary,directory=null){
  const positions=positionIndex(directory);
+ const lines=new Map(nflFantasyRows(summary,[],{directory}).map(p=>[p.id,nflScoresStatLine(p)]));
  const aliases=new Map();
  for(const club of summary?.boxscore?.players||[])for(const group of club.statistics||[])for(const row of group.athletes||[]){
   const athlete=row.athlete,name=clean(athlete?.displayName);if(!name)continue;
   const parts=name.replace(/\s+(jr|sr|ii|iii|iv)\.?$/i,'').split(' ');if(parts.length<2)continue;
   const alias=clean(athlete.shortName)||`${parts[0][0]}.${parts.slice(1).join('')}`;
-  const previous=aliases.get(alias);aliases.set(alias,previous&&previous.name!==name?{name:null}:previous||{name,alias,id:/^\d{1,24}$/.test(String(athlete.id||''))?String(athlete.id):'',nflTeam:club.team?.abbreviation||'',position:athlete.position?.abbreviation||positions.get(name.toLowerCase()+':'+footballTeam(club.team?.abbreviation))||({passing:'QB',kicking:'K',punting:'P'}[group.name]||'')});
+  const previous=aliases.get(alias);aliases.set(alias,previous&&previous.name!==name?{name:null}:previous||{name,alias,id:/^\d{1,24}$/.test(String(athlete.id||''))?String(athlete.id):'',nflTeam:club.team?.abbreviation||'',line:lines.get(String(athlete.id))||'',position:athlete.position?.abbreviation||positions.get(name.toLowerCase()+':'+footballTeam(club.team?.abbreviation))||({passing:'QB',kicking:'K',punting:'P'}[group.name]||'')});
  }
  return [...aliases.values()].filter(p=>p.name).map(p=>({...p,pattern:new RegExp(`(?<![A-Za-z])(?:${escape(p.alias).replaceAll('\\.','\\.\\s*')}|${escape(p.name).replaceAll(' ','\\s+')})(?![A-Za-z])`,'g')}));
 }

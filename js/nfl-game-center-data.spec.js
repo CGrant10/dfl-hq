@@ -5,9 +5,9 @@ const game=()=>({id:String(serial++),state:'in'});
 const payload=id=>({header:{id,season:{year:2026,type:2}}});
 beforeEach(()=>{vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-25T22:00:00Z'));vi.stubGlobal('fetch',vi.fn((url)=>Promise.resolve({ok:true,json:async()=>payload(new URL(url).searchParams.get('event'))})))});
 afterEach(()=>{vi.useRealTimers();vi.unstubAllGlobals()});
-it('checks the live summary again after ten seconds and keeps short reads deduplicated',async()=>{
+it('checks the live summary again after three seconds and keeps short reads deduplicated',async()=>{
  const selected=game();await loadNflGameSummary(selected,2026);await loadNflGameSummary(selected,2026);expect(fetch).toHaveBeenCalledTimes(1);
- vi.advanceTimersByTime(10000);await loadNflGameSummary(selected,2026);expect(fetch).toHaveBeenCalledTimes(2);
+ vi.advanceTimersByTime(3000);await loadNflGameSummary(selected,2026);expect(fetch).toHaveBeenCalledTimes(2);
 });
 it('fetches the final plays when the scoreboard changes to Final instead of reusing the live cache for five minutes',async()=>{
  const selected=game();await loadNflGameSummary(selected,2026);selected.state='post';await loadNflGameSummary(selected,2026);expect(fetch).toHaveBeenCalledTimes(2);
@@ -20,4 +20,12 @@ it('shares pending forced reads and recovers from failed and wrong-game response
  release({ok:false});await expect(first).rejects.toThrow('unavailable');
  fetch.mockResolvedValueOnce({ok:true,json:async()=>payload('different')});await expect(loadNflGameSummary(selected,2026)).rejects.toThrow('scope');
  await expect(loadNflGameSummary(selected,2026)).resolves.toHaveProperty('summary.header.id',selected.id);
+});
+
+it('shares a slow pending live request beyond the freshness window and bypasses browser caching',async()=>{
+ const selected=game();let finish;fetch.mockImplementationOnce(()=>new Promise(resolve=>finish=resolve));
+ const first=loadNflGameSummary(selected,2026);vi.advanceTimersByTime(4000);
+ expect(loadNflGameSummary(selected,2026,{force:true})).toBe(first);expect(fetch).toHaveBeenCalledTimes(1);
+ expect(fetch.mock.calls[0][1].cache).toBe('no-store');expect(new URL(fetch.mock.calls[0][0]).searchParams.has('liveTick')).toBe(true);
+ finish({ok:true,json:async()=>payload(selected.id)});await first;
 });

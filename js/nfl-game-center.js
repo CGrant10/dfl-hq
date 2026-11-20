@@ -34,7 +34,7 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
  if(desk&&initialMode==='stats'&&!(saved?.boxTeam&&saved.boxTeam!=='fantasy'))initialMode='fantasy';
  const uid=`nfl-center-${++serial}`;root.dataset.nflGameCenter='';root.dataset.noSwipe='';
  if(desk)root.dataset.nflLayout='desk';else delete root.dataset.nflLayout;if(fullscreen)root.dataset.nflFullscreen='';
- let stopped=false,games=[],gameId=initialGame,mode=initialMode,filter=['all','scoring','big'].includes(saved?.filter)?saved.filter:'all',summary=null,weekly=[],checked=0,error=false,loading=false,token=0,timer=null,scope='',focusPlay=initialPlay,fieldPlay='',fieldKey='',lastAnimatedField='',rendered='',showRefresh=false,readingFrame=0,statsPending=null,statsScope='',wakeFrame=0;
+ let stopped=false,games=[],gameId=initialGame,mode=initialMode,filter=['all','scoring','big'].includes(saved?.filter)?saved.filter:'all',summary=null,weekly=[],checked=0,error=false,loading=false,token=0,timer=null,scope='',focusPlay=initialPlay,fieldPlay='',fieldKey='',lastAnimatedField='',rendered='',showRefresh=false,boardPending=null,refreshFailures=0,readingFrame=0,statsPending=null,statsScope='',wakeFrame=0;
  const blockedByModal=()=>{const dialogs=[...document.querySelectorAll('dialog[open]')];const front=document.activeElement?.closest('dialog[open]')||dialogs.at(-1);return !!front&&!front.contains(root)};
  const current=()=>!stopped&&root.isConnected&&active()&&!document.hidden&&!blockedByModal();
  const online=()=>navigator.onLine!==false;
@@ -122,23 +122,37 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
   if(!restoreReading()){if(anchor?.isConnected&&!latest)scroller.scrollTop+=anchor.getBoundingClientRect().top-top;else if(latest)scroller.scrollTop=scrollTop;}
   gameSwipe?.update();root.dispatchEvent(new CustomEvent('dfl:player-points-painted',{bubbles:true}));
  }
- function schedule(){clearTimeout(timer);if(current()&&online()&&(!final()||watchOthers()))timer=setTimeout(()=>void refresh(),game()?.state==='in'||liveOthers()?5000:30000)}
+ const live=()=>nflObservedGame(game(),summary,getContext()?.season)?.state==='in'||liveOthers();
+ function schedule(){clearTimeout(timer);if(current()&&online()&&(!final()||watchOthers()))timer=setTimeout(()=>void refresh(),live()?Math.min(3000*2**refreshFailures,30000):30000)}
+ function refreshBoard(context,force){
+  if(boardPending?.scope===scope)return boardPending.promise;
+  const boardScope=scope,entry={scope,promise:null};
+  entry.promise=loadBoard(context.season,context.week,{force,maxAgeMs:live()?10000:20000}).then(board=>{
+   if(!current()||scope!==boardScope)return;
+   const prior=summary?new Set(nflCenterPlays(summary,game()).map(p=>p.id)):null,following=mode==='plays'&&atLatest();
+   games=nflCenterGames(board.payload,context.season,context.week);
+   if(!games.some(g=>g.id===gameId)){gameId=(games.find(g=>g.state==='in')||games[0])?.id||'';summary=null;fieldPlay='';pendingPlays.clear();onGameChange(gameId)}
+   onBoard(board.payload,gameId);
+   if(prior&&!following)for(const play of nflCenterPlays(summary,game()))if(!prior.has(play.id))pendingPlays.add(play.id);
+   if(nflBoardAhead(summary,game()))paint();
+  }).finally(()=>{if(boardPending===entry)boardPending=null});
+  boardPending=entry;return entry.promise;
+ }
  async function refresh({reset=false,force=false}={}){
   if(!current())return;if(loading&&!reset){if(force){showRefresh=true;paint();}return;}clearTimeout(timer);if(!online()){paint();return;}const context=getContext();if(!context?.season||!context.week)return;
   const key=`${context.season}:${context.week}`;if(key!==scope){pendingPlays.clear();fieldPlay='';scope=key;snapshots.clear();readings.clear();pendingReading=false;games=[];summary=null;weekly=[];projections=[];projectionNext=0;projectionPending=null;fantasyOrders.clear();statsChecked=0;checked=0;gameId=initialGame;reset=true}
   const request=++token,hadError=error;loading=true;showRefresh=force||!summary;error=false;if(showRefresh||hadError||mode==='fantasy')paint();
   try{
-   const prior=summary?new Set(nflCenterPlays(summary,game()).map(p=>p.id)):null,following=mode==='plays'&&atLatest();
-   const board=await loadBoard(context.season,context.week,{force,maxAgeMs:game()?.state==='in'||liveOthers()?5000:20000});if(request!==token||!current())return;
-   games=nflCenterGames(board.payload,context.season,context.week);if(!games.some(g=>g.id===gameId)){gameId=(games.find(g=>g.state==='in')||games[0])?.id||'';summary=null;fieldPlay='';pendingPlays.clear();onGameChange(gameId)}
-   onBoard(board.payload,gameId);
-   if(prior&&!following)for(const play of nflCenterPlays(summary,game()))if(!prior.has(play.id))pendingPlays.add(play.id);
-   if(nflBoardAhead(summary,game()))paint();
+   // A slow scoreboard must not delay the selected game's next play.
+   const board=refreshBoard(context,force);
+   if(!game())await board;else void board.catch(()=>{});
+   if(request!==token||!current())return;
    const selected=game();if(selected){
     readFantasyStats();
-    const result=await loadSummary(selected,context.season,{force:force||nflBoardAhead(summary,selected)});if(request!==token||!current()||gameId!==selected.id)return;const before=summary?new Set(nflCenterPlays(summary,selected).map(p=>p.id)):null,following=mode==='plays'&&atLatest();if(before&&!following)for(const play of nflCenterPlays(result.summary,selected))if(!before.has(play.id))pendingPlays.add(play.id);if(following)pendingPlays.clear();summary=result.summary;checked=result.fetchedAt;snapshots.set(gameId,{summary,checked,filter,boxTeam});onSummary(selected,result);
+    const result=await loadSummary({...selected,state:nflObservedGame(selected,summary,context.season)?.state||selected.state},context.season,{force:force||nflBoardAhead(summary,selected)});if(request!==token||!current()||gameId!==selected.id)return;const before=summary?new Set(nflCenterPlays(summary,selected).map(p=>p.id)):null,following=mode==='plays'&&atLatest();if(before&&!following)for(const play of nflCenterPlays(result.summary,selected))if(!before.has(play.id))pendingPlays.add(play.id);if(following)pendingPlays.clear();summary=result.summary;checked=result.fetchedAt;snapshots.set(gameId,{summary,checked,filter,boxTeam});onSummary(selected,result);
    }
-  }catch{if(request===token&&current())error=true}
+   refreshFailures=0;
+  }catch{if(request===token&&current()){error=true;refreshFailures=Math.min(4,refreshFailures+1)}}
   finally{if(request===token&&current()){loading=false;paint();if(focusPlay){root.querySelector('[data-nfl-focused-play]')?.scrollIntoView({block:'nearest'});focusPlay=''}schedule()}}
  }
  const change=event=>{if(event.target.matches('[data-nfl-center-game]'))selectGame(event.target.value);if(event.target.matches('[data-nfl-center-filter]')){const section=desk?root.querySelector('.nfl-live-plays'):null,top=section?.getBoundingClientRect().top;saveReading();filter=event.target.value;pendingReading=!desk;remember();paint();if(section?.isConnected)scroller.scrollTop+=section.getBoundingClientRect().top-top}};
@@ -177,7 +191,7 @@ export function mountNflGameCenter(root,{getContext,active=()=>root.isConnected,
  // A phone return can emit visibility, pageshow and focus together. Preserve
  // an active refresh and coalesce that burst into one foreground request.
  const wake=()=>{if(!current()||loading||wakeFrame)return;wakeFrame=requestAnimationFrame(()=>{wakeFrame=0;if(current()&&!loading)void refresh({force:true})})};
- const resume=()=>{if(!current())return;pendingReading=true;paint();const context=getContext();if(!summary||`${context?.season}:${context?.week}`!==scope||Date.now()-checked>(game()?.state==='in'?5000:30000))void refresh();else schedule()};
+ const resume=()=>{if(!current())return;pendingReading=true;paint();const context=getContext();if(!summary||`${context?.season}:${context?.week}`!==scope||Date.now()-checked>(live()?2500:30000))void refresh();else schedule()};
  const visibility=()=>{if(document.hidden)suspend();else wake()};
  const offline=()=>{suspend();if(current())paint()};
  // Dialogs can be removed before their queued close event fires. Observe only

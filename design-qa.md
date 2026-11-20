@@ -406,3 +406,55 @@ verification/navigation; these are local fixture timings, not a phone guarantee.
 Evidence: `/workspace/dfl-update-1607`.
 
 final result: passed
+
+### 1.608.0 — NFL play feed, aligned with the supplied Scores reference
+
+Visual source: the user-supplied Sleeper mobile screenshots in this conversation
+(591×1280, including device status/navigation and Sleeper betting chrome).
+Implementation: `/workspace/dfl-nfl-1608/after/390-dark-live.png` and corresponding
+Light/320/430/768px states. CSS/device density: 390×844 at scale 1; the source
+uses roughly 1.515 source pixels per target CSS pixel. Device bars, Sleeper’s
+betting dock and DFL’s requested palette are intentional differences.
+Full-view before/after evidence: `/workspace/dfl-nfl-1608/comparison.png`.
+Focused feed comparison: `before/390-dark-feed.png` and the new headline, clock,
+participant and score rows in `after/390-dark-live.png`.
+
+Earlier findings and fixes:
+- P1: play copy centered across the entire feed. Fixed to a left content column
+  beside the portrait, with the clock aligned right and score beside the headline.
+- P2: the outlined inset container and repeated empty vertical space made the
+  feed feel unlike the supplied native reference. Removed the outline, tightened
+  row spacing, and split participant names/stats into readable lines.
+- P1: selected plays waited for a scoreboard request plus a ten-second local
+  cache. Selected-game requests now run independently every three seconds during
+  live viewing. A held scoreboard no longer blocks those requests.
+
+Required surfaces:
+- Typography: existing Inter UI family, 16px primary headline, smaller source and
+  stat lines, clear weights, stable score digits; enlarged text reflows safely.
+- Spacing/layout: single feed surface, portrait/headline alignment, left/right
+  metadata, narrow swipeable rail, persistent Live/Stats controls and field.
+- Colors/tokens: shared Medicine Wheel theme tokens; NFL identity colors stay
+  meaningful. Both themes passed automated text contrast checks.
+- Images: actual NFL portrait/logo URLs and existing fallback handling retained.
+  Test fixtures use local portraits; no generated replacement logos or mascots.
+- Copy/content: full source play details retained. Participant totals are current
+  game totals (identified by title), not invented historic snapshots. Score-at-play
+  is shown only when supplied; reactions and betting data are not fabricated.
+
+Freshness: live summary cache 2.5s, three-second visible/live polling, concurrent
+scoreboard refresh, pending-request coalescing, no-store/live time bucket, eight-
+second request timeout and failure backoff. Hidden/offline/modals stop polling;
+final games stop after the final play. Unchanged plays do not mutate the feed,
+new plays preserve the reader’s position, and only visible field plays animate.
+The free ESPN source reported 8–10s shared caching; the alternate core endpoint
+reported 65s. External publication latency cannot be promised to match Sleeper.
+
+Validated: 2,745 unit tests, release/theme/type/name/build checks, 298 mobile
+Scores checks and 78 live-update checks. Primary interactions include game
+swipes/arrows, Live/Stats, field replay, filters, player cards, reading restoration,
+error recovery and teardown. No browser errors or viewport overflow.
+Remaining P3: native font rasterization and exact licensed feed timing are not
+measurable from these browser fixtures.
+
+final result: passed
