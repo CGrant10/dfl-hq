@@ -3442,3 +3442,7 @@ contrast, overflow, targets, reading restoration, stable field animation and
 reduced motion. Evidence: `/workspace/dfl-nfl-1608/{before,after,comparison.png,refresh-final}`.
 Fixtures use deterministic NFL data and test portraits. Native-device frame
 pacing and the external provider’s publication latency are not inferred.
+
+1.608.1 safeguard: nullified/overturned plays suppress the score-at-play chip,
+so a rescinded scoring snapshot cannot appear beside “No play”. Added a source
+markup regression check; all other presentation and theme behavior is unchanged.

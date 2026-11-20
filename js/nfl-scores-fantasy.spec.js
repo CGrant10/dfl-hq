@@ -27,5 +27,6 @@ it('renders current official participant totals and the play-time score beside a
  const names=nflPlayNameIndex(f.summary),play=nflCenterPlays(f.summary,{sides:sides.map((s,i)=>({...s,id:i?'19':'28'}))})[0],view=nflScoresPlayPresentation(play,names);
  const html=nflScoresPlayMarkup(play,{uid:'fixture',view,teams:sides});
  expect(html).toContain('7/10 CMP, 61 YD, 1 CAR, 3 YD');expect(html).toContain('Current game totals');expect(html).toContain('Score after play:');expect(html).toContain('nfl-feed-person');
+ expect(nflScoresPlayMarkup({...play,voided:true},{uid:'fixture',view,teams:sides})).not.toContain('Score after play:');
  expect(nflScoresPlayMarkup({...play,away:null,home:null},{uid:'fixture',view,teams:sides})).not.toContain('Score after play:');
 });
