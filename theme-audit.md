@@ -3426,3 +3426,19 @@ never requested during installation. Actual compiled Home and Book/Pick’em che
 run with the library CDN blocked, proving the pinned local SDK starts normally.
 Evidence: `/workspace/dfl-update-1607/{handoff,compiled-final}`.
 Physical-device connection timing is not inferred from the local measurements.
+
+### 1.608.0 — Live NFL feed and native text alignment
+
+Compared the current center-aligned feed with the supplied Sleeper mobile
+screenshots, retaining DFL Medicine Wheel colors. Play content now follows a
+left text rail, with down/spot above and quarter/clock on the right. Portraits
+align with the headline; official play-time scores sit beside it. Participant
+lines use current official game totals and full source details remain visible.
+The inset feed outline is removed; positions, tabs, field and app navigation remain.
+
+Reviewed 320/390/430/768px Light/Dark, 200% text, selected plays, Stats and game
+swipes. All 298 mobile checks and 78 live-controller checks passed, including
+contrast, overflow, targets, reading restoration, stable field animation and
+reduced motion. Evidence: `/workspace/dfl-nfl-1608/{before,after,comparison.png,refresh-final}`.
+Fixtures use deterministic NFL data and test portraits. Native-device frame
+pacing and the external provider’s publication latency are not inferred.

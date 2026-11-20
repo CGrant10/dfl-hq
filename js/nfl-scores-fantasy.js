@@ -16,6 +16,22 @@ function catalogIndex(directory){
 function weekIndex(rows,season,week){
  if(!Array.isArray(rows))return new Map();const scope=season+':'+week;let scopes=weekCache.get(rows);if(!scopes){scopes=new Map();weekCache.set(rows,scopes)}if(!scopes.has(scope))scopes.set(scope,index(rows.filter(r=>Number(r.season)===Number(season)&&Number(r.week)===Number(week)&&r.season_type==='regular'),r=>key(full(r),r.team||r.player?.team)));return scopes.get(scope);
 }
+export function nflScoresStatLine(p){
+ const s=p.stats||{},bits=[];
+  if(s.completions!=null&&s.passingAttempts!=null)bits.push(`${s.completions}/${s.passingAttempts} CMP`);
+  if(s.passingYards!=null)bits.push(`${s.passingYards} YD`);
+  if(s.passingTouchdowns)bits.push(`${s.passingTouchdowns} TD`);
+  if(s.interceptions)bits.push(`${s.interceptions} INT`);
+  if(s.rushingAttempts!=null)bits.push(`${s.rushingAttempts} CAR`);
+  if(s.rushingYards!=null&&(s.rushingAttempts>0||s.rushingYards!==0))bits.push(`${s.rushingYards} YD`);
+  if(s.rushingTouchdowns)bits.push(`${s.rushingTouchdowns} TD`);
+  if(s.receptions!=null&&(s.receptions>0||s.receivingTargets>0))bits.push(`${s.receptions}${s.receivingTargets!=null?'/'+s.receivingTargets:''} REC`);
+  if(s.receivingYards!=null&&(s.receptions>0||s.receivingYards!==0))bits.push(`${s.receivingYards} YD`);
+  if(s.receivingTouchdowns)bits.push(`${s.receivingTouchdowns} TD`);
+  if(s.fg)bits.push(`${s.fg} FG`);if(s.xp)bits.push(`${s.xp} XP`);if(s.fumblesLost)bits.push(`${s.fumblesLost} LOST`);
+
+ return Object.values(s).some(v=>typeof v==='number'&&v!==0||typeof v==='string'&&/^\d+\/\d+$/.test(v)&&v!=='0/0')?bits.join(', ')||p.line||'':'';
+}
 // No box-score arithmetic or PPR preset is relabeled as this league's score.
 export function nflScoresFantasyRows(summary,owned=[],{weekly=[],projections=[],directory={},season,week,sides=[],state='',scoringSettings=null,order=[]}={}){
  const projected=weekIndex(projections,season,week),actual=weekIndex(weekly,season,week),catalog=catalogIndex(directory);
@@ -34,19 +50,7 @@ export function nflScoresFantasyRows(summary,owned=[],{weekly=[],projections=[],
   const playerId=owner?.position&&owner.position!==position?null:owner?.id||person?.p===position&&person.id||compatible(projection)&&projection?.player_id||null;
   const points=state==='pre'?null:number(owner?.points)??(compatible(recorded)?scorePlayer(recorded?.stats,scoringSettings):null);
   const projectedPoints=compatible(projection)?scorePlayer(projection?.stats,scoringSettings):null;
-  const s=p.stats||{},bits=[];
-  if(s.completions!=null&&s.passingAttempts!=null)bits.push(`${s.completions}/${s.passingAttempts} CMP`);
-  if(s.passingYards!=null)bits.push(`${s.passingYards} YD`);
-  if(s.passingTouchdowns)bits.push(`${s.passingTouchdowns} TD`);
-  if(s.interceptions)bits.push(`${s.interceptions} INT`);
-  if(s.rushingAttempts!=null)bits.push(`${s.rushingAttempts} CAR`);
-  if(s.rushingYards!=null&&(s.rushingAttempts>0||s.rushingYards!==0))bits.push(`${s.rushingYards} YD`);
-  if(s.rushingTouchdowns)bits.push(`${s.rushingTouchdowns} TD`);
-  if(s.receptions!=null&&(s.receptions>0||s.receivingTargets>0))bits.push(`${s.receptions}${s.receivingTargets!=null?'/'+s.receivingTargets:''} REC`);
-  if(s.receivingYards!=null&&(s.receptions>0||s.receivingYards!==0))bits.push(`${s.receivingYards} YD`);
-  if(s.receivingTouchdowns)bits.push(`${s.receivingTouchdowns} TD`);
-  if(s.fg)bits.push(`${s.fg} FG`);if(s.xp)bits.push(`${s.xp} XP`);if(s.fumblesLost)bits.push(`${s.fumblesLost} LOST`);
-  return [{...p,position,playerId:playerId?String(playerId):null,rowKey:playerId?'sleeper-'+playerId:'espn-'+p.id,points,projectedPoints,league:true,owner:owner?.owner||'',isMine:owner?.isMine===true,line:Object.values(s).some(v=>typeof v==='number'&&v!==0||typeof v==='string'&&/^\d+\/\d+$/.test(v)&&v!=='0/0')?bits.join(', ')||p.line||'':''}];
+  return [{...p,position,playerId:playerId?String(playerId):null,rowKey:playerId?'sleeper-'+playerId:'espn-'+p.id,points,projectedPoints,league:true,owner:owner?.owner||'',isMine:owner?.isMine===true,line:nflScoresStatLine(p)}];
  });
  // Begin in the official box-score sequence, then keep that established
  // sequence through live refreshes rather than re-ranking by points or name.
