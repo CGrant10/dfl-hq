@@ -166,7 +166,7 @@
   --t-fast: 120ms;
   --t-mid: 180ms;
   --t-slow: 240ms;
-  --ease: cubic-bezier(.2, .6, .2, 1);
+  --ease: cubic-bezier(.2, .75, .25, 1);
 }
 
 /* The body face, stated rather than inherited from whatever the browser

@@ -1748,30 +1748,37 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 
 
 /* Source: css/share-preview.css */
-.dfl-share-preview { width:min(520px,calc(100vw - 24px)); max-height:calc(100dvh - 24px); padding:16px; box-sizing:border-box; overflow:auto; overscroll-behavior:contain; border:1px solid var(--line); border-radius:14px; background:var(--bg-2); color:var(--text); }
+.dfl-share-preview { width:min(520px,calc(100vw - 24px)); max-height:calc(100dvh - 24px); padding:16px; box-sizing:border-box; overflow:auto; overscroll-behavior:contain; border:1px solid var(--line); border-radius:8px; background:var(--bg-2); color:var(--text); }
 .dfl-share-preview::backdrop { background:#000a; }
-.dfl-share-preview > header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.dfl-share-preview h2 { margin:0; font:600 1rem/1.4 system-ui,sans-serif; text-transform:none; letter-spacing:0; }
-.dfl-share-preview :is(button,select) { min-height:44px; font:500 .8125rem/1.4 system-ui,sans-serif; text-transform:none; letter-spacing:0; }
+.dfl-share-preview > header { position:sticky; top:-16px; z-index:2; padding-block:8px; background:var(--bg-2); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.dfl-share-preview h2 { margin:0; font:600 1rem/1.4 var(--font-ui); text-transform:none; letter-spacing:0; }
+.dfl-share-preview :is(button,select) { min-height:44px; font:500 .8125rem/1.4 var(--font-ui); text-transform:none; letter-spacing:0; }
 .dfl-share-preview .linkbtn { padding:6px 9px; color:var(--text); text-decoration:none; }
 .dfl-share-preview :is(button,select):focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-.dfl-share-styles { display:flex; gap:16px; margin-block:12px; border-bottom:1px solid var(--line); }
+.dfl-share-styles { position:relative; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; margin-block:12px; border-bottom:1px solid var(--line); }
 .dfl-share-styles button { background:transparent; color:var(--text); border:0; border-radius:0; padding:6px 2px; }
-.dfl-share-styles button[aria-pressed="true"] { box-shadow:inset 0 -2px var(--accent); }
+.dfl-share-styles::after { content:''; position:absolute; bottom:-1px; left:0; width:50%; height:2px; background:var(--accent); transform:translateX(calc(var(--share-style-index,0) * 100%)); transition:transform var(--t-mid) var(--ease); }
+.dfl-share-styles button[aria-pressed="true"] { color:var(--accent); }
 .dfl-share-player,.dfl-share-format { display:flex; align-items:center; gap:10px; margin-block:12px; }
 .dfl-share-player[hidden] { display:none; }
 .dfl-share-player label,.dfl-share-format label { font-size:.8125rem; min-width:42px; }
-.dfl-share-player select,.dfl-share-format select { flex:1; min-width:0; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:7px; padding:6px 10px; }
+.dfl-share-player select,.dfl-share-format select { font-size:var(--ui-input); flex:1; min-width:0; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:7px; padding:6px 10px; }
 .dfl-share-art { margin-block:12px; max-height:min(54dvh,560px); overflow:auto; overscroll-behavior:contain; }
 .dfl-share-art:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 .dfl-share-art canvas { display:block; width:100%; height:auto; }
 .dfl-share-status { font-size:.75rem; line-height:1.5; color:var(--body-text); margin:8px 0; }
 .dfl-share-status:empty { display:none; }
-.dfl-share-preview > footer { display:flex; align-items:center; flex-wrap:wrap; justify-content:flex-end; gap:4px 10px; }
+.dfl-share-preview > footer { position:sticky; bottom:-16px; z-index:2; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 10px; padding-block:10px; border-top:1px solid var(--line-soft); background:var(--bg-2); }
+.dfl-share-preview > footer [data-share-text] { grid-column:1/-1; }
 .dfl-share-preview > footer .btn { position:relative; isolation:isolate; min-height:44px; padding:7px 10px; background:transparent; box-shadow:none; transform:none; color:var(--text); border:0; }
 .dfl-share-preview > footer .btn::before { content:''; position:absolute; inset:5px 0; z-index:-1; border:1px solid var(--line); border-radius:7px; background:var(--bg); }
-.dfl-share-preview > footer [data-share-send]::before { border-color:var(--accent); }
+.dfl-share-preview > footer [data-share-send] { color:var(--on-accent); }
+.dfl-share-preview > footer [data-share-send]::before { background:var(--accent-fill); border-color:var(--accent); }
 .dfl-share-styles[hidden] { display:none; }
+
+.dfl-share-preview [hidden] { display:none; }
+@media(prefers-reduced-motion:reduce) { .dfl-share-styles::after { transition:none; } }
+:root[data-ui-motion="off"] .dfl-share-styles::after { transition:none; }
 
 
 /* Source: css/connected-experience.css */
@@ -5099,13 +5106,13 @@ html[data-ui-motion="off"] .td-receipt-chevron { transition:none; }
 /* The ordinary league pages use the compact rhythm of Home and Clubhouse.
    Route-specific scores, artwork and transactional controls retain their geometry. */
 #view.view[data-page-system][data-route] {
-  --desk-title:1.875rem;
-  --desk-section:1.125rem;
-  --desk-copy:.875rem;
-  --desk-meta:.75rem;
+  --desk-title:var(--ui-title);
+  --desk-section:var(--ui-section);
+  --desk-copy:var(--ui-copy);
+  --desk-meta:var(--ui-meta);
   --page-gap:20px;
   --page-radius:8px;
-  font:500 var(--desk-copy)/1.5 var(--font-body);
+  font:400 var(--desk-copy)/1.5 var(--font-ui);
   letter-spacing:0;
 }
 
@@ -5868,6 +5875,18 @@ dialog.dfl-player-card { height:min(720px,calc(100dvh - 24px),var(--dialog-viewp
 #view.view:is([data-route="home"],[data-route="clubhouse"],[data-route="trade"],[data-route="sportsbook"]) .state.is-error { place-items:start; text-align:left; gap:12px; margin:0 0 16px; padding:18px 0; border:0; border-block:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
 #view.view:is([data-route="home"],[data-route="clubhouse"],[data-route="trade"],[data-route="sportsbook"]) .state.is-error .state-title { color:var(--text); font:700 1rem/1.4 var(--font-body); text-transform:none; }
 #view.view:is([data-route="home"],[data-route="clubhouse"],[data-route="trade"],[data-route="sportsbook"]) .state.is-error p { margin:0; }
+
+.loading-primary .loading-week { display:flex; justify-content:center; padding:10px 0 20px; }
+.loading-primary .loading-week i { width:30%; height:16px; }
+.loading-primary .loading-profile { grid-template-columns:56px minmax(0,1fr); align-items:center; padding:16px; border:1px solid var(--line-soft); border-radius:8px; }
+.loading-primary .loading-profile .loading-avatar { width:56px; height:56px; }
+.loading-primary .loading-profile > div { display:grid; gap:12px; }
+.loading-primary .loading-profile > div i:first-child { width:75%; height:20px; }
+.loading-primary .loading-profile > div i:last-child { width:48%; }
+.loading-primary .loading-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; padding-block:16px; }
+.loading-primary .loading-metrics > div { display:grid; justify-items:center; gap:10px; }
+.loading-primary .loading-metrics > div i { width:60%; }
+.loading-primary .loading-metrics > div i:last-child { height:24px; }
 
 
 /* Source: css/game-day-ready.css */
@@ -11513,6 +11532,41 @@ html[data-ui-motion="off"] :is(.gameday-player,.dfl-player-card) .dfl-player-por
  .trade-watch-list>li { flex-wrap:wrap; }
  .trade-watch-list>li>div { flex-basis:calc(100% - 56px); }
  .trade-watch-list [data-tw-shop] { order:2; }
+}
+
+/* Supporting screens use the same compact ledger and reading roles. */
+#view.view[data-page-system][data-route="finances"] #fin-body { margin-top:16px; }
+#view.view[data-page-system][data-route="finances"] .fin-section + .fin-section { margin-top:20px; }
+#view.view[data-page-system][data-route="finances"] .fin-section > .section-title { margin-bottom:8px; }
+#view.view[data-page-system][data-route="finances"] :is(.fin-summary-card,.duecard) { border:0; border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route="finances"] .fin-summary-card { container:fees / inline-size; }
+#view.view[data-page-system][data-route="finances"] .fin-summary-card .statgrid { grid-template-columns:repeat(3,minmax(0,1fr)); padding:0; gap:0; }
+#view.view[data-page-system][data-route="finances"] .fin-summary-card .stat { padding:10px 4px; min-height:0; border:0; border-bottom:1px solid var(--line-soft); }
+#view.view[data-page-system][data-route="finances"] .fin-summary-card .stat-v { font:700 1.375rem/1.2 var(--font-sport); font-variant-numeric:tabular-nums; }
+#view.view[data-page-system][data-route="finances"] .fin-summary-card .stat-l { font:400 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route="finances"] .due-row { grid-template-columns:8px minmax(0,1fr) auto; padding:10px 0; gap:10px; }
+#view.view[data-page-system][data-route="finances"] .due-who { font:500 var(--ui-row)/1.4 var(--font-ui); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#view.view[data-page-system][data-route="finances"] .due-figure { font:600 var(--ui-copy)/1.4 var(--font-ui); font-variant-numeric:tabular-nums; }
+#view.view[data-page-system][data-route][data-route="profile"] .profile-career-card { container:career / inline-size; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-overview { grid-template-columns:minmax(0,1fr) auto; gap:12px; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-record { min-height:0; padding:12px 0; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-outcomes.is-playoffs { align-self:center; border-top:0; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-outcomes.is-playoffs > div { min-width:64px; padding:8px 12px; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-support > div { padding:10px 0; gap:12px; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-support dd { font:700 1.25rem/1.2 var(--font-sport); }
+@media(max-width:25rem) {
+ #view.view[data-page-system][data-route][data-route="profile"] .career-outcomes:not(.is-playoffs) { grid-column:1/-1; }
+}
+@container career (max-width:14rem) {
+ #view.view[data-page-system][data-route][data-route="profile"] .career-overview { grid-template-columns:minmax(0,1fr); gap:0; }
+ #view.view[data-page-system][data-route][data-route="profile"] .career-outcomes.is-playoffs { justify-content:flex-start; }
+ #view.view[data-page-system][data-route][data-route="profile"] .career-outcomes.is-playoffs > div { padding-left:0; border-left:0; }
+}
+@container fees (max-width:14rem) {
+ #view.view[data-page-system][data-route="finances"] .fin-summary-card .statgrid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@container fees (max-width:10rem) {
+ #view.view[data-page-system][data-route="finances"] .fin-summary-card .statgrid { grid-template-columns:minmax(0,1fr); }
 }
 
 

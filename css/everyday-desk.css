@@ -40,3 +40,38 @@
  .trade-watch-list>li>div { flex-basis:calc(100% - 56px); }
  .trade-watch-list [data-tw-shop] { order:2; }
 }
+
+/* Supporting screens use the same compact ledger and reading roles. */
+#view.view[data-page-system][data-route="finances"] #fin-body { margin-top:16px; }
+#view.view[data-page-system][data-route="finances"] .fin-section + .fin-section { margin-top:20px; }
+#view.view[data-page-system][data-route="finances"] .fin-section > .section-title { margin-bottom:8px; }
+#view.view[data-page-system][data-route="finances"] :is(.fin-summary-card,.duecard) { border:0; border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route="finances"] .fin-summary-card { container:fees / inline-size; }
+#view.view[data-page-system][data-route="finances"] .fin-summary-card .statgrid { grid-template-columns:repeat(3,minmax(0,1fr)); padding:0; gap:0; }
+#view.view[data-page-system][data-route="finances"] .fin-summary-card .stat { padding:10px 4px; min-height:0; border:0; border-bottom:1px solid var(--line-soft); }
+#view.view[data-page-system][data-route="finances"] .fin-summary-card .stat-v { font:700 1.375rem/1.2 var(--font-sport); font-variant-numeric:tabular-nums; }
+#view.view[data-page-system][data-route="finances"] .fin-summary-card .stat-l { font:400 var(--ui-meta)/1.4 var(--font-ui); }
+#view.view[data-page-system][data-route="finances"] .due-row { grid-template-columns:8px minmax(0,1fr) auto; padding:10px 0; gap:10px; }
+#view.view[data-page-system][data-route="finances"] .due-who { font:500 var(--ui-row)/1.4 var(--font-ui); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#view.view[data-page-system][data-route="finances"] .due-figure { font:600 var(--ui-copy)/1.4 var(--font-ui); font-variant-numeric:tabular-nums; }
+#view.view[data-page-system][data-route][data-route="profile"] .profile-career-card { container:career / inline-size; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-overview { grid-template-columns:minmax(0,1fr) auto; gap:12px; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-record { min-height:0; padding:12px 0; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-outcomes.is-playoffs { align-self:center; border-top:0; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-outcomes.is-playoffs > div { min-width:64px; padding:8px 12px; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-support > div { padding:10px 0; gap:12px; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-support dd { font:700 1.25rem/1.2 var(--font-sport); }
+@media(max-width:25rem) {
+ #view.view[data-page-system][data-route][data-route="profile"] .career-outcomes:not(.is-playoffs) { grid-column:1/-1; }
+}
+@container career (max-width:14rem) {
+ #view.view[data-page-system][data-route][data-route="profile"] .career-overview { grid-template-columns:minmax(0,1fr); gap:0; }
+ #view.view[data-page-system][data-route][data-route="profile"] .career-outcomes.is-playoffs { justify-content:flex-start; }
+ #view.view[data-page-system][data-route][data-route="profile"] .career-outcomes.is-playoffs > div { padding-left:0; border-left:0; }
+}
+@container fees (max-width:14rem) {
+ #view.view[data-page-system][data-route="finances"] .fin-summary-card .statgrid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@container fees (max-width:10rem) {
+ #view.view[data-page-system][data-route="finances"] .fin-summary-card .statgrid { grid-template-columns:minmax(0,1fr); }
+}

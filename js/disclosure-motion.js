@@ -1,3 +1,5 @@
+import {uiMotion} from './motion-tokens.js';
+
 // Native details semantics with finite, reversible height motion. No scroll loop.
 export function mountDisclosureMotion(root,{selector,getMotion=()=>true,active=()=>root.isConnected}={}) {
  const moving=new Map(),reduced=matchMedia('(prefers-reduced-motion: reduce)');let stopped=false;
@@ -13,14 +15,14 @@ export function mountDisclosureMotion(root,{selector,getMotion=()=>true,active=(
   const summary=node.querySelector(':scope>summary'),style=getComputedStyle(node),s=getComputedStyle(summary);
   return summary.getBoundingClientRect().height+['paddingTop','paddingBottom','borderTopWidth','borderBottomWidth'].reduce((n,key)=>n+(parseFloat(style[key])||0),0)+(parseFloat(s.marginTop)||0)+(parseFloat(s.marginBottom)||0);
  };
- function move(node,open,deadline=performance.now()+260) {
+ function move(node,open,deadline=performance.now()+uiMotion.disclosure) {
   const start=node.getBoundingClientRect().height,old=moving.get(node);
   if(old)release(old);
   if(open)node.open=true;
   const end=open?node.getBoundingClientRect().height:collapsed(node);
   if(!allowed(node)||!node.animate||Math.abs(start-end)<1){node.open=open;return}
   const animation=node.animate([{height:`${start}px`,overflow:'clip'},{height:`${end}px`,overflow:'clip'}],{
-   duration:Math.max(100,deadline-performance.now()),easing:'cubic-bezier(.22,.75,.25,1)',fill:'both',
+   duration:Math.max(100,deadline-performance.now()),easing:uiMotion.easing,fill:'both',
   });
   const state={node,open,animation,observer:null,frame:0};moving.set(node,state);
   animation.onfinish=()=>{if(moving.get(node)===state)finish(state)};

@@ -29,9 +29,7 @@ export async function render(view) {
   const err = seasonsRes.error || paymentsRes.error || payoutsRes.error ||
               expensesRes.error || compsRes.error;
   if (err) {
-    view.innerHTML = `<header class="utility-head"><small>LEAGUE LEDGER</small><h1>League Fees</h1></header>` + errorBox(err) +
-      `<div class="card"><div class="card-body muted">If a table is missing, run
-       <strong>finance_schema.sql</strong> in the Supabase SQL editor.</div></div>`;
+    view.innerHTML = `<header class="utility-head"><small>LEAGUE LEDGER</small><h1>League Fees</h1></header>` + errorBox(err);
     return;
   }
 
@@ -204,7 +202,7 @@ function paymentRow(r) {
   return `
     <div class="due-row">
       <span class="due-dot ${s.cls}" title="${s.label}" aria-hidden="true"></span>
-      <span class="due-who">
+      <span class="due-who" title="${esc(r.owner_name)}">
         ${esc(r.owner_name)}
         <span class="sr-only"> — ${s.label}</span>
       </span>

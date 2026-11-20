@@ -4,7 +4,8 @@ import {mountPageScrollMotion} from './page-scroll-motion.js';
 import {mountSwipeTabs} from './swipe-tabs.js';
 import {mountDisclosureMotion} from './disclosure-motion.js';
 
-const easing = 'cubic-bezier(.2,.75,.25,1)';
+import {uiMotion} from './motion-tokens.js';
+const easing = uiMotion.easing;
 const running = new Set();
 const exits = new Map();
 let started = false;
@@ -32,7 +33,7 @@ export function cancelUiMotion(node) {
 export function animateUi(node, frames, { motion = true, ...options } = {}) {
   if (!node?.animate || !canPlay(node, motion)) return;
   cancelUiMotion(node);
-  const animation = node.animate(frames, { duration: 220, easing, ...options });
+  const animation = node.animate(frames, { duration: uiMotion.enter, easing, ...options });
   running.add(animation);
   animation.onfinish = () => { running.delete(animation); animation.cancel(); };
   return animation;
@@ -45,7 +46,7 @@ export function cancelUiExit(node) {
 }
 // A dismissal completes once, even if Escape repeats or motion is switched
 // off mid-flight. Reopening cancels the old completion, not the new surface.
-export function exitUi(node, complete, { immediate = false, surface = node, transform: exitTransform = 'translateY(8px)', duration = 160, fade = true } = {}) {
+export function exitUi(node, complete, { immediate = false, surface = node, transform: exitTransform = 'translateY(8px)', duration = uiMotion.exit, fade = true } = {}) {
   const existing = exits.get(node);
   if (existing) { if (immediate) existing(); return; }
   if (immediate || !canPlay(node)) { complete(); return; }

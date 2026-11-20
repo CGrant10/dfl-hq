@@ -1,5 +1,5 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.608.2";
+const CACHE_NAME = "dfl-hq-v1.609.0";
 const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
@@ -34,7 +34,7 @@ const APP_SHELL = [
   "./js/home-daily-desk.js","./js/trade-watchlist.js","./css/everyday-desk.css",
   "./css/onair-motion.css",
   "./css/broadcast-nfl.css",
-  "./css/league-finish.css","./css/app-shared.css?v=1.608.2","./js/trade-receive-controls.js","./js/trade-offer-search.js","./js/trade-offer-catalog.js","./js/trade-offer-preview.js","./css/trade-book-reading.css","./js/workers/trade-offers.js","./js/tab-scroll-cues.js",
+  "./css/league-finish.css","./css/app-shared.css?v=1.609.0","./js/trade-receive-controls.js","./js/trade-offer-search.js","./js/trade-offer-catalog.js","./js/trade-offer-preview.js","./css/trade-book-reading.css","./js/workers/trade-offers.js","./js/tab-scroll-cues.js",
   "./js/player-watchlist-data.js","./js/player-watchlist-model.js","./js/watchlist-alerts.js","./js/player-watchlist-ui.js",
   "./js/loading-presentation.js","./js/home-score-collapse.js","./js/home-primary-action.js","./js/home-rhythm.js","./js/home-moment-stories.js","./js/connected-artwork.js","./js/archive-route-motion.js","./js/broadcast-gesture-motion.js",
   "./js/player-form.js","./js/player-game-model.js","./js/player-game-explorer.js",
@@ -42,7 +42,7 @@ const APP_SHELL = [
   "./js/analyzer-scouting.js",
   "./js/nav-highlight.js",
   "./js/dialog-viewport.js","./js/mobile-sheet.js","./js/confirm-sheet.js","./js/activity-center-model.js","./js/activity-center-data.js","./js/activity-center-ui.js","./js/sportsbook-ticket-route.js",
-  "./js/ui-motion.js","./js/disclosure-motion.js","./css/clubhouse-reading.css","./js/sheet-drag.js","./js/page-scroll-motion.js","./js/route-placeholder.js","./js/route-motion.js","./js/swipe-tabs.js","./js/horizontal-swipe.js","./js/home-injury-panel.js","./js/connected-portrait.js","./js/player-card-motion.js",
+  "./js/ui-motion.js","./js/motion-tokens.js","./js/disclosure-motion.js","./css/clubhouse-reading.css","./js/sheet-drag.js","./js/page-scroll-motion.js","./js/route-placeholder.js","./js/route-motion.js","./js/swipe-tabs.js","./js/horizontal-swipe.js","./js/home-injury-panel.js","./js/connected-portrait.js","./js/player-card-motion.js",
   "./js/clubhouse-polish.js",
 
   "./js/trade-routing.js","./js/trade-receipt-ui.js","./js/trade-workspace.js","./js/trade-connected-motion.js","./js/trade-workspace-ui.js","./js/sleeper-links.js","./js/trade-negotiation-model.js","./js/trade-negotiation-data.js","./js/trade-negotiation-ui.js",
@@ -154,7 +154,7 @@ const APP_SHELL = [
   "./js/service-worker.js","./js/pickem-state.js","./js/golf-event-status.js","./js/pages/calendar.js",
   "./","./index.html","./manifest.json","./css/stakes.css",
   "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/sportsbook.css","./js/sportsbook-slip.js","./js/sportsbook-pickem.js","./js/pickem-game-context.js","./js/sleeper-prop-import.js","./js/sleeper-prop-import-ui.js","./css/golf.css","./css/home.css","./css/breaking-trade.css","./css/update-gate.css",
-  "./js/wall-continuity.js","./js/wall-live.js","./js/sportsbook-fantasy-results.js","./js/sportsbook-live-ticket.js","./js/sportsbook-fantasy-data.js","./js/sportsbook-fantasy-projections.js","./js/sportsbook-live.js","./js/sportsbook-settlement.js","./js/sportsbook-account-motion.js","./js/live-score-refresh.js","./js/score-freshness.js","./js/game-day-readiness.js","./js/matchup-finish.js","./js/matchup-finish-model.js","./css/matchup-finish.css","./js/lineup-alert-model.js","./js/waiver-coach.js","./js/advice-receipts.js","./js/advice-receipts-data.js","./js/advice-receipts-ui.js","./css/advice-receipts.css?v=1.608.2","./js/waiver-history-data.js","./js/waiver-intelligence.js","./js/waiver-intelligence-ui.js","./js/roster-coach-data.js","./js/roster-coach-ui.js","./js/matchup-targets.js","./js/weekly-roasts.js",
+  "./js/wall-continuity.js","./js/wall-live.js","./js/sportsbook-fantasy-results.js","./js/sportsbook-live-ticket.js","./js/sportsbook-fantasy-data.js","./js/sportsbook-fantasy-projections.js","./js/sportsbook-live.js","./js/sportsbook-settlement.js","./js/sportsbook-account-motion.js","./js/live-score-refresh.js","./js/score-freshness.js","./js/game-day-readiness.js","./js/matchup-finish.js","./js/matchup-finish-model.js","./css/matchup-finish.css","./js/lineup-alert-model.js","./js/waiver-coach.js","./js/advice-receipts.js","./js/advice-receipts-data.js","./js/advice-receipts-ui.js","./css/advice-receipts.css?v=1.609.0","./js/waiver-history-data.js","./js/waiver-intelligence.js","./js/waiver-intelligence-ui.js","./js/roster-coach-data.js","./js/roster-coach-ui.js","./js/matchup-targets.js","./js/weekly-roasts.js",
   "./js/config.js","./js/app.js","./js/season-nav.js","./js/router.js","./js/connection-recovery.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
   "./js/app-diagnostics.js","./js/performance.js","./js/performance-findings.js","./js/pages/admin_performance.js","./js/pages/admin_operations.js","./js/breaking-trade.js","./js/custom-alerts.js","./js/league-state.js","./js/league-stakes.js","./js/weekly-briefing.js","./js/roster-next-action.js","./js/pages/stakes.js","./js/sleeper-sync-schedule.js",
   "./js/notifications.js","./js/notification-core.js","./js/notify-nudge.js","./js/profile-notifications.js","./js/weekly-outlook.js","./js/trade-desk.js",
@@ -172,7 +172,7 @@ const APP_SHELL = [
 // The worker imports the manifest into its own installed script resources.
 // A missing or mismatched bundle cannot activate under the new release label.
 if(typeof importScripts==='function'){
-  importScripts('./js/bundle/1.608.2/precache.js');
+  importScripts('./js/bundle/1.609.0/precache.js');
   if(self.DFL_BUNDLE_RELEASE!==CACHE_NAME.slice(APP_CACHE_PREFIX.length)||!Array.isArray(self.DFL_BUNDLE_SHELL)||!self.DFL_BUNDLE_SHELL.length)throw Error('Application bundle release mismatch');
 }
 const BUNDLED_STYLES=new Set(self.DFL_BUNDLE_STYLES||[]);
