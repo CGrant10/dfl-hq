@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 const source = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const scope = 'https://example.com/dfl-hq/';
-function worker({ offline = false, saved = {}, legacy = {}, bundle=null, release=null, failPath=null, htmlPath=null } = {}) {
+function worker({ offline = false, saved = {}, legacy = {}, bundle=null, release=null, failPath=null, htmlPath=null,startup=null,bootAssets=[],routes={},routeAssets={},clients=[] } = {}) {
   const handlers = {};
   const precached = [];
   const key = request => new URL(typeof request === 'string' ? request : request.url, scope).href;
@@ -31,11 +31,12 @@ function worker({ offline = false, saved = {}, legacy = {}, bundle=null, release
     URL, Request, Response, fetch, console,
     location: { origin: 'https://example.com' },
     caches: { match, open: async () => ({match:currentMatch,add:async request=>precached.push(request),put: async (request, response) => entries.set(key(request), response) }) },
-    self: { registration: { scope },skipWaiting:async()=>{},addEventListener: (name, callback) => { handlers[name] = callback; } },
+    self: { clients:{matchAll:async()=>clients},registration: { scope },skipWaiting:async()=>{},addEventListener: (name, callback) => { handlers[name] = callback; } },
   };
   if(bundle!==null)runtime.importScripts=()=>{
     runtime.self.DFL_BUNDLE_RELEASE=release||JSON.parse(readFileSync(new URL('../package.json',import.meta.url))).version;
     runtime.self.DFL_BUNDLE_SHELL=bundle;
+    if(startup){runtime.self.DFL_BUNDLE_STARTUP=startup;runtime.self.DFL_BOOT_ASSETS=bootAssets;runtime.self.DFL_BUNDLE_ROUTES=routes;runtime.self.DFL_ROUTE_ASSETS=routeAssets;}
   };
   runInNewContext(source,runtime);
   return {
@@ -64,6 +65,20 @@ describe('installed app worker navigation', () => {
     expect(initial.filter(r=>r.url.includes('/assets/')).map(r=>r.url)).toEqual([scope+'assets/loading-soft-halo.webp']);
     const warmed=await sw.warm();expect(warmed.some(r=>r.url.endsWith('/assets/dfl-daily-hero.webp'))).toBe(true);
     expect(warmed.filter(r=>r.url.endsWith('/assets/loading-soft-halo.webp'))).toHaveLength(1);
+  });
+  it('activates with only startup dependencies and the open route; unrelated pages warm afterward',async()=>{
+    const app='./js/bundle/test/app.js',home='./js/bundle/test/pages/home.js',book='./js/bundle/test/pages/sportsbook.js',unused='./js/bundle/test/pages/golf.js';
+    const sw=worker({bundle:[app,home,book,unused],startup:[app,home],bootAssets:['./index.html'],routes:{sportsbook:[book]},routeAssets:{sportsbook:['./css/sportsbook.css']},clients:[{url:scope+'#/sportsbook?product=pickem'}]});
+    const assets=await sw.install();expect(sw.fetch.mock.calls.map(([r])=>r.url)).toEqual([app,home,book].map(path=>new URL(path,scope).href));
+    expect(assets.some(r=>r.url===scope+'css/sportsbook.css')).toBe(true);expect(sw.fetch.mock.calls.some(([r])=>r.url.startsWith('https://cdn.'))).toBe(false);
+    await sw.warm();expect(sw.fetch.mock.calls.some(([r])=>r.url.endsWith('/pages/golf.js'))).toBe(true);
+  });
+  it('does not let a broken unused page block initial activation',async()=>{
+    const app='./js/bundle/test/app.js',unused='./js/bundle/test/pages/golf.js';
+    const sw=worker({bundle:[app,unused],startup:[app],failPath:unused});await expect(sw.install()).resolves.toBeDefined();await expect(sw.warm()).resolves.toBeDefined();
+  });
+  it('still rejects a missing critical startup module',async()=>{
+    const app='./js/bundle/test/app.js';await expect(worker({bundle:[app],startup:[app],failPath:app}).install()).rejects.toThrow('Application module unavailable');
   });
   it('does not re-download an immutable cached bundle during normal navigation',async()=>{
     const path='./js/bundle/test/app.js',sw=worker({bundle:[path],saved:{[path]:{body:'Cached release module',type:'application/javascript'}}});

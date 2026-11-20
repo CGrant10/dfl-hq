@@ -28,7 +28,7 @@ export function checkAppBundle(root=fileURLToPath(new URL('../',import.meta.url)
    for(const child of Object.values(node))if(Array.isArray(child))child.forEach(visit);else if(child&&typeof child==='object')visit(child);
   }visit(source);
   for(const ref of refs){
-   if(/^https:\/\//.test(ref.path))continue;
+   if(/^https:\/\//.test(ref.path))throw Error('Runtime CDN dependency: '+ref.path);
    const target=resolve(dirname(file),ref.path.split('?')[0]);
    if(!target.startsWith(base+'/')||!cached.has(target)||!existsSync(target))throw Error(`Broken bundled import: ${file} → ${ref.path}`);
   }
@@ -37,6 +37,14 @@ export function checkAppBundle(root=fileURLToPath(new URL('../',import.meta.url)
  for(const [,page] of read('js/router.js').matchAll(/import\("\.\/pages\/([^"?]+)\.js"\)/g))if(!cached.has(resolve(base,'pages',page+'.js')))throw Error(`Missing retryable route: ${page}`);
  const closure=(file,seen=new Set())=>{if(seen.has(file))return seen;seen.add(file);for(const ref of graph.get(file)||[])closure(ref,seen);return seen};
  const startup=closure(resolve(base,'app.js')),home=closure(resolve(base,'pages/home.js'));
+ const initial=new Set((manifest.DFL_BUNDLE_STARTUP||[]).map(path=>resolve(root,path)));
+ if(!initial.size||initial.size>12||[...startup,...home].some(file=>!initial.has(file)))throw Error('Startup cache does not cover the app and Home dependency graph');
+ for(const [name,paths]of Object.entries(manifest.DFL_BUNDLE_ROUTES||{})){
+  const included=new Set(paths.map(path=>resolve(root,path))),entry=paths.find(path=>path.includes('/pages/')),required=closure(resolve(root,entry));
+  if([...required].some(file=>!included.has(file))||[...included].some(file=>!cached.has(file)))throw Error('Incomplete offline route: '+name);
+ }
+ for(const path of manifest.DFL_BOOT_ASSETS||[])if(!existsSync(resolve(root,path.split('?')[0])))throw Error('Missing boot asset: '+path);
+
  if(startup.size>4||home.size>6)throw Error(`Startup module budget exceeded: app ${startup.size}, Home ${home.size}`);
  const cores=scripts.filter(f=>/\/app-core-[^/]+\.js$/.test(f));if(cores.length!==1)throw Error('Pages must share one app state module');
  return {release:version,modules:scripts.length,startupModules:startup.size,homeModules:home.size};

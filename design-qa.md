@@ -383,3 +383,26 @@ Compiled-app real-data read-only checks verify normal opening and current chrome
 Evidence: `/workspace/dfl-update-1606`. Native-device launch snapshots remain unmeasured.
 
 final result: passed
+
+### 1.607.0 — Install only what opens the app
+
+The user located the remaining wait at “Installing update…”. The previous worker
+still waited for all 90 modules, unrelated CSS/icons/data and nine CDN library
+resources. The installer now selects the generated static startup closure plus
+open-route dependencies and styles; unused pages warm after first paint. Missing
+critical modules still reject activation. Optional failures do not block install
+or stop other optional cache entries. Cache fetches have bounded timeouts.
+
+The production build bundles the same Supabase JS 2.112.3 from an exact pinned
+package/lockfile; the raw-module development imports stay compatible. The build
+check rejects runtime CDN imports and checks all startup/route dependency closures.
+No database, auth, RLS, accepted wagers or data-cache changes.
+
+Validation: 2,743 tests, type/name/theme/release/build checks, mobile Light/Dark
+actual worker update/retry and real compiled read-only league pages with the CDN
+blocked. A deliberately slow unrelated golf module is absent from the install
+request path. Controlled local installation measured 2–4 seconds, including worker
+verification/navigation; these are local fixture timings, not a phone guarantee.
+Evidence: `/workspace/dfl-update-1607`.
+
+final result: passed

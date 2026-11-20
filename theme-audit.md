@@ -3412,3 +3412,17 @@ legacy-navigation frames. Also checked the compiled app’s actual Home/opening
 and Sportsbook/Pick’em/navigation in both themes; no uncaught page errors.
 Evidence: `/workspace/dfl-update-1606/{gate-*,opening-*,ready-*,retry-*,compiled}`.
 Physical iOS launch snapshots and native-device frame pacing are not newly measured.
+
+### 1.607.0 — Shorter installation path
+
+No presentation or palette changes. Retained the same update plate and route-ready
+handoff. Installation now prioritizes seven compiled startup modules, 18 boot
+assets and any open route’s dependencies/styles. Other pages/assets warm after
+first paint, respecting visibility, Save Data and connection policy.
+
+Verified mobile Light/Dark update transitions, retry and zero stale-navigation
+frames with an unrelated page deliberately delayed by 15 seconds: that page was
+never requested during installation. Actual compiled Home and Book/Pick’em checks
+run with the library CDN blocked, proving the pinned local SDK starts normally.
+Evidence: `/workspace/dfl-update-1607/{handoff,compiled-final}`.
+Physical-device connection timing is not inferred from the local measurements.
