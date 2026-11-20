@@ -1,13 +1,13 @@
 /* The ordinary league pages use the compact rhythm of Home and Clubhouse.
    Route-specific scores, artwork and transactional controls retain their geometry. */
 #view.view[data-page-system][data-route] {
-  --desk-title:1.875rem;
-  --desk-section:1.125rem;
-  --desk-copy:.875rem;
-  --desk-meta:.75rem;
+  --desk-title:var(--ui-title);
+  --desk-section:var(--ui-section);
+  --desk-copy:var(--ui-copy);
+  --desk-meta:var(--ui-meta);
   --page-gap:20px;
   --page-radius:8px;
-  font:500 var(--desk-copy)/1.5 var(--font-body);
+  font:400 var(--desk-copy)/1.5 var(--font-ui);
   letter-spacing:0;
 }
 

@@ -1,8 +1,10 @@
 import { animateUi, cancelUiMotion } from './ui-motion.js';
 
+import {uiMotion} from './motion-tokens.js';
+
 let active;
 const primary = new Set(['home', 'clubhouse', 'sportsbook', 'trade', 'analyzer']);
-const duration = 220;
+const duration = uiMotion.enter;
 
 // Use the indicator's current position when another tap interrupts navigation.
 export function routeDirection(from, to, bar = document.getElementById('tabbar')) {

@@ -42,6 +42,16 @@ describe('truthful loading placeholders', () => {
     expect(routePlaceholder('trade')).toContain('loading-packages');
     expect(routePlaceholder('wall')).toContain('loading-composer');
   });
+  it('keeps utility skeletons compact and matches profile and ledger structure', () => {
+    expect(routePlaceholder('finances')).toContain('is-ledger loading-primary');
+    expect(routePlaceholder('profile')).toContain('loading-profile');
+    expect(routePlaceholder('profile')).toContain('loading-route-head" hidden');
+    expect(routePlaceholder('notifications')).not.toContain('loading-masthead');
+    expect(routePlaceholder('sportsbook').match(/class="loading-tabs"/g)).toHaveLength(1);
+    for (const route of ['profile','finances','history']) {
+      expect(routePlaceholder(route)).not.toMatch(/<button|<input|<select|0\.00/);
+    }
+  });
   it.each(['__proto__', 'constructor', '<script>'])('uses the safe Home fallback for %s', name => {
     expect(routePlaceholder(name)).toContain('Loading The DFL Daily');
   });

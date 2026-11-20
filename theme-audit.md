@@ -3458,3 +3458,35 @@ checks cover all 32 NFL abbreviations on both sides, with DFL and fallback fonts
 84 browser checks passed without clipping or horizontal overflow. Added a
 header-bound regression assertion to the existing mobile Scores runner.
 Evidence: `/workspace/dfl-watermark-1608-2/screens-pass`.
+
+### 1.609.0 — Consistent supporting screens and share previews
+
+Reviewed the compiled app at 320px in Light/Dark across all 19 main and secondary
+routes, plus More; 13 everyday routes were also reviewed at 390px. No route
+errors or horizontal overflow. Main sports layouts remain; supporting pages use
+the same title/copy/meta roles. Fees now uses compact ruled summaries and dues,
+with container queries that reflow totals at enlarged text sizes. Profile puts
+the record and playoff total side by side, stacking naturally at 200% text.
+Removed obsolete database instructions from Fees errors and redundant settings
+and calendar helper copy. Existing retry controls remain available.
+
+Ordinary routes, sheets, disclosure panels and controls share one easing recipe.
+Share previews now enter/close smoothly, restore focus, keep actions reachable,
+use theme colors and 16px selectors, and offer an image-only retry after failed
+preparation. Existing chosen share artwork, grading and export totals remain.
+Skeletons use compact ruled rows, remove repeated headings and Book tabs, and
+have distinct Profile/Fees geometry without invented interactive controls.
+
+Validation: 327 files / 2,746 tests passed; release, themes, types, names and
+production build passed. Browser checks: 97 disclosure, 87 sheet, 90 interaction,
+83 share/export (including failed preparation/retry) and 24 share accessibility.
+Reviewed 11 routes at 200% text in both themes, then rechecked Profile/Fees after
+fixing metric overlap. Checked actual matchups, multi-team trades, slips, keeper,
+profile, recap, highlight and table exports, including long names and unavailable
+photos. No league submissions, bets or external messages were sent in review.
+Evidence: `/workspace/dfl-consistency-1609` (before/after320, before/after390,
+secondary-final320, text200-final, shares-verified, share-accessibility, motion,
+sheets, disclosure). Native device frame pacing and future provider data are
+outside these read-only browser checks.
+
+final result: passed

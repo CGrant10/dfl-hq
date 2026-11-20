@@ -82,7 +82,7 @@ async function paintEvents(body) {
   body.innerHTML = `
     ${upcoming.length
       ? `<div class="card schedule">${upcoming.map((e, i) => eventRow(e, true, i === 0)).join("")}</div>`
-      : compactEmpty("Nothing scheduled", past.length ? "Past events are below." : "")}
+      : compactEmpty("Nothing scheduled")}
     ${canEdit() ? `<div class="row-end">${addControl("events", "Add event")}</div>` : ""}
     ${past.length ? `
       <h2 class="section-title">Past<span class="count">${past.length}</span></h2>
