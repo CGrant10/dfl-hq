@@ -7,7 +7,7 @@
   "season": 2026,
   "experts": 8,
   "updatedAt": 1795228141000,
-  "fetchedAt": 1795251077422,
+  "fetchedAt": 1795298120263,
   "players": [
     {
       "sourceId": 22968,
@@ -3687,7 +3687,7 @@
       "sourceId": 24173,
       "name": "Pierre Strong Jr.",
       "position": "RB",
-      "team": "FA",
+      "team": "GB",
       "rank": 389,
       "positionRank": 102,
       "minRank": 358,
