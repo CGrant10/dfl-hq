@@ -53,3 +53,17 @@ def review_clubhouse_finish(page,check,out,tag,width,mode):
   check(tag+f' {motion} cancelling removes transient score layers',page.locator('.gd-score-delta,.gd-score-roll,[data-score-rolling],.gd-score-updated').count()==0)
  page.emulate_media(reduced_motion='no-preference')
  page.evaluate('document.documentElement.dataset.uiMotion="on"')
+
+ # A confirmed bye uses one actionable, compact replacement inside this layout.
+ page.evaluate('''()=>{const f=window.f.finish,now=Date.now();Object.assign(f.game.sides[0].lineup[3],{name:'A Very Long Bye-Week Starting Receiver',state:'bye',kickoff:null});f.game.sides[0].bench=[{id:'ready-backup',roster:1,name:'A Very Long Available Backup Receiver',position:'WR',state:'upcoming',kickoff:new Date(now+30*60000).toISOString(),projection:14.4,activeRoster:true}];f.paint=()=>f.patchGameDay(f.host,f.matchupLineupHtml(f.game,{statLines:f.lines,headerControls:true,targetsAfter:true,leagueId:'123'}));f.paint()}''')
+ warning=page.locator('[data-clubhouse-lineup="1"] [data-lineup-check]')
+ check(tag+' confirmed bye expands before the backup locks',warning.evaluate('e=>e.open&&e.querySelector("summary").textContent.includes("1 on bye")'))
+ check(tag+' replacement shows projection and full-name title once',warning.locator('.gd-rescue').evaluate('e=>e.textContent.includes("14.4 proj.")&&e.querySelector("strong").title==="A Very Long Available Backup Receiver"'))
+ check(tag+' lineup advice includes the safe Sleeper launcher',warning.locator('[data-sleeper-section="roster"]').evaluate('e=>e.href.startsWith("https://sleeperbot.app.link/")&&e.getBoundingClientRect().height>=44'))
+ warning.scroll_into_view_if_needed();page.wait_for_timeout(300);page.screenshot(path=str(out/f'{width}-{mode}-lineup-ready.png'))
+ for size in [16,32]:
+  page.evaluate('size=>document.documentElement.style.fontSize=size+"px"',size)
+  check(tag+f' replacement stays inside its surface at {size}px text',warning.evaluate('e=>e.scrollWidth<=e.clientWidth+1&&[...e.querySelectorAll(".gd-rescue>strong,li b")].every(n=>getComputedStyle(n).whiteSpace==="nowrap"&&n.getBoundingClientRect().right<=e.getBoundingClientRect().right+1)') and page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
+ warning.screenshot(path=str(out/f'{width}-{mode}-lineup-ready-text200.png'));page.evaluate('document.documentElement.style.fontSize="16px"')
+ warning.evaluate('e=>e.open=false');page.evaluate('f.finish.game.sides[0].bench[0].projection=15.3;f.finish.paint()')
+ check(tag+' live advice updates retain the reader disclosure choice',not warning.evaluate('e=>e.open') and '15.3 proj.' in warning.locator('.gd-rescue').text_content())

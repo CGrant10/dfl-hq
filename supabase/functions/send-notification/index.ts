@@ -1,3 +1,4 @@
+import {sendPushWithRetry} from '../_shared/push-delivery.js';
 import {footballNotificationTarget} from '../../../js/football-notification-target.js';
 import {notificationUrgency} from '../../../js/notification-core.js';
 import {highlightVideoUrl} from '../../../js/home-highlight-model.js';
@@ -218,7 +219,8 @@ Deno.serve(async request => {
       await Promise.all((subscriptions || []).filter(row => Array.isArray(row.categories) && row.categories.includes(category)).map(async row => {
         try {
           if(expiring&&expiresAt<=Date.now())return;
-          await webpush.sendNotification({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, payload, { TTL: expiring?Math.max(1,Math.min(7200,Math.floor((expiresAt-Date.now())/1000))):86400, urgency: notificationUrgency(category,{lineupAlert,livePlay:!!livePlay}) });
+          const sent=await sendPushWithRetry(()=>webpush.sendNotification({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, payload, { TTL: expiring?Math.max(1,Math.min(7200,Math.floor((expiresAt-Date.now())/1000))):86400, urgency: notificationUrgency(category,{lineupAlert,livePlay:!!livePlay}), ...(livePlay||lineupAlert?{timeout:3500}:{}) }),{expiresAt:expiring?expiresAt:Infinity,retries:livePlay||lineupAlert?1:0});
+          if(!sent)return;
           delivered++;
           await admin.from("push_subscriptions").update({ failure_count: 0, last_success_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", row.id);
         } catch (error) {

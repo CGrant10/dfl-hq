@@ -18,7 +18,7 @@ export async function loadAdviceReceipts({leagueId,season,week,rosterId=null,his
       await Promise.all(weeks.map(async w=>{
         try{
           const nfl=await loadNflGameDay(season,w,{force});
-          const statuses=[...nfl.teams.values()],now=Date.now();
+          const statuses=[...nfl.teams.values()].filter(s=>s.key!=='bye'),now=Date.now();
           const completed=statuses.length>0&&statuses.every(s=>s.key==='final'&&Number.isFinite(Date.parse(s.kickoff))&&Date.parse(s.kickoff)+4*3600000<=now);
           if(!completed){results.set(w,{completed:false,stats:[]});return}
           const scores=await loadWeeklyStats(season,w,{maxAgeMs:force?0:60000});

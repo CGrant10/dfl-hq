@@ -7,7 +7,7 @@ describe('mounted book quote refresh',()=>{
   afterEach(()=>{stop?.();vi.useRealTimers();vi.unstubAllGlobals();});
   const setup=(extra={})=>{
     vi.useFakeTimers();const doc=new EventTarget(),win=new EventTarget();doc.visibilityState='visible';win.navigator={onLine:true};vi.stubGlobal('document',doc);vi.stubGlobal('window',win);
-    let busy=false,writing=false,active=true;const root={querySelector:selector=>(selector==='.sb-slip[open]'?busy:writing)?{}:null,querySelectorAll:()=>[{dataset:{betOutcome:'2'}},{dataset:{betOutcome:'3'}}]},onUpdate=vi.fn(),onError=vi.fn();
+    let busy=false,writing=false,active=true;const root=Object.assign(new EventTarget(),{querySelector:selector=>(selector==='.sb-slip[open]'?busy:writing)?{}:null,querySelectorAll:()=>[{dataset:{betOutcome:'2'}},{dataset:{betOutcome:'3'}}]}),onUpdate=vi.fn(),onError=vi.fn();
     mocks.read.mockReset().mockResolvedValue({markets:[{id:1,status:'open'}],outcomes:[]});
     const client={rpc:vi.fn().mockResolvedValue({data:{member_id:1,balance:200,bets:[],ledger:[]}})},onAccount=vi.fn(),onAccountError=vi.fn();stop=mountSportsbookLive(root,{client,memberId:1,onAccount,onAccountError,outcomeMap:new Map([['2',{market_id:1}],['3',{market_id:1}]]),active:()=>active,onUpdate,onError,...extra});
     return{win,doc,onUpdate,onError,onAccount,onAccountError,client,root,writing:value=>writing=value,busy:value=>busy=value,retire:()=>active=false};
@@ -36,4 +36,11 @@ describe('mounted book quote refresh',()=>{
     const f=setup();mocks.read.mockRejectedValueOnce(Error('network'));f.win.dispatchEvent(new Event('online'));await vi.advanceTimersByTimeAsync(80);
     expect(f.onError).toHaveBeenCalledOnce();expect(f.onAccount).toHaveBeenCalledOnce();expect(f.onUpdate).not.toHaveBeenCalled();await vi.advanceTimersByTimeAsync(5000);expect(f.onUpdate).toHaveBeenCalledOnce();
   });
+  it('holds projections and quotes while a slip is open, then catches up on close',async()=>{
+    const onRefresh=vi.fn(),f=setup({onRefresh});await vi.advanceTimersByTimeAsync(0);f.busy(true);f.win.dispatchEvent(new Event('online'));await vi.advanceTimersByTimeAsync(80);expect(onRefresh).toHaveBeenCalledOnce();expect(mocks.read).not.toHaveBeenCalled();expect(f.onAccount).toHaveBeenCalledOnce();f.busy(false);f.root.dispatchEvent(new Event('close'));await vi.advanceTimersByTimeAsync(80);expect(onRefresh).toHaveBeenCalledTimes(2);expect(mocks.read).toHaveBeenCalledOnce();
+  });
+  it('retries a failed projection refresh even if account and quote reads succeeded',async()=>{
+    const onRefresh=vi.fn().mockResolvedValueOnce(false).mockResolvedValue(true);setup({onRefresh});await vi.advanceTimersByTimeAsync(0);expect(onRefresh).toHaveBeenCalledOnce();await vi.advanceTimersByTimeAsync(5000);expect(onRefresh).toHaveBeenCalledTimes(2);
+  });
+
 });

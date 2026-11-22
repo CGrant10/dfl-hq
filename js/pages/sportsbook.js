@@ -252,8 +252,8 @@ export async function render(view){
     if(!active())return Promise.resolve();
     if(fantasyTask)return fantasyTask;
     fantasyTask=(async()=>{
-      let results=new Map();
-      try{const {loadFantasyBookProjections}=await import('../sportsbook-fantasy-projections.js');const projected=await loadFantasyBookProjections(db(),[...marketMap.values()],{force});if(active()){for(const button of view.querySelectorAll('[data-bet-outcome]')){const outcome=outcomeMap.get(button.dataset.betOutcome),value=projected.get(String(outcome?.market_id))?.get(String(outcome?.sleeper_roster_id));if(Number.isFinite(value)&&!fantasyOutcomeResult(marketMap.get(String(outcome?.market_id)),outcome))updateBookQuote(button.querySelector('[data-book-projection]'),value.toFixed(1));}const status=view.querySelector('[data-book-updated]');if(status)status.textContent=projected.size?'Updated now':'Projections unavailable';}}catch{const status=view.querySelector('[data-book-updated]');if(status)status.textContent='Refresh unavailable';}
+      let results=new Map(),projectionFailed=false;
+      try{const {loadFantasyBookProjections}=await import('../sportsbook-fantasy-projections.js');const projected=await loadFantasyBookProjections(db(),[...marketMap.values()],{force});if(active()&&!view.querySelector('.sb-slip[open]')){for(const button of view.querySelectorAll('[data-bet-outcome]')){const outcome=outcomeMap.get(button.dataset.betOutcome),value=projected.get(String(outcome?.market_id))?.get(String(outcome?.sleeper_roster_id));if(Number.isFinite(value)&&!fantasyOutcomeResult(marketMap.get(String(outcome?.market_id)),outcome))updateBookQuote(button.querySelector('[data-book-projection]'),value.toFixed(1));}const status=view.querySelector('[data-book-updated]');if(status)status.textContent=projected.size?'Updated now':'Projections unavailable';}}catch{projectionFailed=true;const status=view.querySelector('[data-book-updated]');if(status)status.textContent='Refresh unavailable';}
       try{const {loadFantasyBookResults}=await import('../sportsbook-fantasy-data.js');results=await loadFantasyBookResults(db(),[...marketMap.values()],{force});}catch{/* An unavailable feed cannot keep a claimed result. */}
       if(!active())return;
       for(const market of marketMap.values()){delete market._fantasyResult;const result=results.get(String(market.id));if(result)market._fantasyResult=result;}
@@ -265,7 +265,7 @@ export async function render(view){
       }
       const official=[...outcomeMap.values()].filter(outcome=>{const m=marketMap.get(String(outcome.market_id));return fantasyMarketKey(m)&&['settled','void'].includes(m.status)}).map(outcome=>[outcome.id,marketMap.get(String(outcome.market_id)).status,outcome.is_winner]);
       const stamp=JSON.stringify([[...results].map(([id,{final,scores,winner}])=>[id,final,scores,winner]),official]);
-      if(paint&&!view._bookTicketBusy&&stamp!==fantasyPainted){
+      if(paint&&!view._bookTicketBusy&&!view.querySelector('.sb-slip[open]')&&stamp!==fantasyPainted){
         for(const button of view.querySelectorAll('[data-bet-outcome]')){
           const outcome=outcomeMap.get(button.dataset.betOutcome),market=marketMap.get(String(outcome?.market_id));if(!fantasyMarketKey(market))continue;
           const result=fantasyOutcomeResult(market,outcome),name=button.querySelector('.sb-outcome-name');name?.querySelector('[data-fantasy-result]')?.remove();
@@ -278,6 +278,7 @@ export async function render(view){
         }
         updateAccount({balance:wallet.balance,bets,ledger},{forceTickets:true});fantasyPainted=stamp;
       }
+      return !projectionFailed;
     })().finally(()=>fantasyTask=null);
     return fantasyTask;
   };

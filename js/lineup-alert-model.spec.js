@@ -64,3 +64,10 @@ describe('actionable lineup rescue',()=>{
   expect(slotEligible({position:'WR',positions:['WR','RB']},'RB')).toBe(true);
  });
 });
+
+describe('bye and open-slot kickoff protection',()=>{
+ it('flags a confirmed bye and fills it with the best eligible unlocked reserve',()=>{const result=lineupRescuePlan({...team,lineup:[p('starter','WR',{state:'bye',kickoff:null,slotType:'WR'})],bench:[p('lower','WR',{projection:5}),p('higher','WR',{projection:15}),p('qb','QB',{projection:30})]},{now});expect(result[0]).toMatchObject({status:'Bye week',severity:'out',actionable:true,backup:{id:'higher'}})});
+ it.each([{id:'empty-1',empty:true,slotType:'WR'},{id:'bye',state:'bye',slotType:'WR',name:'Bye player'}])('alerts before the replacement locks for %j',player=>{const t={...team,lineup:[player]},draft=lineupAlertDrafts({season:2026,week:6,teams:[t],now})[0];expect(draft).toBeDefined();expect(draft.expiresAt).toBe(team.bench[0].kickoff.replace('Z','.000Z'));expect(draft.body).toContain('backup');expect(lineupAlertDrafts({season:2026,week:6,teams:[t],now,notifiedKeys:draft.lineupKeys})).toEqual([])});
+ it('warns before an earlier backup kickoff and never claims unknown starters are unlocked',()=>{const t={...team,lineup:[p('starter','WR',{slotType:'WR',injuryStatus:'Out',kickoff:'2026-10-11T20:00:00Z'})]};const draft=lineupAlertDrafts({season:2026,week:6,teams:[t],now})[0];expect(draft.expiresAt).toBe('2026-10-11T17:00:00.000Z');expect(lineupAlertDrafts({season:2026,week:6,teams:[{...t,lineup:[{...t.lineup[0],kickoff:null,state:'unknown'}]}],now})).toEqual([])});
+ it('uses a known upcoming roster kickoff for empty-slot alerts with no bench cover',()=>{const t={...team,bench:[],lineup:[{id:'empty-0',empty:true,slotType:'WR'},p('healthy','RB')]};const draft=lineupAlertDrafts({season:2026,week:6,teams:[t],now})[0];expect(draft.body).toContain('no healthy WR backup');expect(draft.expiresAt).toBe('2026-10-11T17:00:00.000Z')});
+});

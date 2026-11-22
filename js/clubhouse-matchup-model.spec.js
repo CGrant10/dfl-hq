@@ -44,3 +44,7 @@ describe('matchup lead and result copy',()=>{
 describe('NFL halftime checkpoint',()=>{
  it('does not use elapsed time or first-half scores to infer halftime',()=>{for(const [period,state,completed,expected] of [[1,'in',false,false],[2,'in',false,false],[3,'in',false,true],[4,'in',false,true],[5,'in',false,true],[0,'pre',false,false],[0,'post',true,true]]){const payload={season:{year:2026,type:2},week:{number:4},events:[{status:{period,type:{state,completed}},competitions:[{competitors:[{team:{abbreviation:'PIT'}}]}]}]};const schedule=nflWeekStatuses(payload,2026,4);expect(schedule.get('PIT').afterHalftime).toBe(expected);expect(matchupTeamView({starters:['a']},players,schedule).starters[0].afterHalftime).toBe(expected)}});
 });
+
+describe('explicit NFL bye information',()=>{
+ it('uses only the provider bye list, preserving scheduled games and unknown teams',()=>{const payload={season:{year:2026,type:2},week:{number:11,teamsOnBye:[{abbreviation:'ATL'},{abbreviation:'WSH'}]},events:[{date:'2026-11-22T18:00:00Z',status:{type:{state:'pre'}},competitions:[{competitors:[{team:{abbreviation:'WSH'}}]}]}]},schedule=nflWeekStatuses(payload,2026,11);expect(schedule.get('ATL')).toMatchObject({key:'bye',kickoff:null});expect(schedule.get('WAS').key).toBe('upcoming');expect(schedule.has('BUF')).toBe(false);const bye=matchupTeamView({starters:['a'],points:0},{a:{p:'WR',t:'ATL'}},schedule);expect(bye).toMatchObject({known:true,remaining:1});expect(bye.starters[0].state).toBe('bye')});
+});

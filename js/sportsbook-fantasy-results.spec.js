@@ -56,3 +56,7 @@ describe('live fantasy Sportsbook results',()=>{
   const miss=ticketData({bet,legs:[winner,loser]});expect(shareLayoutView(ticketShareSpec(miss))).toMatchObject({status:'Missed',returnLabel:'Est. return',returnValue:0});expect(ticketText(miss)).not.toContain('to return 110');expect(pendingBookReturn(bet,[winner,{status:'void'}])).toEqual({label:'Pending refund',value:50});
  });
 });
+
+it('does not let a confirmed bye keep an otherwise completed fantasy matchup pending',()=>{const f=fixture();f.players['18'].t='ATL';f.schedule.set('ATL',{key:'bye'});f.schedule.set('DAL',{key:'final'});expect(fantasyMatchupResults(f).get('1')).toMatchObject({final:true,winner:'1'})});
+
+it('keeps a bye-slot result provisional while a later NFL game could still supply a replacement',()=>{const f=fixture();f.players['18'].t='ATL';f.schedule.set('ATL',{key:'bye'});f.schedule.set('DAL',{key:'upcoming'});expect(fantasyMatchupResults(f).get('1').final).toBe(false)});

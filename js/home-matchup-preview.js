@@ -34,13 +34,13 @@ export function mountHomeMatchupPreview(root,{members,member,active,standings=[]
  };
  Promise.resolve(weekly).then(value=>{if(current()){forecast=value;paint()}}).catch(()=>{});
  const refresh=async(force=false)=>{
-  if(!current())return;retry.disabled=true;freshness.update({state:'checking'});
+  if(!current())return;retry.disabled=true;if(force||!model)freshness.update({state:'checking'});
   try{
    const index=await loadClubhouseIndex({force});if(!index[0])throw Error('No synced week');
    const stored=await loadClubhouseWeek(index[0].season,index[0].week,{force}),state=await loadLeagueState({force}).catch(()=>null);
    const advanced=Number(state?.season)===Number(stored.season)&&stored.week<state.currentWeek,week={...stored,completed:stored.completed||advanced},openingWeek=gameDayOpeningWeek(week,state);
    if(leagueId!==week.leagueId){leagueId=week.leagueId;leaguePromise=sleeper.league(leagueId)}
-   const results=await Promise.allSettled([loadWeeklyRosters(week.leagueId,week.week,{maxAgeMs:force?0:60000}),loadPlayers({maxAgeMs:300000}),loadNflGameDay(week.season,week.week,{force}),leaguePromise,loadLore({force}),advanced?loadLatestLeagueResults(week.leagueId,week.season,state.currentWeek,{force}):null,openingWeek!==Number(week.week)?loadNflGameDay(week.season,openingWeek,{force}):null,week.completed?[]:sleeper.rosters(week.leagueId)]);
+   const results=await Promise.allSettled([loadWeeklyRosters(week.leagueId,week.week,{maxAgeMs:force?0:model?.live?15000:60000}),loadPlayers({maxAgeMs:300000}),loadNflGameDay(week.season,week.week,{force}),leaguePromise,loadLore({force}),advanced?loadLatestLeagueResults(week.leagueId,week.season,state.currentWeek,{force}):null,openingWeek!==Number(week.week)?loadNflGameDay(week.season,openingWeek,{force}):null,week.completed?[]:sleeper.rosters(week.leagueId)]);
    if(!current())return;if(results[0].status!=='fulfilled'||!results[0].value.length)throw Error('Scores unavailable');
    const value=i=>results[i].status==='fulfilled'?results[i].value:null,nfl=value(2);players=value(1)||players;
    const next=buildGameDay({week,rows:value(0),players,nfl,members,memberId:member?.id,rosters:value(7)||[],...(Array.isArray(value(3)?.roster_positions)?{rosterPositions:value(3).roster_positions}:{})});
