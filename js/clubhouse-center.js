@@ -1,3 +1,4 @@
+import {scorePlayer} from './dfl-scoring.js';
 import {requestedMatchup,markStoryTarget} from './story-destinations.js';
 import {viewingMatchup,setViewingMatchup} from './matchup-view-context.js';
 import {banterMemoryMarkup} from './banter-memory-ui.js';
@@ -20,7 +21,7 @@ import {patchGameDay} from './game-day-dom.js';
 import {mountPlayerSpotlight} from './player-spotlight.js';
 import {mountScoreVfx} from './score-vfx.js';
 import {animateScoreChanges} from './game-day-score-motion.js';
-import {loadWeeklyStats,sleeper} from './sleeper.js';
+import {loadWeeklyStats,loadWeeklyProjections,sleeper} from './sleeper.js';
 import {currentMember} from './members.js';
 import {readPageChoice,savePageChoice} from './page-disclosure.js';
 import {accentOf} from './identity-rules.js';
@@ -31,11 +32,11 @@ import {mountSwipeTabs} from './swipe-tabs.js';
 let stopCurrent=null;
 export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,loadStats=loadWeeklyStats,loadLeague=id=>sleeper.league(id),autoFinish=true}={}) {
  stopCurrent?.();
- let stopped=false,last=null,model=null,slots=null,scoringSettings=null,vfx=null,leaderVfx=null,fxCard=null,stopScores=()=>{},stopMatchupSwipe=null,stopHeroSwipe=null,leaderFilter='all',includeBench=false;
+ let stopped=false,last=null,model=null,slots=null,scoringSettings=null,projections=new Map(),vfx=null,leaderVfx=null,fxCard=null,stopScores=()=>{},stopMatchupSwipe=null,stopHeroSwipe=null,leaderFilter='all',includeBench=false;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)'),current=()=>!stopped&&root.isConnected&&active();
  let motion=readPageChoice('gameday-motion',['on','off'],'on')==='on';
  const scope=`clubhouse-matchup-${week.season}-${week.week}`;
- const make=(data={})=>{const next={...buildGameDay({week,members:week.members,memberId:currentMember()?.id,rows:week.games.flatMap(g=>[g.left,g.right].map(t=>({roster_id:t.roster,points:t.score,starters:[]}))),...data,...(slots?{rosterPositions:slots}:{})}),scoringSettings,recordArchive:week.recordArchive??null};next.games=clubhouseMatchupOrder(next.games,currentMember()?.id);return next};
+ const make=(data={})=>{const next={...buildGameDay({week,projections,members:week.members,memberId:currentMember()?.id,rows:week.games.flatMap(g=>[g.left,g.right].map(t=>({roster_id:t.roster,points:t.score,starters:[]}))),...data,...(slots?{rosterPositions:slots}:{})}),scoringSettings,recordArchive:week.recordArchive??null};next.games=clubhouseMatchupOrder(next.games,currentMember()?.id);return next};
  model=make();
  const routeParams=new URLSearchParams(location.hash.split('?')[1]||''),requested=requestedMatchup(model.games,routeParams);
  let selected=initialClubhouseMatchup(model.games,{requested,remembered:readPageChoice(scope,model.games.map(g=>g.id),null)});
@@ -80,7 +81,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   syncLeadMarkers(scoreRoot,model,selected);
 
   let memory=card.querySelector('[data-banter-memory]');if(!memory){memory=document.createElement('div');memory.dataset.banterMemory='';card.querySelector('[data-clubhouse-position-stats]')?.after(memory)}if(memory)patchGameDay(memory,banterMemoryMarkup(model,game,{history:week.chirpHistory||[],trades:week.memoryTrades||[]}));
-  const lineup=card.querySelector('[data-clubhouse-lineup]');if(lineup)patchGameDay(lineup,(last?matchupLineupHtml(game,{completed:model.completed,targetsAfter:true,headerControls:!!duelHost}):'<p class="clubhouse-stat-status">Checking the starting lineups…</p>')+'<div data-football-panel></div>');
+  const lineup=card.querySelector('[data-clubhouse-lineup]');if(lineup)patchGameDay(lineup,(last?matchupLineupHtml(game,{leagueId:week.leagueId,completed:model.completed,targetsAfter:true,headerControls:!!duelHost}):'<p class="clubhouse-stat-status">Checking the starting lineups…</p>')+'<div data-football-panel></div>');
   const records=card.querySelector('[data-clubhouse-records]');if(records)patchGameDay(records,recordChasesMarkup(model,game));recordWatch.update();
   const teamStats=card.querySelector('[data-clubhouse-team-stats]');if(teamStats)patchGameDay(teamStats,last?clubhouseTeamStatsHtml(game,model.completed):'');
   const position=card.querySelector('[data-clubhouse-position-stats]');if(position)patchGameDay(position,last?clubhousePositionStatsHtml(game,model.completed):'');
@@ -164,7 +165,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
     // Prepare the neighbor from the already loaded model, without fetching a
     // second matchup or mounting its effects while it is only a swipe preview.
     if(card&&id!==selected&&!prepared.has(id)){
-     const lineup=card.querySelector('[data-clubhouse-lineup]');if(lineup&&last)patchGameDay(lineup,matchupLineupHtml(game,{completed:model.completed,targetsAfter:true,headerControls:!!duelHost})+'<div data-football-panel></div>');
+     const lineup=card.querySelector('[data-clubhouse-lineup]');if(lineup&&last)patchGameDay(lineup,matchupLineupHtml(game,{leagueId:week.leagueId,completed:model.completed,targetsAfter:true,headerControls:!!duelHost})+'<div data-football-panel></div>');
      const stats=card.querySelector('[data-clubhouse-team-stats]');if(stats&&last)patchGameDay(stats,clubhouseTeamStatsHtml(game,model.completed));
      prepared.add(id);
     }
@@ -215,7 +216,9 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  if(routeParams.has('player')){root.addEventListener('pointerdown',interruptLinkedFocus,{once:true});root.addEventListener('keydown',interruptLinkedFocus,{once:true});window.addEventListener('wheel',interruptLinkedFocus,{passive:true,once:true})}
  paintBoard();paintActive();paintLeaders();stopCurrent=stop;
  // Box scores and league slot metadata load independently of the score feed.
- void loadLeague(week.leagueId).then(league=>{if(current()){if(Array.isArray(league?.roster_positions))slots=league.roster_positions;scoringSettings=league?.scoring_settings||null;if(!last){model=make();root.dispatchEvent(new CustomEvent('dfl:clubhouse-context'))}if(last){model=make(last);model.checkedAt=last.checkedAt;model.scoreStatus='ready';model.nflAvailable=!!last.nfl||week.completed;model.playersAvailable=!!last.players;model.snapshot.checkedAt=last.checkedAt;paintActive()}}}).catch(()=>{});
+ void loadLeague(week.leagueId).then(async league=>{if(current()){if(Array.isArray(league?.roster_positions))slots=league.roster_positions;scoringSettings=league?.scoring_settings||null;if(!last){model=make();root.dispatchEvent(new CustomEvent('dfl:clubhouse-context'))}if(last){model=make(last);model.checkedAt=last.checkedAt;model.scoreStatus='ready';model.nflAvailable=!!last.nfl||week.completed;model.playersAvailable=!!last.players;model.snapshot.checkedAt=last.checkedAt;paintActive()}
+  if(!week.completed&&scoringSettings){try{const result=await loadWeeklyProjections(week.season,week.week,{maxAgeMs:60000});if(current()&&result.data?.length){projections=new Map(result.data.filter(p=>p.stats&&Object.keys(p.stats).length).map(p=>[String(p.player_id),scorePlayer(p.stats,scoringSettings)]));if(last){for(const game of model.games)for(const team of game.sides)for(const player of team.bench)player.projection=projections.get(player.id)??null;paintActive()}}}catch{/* Scores remain independent of advice availability. */}}
+ }}).catch(()=>{});
  let entered=false;
  return {
   getModel:()=>model,getGame:selectedGame,getPlayerDirectory:()=>last?.players||null,

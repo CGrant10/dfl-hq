@@ -7,13 +7,15 @@ export function nflWeekStatuses(payload,season,week){
  for(const event of payload.events){const type=event.status?.type||{},key=/cancel|postpon/i.test(type.name||'')?'unknown':type.completed||type.state==='post'?'final':type.state==='in'?'live':type.state==='pre'?'upcoming':'unknown';
   for(const team of event.competitions?.[0]?.competitors||[])teams.set(club(team.team?.abbreviation),{key,label:type.shortDetail||type.description||'',kickoff:event.date,afterHalftime:key==='final'||key==='live'&&Number(event.status?.period)>=3});
  }
+ for(const team of payload.week.teamsOnBye||[]){const code=club(team.abbreviation);if(code&&!teams.has(code))teams.set(code,{key:'bye',label:'Bye week',kickoff:null,afterHalftime:false});}
  return teams;
 }
 export function matchupTeamView(row,players={},schedule=null,{completed=false}={}){
  const ids=(row?.starters||[]).map(String).filter(id=>id!=='0');
  const starters=ids.map(id=>{const meta=players[id]||{},state=schedule?.get(club(meta.t));return{id,name:meta.n||`Player ${id}`,position:meta.p||'',nflTeam:meta.t||'',injuryStatus:completed?'':meta.i||'',availabilityStatus:completed?'':meta.s||'',kickoff:state?.kickoff||null,gameLabel:state?.label||'',points:number(row?.players_points?.[id]),state:completed?'final':state?.key||'unknown',afterHalftime:completed||state?.afterHalftime===true}});
  const known=starters.length>0&&starters.every(p=>p.state!=='unknown');
- const remaining=completed?0:known?starters.filter(p=>p.state!=='final').length:null;
+ const byeCanChange=schedule&&[...schedule.values()].some(game=>!['final','bye'].includes(game.key));
+ const remaining=completed?0:known?starters.filter(p=>p.state==='bye'?byeCanChange:p.state!=='final').length:null;
  const live=starters.filter(p=>p.state==='live').length;
  const featured=[...starters].filter(p=>['QB','RB','WR','TE'].includes(p.position)).sort((a,b)=>(b.position==='QB')-(a.position==='QB')||(b.points??0)-(a.points??0)).slice(0,2);
  return {score:number(row?.points),remaining,live,known,starters,featured};
@@ -23,7 +25,7 @@ export function matchupPhase(left,right,completed){
  if(left.live||right.live)return {key:'live',label:'Live'};
  const all=[...left.starters,...right.starters];
  if(!all.length||!left.known||!right.known)return {key:'unknown',label:'Status pending'};
- if(all.every(p=>p.state==='upcoming'))return {key:'upcoming',label:'Upcoming'};
+ if(all.every(p=>['upcoming','bye'].includes(p.state)))return {key:'upcoming',label:'Upcoming'};
  return {key:'ongoing',label:'In progress'};
 }
 

@@ -3490,3 +3490,53 @@ sheets, disclosure). Native device frame pacing and future provider data are
 outside these read-only browser checks.
 
 final result: passed
+
+### 1.610.0 — GameDay lineup, delivery and live-read readiness
+
+Lineup checks now recognize the NFL provider's explicit teams-on-bye list.
+Unknown or missing games remain unknown. Empty slots and bye starters can generate
+owner-only warnings before an eligible backup locks; earlier backups shorten the
+warning deadline. Completed or locked starters stay excluded. Clubhouse advice
+shows one eligible backup, its weekly PPR projection when available, kickoff and
+a safe Sleeper launcher. Long names retain full titles on one visual line. Weekly
+projections load separately from scores, without delaying the score feed.
+
+Clubhouse and the Home score preview now use a 15-second roster cache during live
+20-second polling rather than reusing a minute-old read. Routine refreshes leave
+the current freshness label quiet. Hidden views stop polling and foreground return
+forces a catch-up. Bye slots remain changeable while later NFL games are open;
+they do not create premature final receipts or Book results. Weekly start/sit
+advice and advice-receipt completion also handle explicit bye entries correctly.
+
+The Book preserves quotes while a slip is open and refreshes on close. Failed
+projection reads now trigger the existing bounded read-only retry even when the
+wallet/quote reads succeeded. Existing accepted prices, wallet settlement, and
+won/lost/push and pending-grading rules are retained.
+
+Live player and lineup push delivery retries one temporary endpoint rejection,
+using the same inbox message ID and destination. It honors short Retry-After,
+bounds transport time, rechecks expiry, and does not retry permanent rejections.
+Other notification categories keep their prior retry behavior and all auth,
+recipient, opt-out, roster, deduplication and expiration checks remain.
+
+Validation: 329 files / 2,773 tests passed; 20 checks passed against the exact
+bundled alert workers; Deno checks passed. Release, names, themes, types and the
+90-module production build passed. Actual compiled Home/Clubhouse/Book/Analyzer
+and Activity were checked at 320px and 390px in both themes without route errors
+or overflow. Browser fixtures passed 135 Clubhouse checks (full slot alignment,
+score corrections, interrupted motion, 200% text, replacement advice, preserved
+disclosure state, 21-second reads, hidden pause and return catch-up) and 52 Book
+checks (results, all ticket legs, export text bounds and unavailable evidence).
+The former 100px row cap was replaced with alignment and containment checks so
+visible stat detail is not treated as a failure.
+
+Production jobs and enabled push subscriptions were inspected read-only. Deployed
+send-notification v18 and lineup-alerts v9 after bundled tests. Production lineup
+dry runs before and after deployment returned 200, healthy 12-team data, and no
+new lineup drafts; no test alerts were sent. Push configuration returned 200 and
+unauthorized sends remain 403. Physical phone banner presentation and external
+provider publication latency are not established by these browser/server checks.
+Evidence: `/workspace/dfl-gameday-1610` (before320, after320, after390,
+clubhouse-verified, book/evidence, edge-bundle-passed.log, full-tests-passed.log).
+
+final result: passed

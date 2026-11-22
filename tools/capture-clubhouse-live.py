@@ -45,8 +45,10 @@ with sync_playwright() as p:
  for width in ([int(w) for w in os.environ['DFL_CLUBHOUSE_LAYOUT_WIDTHS'].split(',')] if os.environ.get('DFL_CLUBHOUSE_LAYOUT_WIDTHS') else [320,375,390,430,768] if os.environ.get('DFL_CLUBHOUSE_LAYOUT_ONLY') else [320,390]):
   for mode in ['light','dark']:
    c=browser.new_context(viewport={'width':width,'height':844},has_touch=True,is_mobile=True,service_workers='block');c.add_init_script(fixture)
+   weekly_reads=[]
    def route(r):
     u=r.request.url
+    if 'api.sleeper.app/v1/league/' in u and '/matchups/' in u:weekly_reads.append(u)
     if '/npm/@supabase/supabase-js@' in u:return r.fulfill(content_type='text/javascript',body='export const createClient=()=>window.fixtureDb;',headers={'Access-Control-Allow-Origin':'*'})
     if u.startswith(base):return r.continue_()
     if u.endswith('.mp4'):return r.fulfill(content_type='video/mp4',body=(ROOT/'tools/fixtures/highlight-playback.mp4').read_bytes(),headers={'Access-Control-Allow-Origin':'*'})
@@ -97,7 +99,7 @@ with sync_playwright() as p:
    check(tag+' week control shares the heading without overlap',page.locator('.clubhouse-topline').evaluate('''e=>{const h=e.querySelector('.clubhouse-header').getBoundingClientRect(),s=e.querySelector('summary').getBoundingClientRect();return s.height>=44&&s.left>=h.right-1&&s.top<h.bottom&&s.right<=innerWidth}'''))
    page.evaluate('scrollTo(0,0)');page.wait_for_timeout(700);page.screenshot(path=str(OUT/f'{width}-{mode}-clubhouse-default.png'));page.locator('.clubhouse-matchup-desk').screenshot(path=str(OUT/f'{width}-{mode}-matchup-content.png'))
    check(tag+' starting players are visible on the first phone screen',page.locator('[data-clubhouse-matchup="1"] .gd-lineup-pairs .gd-compare-row').first.evaluate('e=>e.getBoundingClientRect().top<innerHeight-70'))
-   check(tag+' matchup uses compact chips and a compact first player pair',page.locator('.clubhouse-matchup-strip').evaluate('e=>e.clientHeight<=56') and page.locator('[data-clubhouse-matchup="1"] .gd-compare-row').first.evaluate('e=>e.clientHeight<=100'))
+   check(tag+' matchup keeps compact chips and aligned first-pair scores',page.locator('.clubhouse-matchup-strip').evaluate('e=>e.clientHeight<=56') and page.locator('[data-clubhouse-matchup="1"] .gd-compare-row').first.evaluate('e=>{const scores=[...e.querySelectorAll(".gd-thermal-value")].map(n=>n.getBoundingClientRect());return e.scrollWidth<=e.clientWidth+1&&scores.length===2&&Math.abs(scores[0].top-scores[1].top)<1}'))
    if os.environ.get('DFL_CLUBHOUSE_NFL_ONLY'):
     from clubhouse_nfl_review import review_clubhouse_nfl
     review_clubhouse_nfl(page,check,OUT,tag,width,mode)
@@ -106,6 +108,14 @@ with sync_playwright() as p:
    if os.environ.get('DFL_CLUBHOUSE_FINISH_ONLY'):
     from clubhouse_finish_review import review_clubhouse_finish
     review_clubhouse_finish(page,check,OUT,tag,width,mode)
+    if width==320 and mode=='light':
+     count=len(weekly_reads);page.clock.fast_forward(21000);page.wait_for_timeout(500)
+     check(tag+' live score cadence fetches new roster data within 21 seconds',len(weekly_reads)>count)
+     page.evaluate('window.reviewHidden=true;Object.defineProperty(document,"visibilityState",{configurable:true,get:()=>window.reviewHidden?"hidden":"visible"});document.dispatchEvent(new Event("visibilitychange"))')
+     count=len(weekly_reads);page.clock.fast_forward(60000);page.wait_for_timeout(100)
+     check(tag+' hidden live view pauses score polling',len(weekly_reads)==count)
+     page.evaluate('window.reviewHidden=false;document.dispatchEvent(new Event("visibilitychange"))');page.clock.fast_forward(100);page.wait_for_timeout(500)
+     check(tag+' foreground return catches up immediately',len(weekly_reads)>count)
     check(tag+' finish has no browser errors or league writes',not errors and page.evaluate('f.writes.every(name=>name.startsWith("app_client_issues:"))'))
     page.evaluate('f.page.leave()');c.close();continue
    if os.environ.get('DFL_CLUBHOUSE_POINTS_ONLY'):

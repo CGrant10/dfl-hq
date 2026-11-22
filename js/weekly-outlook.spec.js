@@ -256,3 +256,5 @@ it('keeps injury contingency backups distinct across multiple recommended starts
  const result=startSitAdvice({playerIds:players.map(p=>p.id),starterIds:['old1','old2'],rosterPositions:['FLEX','FLEX'],weekly:new Map(players.map(p=>[p.id,p])),now:Date.parse('2026-10-15')});
  expect(result.swaps).toHaveLength(2);expect(new Set(result.swaps.map(s=>s.backup.id)).size).toBe(2);
 });
+
+ it('keeps an explicitly listed bye out of weekly start recommendations',()=>{const pool=buildWeeklyPool([{player_id:'bye',team:'ATL',player:{position:'WR'},stats:{rec:5,rec_yd:60}}],{rec:1,rec_yd:.1},{schedule:new Map([['ATL',{key:'bye',label:'Bye week',kickoff:null}]])});expect(pool.get('bye')).toMatchObject({hasGame:false,scheduleKnown:true,gameStatus:'bye'})});

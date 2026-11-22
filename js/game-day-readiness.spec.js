@@ -61,3 +61,8 @@ describe('score freshness',()=>{
     expect(scoreFreshness({checkedAt:1,now:1,nflAvailable:false}).text).toContain('NFL status unavailable');
   });
 });
+
+ it('keeps a bye warning concise with one eligible backup, full name and a Sleeper handoff',()=>{
+  const now=Date.parse('2026-11-22T17:00:00Z'),side={name:'Team',lineup:[{id:'bye',name:'Bye starter',state:'bye',slotType:'WR'}],bench:[{id:'reserve',name:'A Very Long Backup Receiver Name',position:'WR',state:'upcoming',kickoff:'2026-11-22T18:00:00Z',projection:14.25}]};
+  const html=lineupCheckHtml([side],{now,leagueId:'123'});expect(html).toContain('1 on bye');expect(html).toContain('data-lineup-check open');expect(html).toContain('14.3 proj.');expect(html).toContain('title="A Very Long Backup Receiver Name"');expect(html).toContain('data-sleeper-section="roster"');expect(html).not.toContain('set changes in Sleeper');expect(playerScorePhase(side.lineup[0])).toBe('Bye week');
+ });

@@ -15,13 +15,13 @@ export function lineupRescuePlan(team, {completed=false,now=Date.now(),windowMs=
   if(completed)return [];
   const starters=new Set((team.lineup||[]).filter(p=>!p.empty).map(p=>String(p.id)));
   const claimed=new Set();
-  const priority=p=>p.empty||out.test(p.availabilityStatus||'')||out.test(p.injuryStatus||'')?2:risk.test(p.injuryStatus||'')?1:0;
+  const priority=p=>p.empty||p.state==='bye'||out.test(p.availabilityStatus||'')||out.test(p.injuryStatus||'')?2:risk.test(p.injuryStatus||'')?1:0;
   return [...(team.lineup||[])].sort((a,b)=>priority(b)-priority(a)||Number(a.slotType==='FLEX')-Number(b.slotType==='FLEX')).flatMap(player=>{
-    const status=out.test(player.availabilityStatus||'')?player.availabilityStatus:player.injuryStatus||'';
-    if(!player.empty&&!out.test(status)&&!risk.test(status))return [];
-    if(!player.empty&&!['upcoming','unknown'].includes(player.state))return [];
+    const bye=player.state==='bye',status=bye?'Bye week':out.test(player.availabilityStatus||'')?player.availabilityStatus:player.injuryStatus||'';
+    if(!player.empty&&!bye&&!out.test(status)&&!risk.test(status))return [];
+    if(!player.empty&&!bye&&!['upcoming','unknown'].includes(player.state))return [];
     if(!player.empty&&Number.isFinite(Date.parse(player.kickoff))&&Date.parse(player.kickoff)<=now)return [];
-    if(Number.isFinite(windowMs)&&(!availableBeforeKickoff(player,now)||Date.parse(player.kickoff)-now>windowMs))return [];
+    if(Number.isFinite(windowMs)&&!player.empty&&!bye&&!availableBeforeKickoff(player,now))return [];
     const slot=player.slotType||({Flex:'FLEX',Kicker:'K',Def:'DEF'}[player.slot]||player.slot||player.position);
     const backups=(team.bench||[]).filter(p=>!claimed.has(String(p.id))&&p.activeRoster!==false&&!starters.has(String(p.id))&&slotEligible(p,slot)
       &&availableBeforeKickoff(p,now)&&!out.test(p.availabilityStatus||'')&&!out.test(p.injuryStatus||'')&&!risk.test(p.injuryStatus||''));
@@ -29,10 +29,14 @@ export function lineupRescuePlan(team, {completed=false,now=Date.now(),windowMs=
     backups.sort((a,b)=>(risk.test(status)?Number(Date.parse(b.kickoff)>=kickoff)-Number(Date.parse(a.kickoff)>=kickoff):0)
       ||(finite(b.projection)?Number(b.projection):0)-(finite(a.projection)?Number(a.projection):0)||a.name.localeCompare(b.name));
     const backup=backups[0]||null;
+    const nextKickoff=Math.min(...[...(team.lineup||[]),...(team.bench||[])].filter(p=>availableBeforeKickoff(p,now)).map(p=>Date.parse(p.kickoff)));
+    const deadline=Math.min(Number.isFinite(kickoff)?kickoff:Infinity,backup?Date.parse(backup.kickoff):Infinity);
+    const actionDeadline=Number.isFinite(deadline)?deadline:(player.empty||bye?nextKickoff:NaN);
+    if(Number.isFinite(windowMs)&&(!Number.isFinite(actionDeadline)||actionDeadline<=now||actionDeadline-now>windowMs))return [];
     if(backup)claimed.add(String(backup.id));
-    return [{player,slot,status:player.empty?'Empty slot':status,severity:player.empty||out.test(status)?'out':'questionable',backup,
+    return [{player,slot,status:player.empty?'Empty slot':status,severity:player.empty||bye||out.test(status)?'out':'questionable',backup,
       lateCover:!!backup&&Number.isFinite(kickoff)&&Date.parse(backup.kickoff)>=kickoff,
-      actionable:player.empty||availableBeforeKickoff(player,now)}];
+      deadline:Number.isFinite(actionDeadline)?actionDeadline:null,actionable:player.empty||bye||availableBeforeKickoff(player,now)}];
   });
 }
 /** One owner notification for new problems; earlier polls and legacy alerts count.
@@ -53,7 +57,7 @@ export function lineupAlertDrafts({season,week,teams=[],completed=false,now=Date
       body,category:'matchups',audience:'members',targetMemberIds:[Number(team.memberId)],
       targetUrl:'#/analyzer?owner='+encodeURIComponent(team.uid),
       lineupKeys:alerts.map(alert=>alert.key).sort(),
-      expiresAt:new Date(Math.min(...alerts.map(alert=>Date.parse(alert.player.kickoff)))).toISOString(),
+      expiresAt:new Date(Math.min(...alerts.map(alert=>alert.deadline))).toISOString(),
     }];
   });
 }
