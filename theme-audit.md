@@ -3540,3 +3540,23 @@ Evidence: `/workspace/dfl-gameday-1610` (before320, after320, after390,
 clubhouse-verified, book/evidence, edge-bundle-passed.log, full-tests-passed.log).
 
 final result: passed
+
+### 1.610.1 — Keep NFL Live time clear of both scores
+
+Reproduced center status text painting into the right-hand score: 30 of 48
+header stress cases failed before the fix, despite no page-level overflow.
+The center clock now has a zero-minimum grid track bounded to its own column.
+Quarter/time, long provider statuses, down-and-distance and channel labels can
+wrap within that column without hiding their text or covering either score.
+Existing score columns, team watermarks, themes and refresh behavior remain.
+
+Inspected Light/Dark header screenshots at 320/390/430px and 100%/200% text;
+all 48 header cases now pass Range-based text containment and score-separation
+checks. Added those checks to the existing Scores browser runner: 346 checks
+passed across 320/390/430/768px, Live/Stats, enlarged text, contrast, field motion,
+game navigation and teardown. All 27 focused NFL tests passed, as did release,
+theme, type, name and production-build checks. Browser checks use deterministic
+provider fixtures; native-device font rasterization remains unmeasured.
+Evidence: `/workspace/dfl-clock-1610-1/{before,after,scores}`.
+
+final result: passed
