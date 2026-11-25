@@ -32,7 +32,7 @@ vi.mock('../sleeper.js',()=>({loadNflState:async()=>({data:{season:'2026',week:4
 vi.mock('../sportsbook-ticket.js',()=>({shareTicket:vi.fn()}));
 import { render,leave } from './sportsbook.js';
 
-const fakeView=()=>({innerHTML:'',querySelectorAll:()=>[],querySelector:()=>null,append(){},addEventListener(){}});
+const fakeView=()=>({dataset:{},innerHTML:'',querySelectorAll:()=>[],querySelector:()=>null,append(){},addEventListener(){}});
 
 it('renders the real markets and wallet with separate accessible ticket panel', async()=>{
   const view=fakeView();

@@ -1,6 +1,8 @@
+import {pageEntry,visitMemoryName,readViewMemory,writeViewMemory} from '../view-memory.js';
+import {getMemberId} from '../members.js';
 import {mountArchiveWeeks} from '../archive-weeks.js';
 import {historyMomentKey,markStoryTarget} from '../story-destinations.js';
-import {readPageChoice,savePageChoice} from '../page-disclosure.js';
+import {savePageChoice} from '../page-disclosure.js';
 // =====================================================================
 // History - everything backward-looking, in one place.
 //
@@ -47,12 +49,14 @@ function icon(category) {
 
 let tab = "fame";
 let season = null;
-let generation=0,weekDesk=null;
-export function leave(){generation++;weekDesk?.stop();weekDesk=null}
+let generation=0,weekDesk=null,saveVisit=()=>{};
+export function leave(){saveVisit();window.removeEventListener('pagehide',saveVisit);saveVisit=()=>{};generation++;weekDesk?.stop();weekDesk=null}
 
 export async function render(view) {
   weekDesk?.stop();weekDesk=null;const token=++generation;
-  tab=readPageChoice('history-tab',['weeks','fame','moments','seasons','alltime','records'],'weeks');
+  const entry=pageEntry(view,'history'),key=visitMemoryName(view,'history'),member=getMemberId(),saved=entry==='restore'?readViewMemory(member,key):null;
+  if(entry==='fresh'){tab='weeks';season=null}else if(saved){tab=saved.tab||'weeks';season=saved.season}
+  window.removeEventListener('pagehide',saveVisit);saveVisit=()=>{if(view.isConnected)writeViewMemory(member,key,{tab,season})};window.addEventListener('pagehide',saveVisit);
   const storyParams=new URLSearchParams(location.hash.split('?')[1]||'');
   const storyTab=storyParams.get('tab');if(['weeks','fame','moments','seasons','alltime','records'].includes(storyTab))tab=storyTab;
   const storySeason=Number(storyParams.get('season'));if(Number.isInteger(storySeason)&&storySeason>=2010&&storySeason<=2100){season=storySeason;savePageChoice('history-season',String(season));}
@@ -364,7 +368,6 @@ function yearbookView(data) {
 
   const hasGames = (y) => data.standings.some((s) => s.season === y && (s.wins + s.losses + s.ties) > 0);
   // Open on the newest season actually played, not a pre-draft season of 0-0.
-  season=Number(readPageChoice('history-season',years.map(String),String(season||'')))||season;
   if (!years.includes(season)) season = years.find(hasGames) ?? years[0];
 
   const y = yearbook(data, season);

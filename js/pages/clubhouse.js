@@ -19,16 +19,17 @@ import {buildWeeklyClubhouse,weeklyHref} from '../weekly-clubhouse-model.js';
 import {mountAdviceReceipts} from '../advice-receipts-ui.js';
 import {weeklyAwardsHtml,weeklyReceiptsHtml,weeklyVoteHtml,weeklyVoteResults,wireMatchupThreads,wireClubhouseTabs} from '../weekly-clubhouse-ui.js';
 import {shareWeeklyClubhouse} from '../weekly-clubhouse-share.js';
-import {readViewMemory,writeViewMemory} from '../view-memory.js';
+import {pageEntry,visitMemoryName,readViewMemory,writeViewMemory} from '../view-memory.js';
 let renderGeneration=0,stopLive=null;
 export function leave(){renderGeneration++;stopLive?.();stopLive=null}
 export async function render(view){
  stopLive?.();stopLive=null;
+ const entry=pageEntry(view,'clubhouse'),choiceKey=visitMemoryName(view,'clubhouse-choice');
  const token=++renderGeneration,active=()=>token===renderGeneration&&view.isConnected&&location.hash.startsWith("#/clubhouse");
  view.innerHTML='<header class="page-head"><h1>Clubhouse</h1></header><p role="status">Loading the league’s receipts…</p><div class="clubhouse-skeleton" aria-hidden="true"><i></i><i></i><i></i></div>';
  try{
   const[index,members]=await Promise.all([loadClubhouseIndex(),loadMemberDirectory()]);if(!active())return;
-  const remembered=readViewMemory(currentMember()?.id,'clubhouse-choice');
+  const remembered=entry==='fresh'?null:readViewMemory(currentMember()?.id,choiceKey)||(entry==='restore'?readViewMemory(currentMember()?.id,'clubhouse-choice'):null);
   const params=new URLSearchParams(location.hash.split('?')[1]||''),wanted=index.find(w=>w.season===Number(params.get('season'))&&w.week===Number(params.get('week'))),selected=wanted||(params.has('archive')&&index.find(w=>w.completed))||index[0];
   if((params.has('season')||params.has('week'))&&!wanted){view.innerHTML='<h1>Weekly clubhouse</h1><p>That week is not available.</p><a class="btn" href="#/clubhouse">Latest completed week</a>';return}
   if(!selected){view.innerHTML='<h1>Weekly clubhouse</h1><p>No matchups available yet.</p>';return}
@@ -72,7 +73,7 @@ export async function render(view){
    if(event.detail===0){section.tabIndex=-1;section.focus({preventScroll:true})}
   });
   if(initialTab==='highlights'&&/^\d{1,24}$/.test(params.get('clip')||'')){void teamReel.openClip(params.get('clip')).then(opened=>{if(!active()||opened)return;const next=new URLSearchParams(location.hash.split('?')[1]||'');next.set('tab','nfl');next.set('clipUnavailable','1');next.delete('clip');location.replace(location.hash.split('?')[0]+'?'+next)})}
-  const remember=()=>writeViewMemory(currentMember()?.id,'clubhouse-choice',{season:selected.season,week:selected.week,tab:activeTab(view)});
+  const remember=()=>{const choice={season:selected.season,week:selected.week,tab:activeTab(view)};writeViewMemory(currentMember()?.id,'clubhouse-choice',choice);writeViewMemory(currentMember()?.id,choiceKey,choice)};
   remember();view.addEventListener('click',event=>{if(event.target.closest('[data-clubhouse-tab]'))remember()});view.addEventListener('keydown',event=>{if(event.target.closest('[data-clubhouse-tab]'))queueMicrotask(remember)});
   view.querySelector('[data-open-matchups]')?.addEventListener('click',()=>view.querySelector('#clubhouse-tab-matchups').click());
   void mountRivalries(view,model,active);

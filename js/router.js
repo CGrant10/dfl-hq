@@ -105,7 +105,7 @@ export function currentRoute() {
   const name = (location.hash || "#/home").replace("#/", "").split("?")[0];
   return routes[name] ? name : "home";
 }
-export function go(name) { location.hash = "#/" + name; }
+export function go(name) { const hash='#/'+name;if(location.hash===hash)void renderRoute({fresh:true});else location.hash=hash; }
 
 let leaving = null;
 const listeners = new Set();
@@ -136,11 +136,10 @@ function handleTabNavigation(event, bar) {
   }
   const view = document.getElementById("view");
   if (view?.dataset.route !== name && !view?.classList.contains("is-route-loading")) {
-    void renderRoute();
+    void renderRoute({fresh:true});
     return;
   }
-  stopRestore();window.scrollTo({top:0,behavior:'instant'});
-  syncTabIndicator();
+  void renderRoute({fresh:true});
 }
 
 /*
@@ -289,7 +288,7 @@ const setRouteCanvas = color => {
   scrolling the new page, or publishing a route-complete notification.
 */
 export async function renderRoute(options={}){
- const visit=(routeHistory||=createRouteHistory()).visit();
+ const visit=(routeHistory||=createRouteHistory()).visit({fresh:options.fresh===true,refresh:options.type!=='hashchange'});
  const previous=document.getElementById('view'),hash=location.hash,context={back:visit.kind==='back',visitId:visit.id};
  return renderWithMatchupMotion(()=>renderWithArchiveMotion(()=>renderWithTradeReceiptMotion(()=>renderRoutePage({...options,visit}),previous,hash,context),previous,hash,context),previous,hash);
 }
@@ -310,8 +309,8 @@ async function renderRoutePage({ retry = false, visit } = {}) {
     if(mountedVisit)writeViewMemory(mountedMember,`visit:${mountedVisit}`,snapshot);
   }
   const routeMemory = readViewMemory(getMemberId(), `route:${expectedHash}`);
-  const backMemory=visit.kind==='back'?readViewMemory(getMemberId(),`visit:${visit.id}`):null;
-  const restoreMemory=backMemory||((retry||visit.kind==='refresh')?routeMemory:null);
+  const restoring=retry||['back','refresh','resume'].includes(visit.kind);
+  const restoreMemory=restoring?(readViewMemory(getMemberId(),`visit:${visit.id}`)||routeMemory):null;
   const changed = name !== lastAnimated || expectedHash !== mountedHash;
   if (changed) { previousView.classList.remove("page-in"); previousView.classList.add("page-switching"); }
   try { leaving?.(); } catch (err) { console.warn(err); }
@@ -326,7 +325,7 @@ async function renderRoutePage({ retry = false, visit } = {}) {
   delete view.dataset.pulseSystem;
   delete view.dataset.routeGliding;
   view.dataset.route = name;
-  view.dataset.routeReturning = String(visit.kind === "back");
+  view.dataset.routeReturning = String(restoring);
   if(visit.id!=null)view.dataset.routeVisitId=String(visit.id);else delete view.dataset.routeVisitId;
   view.classList.remove("page-in");
   view.toggleAttribute("data-page-system", standardPageRoutes.has(name));
@@ -414,11 +413,11 @@ async function renderRoutePage({ retry = false, visit } = {}) {
   const recovery=mountConnectionRecovery({root:view,active:()=>isCurrent()&&getMemberId()===renderedMember,
     failed:()=>view.dataset.routeFailed==='true',retry:()=>renderRoute({retry:true})});
   stopRecovery=()=>recovery.stop();
-  const legacyRestore=visit.kind==='back'||retry||visit.kind==='refresh';
+  const legacyRestore=restoring;
   window.scrollTo({top:restoreMemory?.y??(legacyRestore?Number(view.dataset.restoreScrollY)||0:0),behavior:'instant'});
   const focusPost=view.querySelector("[data-wall-focus],[data-route-focus]");
   if(focusPost&&!restoreMemory){focusPost.scrollIntoView({block:"start"});(focusPost.querySelector("summary")||focusPost).focus({preventScroll:true});}
-  else if (!document.documentElement.dataset.archiveReturning) stopRestore = restoreView(view, restoreMemory||routeMemory, { active: isCurrent,restoreScroll:!!restoreMemory&&!document.documentElement.dataset.receiptReturning });
+  else if (!document.documentElement.dataset.archiveReturning) stopRestore = restoreView(view, restoreMemory, { active: isCurrent,restoreScroll:!!restoreMemory&&!document.documentElement.dataset.receiptReturning });
   if (retry && !view.dataset.routeFailed) { const title=view.querySelector('h1,.page-title');if(title){title.tabIndex=-1;title.focus({preventScroll:true})} }
   mountedHash = expectedHash; mountedMember = getMemberId();mountedVisit=visit.id;
   stopPageMotion = mountPageMotion(view);
@@ -447,7 +446,7 @@ export function startRouter() {
   mountArchiveRouteMotion();
   mountTradeReceiptMotion();
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-  window.addEventListener('pagehide', () => { const view=document.getElementById('view'); if(view&&mountedHash&&!view.dataset.routeFailed&&!view.classList.contains('is-route-loading'))writeViewMemory(mountedMember,`route:${mountedHash}`,captureView(view)); });
+  window.addEventListener('pagehide', () => { const view=document.getElementById('view'); if(view&&mountedHash&&!view.dataset.routeFailed&&!view.classList.contains('is-route-loading')){const snapshot=captureView(view);writeViewMemory(mountedMember,`route:${mountedHash}`,snapshot);if(mountedVisit)writeViewMemory(mountedMember,`visit:${mountedVisit}`,snapshot);} });
   ensureSportsbookNav();
   startMemberLock();
   const bar = document.getElementById("tabbar");
@@ -463,7 +462,7 @@ export function startRouter() {
   document.addEventListener('click',event=>{
     if(event.defaultPrevented||event.button>0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
     const link=event.target.closest('a[href^="#/"]');
-    if(link?.getAttribute('href')===location.hash){stopRestore();window.scrollTo({top:0,behavior:'instant'});}
+    if(link?.getAttribute('href')===location.hash){event.preventDefault();void renderRoute({fresh:true});}
   });
   if (!location.hash) location.hash = "#/home";
   else renderRoute();

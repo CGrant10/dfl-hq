@@ -1,3 +1,4 @@
+import {pageEntry,visitMemoryName,readViewMemory,writeViewMemory} from './view-memory.js';
 // UI preferences only. Stakes, picks and tickets never enter this store.
 const PREFIX = 'dfl.sportsbook.view.v1.';
 export function cleanBookState(value = {}) {
@@ -19,4 +20,13 @@ export function writeBookState(memberId, patch, storage = globalThis.localStorag
   const next = cleanBookState({ ...readBookState(memberId, storage), ...patch });
   try { storage.setItem(PREFIX + memberId, JSON.stringify(next)); } catch { /* Storage may be disabled. */ }
   return next;
+}
+
+export function enterBookVisit(view,memberId){
+ const entry=pageEntry(view,'sportsbook');if(entry==='update')return;
+ const saved=entry==='restore'?readViewMemory(memberId,visitMemoryName(view,'sportsbook')):null;
+ writeBookState(memberId,saved||(entry==='restore'?readBookState(memberId):cleanBookState()));
+}
+export function saveBookVisit(view,memberId){
+ writeViewMemory(memberId,visitMemoryName(view,'sportsbook'),readBookState(memberId));
 }

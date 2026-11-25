@@ -10,7 +10,7 @@ import { sportsbookWeekCaption, fantasyWeekGroups } from "../sportsbook-fantasy-
 import { selectFeaturedProps, groupPropPlayers } from "../sportsbook-featured-props.js";
 import { propLine } from "../sportsbook-core-props.js";
 import { loadPropIndex, loadPropGame, loadMarketOutcomes } from "../sportsbook-loading.js";
-import { readBookState, writeBookState } from "../sportsbook-view-state.js";
+import { enterBookVisit, saveBookVisit, readBookState, writeBookState } from "../sportsbook-view-state.js";
 import {mountSportsbookLive} from '../sportsbook-live.js';
 import {createSettlementTracker,loadBookAccount,loadBookWallet} from '../sportsbook-settlement.js';
 import {animateBankroll,revealTicketResult,updateBookQuote} from '../sportsbook-account-motion.js';
@@ -93,6 +93,7 @@ export async function render(view){
   leave();activeBook=view;const generation=renderGeneration;
   const active=()=>view.isConnected&&generation===renderGeneration&&String(currentMember()?.id)===String(me.id);
   const me=currentMember();
+  if(me)enterBookVisit(view,me.id);
   if(!me){view.innerHTML=`<header class="page-head"><h1>Sportsbook</h1></header><section class="card profile-entry"><h2>Open your book</h2><p>Choose your league profile to see your bankroll, picks and tickets.</p><button type="button" class="btn" data-open-profile>Choose your profile</button></section>`;return}
   const canBook=hasPermission("sportsbook");
   const refreshing=!!view.querySelector('#sportsbook-wrap');
@@ -902,7 +903,7 @@ function rememberView(view,memberId){
   if(requestedPlayer)writeBookState(memberId,{product:"book",tab:"markets"});
   view.dataset.restoreScrollY=String(saved.scroll);
   let active=view.dataset.route==="sportsbook"&&!view.classList.contains("is-route-loading");
-  const save=()=>{if(active&&view.isConnected)writeBookState(memberId,{scroll:window.scrollY})};
+  const save=()=>{if(active&&view.isConnected){writeBookState(memberId,{scroll:window.scrollY});saveBookVisit(view,memberId)}};
   const onReady=event=>{if(event.detail?.route==="sportsbook")active=true};
   window.addEventListener("dfl:route-performance",onReady);
   window.addEventListener("pagehide",save);
