@@ -104,3 +104,8 @@ html[data-ui-motion="off"] .tb-offer-preview>summary i { transition:none; }
 #view[data-route="trade"] .tb-preview-slot button>.dfl-player-portrait { flex:none; width:20px; min-width:20px; height:24px; min-height:0; padding:0; }
 #view[data-route="trade"] .tb-preview-slot button>.dfl-player-portrait>i { min-height:0; padding:0; }
 #view[data-route="trade"] .tb-preview-slot button>span:not(.dfl-player-portrait) { display:block; min-height:0; padding:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* Incoming availability stays visible without turning each offer into a report. */
+.td-incoming-risk { display:grid; gap:2px; min-width:0; padding-block:6px; color:var(--body-text); font:400 .6875rem/1.4 var(--font-ui); }
+.td-incoming-risk>strong { color:var(--text); font-weight:600; }
+.td-incoming-risk>span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

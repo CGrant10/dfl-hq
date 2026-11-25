@@ -3601,3 +3601,28 @@ Evidence: `/workspace/dfl-polish-1611/` (trade-verified/board, broadcast-after,
 sheets, images, after320, after390 and test/build logs).
 
 final result: passed
+
+### 1.612.0 — Current trade context and visible incoming risk
+
+Kept Medicine Wheel Light/Dark tokens and existing compact trade-card layout.
+Incoming injury and QB/role risk is now visible before opening details; affected
+offer cards say `Risky return`, while value balance remains a separate estimate.
+Names stay on one line with full text in their titles. Inspected Light/Dark
+320/390px screenshots, including the new incoming-risk row. 152 browser checks
+passed for card layout, compare/editor behavior, nested player cards, enlarged
+text, reduced motion, roster routing and visible collapsed-offer injury risk.
+
+Read-only compiled Trade/Team Analyzer checks at 390px passed in both themes:
+offer generation completed, Compare remained visible, no horizontal overflow
+or browser errors. The valuation fix uses each player's last three actual games
+across absences, prioritizes newer availability news and reduces the influence
+of consensus dated before material injury/QB context. Captured public player
+facts drive regression tests; no player-name exceptions or fabricated diagnoses.
+All 330 test files / 2,786 tests passed, as did release, themes, type, name and
+production-build checks. Native
+phone rendering/keyboard behavior and upstream publication delays remain outside
+these Chromium checks. No real offers, notifications or league writes were sent.
+Evidence: `/workspace/dfl-trade-values-1612/` (trade/board, compiled390,
+reproduce.log, latest-reproduction.log, focused/full-test and build logs).
+
+final result: passed

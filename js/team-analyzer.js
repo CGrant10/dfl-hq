@@ -15,7 +15,7 @@ import {balanceTradeSuggestions} from './trade-auto-balance.js';
 import {tradeWeekPlayerPool} from './trade-week-forecast.js';
 import {backfieldRoleIndex} from './backfield-roles-model.js';
 import {tradeRosterContext,tradeAdjustedImpacts,safeBalancedTrade} from './trade-roster-context.js';
-import {teamQuarterbackContext,currentInjurySetback,workloadChange} from './player-value-context.js';
+import {teamQuarterbackContext,currentInjurySetback,workloadChange,currentAvailabilityReport,expertContextFactor} from './player-value-context.js';
 
 export const ANALYZER_POSITIONS = ["QB", "RB", "WR", "TE"];
 export const ANALYZER_UNITS = [...ANALYZER_POSITIONS, "FLEX"];
@@ -101,7 +101,10 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const weeklyMeta = weekly?.player || {};
     // An explicit healthy status from this week's feed clears an older injury.
     const catalogInjury=meta?.i||meta?.injury_status;
-    const injury = ['IR','PUP'].includes(catalogInjury)?catalogInjury:weekly && Object.hasOwn(weekly,'injury_status') ? weekly.injury_status
+    const statusNewsAt=Math.max(Number(weeklyMeta.news_updated)||0,Number(meta.nu??meta.news_updated)||0);
+    const statusUpdatedAt=statusNewsAt<=now+300000?statusNewsAt:0;
+    const reportedAvailability=currentAvailabilityReport({name:meta?.n||meta?.full_name||id,nflTeam:meta?.t||meta?.team,position},{injuryIndex,newsUpdatedAt:statusUpdatedAt,now});
+    const injury = ['IR','PUP'].includes(catalogInjury)?catalogInjury:reportedAvailability?reportedAvailability.status:weekly && Object.hasOwn(weekly,'injury_status') ? weekly.injury_status
       : Object.hasOwn(weeklyMeta,'injury_status') ? weeklyMeta.injury_status : meta?.i || meta?.injury_status;
     const availability = injuryProfile(injury,
       reserveIds.has(id) ? 'Injured Reserve' : weeklyMeta.status || meta?.s || meta?.status);
@@ -148,7 +151,8 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const formWeight=rebasedRole ? .65 : Math.min(.3,recentScores.length/3*.3);
     const formPerGame=currentPerGame!=null&&recentAverage!=null
       ? currentPerGame*(1-formWeight)+recentAverage*formWeight : currentPerGame??recentAverage;
-    const currentWeight=rebasedRole ? .85 : injurySetback&&currentGames>=3&&formPerGame<baselinePerGame ? .8 : Math.min(.65,currentGames/6*.65);
+    const disrupted=injurySetback||availability.isOut||availability.injuryStatus==='Doubtful';
+    const currentWeight=rebasedRole ? .85 : disrupted&&currentGames>=3&&formPerGame<baselinePerGame ? .8 : Math.min(.65,currentGames/6*.65);
     const pointForecast=baselinePerGame!=null&&formPerGame!=null
       ? baselinePerGame*(1-currentWeight)+formPerGame*currentWeight : baselinePerGame??formPerGame;
     // Do not count a verified role change twice through the small usage factor.
@@ -203,7 +207,7 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
       adp: adpFrom(projection, scoringFormat),
       games,
       hasPriorProduction,
-      injuryStatus: availability.injuryStatus,
+      injuryStatus: availability.injuryStatus,injuryStatusUpdatedAt:reportedAvailability?.updatedAt||statusUpdatedAt||seasonAvailability.availabilityUpdatedAt,
       playerStatus: availability.playerStatus,
       practiceParticipation: weeklyMeta.practice_participation || meta?.pp || meta?.practice_participation || null,
       isOut: availability.isOut,
@@ -280,7 +284,7 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     // govern their influence; stale opinions never set prices.
     const breadth=Math.min(1, Math.max(0, Number(expertRankings?.experts)||0)/8);
     const spread=expert ? Math.max(0, Number(expert.stdDev)||0)/Math.max(10,expert.rank) : 0;
-    const expertWeight=expertRankings?.usable&&expert&&player.modelSource!=='unrated' ? round((.3+.2*breadth)*(1-Math.min(.3,spread)),3) : 0;
+    const expertWeight=expertRankings?.usable&&expert&&player.modelSource!=='unrated' ? round((.3+.2*breadth)*(1-Math.min(.3,spread))*expertContextFactor(player,expertRankings.updatedAt),3) : 0;
     const expertValue=expert?expertValueIndex(expert.rank)*oneQbFactor(player):null;
     const modelRank=modelRanks.get(player.id);
     pool.set(player.id, {

@@ -10,6 +10,25 @@ const unavailable=status=>/^(?:out|doubtful|IR|PUP|injured reserve)$/i.test(stat
 export const valueContextKey=player=>JSON.stringify([player?.valueContext?.roleChange||null,!!player?.valueContext?.injurySetback,
  player?.valueContext?.quarterback?.quarterbackId||null,player?.valueContext?.quarterback?.status||null]);
 
+// A dated injury report can supersede an older weekly projection. A later
+// Sleeper news update with an explicit status can supersede that report again.
+export function currentAvailabilityReport(player,{injuryIndex=new Map(),newsUpdatedAt=0,now=Date.now()}={}){
+ const report=playerInjuryReport(player,injuryIndex);
+ if(!fresh(report,now)||Number(newsUpdatedAt)>report.updatedAt&&Number(newsUpdatedAt)<=now+300000)return null;
+ const statuses={active:null,healthy:null,normal:null,out:'Out',doubtful:'Doubtful',questionable:'Questionable',ir:'IR','injured reserve':'IR',pup:'PUP'};
+ const key=String(report.status||'').toLowerCase();
+ return Object.hasOwn(statuses,key)?{status:statuses[key],updatedAt:report.updatedAt}:null;
+}
+
+// Rankings published before material news must not restore the old price
+// after the production/availability model has accounted for that news.
+// This is a bounded weighting rule, not a measured probability of recovery.
+export function expertContextFactor(player,updatedAt){
+ const injuryAfter=(player.injuryStatusUpdatedAt??player.availabilityUpdatedAt)>updatedAt&&(player.isOut||player.isRisky);
+ const passerAfter=player.valueContext?.quarterback?.updatedAt>updatedAt;
+ return injuryAfter||passerAfter ? (player.injuryStatus==='Questionable'&&!passerAfter ? .7 : .35) : 1;
+}
+
 // Infer the established passer from actual attempts on his CURRENT NFL team.
 // A backup's injury cannot create a team-wide penalty. Two games led by the
 // replacement end this temporary adjustment: those results now inform form.
