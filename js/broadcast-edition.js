@@ -13,9 +13,10 @@ const dailyRank=(date,story)=>{let hash=2166136261;for(const char of date+'|'+st
 function archivePicks(stories,date,limit){
  const ranked=[...stories].sort((a,b)=>dailyRank(date,a)-dailyRank(date,b)||String(storyId(a)).localeCompare(String(storyId(b))));
  const picked=[],counts=new Map();
- const take=(story,cap)=>{const kind=story.kind||story.generator||'archive';if(picked.length>=limit||picked.includes(story)||(counts.get(kind)||0)>=cap)return;picked.push(story);counts.set(kind,(counts.get(kind)||0)+1)};
+ const take=(story,cap,distinct=false)=>{const topic=story.storyKind||story.storySignal;if(distinct&&topic&&picked.some(p=>p.kind===story.kind&&(p.storyKind||p.storySignal)===topic))return;const kind=story.kind||story.generator||'archive';if(picked.length>=limit||picked.includes(story)||(counts.get(kind)||0)>=cap)return;picked.push(story);counts.set(kind,(counts.get(kind)||0)+1)};
  // Cover different subjects before adding a second record or league story.
  for(const story of ranked)take(story,1);
+ for(const story of ranked)take(story,['record','lore'].includes(story.kind)?2:1,true);
  for(const story of ranked)take(story,['record','lore'].includes(story.kind)?2:1);
  return picked;
 }
@@ -55,7 +56,9 @@ export function broadcastEdition(stories=[],date='',{now=Date.parse(date+'T12:00
   return rank-other||([1,3].includes(rank)?storyTime(b.story)-storyTime(a.story):0)||a.index-b.index;
  }).map(item=>item.story);
  const live=[...pinned,...ranked.slice(0,Math.max(0,6-pinned.length))];
- const picks=archivePicks(archive,date,Math.max(0,BROADCAST_STORY_LIMIT-live.length-awards.size));
+ // Four stable editions per day; routine score polling never shuffles the archive.
+ const archiveSeed=Number.isFinite(Number(now))?date+':'+Math.floor(new Date(Number(now)).getUTCHours()/6):date;
+ const picks=archivePicks(archive,archiveSeed,Math.max(0,BROADCAST_STORY_LIMIT-live.length-awards.size));
  // Separate the two awards with another subject when one is available.
  const claims=new Set();
  // Deduplicate after freshness ranking so an expired or older copy cannot

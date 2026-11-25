@@ -1,3 +1,5 @@
+import {updateStableContent} from './stable-content.js';
+import {offerStarterChanges} from './trade-offer-preview.js';
 import {patchGameDay} from './game-day-dom.js';
 import {animateUi} from './ui-motion.js';
 import {esc,toast} from './ui.js';
@@ -18,7 +20,7 @@ function players(ids,pool,{deal,owner,editable=false,locked=[]}={}){
  return `<ul class="tob-players">${ids.map(id=>{
   const p=pool.get(String(id)),to=deal?.parties.length>2?deal.parties.find(t=>String(t.id)===String(deal.destinations[id])):null;
   const context=`<small>${esc([p?.position,p?.nflTeam].filter(Boolean).join(' · '))}${to?` · → ${esc(name(to))}`:''}</small>`;
-  return editable?`<li class="tob-edit-player"><button type="button" class="tob-player-name" data-tob-swap="${esc(id)}" data-owner="${owner}" ${locked.map(String).includes(String(id))?'disabled':''} aria-label="Replace ${esc(p?.name||id)}">${p?playerPortrait(p):''}<span class="tob-edit-hint" aria-hidden="true">Swap</span><span class="tob-name-text">${esc(p?.name||id)}</span>${context}</button></li>`:`<li>${p?playerPortrait(p):''}<div class="tob-player-copy"><strong>${esc(p?.name||id)}</strong>${context}</div></li>`;
+  return editable?`<li class="tob-edit-player"><button type="button" class="tob-player-name" data-tob-swap="${esc(id)}" data-owner="${owner}" ${locked.map(String).includes(String(id))?'disabled':''} aria-label="Replace ${esc(p?.name||id)}">${p?playerPortrait(p):''}<span class="tob-edit-hint" aria-hidden="true">Swap</span><span class="tob-name-text">${esc(p?.name||id)}</span>${context}</button></li>`:`<li class="tob-read-player"><button type="button" class="tob-player-card" data-player-card="${esc(id)}" data-player-name="${esc(p?.name||id)}" data-player-team="${esc(p?.nflTeam||'')}" aria-label="View ${esc(p?.name||id)} player card">${p?playerPortrait(p):''}<span class="tob-player-copy"><strong title="${esc(p?.name||id)}">${esc(p?.name||id)}</strong>${context}</span></button></li>`;
  }).join('')}</ul>`;
 }
 
@@ -33,7 +35,7 @@ export function mountTradeOfferBoard(root,{getData,getMine,getOffer,getRestricti
  const sync=()=>{
   if(!valid())return;
   const currentOwner=String(getMine()?.id);if(currentOwner!==ownerId){ownerId=currentOwner;choices=[];stopDialog()}
-  const slot=root.querySelector('[data-tb-board-tools]');if(slot){slot.hidden=!choices.length;const markup=choices.length?`<div class="tob-tray"><span>${choices.length} / 2 selected</span><button type="button" data-tob-open ${choices.length<2?'disabled':''}>Compare offers</button><button type="button" data-tob-clear>Clear</button></div>`:'';if(slot!==lastSlot||markup!==lastTray){slot.innerHTML=markup;lastSlot=slot;lastTray=markup}}
+  const slot=root.querySelector('[data-tb-board-tools]');if(slot){const markup=choices.length?`<div class="tob-tray"><span>${choices.length} / 2 selected</span><button type="button" data-tob-open ${choices.length<2?'disabled':''}>Compare offers</button><button type="button" data-tob-clear>Clear</button></div>`:'';if(slot!==lastSlot||markup!==lastTray){updateStableContent(slot,()=>{slot.hidden=!choices.length;slot.innerHTML=markup});lastSlot=slot;lastTray=markup}}
   for(const card of root.querySelectorAll('[data-offer-key]')){const b=card.querySelector('[data-tob-compare]');if(b){const on=choices.some(c=>c.originKey===card.dataset.offerKey);b.setAttribute('aria-pressed',String(on));b.textContent=on?'Selected':'Compare'}}
  };
  const add=(deal,originKey=null,toggle=true)=>{const choice={...boardProposal(deal),originKey},index=choices.findIndex(c=>c.id===choice.id);if(index>=0){if(!toggle)return true;choices.splice(index,1);}else{if(choices.length>=2){toast('Two offers selected. Clear one to compare another.',true);return false}choices.push(choice)}sync();return true};
@@ -44,7 +46,7 @@ export function mountTradeOfferBoard(root,{getData,getMine,getOffer,getRestricti
    patchGameDay(body,`<div class="tob-verdict"><b>${esc(a.price.headline)}</b><span>${esc({fair:'Fair',aggressive:'Aggressive',steal:'Steal'}[a.tier])}</span></div>${packages(draft,pool,true,getRestrictions().locked||[])}${figures(draft)}${risks(draft,pool)}<div class="tob-editor-actions"><button type="button" data-tob-use>Review this offer</button><button type="button" data-tob-add-edit>Add to comparison</button><button type="button" data-tob-reset>Reset</button></div>`);
   }else{
    const deals=choices.map(restore);
-   patchGameDay(body,`<div class="tob-comparison">${choices.map((choice,i)=>{const d=deals[i],a=d&&tradeAssessment(tradePerspective(d.result));return `<section><header><small>Offer ${i+1}</small><h3>${esc(d?label(d):'Roster changed')}</h3><button type="button" data-tob-remove="${i}" aria-label="Remove offer ${i+1}">Remove</button></header>${d?`<div class="tob-verdict"><b>${esc(a.price.headline)}</b><span>${esc({fair:'Fair',aggressive:'Aggressive',steal:'Steal'}[a.tier])}</span></div><h4>You send</h4>${players(d.sends[0],pool)}<h4>You get</h4>${players(d.receives[0],pool)}${figures(d)}<div class="tob-risks">${risks(d,pool)}</div>${d.parties.length>2?`<details class="tob-routing"><summary>All ${d.parties.length} teams</summary>${packages(d,pool)}</details>`:'<div></div>'}<div class="tob-editor-actions"><button type="button" data-tob-review="${i}">Review offer</button><button type="button" data-tob-edit-choice="${i}">Edit players</button></div>`:'<p class="tob-risk">Refresh offers to rebuild this package.</p>'}</section>`}).join('')}</div>`);
+   patchGameDay(body,`<div class="tob-comparison">${choices.map((choice,i)=>{const d=deals[i],a=d&&tradeAssessment(tradePerspective(d.result));return `<section><header><small>Offer ${i+1}</small><h3>${esc(d?label(d):'Roster changed')}</h3><button type="button" data-tob-remove="${i}" aria-label="Remove offer ${i+1}">Remove</button></header>${d?`<div class="tob-verdict"><b>${esc(a.price.headline)}</b><span>${esc({fair:'Fair',aggressive:'Aggressive',steal:'Steal'}[a.tier])}</span></div><h4>You send</h4>${players(d.sends[0],pool)}<h4>You get</h4>${players(d.receives[0],pool)}${figures(d)}${offerStarterChanges(d,pool)}<div class="tob-risks">${risks(d,pool)}</div>${d.parties.length>2?`<details class="tob-routing"><summary>All ${d.parties.length} teams</summary>${packages(d,pool)}</details>`:'<div></div>'}<div class="tob-editor-actions"><button type="button" data-tob-review="${i}">Review offer</button><button type="button" data-tob-edit-choice="${i}">Edit players</button></div>`:'<p class="tob-risk">Refresh offers to rebuild this package.</p>'}</section>`}).join('')}</div>`);
   }
  };
  const show=(type,source)=>{

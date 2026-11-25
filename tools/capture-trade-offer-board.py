@@ -7,7 +7,8 @@ ROOT=Path(__file__).resolve().parents[1];FIXTURE=Path(os.environ.get('DFL_TRADE_
 class Handler(SimpleHTTPRequestHandler):
  def do_GET(self):
   path=self.path.split('?',1)[0]
-  body="export const db=()=>({});export const edge=()=>{throw Error('Review writes blocked')};export const privilegedFunctionHeaders=()=>({});" if path=='/js/supabase.js' else "export const currentMember=()=>null;export const loadMemberDirectory=async()=>[];" if path=='/js/members.js' else None
+  body="export const db=()=>({});export const edge=()=>{throw Error('Review writes blocked')};export const privilegedFunctionHeaders=()=>({});" if path=='/js/supabase.js' else "export const currentMember=()=>null;export const getMemberId=()=>null;export const loadMemberDirectory=async()=>[];" if path=='/js/members.js' else None
+  if path=='/js/player-card-data.js':body="""export async function loadPlayerCard(selection){window.cardCalls=(window.cardCalls||0)+1;return {player:{id:selection.id,name:selection.name||'Fixture player',position:'WR',nflTeam:'CIN'},leagueId:'1286077564572037120',season:2026,week:6,points:20,state:'final',injury:{tag:'Healthy',availability:'Available',body:''},owner:null,ownerLabel:'Fixture team',myRosterId:1,recent:[],stats:{items:[],updatedAt:null}}}"""
   if body is not None:self.send_response(200);self.send_header('Content-Type','text/javascript');self.end_headers();self.wfile.write(body.encode());return
   super().do_GET()
  def translate_path(self,path):
@@ -25,10 +26,10 @@ with sync_playwright() as p:
  for width in [320,390]:
   for theme in ['light','dark']:
    c=browser.new_context(viewport={'width':width,'height':844},has_touch=True,is_mobile=True,service_workers='block');c.route('**/*',lambda r:r.continue_() if r.request.url.startswith('http://127.0.0.1:') else r.fulfill(content_type='image/png',body=(ROOT/'tools/fixtures/player-portrait.png').read_bytes(),headers={'Access-Control-Allow-Origin':'*'}) if r.request.resource_type=='image' else r.abort());page=c.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.goto(f'http://127.0.0.1:{server.server_port}/trade-review/index.html#/trade');page.wait_for_function('window.reviewReady');page.wait_for_selector('.tb-offer');page.evaluate('document.fonts.ready')
-   page.evaluate("""async theme=>{(await import('/js/theme.js')).saveMode(theme);const m=await import('/js/ui-motion.js');m.startUiMotion();window.stopBoardMotion=m.mountPageMotion(document.querySelector('#view'));}""",theme)
+   page.evaluate("""async theme=>{(await import('/js/theme.js')).saveMode(theme);const m=await import('/js/ui-motion.js');m.startUiMotion();(await import('/js/player-card-actions.js')).mountPlayerCards();window.stopBoardMotion=m.mountPageMotion(document.querySelector('#view'));}""",theme)
    page.wait_for_function('document.querySelectorAll(".tb-offer").length>=3');page.wait_for_timeout(300)
    tag=f'{width}px {theme}';cards=page.locator('.tb-offer');first=cards.first
-   check(tag+' default actions stay compact without hiding players',first.locator('[data-tb-save]').is_visible() and first.locator('[data-tob-compare]').is_hidden() and first.locator('[data-td-load-offer]').is_visible())
+   check(tag+' Compare is directly available beside the default actions',first.locator('[data-tb-save]').is_visible() and first.locator('[data-tob-compare]').is_visible() and first.locator('[data-td-load-offer]').is_visible())
    menu=first.locator('.tb-offer-more');menu.locator(':scope > summary').click()
    # Native details delivers toggle asynchronously; verify the positioned menu.
    page.wait_for_function('e=>{const r=e.getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight}',arg=menu.locator('.tb-offer-more-actions').element_handle(),timeout=2000)
@@ -45,7 +46,15 @@ with sync_playwright() as p:
    check(tag+' send and receive sections align',sheet.locator('.tob-comparison').evaluate('e=>{const a=e.children[0].querySelectorAll("h4"),b=e.children[1].querySelectorAll("h4");return [...a].every((n,i)=>Math.abs(n.getBoundingClientRect().top-b[i].getBoundingClientRect().top)<1)}'))
    check(tag+' comparison has current balance and lineup values',sheet.locator('.tob-metrics dd').count()==6)
    check(tag+' loaded portraits stay inside their player rows',sheet.locator('.dfl-player-portrait img').evaluate_all('es=>es.every(e=>{const b=e.getBoundingClientRect(),p=e.parentElement.getBoundingClientRect();return b.left>=p.left-1&&b.top>=p.top-1&&b.right<=p.right+1&&b.bottom<=p.bottom+1})'))
+   check(tag+' both offers show actual starter changes',sheet.locator('.tob-lineup').count()==2 and sheet.locator('.tob-lineup h4').all_text_contents()==['Starter changes','Starter changes'])
+   check(tag+' comparison player controls keep one-line names and 44px targets',sheet.locator('.tob-player-card').evaluate_all('es=>es.length>0&&es.every(e=>e.getBoundingClientRect().height>=44&&getComputedStyle(e.querySelector("strong")).whiteSpace==="nowrap"&&e.querySelector("strong").title===e.querySelector("strong").textContent)'))
    sheet.screenshot(path=str(OUT/f'comparison-{width}-{theme}.png'))
+   source=sheet.locator('.tob-player-card').first;source.scroll_into_view_if_needed();old_scroll=sheet.locator('.tob-body').evaluate('e=>e.scrollTop');source.click()
+   player=page.locator('.dfl-player-card[open]');player.wait_for();page.wait_for_function('document.querySelector(".dfl-player-card[open] .player-card-hero")&&!document.querySelector(".dfl-player-card[open]").dataset.playerCardStage')
+   check(tag+' comparison opens a real player card through delegated portrait controls',player.locator('.player-card-hero').is_visible() and page.evaluate('cardCalls===1'))
+   player.locator('[data-player-card-close]').click();page.wait_for_function('!document.querySelector(".dfl-player-card[open]")')
+   check(tag+' closing player card restores its exact comparison control and scroll',sheet.is_visible() and source.evaluate('e=>e===document.activeElement') and abs(sheet.locator('.tob-body').evaluate('e=>e.scrollTop')-old_scroll)<2)
+   check(tag+' interrupted portrait cleanup leaves no hidden comparison photos',sheet.locator('.dfl-player-portrait').evaluate_all('es=>es.every(e=>getComputedStyle(e).visibility!=="hidden")') and page.locator('.dfl-connected-portrait').count()==0)
    sheet.locator('[data-tob-close]').click();page.wait_for_function('!document.querySelector(".trade-offer-sheet[open]")');check(tag+' close returns to compare control',page.locator('[data-tob-open]').evaluate('e=>e===document.activeElement'))
    page.locator('[data-tob-open]').click();sheet=page.locator('.trade-offer-sheet[open]');sheet.locator('[data-tob-remove="0"]').click();sheet.locator('[data-tob-close]').click();page.wait_for_function('!document.querySelector(".trade-offer-sheet[open]")');check(tag+' removing one offer returns focus to an enabled control',page.locator('[data-tob-clear]').evaluate('e=>e===document.activeElement'))
    click_offer_action(first.locator('[data-tob-compare]'));check(tag+' an alternative can be selected after removal',page.locator('[data-tob-open]').is_enabled())

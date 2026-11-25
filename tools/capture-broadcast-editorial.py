@@ -16,7 +16,7 @@ server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=serv
 
 with sync_playwright() as p:
  browser=p.chromium.launch(executable_path=os.environ.get('DFL_REVIEW_CHROMIUM'),headless=True,args=['--no-sandbox'])
- page=browser.new_page(viewport={'width':390,'height':844},is_mobile=True,has_touch=True)
+ page=browser.new_page(viewport={'width':int(os.environ.get('DFL_REVIEW_WIDTH','390')),'height':844},is_mobile=True,has_touch=True)
  errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  page.goto('http://127.0.0.1:'+str(server.server_port)+'/',wait_until='domcontentloaded');page.wait_for_function('!!window.reviewDeck');page.evaluate('document.fonts.ready')
  page.evaluate('''async()=>{

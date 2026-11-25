@@ -108,7 +108,7 @@ with sync_playwright() as p:
     result=page.locator('.bx-layer>.bx-slide:not(.bx-leaving)').evaluate('''e=>{
      const r=e.getBoundingClientRect(),art=e.querySelector('.bx-brief-art,.bx-brief-number,.bx-brief-value')?.getBoundingClientRect();
      const copy=[...e.querySelectorAll(':scope>.bx-kicker,:scope>.bx-head,:scope>.bx-brief-body,:scope>.bx-brief-action')];
-     const within=[...e.children].filter(n=>getComputedStyle(n).clipPath!=='inset(50%)').every(n=>{const b=n.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1&&b.top>=r.top-1&&b.bottom<=r.bottom+1&&n.scrollWidth<=n.clientWidth+1});
+     const within=[...e.children].filter(n=>n.getClientRects().length&&getComputedStyle(n).clipPath!=='inset(50%)').every(n=>{const b=n.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1&&b.top>=r.top-1&&b.bottom<=r.bottom+1&&n.scrollWidth<=n.clientWidth+1});
      const separate=!art||copy.every(n=>{const b=n.getBoundingClientRect();return b.right<=art.left+1||b.left>=art.right-1||b.bottom<=art.top+1||b.top>=art.bottom-1});
      const series=e.querySelector('.bx-brief-series')?.getBoundingClientRect(),names=[...e.querySelectorAll('.bx-brief-rivals strong')];
      return {children:[...e.children].map(n=>({class:n.className,rect:n.getBoundingClientRect().toJSON(),scroll:[n.scrollWidth,n.scrollHeight],client:[n.clientWidth,n.clientHeight]})),bounds:r.toJSON(),within,separate,seriesSeparate:!series||names.every(n=>n.getBoundingClientRect().bottom<=series.top+1),overflow:document.documentElement.scrollWidth>innerWidth+1};

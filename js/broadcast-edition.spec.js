@@ -119,3 +119,10 @@ describe('full Home broadcast editions',()=>{
   expect(deck).toHaveLength(4);expect(deck[0].homeFeature).toBe(true);expect(deck[1].kind).toBe('trade');expect(homeBroadcastDeck(deck,{now:new Date(date+'T13:00:00Z')})).toEqual(deck);
  });
 });
+
+it('keeps archive selection stable within an edition and varies it later in the day',()=>{
+ const stories=Array.from({length:30},(_,i)=>({id:`record-${i}`,kind:'record',storyKind:['high','low','blowout'][i%3],figure:i,headline:`Record ${i}`,href:`#/facts?record=${i}`}));
+ const edition=hour=>broadcastEdition(stories,date,{now:Date.parse(`${date}T${hour}:00:00Z`)});
+ expect(edition('07')).toEqual(edition('10'));expect(edition('07').map(s=>s.id)).not.toEqual(edition('13').map(s=>s.id));
+ expect(new Set(edition('07').map(s=>s.storyKind)).size).toBe(2);
+});

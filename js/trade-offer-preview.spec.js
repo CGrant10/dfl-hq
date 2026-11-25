@@ -27,3 +27,11 @@ it('refuses transferred players and escapes names in an otherwise valid offer',(
  teams[1].playerIds=teams[1].playerIds.filter(id=>id!=='2-1');
  expect(offerLineupMarkup(offer,teams[0],pool)).toContain('Rosters changed');
 });
+
+it('compares actual starter changes without promoting every incoming player',async()=>{
+ const {offerStarterChanges}=await import('./trade-offer-preview.js');const {teams,pool}=tradeReviewFixture(),deal=evaluateTradeDeal(teams.slice(0,2),[['1-4'],['2-1']],pool);
+ const changes=lineupSlotChanges(lineupPreviewsFor(deal,pool)[0]),html=offerStarterChanges(deal,pool);
+ expect(html).toContain('Starter changes');
+ for(const row of changes){expect(html).toContain(row.slot);expect(html).toContain(row.after?.name||'Empty slot');expect(html).toContain(row.before?.name||'Empty slot')}
+ expect(html).not.toContain('data-player-card');
+});
