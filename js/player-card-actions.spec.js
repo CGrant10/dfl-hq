@@ -36,3 +36,10 @@ describe('shared player-card entry points', () => {
     expect(preventDefault).not.toHaveBeenCalled();
   });
 });
+
+describe('player-card intent across page changes',()=>{
+ function setup(){const handlers=new Map(),doc={addEventListener:vi.fn((name,fn)=>handlers.set(name,fn)),removeEventListener:vi.fn()},win=new EventTarget();vi.stubGlobal('document',doc);vi.stubGlobal('window',win);const stop=mountPlayerCards();const tap=source=>handlers.get('click')({preventDefault:vi.fn(),target:{closest:s=>s==='[data-player-card]'?source:null}});return{handlers,doc,win,stop,tap}}
+ it('opens only the last rapid tap rather than replaying queued cards',async()=>{const f=setup(),a={dataset:{playerCard:'a'},isConnected:true},b={dataset:{playerCard:'b'},isConnected:true};f.tap(a);f.tap(b);await vi.dynamicImportSettled();expect(openPlayerCard).toHaveBeenCalledTimes(1);expect(openPlayerCard).toHaveBeenLastCalledWith(expect.objectContaining({id:'b'}),{source:b});f.stop()});
+ it('drops an opening when its row disappears or the route changes',async()=>{const f=setup(),a={dataset:{playerCard:'a'},isConnected:true};f.tap(a);a.isConnected=false;await vi.dynamicImportSettled();expect(openPlayerCard).not.toHaveBeenCalled();a.isConnected=true;f.tap(a);f.win.dispatchEvent(new Event('hashchange'));await vi.dynamicImportSettled();expect(openPlayerCard).not.toHaveBeenCalled();f.stop()});
+ it('mounts once and warms intent without opening a card',async()=>{const f=setup();mountPlayerCards();expect(f.doc.addEventListener).toHaveBeenCalledTimes(3);const a={dataset:{playerCard:'a'}};f.handlers.get('pointerdown')({target:{closest:s=>s==='[data-player-card]'?a:null}});await vi.dynamicImportSettled();expect(openPlayerCard).not.toHaveBeenCalled();f.stop()});
+});

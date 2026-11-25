@@ -39,7 +39,7 @@
 }
 #home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-art {
  inset:0 auto 0 0; width:34%; height:auto; padding:8px 0 0; box-sizing:border-box;
- display:flex; align-items:flex-end; justify-content:center; background:color-mix(in srgb,var(--accent-fill) 6%,var(--bg-2));
+ display:flex; align-items:flex-end; justify-content:center; background:transparent;
 }
 #home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-art>img {
  width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain;
@@ -211,3 +211,17 @@ html[data-ui-motion="off"] #home-wrap .bx-edition-progress>span { transition:non
 #home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-chip>:is(.bx-kicker,.bx-head,.bx-brief-body,.bx-brief-action) { width:58%; max-width:58%; margin-left:0; }
 #home-wrap .bx-stage[data-bx-large-text] .bx-brief-chip>:is(.bx-kicker,.bx-head,.bx-brief-body,.bx-brief-action) { width:100%; max-width:100%; }
 #home-wrap .bx-stage[data-bx-large-text] .bx-brief-chip>.bx-brief-art { position:static; width:100%; height:60px; }
+
+/* Sports typography distinguishes a result, record and season award. */
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award-season { position:absolute; right:14px; bottom:18px; z-index:0; pointer-events:none; color:var(--text); opacity:.055; font:700 4.75rem/1 var(--font-sport); letter-spacing:-.035em; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-chip>.bx-brief-award-season { left:14px; right:auto; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award>:is(.bx-kicker,.bx-head,.bx-brief-action) { position:relative; z-index:1; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award>.bx-brief-art { isolation:isolate; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award>.bx-brief-art::before { content:''; position:absolute; inset:8% 0 0; z-index:-1; background:radial-gradient(ellipse at 50% 64%,color-mix(in srgb,var(--accent-fill) 12%,transparent),transparent 72%); pointer-events:none; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-value>strong { font-family:var(--font-sport); font-weight:700; font-size:clamp(1.125rem,calc(11rem / var(--bx-digits,4)),3rem); line-height:1; font-variant-numeric:tabular-nums; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-metric .bx-brief-value { padding-bottom:12px; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-metric .bx-brief-value::after { content:''; position:absolute; bottom:0; left:10px; right:0; height:5px; border-bottom:1px solid var(--line-soft); background:repeating-linear-gradient(90deg,var(--line-soft) 0 1px,transparent 1px 12.5%); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-result .bx-brief-scores b { font-family:var(--font-sport); font-weight:700; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-award-season { display:none; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-metric .bx-brief-value { padding-bottom:0; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-metric .bx-brief-value::after { content:none; }

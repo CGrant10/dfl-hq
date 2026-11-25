@@ -6,18 +6,20 @@ export function fitDialogToViewport(dialog) {
   const viewport = window.visualViewport;
   if (!viewport) return;
   const controller = new AbortController();
-  const stop=()=>controller.abort();
+  let frame=0,last={};
+  const stop=()=>{if(frame)cancelAnimationFrame(frame);frame=0;controller.abort()};
   const update = () => {
-    if (!dialog.isConnected) { controller.abort(); return; }
+    if(frame)cancelAnimationFrame(frame);frame=0;if (!dialog.isConnected) { stop(); return; }
     const bounds = dialogViewportBounds(innerHeight, viewport.height, viewport.offsetTop);
-    for (const [key, value] of Object.entries(bounds)) dialog.style.setProperty(`--dialog-viewport-${key}`, `${value}px`);
+    for (const [key,value] of Object.entries(bounds))if(last[key]!==value){dialog.style.setProperty(`--dialog-viewport-${key}`,`${value}px`);last[key]=value}
   };
-  viewport.addEventListener('resize', update, { signal: controller.signal });
-  viewport.addEventListener('scroll', update, { signal: controller.signal });
+  const schedule=()=>{if(!frame)frame=requestAnimationFrame(update)};
+  viewport.addEventListener('resize', schedule, { signal: controller.signal });
+  viewport.addEventListener('scroll', schedule, { signal: controller.signal });
   window.addEventListener('dfl:route-performance', update, { signal: controller.signal });
   window.addEventListener('pageshow', update, { signal: controller.signal });
-  window.addEventListener('resize', update, { signal: controller.signal });
-  dialog.addEventListener('close', () => {if(!dialog.open)controller.abort()}, { signal:controller.signal });
+  window.addEventListener('resize', schedule, { signal: controller.signal });
+  dialog.addEventListener('close', () => {if(!dialog.open)stop()}, { signal:controller.signal });
   update();
   return stop;
 }

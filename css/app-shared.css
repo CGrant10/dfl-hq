@@ -7588,6 +7588,11 @@ html[data-ui-motion="off"] .tb-offer-preview>summary i { transition:none; }
 .td-counter-card>header>strong { min-width:0; font-size:.75rem; }
 .td-decision dd .td-price-label { display:block; margin-top:2px; color:var(--muted); font-size:.62rem; line-height:1.25; }
 
+#view[data-route="trade"] .tb-preview-slot button { gap:5px; }
+#view[data-route="trade"] .tb-preview-slot button>.dfl-player-portrait { flex:none; width:20px; min-width:20px; height:24px; min-height:0; padding:0; }
+#view[data-route="trade"] .tb-preview-slot button>.dfl-player-portrait>i { min-height:0; padding:0; }
+#view[data-route="trade"] .tb-preview-slot button>span:not(.dfl-player-portrait) { display:block; min-height:0; padding:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
 
 /* Source: css/player-card-reading.css */
 /* Stable sheet geometry keeps data/image arrivals out of the portrait flight. */
@@ -9035,7 +9040,7 @@ html[data-ui-motion="off"] #view.view[data-route="clubhouse"] .clubhouse-context
 }
 #home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-art {
  inset:0 auto 0 0; width:34%; height:auto; padding:8px 0 0; box-sizing:border-box;
- display:flex; align-items:flex-end; justify-content:center; background:color-mix(in srgb,var(--accent-fill) 6%,var(--bg-2));
+ display:flex; align-items:flex-end; justify-content:center; background:transparent;
 }
 #home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-art>img {
  width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain;
@@ -9207,6 +9212,20 @@ html[data-ui-motion="off"] #home-wrap .bx-edition-progress>span { transition:non
 #home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-chip>:is(.bx-kicker,.bx-head,.bx-brief-body,.bx-brief-action) { width:58%; max-width:58%; margin-left:0; }
 #home-wrap .bx-stage[data-bx-large-text] .bx-brief-chip>:is(.bx-kicker,.bx-head,.bx-brief-body,.bx-brief-action) { width:100%; max-width:100%; }
 #home-wrap .bx-stage[data-bx-large-text] .bx-brief-chip>.bx-brief-art { position:static; width:100%; height:60px; }
+
+/* Sports typography distinguishes a result, record and season award. */
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award-season { position:absolute; right:14px; bottom:18px; z-index:0; pointer-events:none; color:var(--text); opacity:.055; font:700 4.75rem/1 var(--font-sport); letter-spacing:-.035em; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-chip>.bx-brief-award-season { left:14px; right:auto; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award>:is(.bx-kicker,.bx-head,.bx-brief-action) { position:relative; z-index:1; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award>.bx-brief-art { isolation:isolate; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-award>.bx-brief-art::before { content:''; position:absolute; inset:8% 0 0; z-index:-1; background:radial-gradient(ellipse at 50% 64%,color-mix(in srgb,var(--accent-fill) 12%,transparent),transparent 72%); pointer-events:none; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-value>strong { font-family:var(--font-sport); font-weight:700; font-size:clamp(1.125rem,calc(11rem / var(--bx-digits,4)),3rem); line-height:1; font-variant-numeric:tabular-nums; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-metric .bx-brief-value { padding-bottom:12px; }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-metric .bx-brief-value::after { content:''; position:absolute; bottom:0; left:10px; right:0; height:5px; border-bottom:1px solid var(--line-soft); background:repeating-linear-gradient(90deg,var(--line-soft) 0 1px,transparent 1px 12.5%); }
+#home-wrap .bx-stage[data-bx-format="wide"] .bx-brief-result .bx-brief-scores b { font-family:var(--font-sport); font-weight:700; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-award-season { display:none; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-metric .bx-brief-value { padding-bottom:0; }
+#home-wrap .bx-stage[data-bx-large-text] .bx-brief-metric .bx-brief-value::after { content:none; }
 
 
 /* Source: css/clubhouse-swipe-images.css */
@@ -10415,7 +10434,7 @@ html[data-readability="comfortable"] #view[data-route="clubhouse"] .gd-compare-r
 .tob-tray>span { margin-right:auto; }
 .tob-tray>button { min-height:44px; min-width:44px; padding:4px; border:0; background:none; color:var(--accent); font:600 .75rem/1.4 var(--font-ui); }
 .tob-tray>button:disabled { color:var(--body-text); opacity:.6; }
-.trade-offer-sheet { box-sizing:border-box; width:min(100%,760px); max-width:100%; max-height:min(90dvh,var(--dialog-available-height,90dvh)); padding:0; border:1px solid var(--line); border-radius:12px 12px 0 0; background:var(--bg); color:var(--text); box-shadow:var(--shadow-card); overflow:hidden; }
+.trade-offer-sheet { box-sizing:border-box; width:min(100%,760px); max-width:100%; max-height:min(90dvh,var(--dialog-viewport-height,90dvh)); padding:0; border:1px solid var(--line); border-radius:12px 12px 0 0; background:var(--bg); color:var(--text); box-shadow:var(--shadow-card); overflow:hidden; }
 .trade-offer-sheet[open] { display:flex; flex-direction:column; }
 .trade-offer-sheet::backdrop { background:var(--sheet-backdrop,rgba(0,0,0,.65)); }
 .trade-offer-sheet>header { display:flex; flex:none; justify-content:space-between; align-items:center; gap:12px; padding:8px 14px; border-bottom:1px solid var(--line); }
@@ -10456,8 +10475,8 @@ body dialog.trade-offer-sheet button { cursor:pointer; min-width:44px; min-heigh
 @media(max-height:500px){.trade-offer-sheet{max-height:96dvh}}
 html[data-readability="comfortable"] .trade-offer-sheet :is(.tob-players small,.tob-metrics dt,.tob-risk) { font-size:.875rem; }
 @supports(grid-template-rows:subgrid){
- .tob-comparison { grid-template-rows:repeat(10,auto); row-gap:0; }
- .tob-comparison>section { display:grid; grid-template-rows:subgrid; grid-row:1/span 10; }
+ .tob-comparison { grid-template-rows:repeat(11,auto); row-gap:0; }
+ .tob-comparison>section { display:grid; grid-template-rows:subgrid; grid-row:1/span 11; }
  .tob-comparison>section:first-child { grid-column:1; }
  .tob-comparison>section:nth-child(2) { grid-column:2; }
  .tob-comparison>.tob-players { align-self:start; }
@@ -10508,6 +10527,25 @@ body dialog.trade-offer-sheet .tob-editor-actions>[data-tob-use] { color:var(--a
 }
 
 html[data-readability="comfortable"] body dialog.trade-offer-sheet :is(.tob-player-name,.tob-players strong) { font-size:1rem; }
+
+/* Complete offers stay side by side, with the actual starter changes beside value. */
+#view[data-route="trade"] [data-tb-board-tools]:not([hidden]) { position:sticky; top:calc(var(--topbar-h,56px) + var(--dfl-scroll-height,0px)); z-index:12; background:var(--bg); }
+.trade-offer-sheet .tob-players>.tob-read-player { display:block; padding-block:2px; }
+body dialog.trade-offer-sheet .tob-player-card { display:grid; grid-template-columns:24px minmax(0,1fr); align-items:center; gap:6px; width:100%; min-width:0; min-height:44px; padding:4px 0; color:var(--text); text-align:left; }
+.tob-player-copy { min-width:0; }
+.trade-offer-sheet .tob-player-card strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tob-lineup { padding-block:8px; border-top:1px solid var(--line-soft); }
+.tob-lineup>h4 { margin:0 0 4px; }
+.tob-lineup>small,.tob-lineup>p { margin:0; color:var(--body-text); font:400 .625rem/1.4 var(--font-ui); }
+.tob-lineup dl { margin:6px 0 0; }
+.tob-lineup dl>div { display:grid; grid-template-columns:24px minmax(0,1fr); gap:6px; padding:5px 0; border-bottom:1px solid var(--line-soft); }
+.tob-lineup dt { color:var(--body-text); font:600 .625rem/1.4 var(--font-ui); }
+.tob-lineup dd { min-width:0; margin:0; display:grid; gap:2px; }
+.tob-lineup dd :is(span,strong) { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:500 .6875rem/1.4 var(--font-ui); }
+.tob-lineup dd>span { color:var(--body-text); font-weight:400; }
+@container (width < 18rem) {
+ .tob-lineup dl>div { grid-template-columns:minmax(0,1fr); gap:2px; }
+}
 
 
 /* Source: css/player-card-finish.css */

@@ -99,3 +99,8 @@ html[data-ui-motion="off"] .tb-offer-preview>summary i { transition:none; }
 .td-counter-drops { margin:0 0 7px; color:var(--muted); font-size:.7rem; overflow-wrap:break-word; }
 .td-counter-card>header>strong { min-width:0; font-size:.75rem; }
 .td-decision dd .td-price-label { display:block; margin-top:2px; color:var(--muted); font-size:.62rem; line-height:1.25; }
+
+#view[data-route="trade"] .tb-preview-slot button { gap:5px; }
+#view[data-route="trade"] .tb-preview-slot button>.dfl-player-portrait { flex:none; width:20px; min-width:20px; height:24px; min-height:0; padding:0; }
+#view[data-route="trade"] .tb-preview-slot button>.dfl-player-portrait>i { min-height:0; padding:0; }
+#view[data-route="trade"] .tb-preview-slot button>span:not(.dfl-player-portrait) { display:block; min-height:0; padding:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

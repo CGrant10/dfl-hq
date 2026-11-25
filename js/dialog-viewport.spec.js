@@ -23,3 +23,10 @@ describe('visible dialog bounds', () => {
     expect(dialogViewportBounds(844, 400, 80)).toEqual({ top:80, bottom:364, height:376 });
   });
 });
+
+it('coalesces keyboard events into one frame and cancels queued work on close',()=>{
+ const viewport=new EventTarget(),win=new EventTarget(),dialog=new EventTarget(),frames=new Map();let id=0;
+ Object.assign(viewport,{height:844,offsetTop:0});win.visualViewport=viewport;dialog.isConnected=true;dialog.style={setProperty:vi.fn()};
+ vi.stubGlobal('window',win);vi.stubGlobal('innerHeight',844);vi.stubGlobal('requestAnimationFrame',fn=>{frames.set(++id,fn);return id});vi.stubGlobal('cancelAnimationFrame',key=>frames.delete(key));
+ try{fitDialogToViewport(dialog);dialog.style.setProperty.mockClear();viewport.height=400;viewport.offsetTop=80;viewport.dispatchEvent(new Event('resize'));viewport.dispatchEvent(new Event('scroll'));viewport.dispatchEvent(new Event('resize'));expect(frames.size).toBe(1);const apply=[...frames.values()][0];apply();expect(dialog.style.setProperty).toHaveBeenCalledTimes(3);expect(dialog.style.setProperty).toHaveBeenCalledWith('--dialog-viewport-height','376px');dialog.style.setProperty.mockClear();viewport.dispatchEvent(new Event('resize'));[...frames.values()][0]();expect(dialog.style.setProperty).not.toHaveBeenCalled();viewport.height=350;viewport.dispatchEvent(new Event('resize'));dialog.dispatchEvent(new Event('close'));expect(frames.size).toBe(0)}finally{vi.unstubAllGlobals()}
+});

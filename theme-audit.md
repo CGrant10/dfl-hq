@@ -3560,3 +3560,44 @@ provider fixtures; native-device font rasterization remains unmeasured.
 Evidence: `/workspace/dfl-clock-1610-1/{before,after,scores}`.
 
 final result: passed
+
+### 1.611.0 — Connected player cards, offer comparisons and broadcast editions
+
+Reviewed actual Light/Dark mobile screenshots of Home, Trades, Clubhouse and Team
+Analyzer at 320px, plus loaded Home and generated offers at 390px. No page
+horizontal overflow or browser errors. The compiled trade page generated 103
+offers across 11 partner teams, with Compare visible beside its default actions.
+
+Comparison now exposes actual legal starter changes alongside package balance,
+lineup and depth values. Its two columns remain aligned at 320/390px in both
+themes, including 200% text; player names stay on one line with full titles.
+144 browser checks passed, covering nested portrait/card opening, exact focus
+and scroll return, swapping, fresh grades, three-way routing and reduced motion.
+Before/after starter controls also carry fixed-size portraits.
+
+Broadcast keeps the independent daily opener and existing award illustrations.
+Secondary results/metrics use sports typography, awards carry a faint season
+mark and soft radial light, and archive subjects rotate in stable six-hour
+editions. Inspected both themes; 96 standard and 60 enlarged-text composition
+checks passed, plus the editorial picker, routed receipt, autoplay, swipe,
+offscreen layout-read and reduced-motion checks. Hidden decorative season text
+is excluded from visible-child geometry checks, while all visible children
+retain containment assertions.
+
+Shared player intent now preloads on interaction, ignores superseded/detached
+openings and cleans up delegated handlers. 36 portrait choreography checks and
+87 sheet checks passed, including interrupted/repeated opens, viewport/keyboard
+changes, focus restoration and motion-off. Visual viewport events are batched
+per animation frame and unchanged dimensions are not rewritten. Existing photo
+layout/fallback behavior passed Light/Dark at DPR 1/3 with delayed/failed images.
+
+All 329 test files / 2,779 tests passed, plus release, theme, type, name and
+production-bundle checks. One five-second trade-search timeout under concurrent
+browser/build load was rerun with the suite's command-line budget set to 15s;
+no application test expectations or repository timeouts were changed. These are
+Chromium mobile-emulation checks; native-device frame pacing and keyboard
+behavior remain unmeasured. No real league writes were made during verification.
+Evidence: `/workspace/dfl-polish-1611/` (trade-verified/board, broadcast-after,
+sheets, images, after320, after390 and test/build logs).
+
+final result: passed

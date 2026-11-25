@@ -23,7 +23,8 @@ export function renderBroadcastBrief(item){
  let kind='news',heading=item.headline||'',body='',media='',detail='',decoration='',tradeSummary='',tradeReading='',action=item.actionLabel||'Read story',href=item.href||'',tag=href?'a':'section';
  if(item.treatment==='champion'){
   kind='award';const chip=item.variant==='chip';media=art(`assets/dfl-daily-${chip?'chip-eater':'champion'}.webp`);
-  decoration=`<span class="bx-brief-poster" aria-hidden="true">${chip?'CHIP EATER':'CHAMPION'}</span>`;
+  const year=String(item.kicker||'').match(/\b20\d{2}\b/)?.[0];
+  decoration=(year?`<span class="bx-brief-award-season" aria-hidden="true">${esc(year)}</span>`:'')+`<span class="bx-brief-poster" aria-hidden="true">${chip?'CHIP EATER':'CHAMPION'}</span>`;
   action=chip?'Wall of shame':'Title ledger';href=href||'#/history';tag='a';
  }else if(item.kind==='trade'&&item.tradeStory?.packages?.length){
   kind='trade';heading=item.tradeStory.outcome?.displayGrade||item.tradeStory.outcome?.grade||'Trade receipt';action='Receipt';

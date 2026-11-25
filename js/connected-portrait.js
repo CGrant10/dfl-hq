@@ -19,6 +19,7 @@ export function connectPortrait(source, target, { motion = true, duration = 280,
   let pendingImage=null,photoReady=null;
   if (photo?.src) {
     const image = document.createElement('img'),ready=photo.complete&&photo.naturalWidth;
+    image.decoding='async';image.loading='eager';
     image.alt = '';
     Object.assign(image.style, { display:'block', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top' });
     if (portrait.classList.contains('is-team')) Object.assign(image.style, { objectFit:'contain', padding:'10px', boxSizing:'border-box' });
