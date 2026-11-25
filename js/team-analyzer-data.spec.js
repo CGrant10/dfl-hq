@@ -48,6 +48,7 @@ vi.mock("./team-analyzer.js", () => ({
   analyzeLeague: ({ rosters }) => rosters.map(roster => ({ ...roster })),
 }));
 
+import {loadLeagueState} from './league-state.js';
 import {loadNflGameDay} from "./nfl-game-day.js";
 import { sleeper, loadSeasonStats, loadWeeklyStats, loadWeeklyProjections, loadMarketAdp } from "./sleeper.js";
 import {loadExpertRankings} from './expert-rankings-data.js';
@@ -100,6 +101,14 @@ describe("shared analyzer model", () => {
     expect(loadWeeklyStats.mock.calls.map(args=>args[1])).toEqual([1,2,3]);
     expect(data.completedWeeks).toBe(2);
     expect(data.expertConsensus.status).toBe('Unavailable');
+  });
+  it('keeps completed games outside four calendar weeks available to the player model',async()=>{
+    loadLeagueState.mockResolvedValueOnce({season:2026,currentWeek:7});
+    loadWeeklyStats.mockImplementationOnce(async()=>({data:[{player_id:'p1',stats:{gp:1,rec:10}}],fetchedAt:1}));
+    await loadAnalyzerData();
+    const args=mocks.buildPool.mock.calls.at(-1)[0];
+    expect(args.recentStats).toHaveLength(6);expect(args.recentStats).toBe(args.seasonWeeklyStats);
+    expect(args.recentStats[0][0].player_id).toBe('p1');
   });
   it("reports failed availability separately from newer production", async()=>{
     clearAnalyzerDataCache();

@@ -1,0 +1,1856 @@
+{
+  "capturedAt": "2026-11-25T20:12:07.075509+00:00",
+  "sources": [
+    "Sleeper stats/projections/player catalog",
+    "ESPN dated injury reports",
+    "FantasyPros PPR ROS consensus"
+  ],
+  "season": 2026,
+  "currentWeek": 12,
+  "now": 1795637527075,
+  "players": {
+    "11292": {
+      "n": "Tommy DeVito",
+      "p": "QB",
+      "t": "NE",
+      "i": null,
+      "s": "Active",
+      "news_updated": 1795586405021
+    },
+    "4034": {
+      "n": "Christian McCaffrey",
+      "p": "RB",
+      "t": "SF",
+      "i": null,
+      "s": "Active",
+      "news_updated": 1795450217900
+    },
+    "13345": {
+      "n": "Jonah Coleman",
+      "p": "RB",
+      "t": "DEN",
+      "i": null,
+      "s": "Active",
+      "news_updated": 1795486221744
+    },
+    "12533": {
+      "n": "Jacory Croskey-Merritt",
+      "p": "RB",
+      "t": "WAS",
+      "i": null,
+      "s": "Active",
+      "news_updated": 1795519847448
+    },
+    "10229": {
+      "n": "Rashee Rice",
+      "p": "WR",
+      "t": "KC",
+      "i": null,
+      "s": "Active",
+      "news_updated": 1795403111101
+    },
+    "11564": {
+      "n": "Drake Maye",
+      "p": "QB",
+      "t": "NE",
+      "i": "Out",
+      "s": "Active",
+      "news_updated": 1795465818368
+    },
+    "5859": {
+      "n": "A.J. Brown",
+      "p": "WR",
+      "t": "NE",
+      "i": "Doubtful",
+      "s": "Active",
+      "news_updated": 1795636209896
+    }
+  },
+  "scoringSettings": {
+    "ff": 1,
+    "fum": 0,
+    "int": 2,
+    "rec": 1,
+    "xpm": 1,
+    "sack": 1,
+    "safe": 2,
+    "st_ff": 0,
+    "st_td": 0,
+    "def_td": 6,
+    "fgmiss": 0,
+    "rec_td": 6,
+    "rec_yd": 0.1,
+    "xpmiss": 0,
+    "def_2pt": 2,
+    "fgm_50p": 5,
+    "fum_rec": 2,
+    "pass_td": 4,
+    "pass_yd": 0.04,
+    "rec_2pt": 2,
+    "rush_td": 6,
+    "rush_yd": 0.1,
+    "blk_kick": 2,
+    "fgm_0_19": 3,
+    "fum_lost": -2,
+    "pass_2pt": 2,
+    "pass_int": -2,
+    "rush_2pt": 2,
+    "def_st_ff": 0,
+    "def_st_td": 0,
+    "fgm_20_29": 3,
+    "fgm_30_39": 3,
+    "fgm_40_49": 4,
+    "fum_rec_td": 6,
+    "st_fum_rec": 0,
+    "pts_allow_0": 10,
+    "bonus_rec_rb": 0,
+    "pts_allow_1_6": 7,
+    "pts_allow_35p": -4,
+    "def_st_fum_rec": 0,
+    "pts_allow_7_13": 4,
+    "pts_allow_14_20": 1,
+    "pts_allow_21_27": 0,
+    "pts_allow_28_34": -1,
+    "bonus_rec_yd_100": 1,
+    "bonus_rec_yd_200": 2,
+    "bonus_pass_yd_300": 1,
+    "bonus_pass_yd_400": 2,
+    "bonus_rush_yd_100": 1,
+    "bonus_rush_yd_200": 2
+  },
+  "currentStats": {
+    "11292": {
+      "pass_int": 1.0,
+      "gp": 3.0,
+      "pass_att": 32.0,
+      "rush_att": 5.0,
+      "pass_yd": 132.0,
+      "pass_td": 1.0,
+      "rush_yd": 21.0
+    },
+    "4034": {
+      "bonus_rec_yd_100": 1.0,
+      "gp": 10.0,
+      "rec_td": 3.0,
+      "rush_td": 11.0,
+      "rec_2pt": 1.0,
+      "rec": 42.0,
+      "fum_lost": 1.0,
+      "rush_att": 127.0,
+      "rush_yd": 568.0,
+      "bonus_rec_rb": 42.0,
+      "rec_tgt": 52.0,
+      "fum": 1.0,
+      "rec_yd": 444.0
+    },
+    "13345": {
+      "bonus_rush_yd_100": 1.0,
+      "gp": 6.0,
+      "rush_td": 6.0,
+      "rec": 17.0,
+      "rush_att": 71.0,
+      "rush_yd": 302.0,
+      "bonus_rec_rb": 17.0,
+      "rec_tgt": 19.0,
+      "rec_yd": 146.0
+    },
+    "12533": {
+      "gp": 6.0,
+      "rush_td": 3.0,
+      "rec": 7.0,
+      "rush_att": 80.0,
+      "rush_yd": 293.0,
+      "bonus_rec_rb": 7.0,
+      "rec_tgt": 10.0,
+      "fum": 1.0,
+      "rec_yd": 63.0
+    },
+    "10229": {
+      "gp": 8.0,
+      "rec_td": 2.0,
+      "rec": 36.0,
+      "rec_tgt": 44.0,
+      "rec_yd": 427.0
+    },
+    "11564": {
+      "pass_int": 11.0,
+      "gp": 10.0,
+      "pass_2pt": 1.0,
+      "rush_td": 3.0,
+      "pass_att": 276.0,
+      "fum_lost": 2.0,
+      "rush_att": 48.0,
+      "bonus_pass_yd_300": 2.0,
+      "pass_yd": 2330.0,
+      "pass_td": 18.0,
+      "rush_yd": 230.0,
+      "fum": 6.0
+    },
+    "5859": {
+      "gp": 4.0,
+      "rec": 11.0,
+      "rec_tgt": 26.0,
+      "fum": 1.0,
+      "rec_yd": 128.0
+    }
+  },
+  "previousStats": {
+    "11292": {},
+    "4034": {
+      "bonus_rush_yd_100": 4.0,
+      "gp": 17.0,
+      "rec_td": 7.0,
+      "rush_td": 10.0,
+      "pass_att": 1.0,
+      "rec": 102.0,
+      "rush_att": 311.0,
+      "rush_yd": 1202.0,
+      "bonus_rec_rb": 102.0,
+      "rec_tgt": 129.0,
+      "fum": 2.0,
+      "rec_yd": 924.0
+    },
+    "13345": {},
+    "12533": {
+      "bonus_rush_yd_100": 2.0,
+      "gp": 17.0,
+      "rush_td": 8.0,
+      "rec": 9.0,
+      "fum_lost": 2.0,
+      "rush_att": 175.0,
+      "rush_yd": 805.0,
+      "bonus_rec_rb": 9.0,
+      "rec_tgt": 13.0,
+      "fum": 4.0,
+      "rec_yd": 68.0
+    },
+    "10229": {
+      "bonus_rec_yd_100": 1.0,
+      "gp": 8.0,
+      "rec_td": 5.0,
+      "rush_td": 1.0,
+      "rec_2pt": 1.0,
+      "rec": 53.0,
+      "rush_att": 5.0,
+      "rush_yd": 20.0,
+      "rec_tgt": 78.0,
+      "fum": 2.0,
+      "rec_yd": 571.0
+    },
+    "11564": {
+      "pass_int": 8.0,
+      "gp": 17.0,
+      "pass_2pt": 1.0,
+      "rush_td": 4.0,
+      "pass_att": 492.0,
+      "rec": 1.0,
+      "fum_lost": 3.0,
+      "rush_att": 103.0,
+      "bonus_pass_yd_300": 1.0,
+      "rush_2pt": 1.0,
+      "pass_yd": 4394.0,
+      "pass_td": 31.0,
+      "rush_yd": 450.0,
+      "rec_tgt": 1.0,
+      "fum": 8.0,
+      "rec_yd": 2.0
+    },
+    "5859": {
+      "bonus_rec_yd_100": 5.0,
+      "gp": 15.0,
+      "rec_td": 7.0,
+      "rec": 78.0,
+      "rec_tgt": 121.0,
+      "rec_yd": 1003.0
+    }
+  },
+  "projections": [
+    {
+      "player_id": "4034",
+      "season": "2026",
+      "season_type": "regular",
+      "week": null,
+      "date": null,
+      "team": "SF",
+      "game_id": "season",
+      "stats": {
+        "adp_ppr": 5.1,
+        "bonus_rec_rb": 70.0,
+        "fum_lost": 2.0,
+        "gp": 18.0,
+        "rec": 70.0,
+        "rec_td": 4.0,
+        "rec_yd": 606.0,
+        "rush_att": 240.0,
+        "rush_td": 7.0,
+        "rush_yd": 984.0
+      }
+    },
+    {
+      "player_id": "5859",
+      "season": "2026",
+      "season_type": "regular",
+      "week": null,
+      "date": null,
+      "team": "NE",
+      "game_id": "season",
+      "stats": {
+        "adp_ppr": 17.4,
+        "gp": 18.0,
+        "rec": 54.0,
+        "rec_2pt": 1.0,
+        "rec_td": 5.0,
+        "rec_yd": 805.0,
+        "rush_att": 1.0,
+        "rush_yd": 5.0
+      }
+    },
+    {
+      "player_id": "10229",
+      "season": "2026",
+      "season_type": "regular",
+      "week": null,
+      "date": null,
+      "team": "KC",
+      "game_id": "season",
+      "stats": {
+        "adp_ppr": 29.5,
+        "fum_lost": 1.0,
+        "gp": 18.0,
+        "rec": 88.0,
+        "rec_2pt": 1.0,
+        "rec_td": 7.0,
+        "rec_yd": 964.0,
+        "rush_att": 6.0,
+        "rush_yd": 29.0
+      }
+    },
+    {
+      "player_id": "11564",
+      "season": "2026",
+      "season_type": "regular",
+      "week": null,
+      "date": null,
+      "team": "NE",
+      "game_id": "season",
+      "stats": {
+        "adp_ppr": 47.1,
+        "fum_lost": 3.0,
+        "gp": 18.0,
+        "pass_2pt": 1.0,
+        "pass_att": 505.0,
+        "pass_int": 11.0,
+        "pass_td": 29.0,
+        "pass_yd": 3854.0,
+        "rush_att": 85.0,
+        "rush_td": 4.0,
+        "rush_yd": 416.0
+      }
+    },
+    {
+      "player_id": "12533",
+      "season": "2026",
+      "season_type": "regular",
+      "week": null,
+      "date": null,
+      "team": "WAS",
+      "game_id": "season",
+      "stats": {
+        "adp_ppr": 115.4,
+        "bonus_rec_rb": 19.0,
+        "fum_lost": 1.0,
+        "gp": 18.0,
+        "rec": 19.0,
+        "rec_td": 1.0,
+        "rec_yd": 135.0,
+        "rush_att": 141.0,
+        "rush_td": 5.0,
+        "rush_yd": 614.0
+      }
+    },
+    {
+      "player_id": "13345",
+      "season": "2026",
+      "season_type": "regular",
+      "week": null,
+      "date": null,
+      "team": "DEN",
+      "game_id": "season",
+      "stats": {
+        "adp_ppr": 164.0,
+        "bonus_rec_rb": 10.0,
+        "fum_lost": 1.0,
+        "gp": 18.0,
+        "rec": 10.0,
+        "rec_td": 1.0,
+        "rec_yd": 75.0,
+        "rush_att": 72.0,
+        "rush_td": 2.0,
+        "rush_yd": 304.0
+      }
+    },
+    {
+      "player_id": "11292",
+      "season": "2026",
+      "season_type": "regular",
+      "week": null,
+      "date": null,
+      "team": "NE",
+      "game_id": "season",
+      "stats": {
+        "adp_ppr": 999.0,
+        "gp": 18.0,
+        "pass_att": 30.0,
+        "pass_int": 1.0,
+        "pass_td": 1.0,
+        "pass_yd": 202.0,
+        "rush_att": 4.0,
+        "rush_yd": 13.0
+      }
+    }
+  ],
+  "weeklyProjections": [
+    {
+      "player_id": "10229",
+      "season": "2026",
+      "season_type": "regular",
+      "week": 12,
+      "date": "2026-11-26",
+      "team": "KC",
+      "game_id": "202611204",
+      "stats": {
+        "fum": 0.05,
+        "fum_lost": 0.02,
+        "gp": 1.0,
+        "rec": 4.43,
+        "rec_2pt": 0.02,
+        "rec_td": 0.37,
+        "rec_tgt": 6.43,
+        "rec_yd": 57.35,
+        "rush_2pt": 0.0,
+        "rush_att": 0.38,
+        "rush_td": 0.02,
+        "rush_yd": 1.5
+      },
+      "player": {
+        "injury_status": null,
+        "news_updated": 1795403111101
+      }
+    },
+    {
+      "player_id": "13345",
+      "season": "2026",
+      "season_type": "regular",
+      "week": 12,
+      "date": "2026-11-27",
+      "team": "DEN",
+      "game_id": "202611228",
+      "stats": {
+        "bonus_rec_rb": 2.63,
+        "fum": 0.17,
+        "fum_lost": 0.08,
+        "gp": 1.0,
+        "rec": 2.63,
+        "rec_2pt": 0.01,
+        "rec_td": 0.09,
+        "rec_tgt": 2.96,
+        "rec_yd": 22.09,
+        "rush_2pt": 0.06,
+        "rush_att": 18.01,
+        "rush_td": 0.81,
+        "rush_yd": 67.5
+      },
+      "player": {
+        "injury_status": null,
+        "news_updated": 1795486221744
+      }
+    },
+    {
+      "player_id": "12533",
+      "season": "2026",
+      "season_type": "regular",
+      "week": 12,
+      "date": "2026-11-29",
+      "team": "WAS",
+      "game_id": "202611201",
+      "stats": {
+        "bonus_rec_rb": 0.94,
+        "fum": 0.11,
+        "fum_lost": 0.05,
+        "gp": 1.0,
+        "rec": 0.94,
+        "rec_2pt": 0.0,
+        "rec_td": 0.05,
+        "rec_tgt": 1.21,
+        "rec_yd": 8.18,
+        "rush_2pt": 0.02,
+        "rush_att": 11.13,
+        "rush_td": 0.23,
+        "rush_yd": 41.47
+      },
+      "player": {
+        "injury_status": null,
+        "news_updated": 1795519847448
+      }
+    },
+    {
+      "player_id": "4034",
+      "season": "2026",
+      "season_type": "regular",
+      "week": 12,
+      "date": "2026-11-29",
+      "team": "SF",
+      "game_id": "202611231",
+      "stats": {
+        "bonus_rec_rb": 3.73,
+        "fum": 0.18,
+        "fum_lost": 0.08,
+        "gp": 1.0,
+        "rec": 3.73,
+        "rec_2pt": 0.01,
+        "rec_td": 0.12,
+        "rec_tgt": 4.58,
+        "rec_yd": 26.28,
+        "rush_2pt": 0.08,
+        "rush_att": 15.96,
+        "rush_td": 0.89,
+        "rush_yd": 58.99
+      },
+      "player": {
+        "injury_status": null,
+        "news_updated": 1795450217900
+      }
+    },
+    {
+      "player_id": "11292",
+      "season": "2026",
+      "season_type": "regular",
+      "week": 12,
+      "date": "2026-11-29",
+      "team": "NE",
+      "game_id": "202611229",
+      "stats": {
+        "fum": 0.4,
+        "fum_lost": 0.18,
+        "gp": 1.0,
+        "pass_2pt": 0.06,
+        "pass_att": 31.35,
+        "pass_int": 1.04,
+        "pass_td": 1.1,
+        "pass_yd": 214.02,
+        "rush_att": 2.95,
+        "rush_td": 0.1,
+        "rush_yd": 10.34
+      },
+      "player": {
+        "injury_status": null,
+        "news_updated": 1795586405021
+      }
+    },
+    {
+      "player_id": "5859",
+      "season": "2026",
+      "season_type": "regular",
+      "week": 12,
+      "date": null,
+      "team": "NE",
+      "game_id": "202611229",
+      "stats": {},
+      "player": {
+        "injury_status": "Doubtful",
+        "news_updated": 1795636209896
+      }
+    },
+    {
+      "player_id": "11564",
+      "season": "2026",
+      "season_type": "regular",
+      "week": 12,
+      "date": null,
+      "team": "NE",
+      "game_id": "202611229",
+      "stats": {},
+      "player": {
+        "injury_status": "Out",
+        "news_updated": 1795465818368
+      }
+    }
+  ],
+  "weeks": [
+    [
+      {
+        "player_id": "11564",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 1,
+        "date": "2026-09-09",
+        "team": "NE",
+        "game_id": "202610130",
+        "stats": {
+          "pass_int": 3.0,
+          "gp": 1.0,
+          "pass_att": 33.0,
+          "rush_att": 7.0,
+          "pass_yd": 178.0,
+          "pass_td": 1.0,
+          "rush_yd": 47.0
+        }
+      },
+      {
+        "player_id": "5859",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 1,
+        "date": "2026-09-09",
+        "team": "NE",
+        "game_id": "202610130",
+        "stats": {
+          "gp": 1.0,
+          "rec": 3.0,
+          "rec_tgt": 4.0,
+          "rec_yd": 26.0
+        }
+      },
+      {
+        "player_id": "11292",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 1,
+        "date": "2026-09-09",
+        "team": "NE",
+        "game_id": "202610130",
+        "stats": {}
+      },
+      {
+        "player_id": "4034",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 1,
+        "date": "2026-09-10",
+        "team": "SF",
+        "game_id": "202610132",
+        "stats": {
+          "gp": 1.0,
+          "rec": 5.0,
+          "rush_att": 10.0,
+          "rush_yd": 68.0,
+          "bonus_rec_rb": 5.0,
+          "rec_tgt": 8.0,
+          "rec_yd": 20.0
+        }
+      },
+      {
+        "player_id": "12533",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 1,
+        "date": "2026-09-13",
+        "team": "WAS",
+        "game_id": "202610126",
+        "stats": {
+          "gp": 1.0,
+          "rush_td": 1.0,
+          "rec": 1.0,
+          "rush_att": 16.0,
+          "rush_yd": 63.0,
+          "bonus_rec_rb": 1.0,
+          "rec_tgt": 1.0,
+          "fum": 1.0,
+          "rec_yd": -7.0
+        }
+      },
+      {
+        "player_id": "13345",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 1,
+        "date": "2026-09-14",
+        "team": "DEN",
+        "game_id": "202610116",
+        "stats": {
+          "gp": 1.0
+        }
+      },
+      {
+        "player_id": "10229",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 1,
+        "date": "2026-09-14",
+        "team": "KC",
+        "game_id": "202610116",
+        "stats": {
+          "gp": 1.0,
+          "rec": 2.0,
+          "rec_td": 1.0,
+          "rec_tgt": 2.0,
+          "rec_yd": 19.0
+        }
+      }
+    ],
+    [
+      {
+        "player_id": "12533",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 2,
+        "date": "2026-09-20",
+        "team": "WAS",
+        "game_id": "202610209",
+        "stats": {
+          "gp": 1.0,
+          "rec": 1.0,
+          "rush_att": 12.0,
+          "rush_yd": 43.0,
+          "bonus_rec_rb": 1.0,
+          "rec_tgt": 1.0,
+          "rec_yd": 5.0
+        }
+      },
+      {
+        "player_id": "13345",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 2,
+        "date": "2026-09-20",
+        "team": "DEN",
+        "game_id": "202610210",
+        "stats": {
+          "gp": 1.0,
+          "rush_td": 1.0,
+          "rec": 3.0,
+          "rush_att": 10.0,
+          "rush_yd": 39.0,
+          "bonus_rec_rb": 3.0,
+          "rec_tgt": 3.0,
+          "rec_yd": 19.0
+        }
+      },
+      {
+        "player_id": "10229",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 2,
+        "date": "2026-09-20",
+        "team": "KC",
+        "game_id": "202610216",
+        "stats": {
+          "gp": 1.0,
+          "rec": 4.0,
+          "rec_tgt": 6.0,
+          "rec_yd": 83.0
+        }
+      },
+      {
+        "player_id": "4034",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 2,
+        "date": "2026-09-20",
+        "team": "SF",
+        "game_id": "202610231",
+        "stats": {
+          "gp": 1.0,
+          "rush_td": 2.0,
+          "rec": 4.0,
+          "rush_att": 10.0,
+          "rush_yd": 23.0,
+          "bonus_rec_rb": 4.0,
+          "rec_tgt": 4.0,
+          "rec_yd": 43.0
+        }
+      },
+      {
+        "player_id": "11292",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 2,
+        "date": "2026-09-20",
+        "team": "NE",
+        "game_id": "202610221",
+        "stats": {}
+      },
+      {
+        "player_id": "11564",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 2,
+        "date": "2026-09-20",
+        "team": "NE",
+        "game_id": "202610221",
+        "stats": {
+          "pass_int": 1.0,
+          "gp": 1.0,
+          "pass_att": 22.0,
+          "rush_att": 4.0,
+          "pass_yd": 208.0,
+          "rush_yd": 17.0
+        }
+      },
+      {
+        "player_id": "5859",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 2,
+        "date": "2026-09-20",
+        "team": "NE",
+        "game_id": "202610221",
+        "stats": {}
+      }
+    ],
+    [
+      {
+        "player_id": "10229",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 3,
+        "date": "2026-09-27",
+        "team": "KC",
+        "game_id": "202610319",
+        "stats": {
+          "gp": 1.0,
+          "rec": 7.0,
+          "rec_tgt": 9.0,
+          "rec_yd": 88.0
+        }
+      },
+      {
+        "player_id": "13345",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 3,
+        "date": "2026-09-27",
+        "team": "DEN",
+        "game_id": "202610310",
+        "stats": {}
+      },
+      {
+        "player_id": "5859",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 3,
+        "date": "2026-09-27",
+        "team": "NE",
+        "game_id": "202610315",
+        "stats": {}
+      },
+      {
+        "player_id": "4034",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 3,
+        "date": "2026-09-27",
+        "team": "SF",
+        "game_id": "202610331",
+        "stats": {
+          "gp": 1.0,
+          "rush_td": 1.0,
+          "rec": 4.0,
+          "rush_att": 15.0,
+          "rush_yd": 75.0,
+          "bonus_rec_rb": 4.0,
+          "rec_tgt": 5.0,
+          "rec_yd": 41.0
+        }
+      },
+      {
+        "player_id": "11292",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 3,
+        "date": "2026-09-27",
+        "team": "NE",
+        "game_id": "202610315",
+        "stats": {
+          "gp": 1.0,
+          "pass_att": 5.0,
+          "pass_yd": 30.0,
+          "rush_att": 1.0,
+          "rush_yd": 2.0
+        }
+      },
+      {
+        "player_id": "11564",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 3,
+        "date": "2026-09-27",
+        "team": "NE",
+        "game_id": "202610315",
+        "stats": {
+          "pass_int": 2.0,
+          "gp": 1.0,
+          "pass_att": 25.0,
+          "fum_lost": 1.0,
+          "rush_att": 4.0,
+          "pass_yd": 199.0,
+          "rush_yd": 18.0,
+          "fum": 2.0
+        }
+      },
+      {
+        "player_id": "12533",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 3,
+        "date": "2026-09-27",
+        "team": "WAS",
+        "game_id": "202610335",
+        "stats": {
+          "gp": 1.0,
+          "rec": 1.0,
+          "rush_att": 19.0,
+          "rush_yd": 36.0,
+          "bonus_rec_rb": 1.0,
+          "rec_tgt": 1.0,
+          "rec_yd": 7.0
+        }
+      }
+    ],
+    [
+      {
+        "player_id": "11292",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 4,
+        "date": "2026-10-04",
+        "team": "NE",
+        "game_id": "202610404",
+        "stats": {}
+      },
+      {
+        "player_id": "4034",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 4,
+        "date": "2026-10-04",
+        "team": "SF",
+        "game_id": "202610431",
+        "stats": {
+          "gp": 1.0,
+          "rush_td": 1.0,
+          "rec": 3.0,
+          "rush_att": 15.0,
+          "rush_yd": 52.0,
+          "bonus_rec_rb": 3.0,
+          "rec_tgt": 5.0,
+          "rec_yd": 18.0
+        }
+      },
+      {
+        "player_id": "5859",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 4,
+        "date": "2026-10-04",
+        "team": "NE",
+        "game_id": "202610404",
+        "stats": {}
+      },
+      {
+        "player_id": "11564",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 4,
+        "date": "2026-10-04",
+        "team": "NE",
+        "game_id": "202610404",
+        "stats": {
+          "pass_int": 1.0,
+          "gp": 1.0,
+          "pass_2pt": 1.0,
+          "pass_att": 37.0,
+          "fum_lost": 1.0,
+          "rush_att": 8.0,
+          "pass_yd": 269.0,
+          "pass_td": 3.0,
+          "rush_yd": 54.0,
+          "fum": 3.0
+        }
+      },
+      {
+        "player_id": "13345",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 4,
+        "date": "2026-10-04",
+        "team": "DEN",
+        "game_id": "202610431",
+        "stats": {}
+      },
+      {
+        "player_id": "10229",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 4,
+        "date": "2026-10-04",
+        "team": "KC",
+        "game_id": "202610425",
+        "stats": {
+          "gp": 1.0
+        }
+      },
+      {
+        "player_id": "12533",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 4,
+        "date": "2026-10-04",
+        "team": "WAS",
+        "game_id": "202610435",
+        "stats": {
+          "gp": 1.0,
+          "rec": 2.0,
+          "rush_att": 9.0,
+          "rush_yd": 15.0,
+          "bonus_rec_rb": 2.0,
+          "rec_tgt": 4.0,
+          "rec_yd": 35.0
+        }
+      }
+    ],
+    [
+      {
+        "player_id": "12533",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 5,
+        "date": "2026-10-11",
+        "team": "WAS",
+        "game_id": "202610535",
+        "stats": {
+          "gp": 1.0,
+          "rush_att": 11.0,
+          "rush_td": 1.0,
+          "rush_yd": 82.0
+        }
+      },
+      {
+        "player_id": "13345",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 5,
+        "date": "2026-10-11",
+        "team": "DEN",
+        "game_id": "202610529",
+        "stats": {}
+      },
+      {
+        "player_id": "4034",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 5,
+        "date": "2026-10-11",
+        "team": "SF",
+        "game_id": "202610530",
+        "stats": {
+          "gp": 1.0,
+          "rush_td": 1.0,
+          "rec": 3.0,
+          "rush_att": 11.0,
+          "rush_yd": 68.0,
+          "bonus_rec_rb": 3.0,
+          "rec_tgt": 3.0,
+          "rec_yd": 15.0
+        }
+      },
+      {
+        "player_id": "5859",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 5,
+        "date": "2026-10-11",
+        "team": "NE",
+        "game_id": "202610521",
+        "stats": {}
+      },
+      {
+        "player_id": "11292",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 5,
+        "date": "2026-10-11",
+        "team": "NE",
+        "game_id": "202610521",
+        "stats": {}
+      },
+      {
+        "player_id": "11564",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 5,
+        "date": "2026-10-11",
+        "team": "NE",
+        "game_id": "202610521",
+        "stats": {
+          "gp": 1.0,
+          "rush_td": 1.0,
+          "pass_att": 34.0,
+          "rush_att": 7.0,
+          "bonus_pass_yd_300": 1.0,
+          "pass_yd": 374.0,
+          "pass_td": 4.0,
+          "rush_yd": 25.0
+        }
+      }
+    ],
+    [
+      {
+        "player_id": "13345",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 6,
+        "date": "2026-10-15",
+        "team": "DEN",
+        "game_id": "202610610",
+        "stats": {}
+      },
+      {
+        "player_id": "11564",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 6,
+        "date": "2026-10-18",
+        "team": "NE",
+        "game_id": "202610621",
+        "stats": {
+          "gp": 1.0,
+          "pass_att": 32.0,
+          "rush_att": 4.0,
+          "pass_yd": 235.0,
+          "pass_td": 3.0,
+          "rush_yd": 24.0
+        }
+      },
+      {
+        "player_id": "5859",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 6,
+        "date": "2026-10-18",
+        "team": "NE",
+        "game_id": "202610621",
+        "stats": {
+          "gp": 1.0,
+          "rec": 3.0,
+          "rec_tgt": 10.0,
+          "fum": 1.0,
+          "rec_yd": 27.0
+        }
+      },
+      {
+        "player_id": "11292",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 6,
+        "date": "2026-10-18",
+        "team": "NE",
+        "game_id": "202610621",
+        "stats": {}
+      },
+      {
+        "player_id": "12533",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 6,
+        "date": "2026-10-19",
+        "team": "WAS",
+        "game_id": "202610631",
+        "stats": {}
+      },
+      {
+        "player_id": "4034",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 6,
+        "date": "2026-10-19",
+        "team": "SF",
+        "game_id": "202610631",
+        "stats": {
+          "gp": 1.0,
+          "rush_td": 2.0,
+          "rec": 9.0,
+          "fum_lost": 1.0,
+          "rush_att": 16.0,
+          "rush_yd": 64.0,
+          "bonus_rec_rb": 9.0,
+          "rec_tgt": 10.0,
+          "fum": 1.0,
+          "rec_yd": 53.0
+        }
+      }
+    ],
+    [
+      {
+        "player_id": "11564",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 7,
+        "date": "2026-10-22",
+        "team": "NE",
+        "game_id": "202610706",
+        "stats": {
+          "pass_int": 1.0,
+          "gp": 1.0,
+          "rush_td": 1.0,
+          "pass_att": 31.0,
+          "rush_att": 4.0,
+          "bonus_pass_yd_300": 1.0,
+          "pass_yd": 321.0,
+          "pass_td": 2.0,
+          "rush_yd": 26.0
+        }
+      },
+      {
+        "player_id": "11292",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 7,
+        "date": "2026-10-22",
+        "team": "NE",
+        "game_id": "202610706",
+        "stats": {}
+      },
+      {
+        "player_id": "5859",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 7,
+        "date": "2026-10-22",
+        "team": "NE",
+        "game_id": "202610706",
+        "stats": {
+          "gp": 1.0,
+          "rec": 3.0,
+          "rec_tgt": 6.0,
+          "rec_yd": 48.0
+        }
+      },
+      {
+        "player_id": "13345",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 7,
+        "date": "2026-10-25",
+        "team": "DEN",
+        "game_id": "202610701",
+        "stats": {
+          "gp": 1.0,
+          "rec": 2.0,
+          "rush_att": 9.0,
+          "rush_yd": 54.0,
+          "bonus_rec_rb": 2.0,
+          "rec_tgt": 2.0,
+          "rec_yd": 15.0
+        }
+      },
+      {
+        "player_id": "4034",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 7,
+        "date": "2026-10-25",
+        "team": "SF",
+        "game_id": "202610702",
+        "stats": {
+          "gp": 1.0,
+          "rush_td": 1.0,
+          "rec": 6.0,
+          "rush_att": 7.0,
+          "rush_yd": 39.0,
+          "bonus_rec_rb": 6.0,
+          "rec_tgt": 7.0,
+          "rec_yd": 61.0
+        }
+      }
+    ],
+    [
+      {
+        "player_id": "10229",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 8,
+        "date": "2026-11-01",
+        "team": "KC",
+        "game_id": "202610810",
+        "stats": {
+          "gp": 1.0,
+          "rec_td": 1.0,
+          "rec": 7.0,
+          "rec_tgt": 8.0,
+          "rec_yd": 53.0
+        }
+      },
+      {
+        "player_id": "11292",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 8,
+        "date": "2026-11-01",
+        "team": "NE",
+        "game_id": "202610819",
+        "stats": {}
+      },
+      {
+        "player_id": "12533",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 8,
+        "date": "2026-11-01",
+        "team": "WAS",
+        "game_id": "202610835",
+        "stats": {}
+      },
+      {
+        "player_id": "13345",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 8,
+        "date": "2026-11-01",
+        "team": "DEN",
+        "game_id": "202610810",
+        "stats": {
+          "gp": 1.0,
+          "rush_td": 1.0,
+          "rec": 4.0,
+          "rush_att": 11.0,
+          "rush_yd": 41.0,
+          "bonus_rec_rb": 4.0,
+          "rec_tgt": 5.0,
+          "rec_yd": 63.0
+        }
+      },
+      {
+        "player_id": "11564",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 8,
+        "date": "2026-11-01",
+        "team": "NE",
+        "game_id": "202610819",
+        "stats": {
+          "gp": 1.0,
+          "rush_td": 1.0,
+          "pass_att": 20.0,
+          "rush_att": 8.0,
+          "pass_yd": 199.0,
+          "pass_td": 2.0,
+          "rush_yd": 5.0,
+          "fum": 1.0
+        }
+      }
+    ],
+    [
+      {
+        "player_id": "10229",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 9,
+        "date": "2026-11-08",
+        "team": "KC",
+        "game_id": "202610916",
+        "stats": {
+          "gp": 1.0,
+          "rec": 5.0,
+          "rec_tgt": 7.0,
+          "rec_yd": 49.0
+        }
+      },
+      {
+        "player_id": "11292",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 9,
+        "date": "2026-11-08",
+        "team": "NE",
+        "game_id": "202610921",
+        "stats": {
+          "gp": 1.0,
+          "pass_att": 3.0,
+          "pass_yd": 21.0
+        }
+      },
+      {
+        "player_id": "12533",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 9,
+        "date": "2026-11-08",
+        "team": "WAS",
+        "game_id": "202610935",
+        "stats": {}
+      },
+      {
+        "player_id": "4034",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 9,
+        "date": "2026-11-08",
+        "team": "SF",
+        "game_id": "202610931",
+        "stats": {
+          "gp": 1.0,
+          "rec_td": 1.0,
+          "rush_td": 1.0,
+          "rec": 2.0,
+          "rush_att": 18.0,
+          "rush_yd": 68.0,
+          "bonus_rec_rb": 2.0,
+          "rec_tgt": 3.0,
+          "rec_yd": 19.0
+        }
+      },
+      {
+        "player_id": "13345",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 9,
+        "date": "2026-11-08",
+        "team": "DEN",
+        "game_id": "202610905",
+        "stats": {
+          "gp": 1.0,
+          "rush_td": 1.0,
+          "rec": 4.0,
+          "rush_att": 17.0,
+          "rush_yd": 57.0,
+          "bonus_rec_rb": 4.0,
+          "rec_tgt": 4.0,
+          "rec_yd": 31.0
+        }
+      },
+      {
+        "player_id": "11564",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 9,
+        "date": "2026-11-08",
+        "team": "NE",
+        "game_id": "202610921",
+        "stats": {
+          "pass_int": 3.0,
+          "gp": 1.0,
+          "pass_att": 38.0,
+          "rush_att": 1.0,
+          "pass_yd": 299.0,
+          "pass_td": 3.0,
+          "rush_yd": 3.0
+        }
+      }
+    ],
+    [
+      {
+        "player_id": "12533",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 10,
+        "date": "2026-11-12",
+        "team": "WAS",
+        "game_id": "202611023",
+        "stats": {}
+      },
+      {
+        "player_id": "10229",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 10,
+        "date": "2026-11-15",
+        "team": "KC",
+        "game_id": "202611002",
+        "stats": {
+          "gp": 1.0,
+          "rec": 5.0,
+          "rec_tgt": 6.0,
+          "rec_yd": 82.0
+        }
+      },
+      {
+        "player_id": "11292",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 10,
+        "date": "2026-11-15",
+        "team": "NE",
+        "game_id": "202611011",
+        "stats": {
+          "pass_int": 1.0,
+          "gp": 1.0,
+          "pass_att": 24.0,
+          "rush_att": 4.0,
+          "pass_yd": 81.0,
+          "pass_td": 1.0,
+          "rush_yd": 19.0
+        }
+      },
+      {
+        "player_id": "4034",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 10,
+        "date": "2026-11-15",
+        "team": "SF",
+        "game_id": "202611009",
+        "stats": {
+          "bonus_rec_yd_100": 1.0,
+          "gp": 1.0,
+          "rec_td": 2.0,
+          "rush_td": 1.0,
+          "rec_2pt": 1.0,
+          "rec": 4.0,
+          "rush_att": 13.0,
+          "rush_yd": 62.0,
+          "bonus_rec_rb": 4.0,
+          "rec_tgt": 4.0,
+          "rec_yd": 161.0
+        }
+      },
+      {
+        "player_id": "11564",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 10,
+        "date": "2026-11-15",
+        "team": "NE",
+        "game_id": "202611011",
+        "stats": {
+          "gp": 1.0,
+          "pass_att": 4.0,
+          "rush_att": 1.0,
+          "pass_yd": 48.0,
+          "rush_yd": 11.0
+        }
+      },
+      {
+        "player_id": "5859",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 10,
+        "date": "2026-11-15",
+        "team": "NE",
+        "game_id": "202611011",
+        "stats": {
+          "gp": 1.0,
+          "rec": 2.0,
+          "rec_tgt": 6.0,
+          "rec_yd": 27.0
+        }
+      }
+    ],
+    [
+      {
+        "player_id": "10229",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 11,
+        "date": "2026-11-22",
+        "team": "KC",
+        "game_id": "202611116",
+        "stats": {
+          "gp": 1.0,
+          "rec": 6.0,
+          "rec_tgt": 6.0,
+          "rec_yd": 53.0
+        }
+      },
+      {
+        "player_id": "13345",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 11,
+        "date": "2026-11-22",
+        "team": "DEN",
+        "game_id": "202611110",
+        "stats": {
+          "bonus_rush_yd_100": 1.0,
+          "gp": 1.0,
+          "rush_td": 3.0,
+          "rec": 4.0,
+          "rush_att": 24.0,
+          "rush_yd": 111.0,
+          "bonus_rec_rb": 4.0,
+          "rec_tgt": 5.0,
+          "rec_yd": 18.0
+        }
+      },
+      {
+        "player_id": "4034",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 11,
+        "date": "2026-11-22",
+        "team": "SF",
+        "game_id": "202611131",
+        "stats": {
+          "gp": 1.0,
+          "rush_td": 1.0,
+          "rec": 2.0,
+          "rush_att": 12.0,
+          "rush_yd": 49.0,
+          "bonus_rec_rb": 2.0,
+          "rec_tgt": 3.0,
+          "rec_yd": 13.0
+        }
+      },
+      {
+        "player_id": "12533",
+        "season": "2026",
+        "season_type": "regular",
+        "week": 11,
+        "date": "2026-11-23",
+        "team": "WAS",
+        "game_id": "202611135",
+        "stats": {
+          "gp": 1.0,
+          "rush_td": 1.0,
+          "rec": 2.0,
+          "rush_att": 13.0,
+          "rush_yd": 54.0,
+          "bonus_rec_rb": 2.0,
+          "rec_tgt": 3.0,
+          "rec_yd": 23.0
+        }
+      }
+    ]
+  ],
+  "injuryReport": {
+    "injuries": [
+      {
+        "injuries": [
+          {
+            "status": "Active",
+            "date": "2026-11-23T01:33Z",
+            "shortComment": "Coleman reeled off 111 yards and three touchdowns on 24 carries and hauled in four of five targets for 18 yards during Sunday's 38-24 win against the Raiders.",
+            "longComment": "Since returning from an IR stint due to a sprained ankle in Week 7, Coleman has increased his touch count in four consecutive contests, taking a stranglehold on the Broncos backfield in the process. As evidence, his 25 touches easily outpaced fellow RB J.K. Dobbins' one, which went for no yards. Coleman, a rookie fourth-round pick, also cracked the 100-yard mark on the ground for the first time in his career. With RJ Harvey (ankle) on injured reserve for at least one more game, Coleman again is set to act as a workhorse in Friday's road matchup with the Steelers.",
+            "details": {
+              "returnDate": null
+            },
+            "athlete": {
+              "displayName": "Jonah Coleman",
+              "position": {
+                "abbreviation": "RB"
+              },
+              "team": {
+                "abbreviation": "DEN"
+              }
+            }
+          },
+          {
+            "status": "Active",
+            "date": "2026-11-22T23:16Z",
+            "shortComment": "Rice secured all six targets for 53 yards in the Chiefs' 34-7 win over the Cardinals on Sunday.",
+            "longComment": "Rice tied for the team lead in receptions and finished as the runner-up in targets to Travis Kelce. The veteran receiver averaged a modest 8.8 yards per catch, his third game in the last four with under 10.0 yards per reception. Rice has at least five catches in four consecutive contests heading into Thursday's Week 12 Thanksgiving showdown against the Bills in Buffalo.",
+            "details": {
+              "returnDate": null
+            },
+            "athlete": {
+              "displayName": "Rashee Rice",
+              "position": {
+                "abbreviation": "WR"
+              },
+              "team": {
+                "abbreviation": "KC"
+              }
+            }
+          },
+          {
+            "status": "Doubtful",
+            "date": "2026-11-25T19:47Z",
+            "shortComment": "Brown (hamstring) didn't take part in practice Wednesday, Evan Lazar of the Patriots' official site reports.",
+            "longComment": "Coming out of a Week 11 bye, Brown didn't take any reps during the two bonus practices the Patriots held Monday and Tuesday, so it comes as little surprise that he was absent from the team's first official practice of Week 12. Head coach Mike Vrabel has already acknowledged that Brown isn't expected to play Sunday versus the Chargers, but the Patriots will likely wait until after Friday's practice before officially ruling the receiver out for that contest.",
+            "details": {
+              "returnDate": "2026-11-29"
+            },
+            "athlete": {
+              "displayName": "A.J. Brown",
+              "position": {
+                "abbreviation": "WR"
+              },
+              "team": {
+                "abbreviation": "NE"
+              }
+            }
+          },
+          {
+            "status": "Active",
+            "date": "2026-11-24T01:15Z",
+            "shortComment": "Patriots head coach Mike Vrabel said Monday that DeVito is the team's starting quarterback, Mike Reiss of ESPN.com reports. \"We're excited about that. He had a good preseason, and Tommy's improved,\" Vrabel said of DeVito.",
+            "longComment": "With Drake Maye (fibula) hurt early in Week 10 against Detroit, DeVito stepped in at quarterback but managed to complete just 12 of 24 pass attempts for 81 yards, a touchdown and an interception. He added 19 yards on four carries. The 28-year-old does have some starting experience -- he helmed the Giants offense for eight starts between 2023 and 2024 -- but he didn't play at all in 2025. For now, the Patriots are at least communicating that they'll stand pat and not look for help at quarterback outside the organization. However, the team is barely hanging on in the AFC playoff race with a 5-5 record, and with only rookie Behren Morton on the active roster as a healthy option to DeVito, the team may still look elsewhere if DeVito is unable to show better production.",
+            "details": {
+              "returnDate": null
+            },
+            "athlete": {
+              "displayName": "Tommy DeVito",
+              "position": {
+                "abbreviation": "QB"
+              },
+              "team": {
+                "abbreviation": "NE"
+              }
+            }
+          },
+          {
+            "status": "Out",
+            "date": "2026-11-23T20:26Z",
+            "shortComment": "For now, Maye -- who suffered a fractured right fibula during a Week 10 loss to the Lions -- remains on the Patriots' 53-man roster rather than injured reserve, with coach Mike Vrabel citing the \"balance\" the team is hoping to strike with regard to managing its remaining designated to return from IR slots, Mike Reiss of ESPN.com reports.",
+            "longComment": "Per Reiss, teams are limited to eight players that can be designated to return from the list over the course of the regular season, and the Patriots are close to using them all. \"Right now, he's not on injured reserve,\" Vrabel said Monday. \"He's on the active roster, so that's where it is today. I think that those things are obviously fluid. But we want to try to give him every opportunity that we can to be back at some point in time. I don't know when that will be; I'm not sure. But also, try to manage the roster and do what we need to do to try to win each week.\" On Sunday, Ian Rapoport of NFL Network reported that Maye was on track to miss at least six weeks, a timetable that suggests, in a best-case scenario, the QB could make a push for a late-season return or for the postseason, should New England qualify. Heading into a Week 12 game against the Chargers, Tommy DeVito is slated to work as the team's starter, with rookie Behren Morton on hand as his backup. Additionally, there's the possibility that the team considers Daniel Jones -- who the Colts let go Friday -- as an alternative, but Vrabel told Reiss that in the short term at least, adding another signal-caller is not something that's being planned.",
+            "details": {
+              "returnDate": "2026-12-27"
+            },
+            "athlete": {
+              "displayName": "Drake Maye",
+              "position": {
+                "abbreviation": "QB"
+              },
+              "team": {
+                "abbreviation": "NE"
+              }
+            }
+          },
+          {
+            "status": "Active",
+            "date": "2026-11-23T04:41Z",
+            "shortComment": "McCaffrey rushed 12 times for 49 yards and a touchdown while catching both of his targets for 13 yards in Sunday's 35-10 win over the Vikings.",
+            "longComment": "McCaffrey was relatively quiet in the lopsided win, but he extended his touchdown streak to nine games with a six-yard touchdown run in the fourth quarter. The versatile running back was much less involved as a pass catcher Sunday night after racking up 161 yards and two touchdowns through the air against the Cowboys in Week 10, and he finished with a season-low 62 scrimmage yards against the Vikings. Backup Kaelon Black had just eight rushing yards on his six carries after siphoning off at least 11 rushing attempts in each of the previous three games. McCaffrey is set to face another stout defensive front in Week 12 when the 49ers host the Seahawks, against whom McCaffrey churned out 83 scrimmage yards and a touchdown in Week 5.",
+            "details": {
+              "returnDate": null
+            },
+            "athlete": {
+              "displayName": "Christian McCaffrey",
+              "position": {
+                "abbreviation": "RB"
+              },
+              "team": {
+                "abbreviation": "SF"
+              }
+            }
+          },
+          {
+            "status": "Active",
+            "date": "2026-11-24T05:06Z",
+            "shortComment": "Croskey-Merritt rushed 13 times for 54 yards and a touchdown and brought in two of three targets for 23 yards in the Commanders' 22-20 win over the Bengals on Monday night.",
+            "longComment": "Making his return from a four-game absence due to a groin injury, Croskey-Merritt outpaced Austin Ekeler, the only other Commanders back to log a carry, by six rush attempts. The second-year pro also recorded his third rushing touchdown of the season on a one-yard run with 12 seconds remaining in the first half. Croskey-Merritt averaged over 4.0 yards per carry for the second straight game after failing to eclipse that mark in each of the first four games of the season, and he should be in store for an even busier day in a favorable Week 12 road matchup against the Cardinals on Sunday.",
+            "details": {
+              "returnDate": null
+            },
+            "athlete": {
+              "displayName": "Jacory Croskey-Merritt",
+              "position": {
+                "abbreviation": "RB"
+              },
+              "team": {
+                "abbreviation": "WSH"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "expertRankings": {
+    "source": "FantasyPros",
+    "experts": 6,
+    "updatedAt": 1795574936000,
+    "season": 2026,
+    "scoring": "ppr",
+    "fetchedAt": 1795583042324,
+    "status": "Fresh",
+    "usable": true,
+    "players": [
+      {
+        "sourceId": 16393,
+        "name": "Christian McCaffrey",
+        "position": "RB",
+        "team": "SF",
+        "rank": 5,
+        "positionRank": 3,
+        "minRank": 3,
+        "maxRank": 10,
+        "stdDev": 3.35
+      },
+      {
+        "sourceId": 27320,
+        "name": "Jonah Coleman",
+        "position": "RB",
+        "team": "DEN",
+        "rank": 32,
+        "positionRank": 12,
+        "minRank": 14,
+        "maxRank": 174,
+        "stdDev": 55.9
+      },
+      {
+        "sourceId": 23113,
+        "name": "Rashee Rice",
+        "position": "WR",
+        "team": "KC",
+        "rank": 44,
+        "positionRank": 23,
+        "minRank": 33,
+        "maxRank": 58,
+        "stdDev": 8.9
+      },
+      {
+        "sourceId": 18218,
+        "name": "A.J. Brown",
+        "position": "WR",
+        "team": "NE",
+        "rank": 103,
+        "positionRank": 50,
+        "minRank": 34,
+        "maxRank": 117,
+        "stdDev": 27.92
+      },
+      {
+        "sourceId": 27316,
+        "name": "Jacory Croskey-Merritt",
+        "position": "RB",
+        "team": "WAS",
+        "rank": 141,
+        "positionRank": 39,
+        "minRank": 144,
+        "maxRank": 175,
+        "stdDev": 10.37
+      },
+      {
+        "sourceId": 25746,
+        "name": "Tommy DeVito",
+        "position": "QB",
+        "team": "NE",
+        "rank": 302,
+        "positionRank": 34,
+        "minRank": 252,
+        "maxRank": 315,
+        "stdDev": 22.88
+      },
+      {
+        "sourceId": 23046,
+        "name": "Drake Maye",
+        "position": "QB",
+        "team": "NE",
+        "rank": 309,
+        "positionRank": 37,
+        "minRank": 179,
+        "maxRank": 348,
+        "stdDev": 61.47
+      }
+    ]
+  },
+  "backfieldRoles": {
+    "status": "Fresh",
+    "usable": true,
+    "players": {
+      "12533": {
+        "team": "WAS",
+        "order": 1
+      },
+      "13345": {
+        "team": "DEN",
+        "order": 1
+      },
+      "4034": {
+        "team": "SF",
+        "order": 1
+      }
+    }
+  }
+}

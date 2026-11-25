@@ -17,7 +17,7 @@ import {createTradeNegotiation} from '../trade-negotiation-ui.js';
 import {tradeLineupFitLabel} from '../trade-suggestion-quality.js';
 import {createTradeConnection} from '../trade-connected-motion.js';
 import {offerLineupMarkup} from '../trade-offer-preview.js';
-import {tradeDecisionMarkup} from '../trade-decision-ui.js';
+import {incomingTradeRisks,incomingTradeRiskMarkup,tradeDecisionMarkup} from '../trade-decision-ui.js';
 import {loadTradeWeekSchedules} from '../trade-weekly-outlook.js';
 import {lineupPreviewsFor} from '../trade-workspace.js';
 import {mountAnalyzerLiveRefresh} from "../analyzer-live-refresh.js";
@@ -111,13 +111,13 @@ const offerPreview=(offer,pool)=>{
 };
 
 function offerMarkup(offer, pool) {
-  if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${offerBalance(offer)}${offerPreview(offer,pool)}<footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-ui-action="primary" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer></article>`;
+  if (offer.parties) return `<article class="tb-offer tb-multi-offer" data-offer-key="${esc(offerKey(offer))}"><header><span>${offer.parties.length}-TEAM</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { compact: true })}${offerPackage(offer.sends[index], pool,"SENDS",offer)}<small>LINEUP ${signed(offer.weeklyDeltas[index])}</small></section>`).join("")}</div>${incomingTradeRiskMarkup(offer,pool)}${offerBalance(offer)}${offerPreview(offer,pool)}<footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-ui-action="primary" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer></article>`;
   const assessment=tradeAssessment(offer);
-  const call = (assessment.needsReview&&assessment.price.headline==='Balanced'?'Estimated balance':assessment.price.headline);
+  const call = incomingTradeRisks(offer,pool).length?'Risky return':(assessment.needsReview&&assessment.price.headline==='Balanced'?'Estimated balance':assessment.price.headline);
   return `<article class="tb-offer" data-offer-key="${esc(offerKey(offer))}">
     <header><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<strong>${esc(teamName(offer.other))}</strong></small><b class="tb-offer-verdict"><span>${esc(call)}</span><strong aria-label="${Math.round(assessment.fairness)} percent value balance">${Math.round(assessment.fairness)}%</strong></b></header>
     <div class="tb-offer-flow">${offerPackage(offer.sendA,pool,'You send')}${offerPackage(offer.sendB,pool,'You get')}</div>
-    ${tradeCoverageMarkup(offer,pool,{compact:true,parties:[null,offer.other]})}${offerBalance(offer)}${offerPreview(offer,pool)}
+    ${incomingTradeRiskMarkup(offer,pool,{label:false})}${tradeCoverageMarkup(offer,pool,{compact:true,parties:[null,offer.other]})}${offerBalance(offer)}${offerPreview(offer,pool)}
     <footer class="tb-offer-footer"><button type="button" class="tb-offer-analyze" data-ui-action="primary" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(','))}" data-send-b="${esc(offer.sendB.join(','))}" data-weekly-delta="${Number(offer.weeklyDeltaA)||0}">Analyze <span aria-hidden="true">→</span></button>${offerControls(offer,pool)}</footer>
   </article>`;
 }

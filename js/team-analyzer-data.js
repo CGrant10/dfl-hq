@@ -124,7 +124,9 @@ async function fetchAnalyzerData({freshTrade=false,liveRefresh=false} = {}) {
     currentStats: currentStatsRes.data || {},
     projections: projectionRes.data || [],
     weeklyProjections: weeklyProjectionRes.data || [],
-    recentStats: formWeeks.slice(-4),
+    // The player model selects each player’s last three played games, even
+    // across a bye or injury absence. Calendar slicing loses those samples.
+    recentStats: formWeeks,
     seasonWeeklyStats: formWeeks,
     dataSignals: {projections:projectionRes,production:currentStatsRes,availability:weeklyProjectionRes,
       weeklyResults:{stale:recentStatsRes.some(r=>r.stale)}},

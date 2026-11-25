@@ -34,7 +34,7 @@ const createTradeNegotiation=options=>createRealTradeNegotiation({...options,...
 import {tradeLineupFitLabel} from '/js/trade-suggestion-quality.js';
 import {createTradeConnection} from '/js/trade-connected-motion.js';
 import {offerLineupMarkup} from '/js/trade-offer-preview.js';
-import {tradeDecisionMarkup} from '/js/trade-decision-ui.js';
+import {incomingTradeRisks,incomingTradeRiskMarkup,tradeDecisionMarkup} from '/js/trade-decision-ui.js';
 const loadTradeWeekSchedules=async()=>window.reviewSchedules||[];
 import {lineupPreviewsFor} from '/js/trade-workspace.js';
 import {analyzerPlayerSignal} from "/js/analyzer-player-form.js";

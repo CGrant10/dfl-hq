@@ -1,1 +1,0 @@
-import{Ir as e}from"./app-core-BixdI9sj.js";function t(t){return`<span class="dfl-network-mark"><b>DFL</b><span>${e(t)}</span><i aria-hidden="true"></i></span>`}export{t};
