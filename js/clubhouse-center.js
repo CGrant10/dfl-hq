@@ -1,3 +1,4 @@
+import {pageEntry} from './view-memory.js';
 import {scorePlayer} from './dfl-scoring.js';
 import {requestedMatchup,markStoryTarget} from './story-destinations.js';
 import {viewingMatchup,setViewingMatchup} from './matchup-view-context.js';
@@ -39,7 +40,8 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  const make=(data={})=>{const next={...buildGameDay({week,projections,members:week.members,memberId:currentMember()?.id,rows:week.games.flatMap(g=>[g.left,g.right].map(t=>({roster_id:t.roster,points:t.score,starters:[]}))),...data,...(slots?{rosterPositions:slots}:{})}),scoringSettings,recordArchive:week.recordArchive??null};next.games=clubhouseMatchupOrder(next.games,currentMember()?.id);return next};
  model=make();
  const routeParams=new URLSearchParams(location.hash.split('?')[1]||''),requested=requestedMatchup(model.games,routeParams);
- let selected=initialClubhouseMatchup(model.games,{requested,remembered:readPageChoice(scope,model.games.map(g=>g.id),null)});
+ const freshEntry=pageEntry(root,'clubhouse-matchup')==='fresh';
+ let selected=initialClubhouseMatchup(model.games,{requested,remembered:freshEntry?null:readPageChoice(scope,model.games.map(g=>g.id),null)});
  let linkedFocusDone=false,linkedFocusInterrupted=false;const interruptLinkedFocus=()=>{linkedFocusInterrupted=true};
  const selectedGame=()=>model.games.find(g=>g.id===selected),cardOf=id=>root.querySelector(`[data-clubhouse-matchup="${CSS.escape(id)}"] .clubhouse-matchup-card`);
  const duelHost=root.querySelector('[data-clubhouse-duel]');

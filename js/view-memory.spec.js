@@ -13,3 +13,10 @@ it('restores disclosure preferences without moving a fresh visit',()=>{
  const stop=restoreView({querySelector:()=>detail},{y:900,details:[{key:'#test',open:true}]},{restoreScroll:false,scroll:y=>scrolls.push(y)});
  expect(detail.open).toBe(true);expect(scrolls).toEqual([]);stop();
 });
+it('distinguishes each page component’s first entry from updates and returns',async()=>{
+ const {pageEntry,visitMemoryName}=await import('./view-memory.js');
+ const fresh={dataset:{routeReturning:'false',routeVisitId:'a'}},back={dataset:{routeReturning:'true',routeVisitId:'b'}};
+ expect(pageEntry(fresh,'book')).toBe('fresh');expect(pageEntry(fresh,'book')).toBe('update');expect(pageEntry(fresh,'matchups')).toBe('fresh');
+ expect(pageEntry(back,'book')).toBe('restore');expect(pageEntry(back,'book')).toBe('update');
+ expect(visitMemoryName(fresh,'book')).toBe('book:visit:a');expect(visitMemoryName(back,'book')).toBe('book:visit:b');
+});
