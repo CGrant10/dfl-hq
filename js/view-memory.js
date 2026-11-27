@@ -61,3 +61,13 @@ export function restoreView(view, memory, { active = () => true, scroll = y => w
   for (const name of ['pointerdown', 'wheel', 'keydown']) window.addEventListener(name, cancel, { passive: true, once: true });
   schedule(); return stop;
 }
+
+// A renderer can update the same view many times. Reset its landing state only
+// on a fresh route entry, never during score refreshes or resumed visits.
+const pageEntries=new WeakMap();
+export function pageEntry(view,scope){
+ let entries=pageEntries.get(view);if(!entries){entries=new Set();pageEntries.set(view,entries)}
+ if(entries.has(scope))return 'update';entries.add(scope);
+ return view.dataset.routeReturning==='true'?'restore':'fresh';
+}
+export const visitMemoryName=(view,name)=>`${name}:visit:${view.dataset.routeVisitId||'current'}`;

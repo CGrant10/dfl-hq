@@ -3626,3 +3626,37 @@ Evidence: `/workspace/dfl-trade-values-1612/` (trade/board, compiled390,
 reproduce.log, latest-reproduction.log, focused/full-test and build logs).
 
 final result: passed
+
+### 1.613.0 — Fresh page entries and exact visit restoration
+
+Fresh navigation now starts at the top without restoring the prior route's
+section/strip snapshot. Selecting the current page again creates a fresh view
+and visit identity without adding a phantom Back step. Back restores its own
+visit, while reload/back-forward document restoration can resume an existing
+entry. Pagehide saves the exact visit as well as route fallback memory.
+Background refreshes after query-only tab/matchup changes retain that visit.
+
+Clubhouse starts on its default tab and first matchup on a fresh page entry;
+Sportsbook resets its presentation to Fantasy/markets; History starts on Weeks
+with the latest archive rather than another visit's chosen tab/year/week.
+Each page saves presentation state per visit for Back/resume. Repeated data
+updates within one view preserve its active presentation. Motion/theme settings,
+picks, wagers, protected-player settings and manual trade drafts are not erased.
+Intentional receipt/player/archive links still open their specific targets.
+
+40 browser route checks passed, including same-page taps, new entries, exact
+Back offsets/disclosures, reload, returning to the open app, query refreshes,
+deep links, interrupted loads, retries, reduced/off motion and 320/390/768px
+containment. Read-only compiled app checks at 390px passed in Light/Dark for
+Home, Clubhouse, Sportsbook and History. Additional real-page round trips verify
+Back, fresh default tabs/top positions and background-sync preservation on
+Clubhouse/Sportsbook/History in both themes (12 flows, no browser errors).
+Inspected both-theme screenshots; existing theme tokens and styling retained.
+All 331 test files / 2,791 tests passed, plus release, themes, type, names and
+production build checks.
+Native OS process eviction and hardware Back gestures remain unmeasured; browser
+history, reload and persisted pageshow/focus behavior are covered.
+Evidence: `/workspace/dfl-navigation-1613/` (routes-release, compiled390,
+flows-release, focused/full-test and production-build logs).
+
+final result: passed
